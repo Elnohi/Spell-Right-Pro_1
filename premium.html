@@ -102,19 +102,17 @@
     }
 
     function handleExamChange() {
-      const selectedExam = document.getElementById('examSelect').value;
-      if (selectedExam === 'OET') {
-        if (typeof oetWordList !== 'undefined') {
-          words = oetWordList;
-        } else {
-          alert("OET word list not loaded correctly.");
-        }
-      } else if (selectedExam === 'SpellingBee') {
-        words = ['apple', 'banana', 'grape', 'elephant', 'xylophone'];
-      } else {
-        words = [];
-      }
+      const selectedExam = document.getElementById("examSelect").addEventListener("change", function () {
+  const selectedExam = this.value;
+
+  if (selectedExam === "OET") {
+    if (typeof oetWords !== 'undefined' && Array.isArray(oetWords)) {
+      loadWords(oetWords);
+    } else {
+      alert("OET word list not loaded correctly.");
     }
+  }
+});
 
     function startPractice() {
       alert("Practice mode starting with " + words.length + " words.");
