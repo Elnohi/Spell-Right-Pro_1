@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>SpellRightPro – Freemium Edition</title>
+
+  <!-- Google Analytics -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-H09MF13297"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-H09MF13297');
+  </script>
+
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/10.4.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.4.0/firebase-auth-compat.js"></script>
+
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyCZ-rAPnRgVjSRFOFvbiQlowE6A3RVvwWo",
+      authDomain: "spellrightpro-firebase.firebaseapp.com",
+      projectId: "spellrightpro-firebase",
+      storageBucket: "spellrightpro-firebase.firebasestorage.app",
+      messagingSenderId: "798456641137",
+      appId: "1:798456641137:web:5c6d79db5bf49d04928dd0",
+      measurementId: "G-H09MF13297"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+  </script>
+
+  <!-- FontAwesome -->
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet"/>
+
+  <style>
+    body { font-family: Arial, sans-serif; margin: 0; padding: 0; background: #f8f9fa; }
+    .container { max-width: 960px; margin: auto; padding: 20px; }
+    .form-row { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-top: 15px; }
+    .form-row label { min-width: 100px; }
+    .form-row select, .form-row input[type="email"], .form-row input[type="password"] {
+      flex: 1; padding: 8px; border: 1px solid #ccc; border-radius: 5px;
+    }
+    .btn { padding: 10px 15px; border: none; background: #007bff; color: white; border-radius: 5px; cursor: pointer; }
+    .btn:hover { background: #0056b3; }
+    .btn-warning { background: #ffc107; color: black; }
+    .word-box { padding: 20px; border: 2px solid #007bff; border-radius: 10px; background: white; margin-bottom: 20px; }
+    .ad-banner { margin: 20px 0; text-align: center; border: 1px dashed #ccc; padding: 10px; background: #fff; }
+    @media (max-width: 600px) { .form-row { flex-direction: column; align-items: stretch; } }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <img src="logo.png" alt="SpellRightPro Logo" style="height:50px; vertical-align:middle; margin-right:10px;" />
+    <h1 style="display:inline-block; vertical-align:middle;">SpellRightPro</h1>
+
+    <div class="form-row" id="authSection">
+      <label>Email:</label>
+      <input type="email" id="userEmail" placeholder="Enter email" />
+      <label>Password:</label>
+      <input type="password" id="userPassword" placeholder="Enter password" />
+      <button onclick="loginUser()" class="btn">Login</button>
+      <button onclick="signUpUser()" class="btn">Sign Up</button>
+      <button onclick="logoutUser()" class="btn btn-warning">Logout</button>
+      <span id="loginStatus"></span>
+    </div>
+
+    <div class="form-row">
+      <label>Select Exam:</label>
+      <select id="examSelect">
+        <option value="">-- Choose --</option>
+        <option value="OET">OET</option>
+      </select>
+      <label>Accent:</label>
+      <select id="accentSelect">
+        <option value="en-GB">British</option>
+        <option value="en-US">American</option>
+      </select>
+    </div>
+
+    <div class="form-row">
+      <button onclick="startPractice()" class="btn">Start Practice</button>
+      <button onclick="startTest()" class="btn">Start Test</button>
+    </div>
+
+    <div class="form-row">
+      <button onclick="window.location.href='premium.html'" class="btn btn-warning">Upgrade to Premium</button>
+    </div>
+
+    <div id="trainer" class="card"></div>
+    <div id="scoreDisplay" class="card"></div>
+
+    <div class="ad-banner">
+      <p>Ad Placeholder — Your AdSense ad will appear here</p>
+    </div>
+
+    <form name="feedback" method="POST" data-netlify="true" netlify-honeypot="bot-field" class="form-row">
+      <input type="hidden" name="form-name" value="feedback" />
+      <input type="hidden" name="user-email" id="formHiddenEmail" />
+      <textarea name="message" rows="3" placeholder="Write your notes or comments here..." style="width:100%;" required></textarea>
+      <button type="submit" class="btn">
+        <i class="fas fa-paper-plane"></i> Send Comment
+      </button>
+    </form>
+  </div>
+
+  <!-- External Scripts -->
+  <script src="oet_word_list.js"></script>
+  <script>
+    const synth = window.speechSynthesis;
+    let currentWords = [];
+    let currentAccent = "en-GB";
+
+    auth.onAuthStateChanged(user => {
+      const status = document.getElementById("loginStatus");
+      if (user) {
+        status.textContent = `Logged in as ${user.email}`;
+        status.style.color = "green";
+      } else {
+        status.textContent = "Not logged in";
+        status.style.color = "red";
+      }
+    });
+
+    document.getElementById("examSelect").addEventListener("change", function() {
+      if (this.value === "OET" && typeof OET_WORD_LIST !== 'undefined') {
+        currentWords = [...OET_WORD_LIST];
+        alert(`Loaded ${currentWords.length} OET words.`);
+      }
+    });
+
+    function loginUser() {
+      const email = document.getElementById("userEmail").value.trim();
+      const password = document.getElementById("userPassword").value;
+      if (!email || !password) return alert("Email and password required");
+      auth.signInWithEmailAndPassword(email, password)
+        .then(() => alert("Login successful!"))
+        .catch(error => alert(error.message));
+    }
+
+    function signUpUser() {
+      const email = document.getElementById("userEmail").value.trim();
+      const password = document.getElementById("userPassword").value;
+      if (!email || !password) return alert("Email and password required");
+      auth.createUserWithEmailAndPassword(email, password)
+        .then(() => alert("Account created and signed in!"))
+        .catch(error => alert(error.message));
+    }
+
+    function logoutUser() {
+      auth.signOut().then(() => {
+        alert("Logged out");
+        document.getElementById("trainer").innerHTML = "";
+        document.getElementById("scoreDisplay").innerHTML = "";
+      });
+    }
+
+    function startPractice() {
+      if (!currentWords.length) return alert("Please select an exam and load words first");
+      presentWord();
+    }
+
+    function startTest() {
+      if (!currentWords.length) return alert("Please select an exam and load words first");
+      currentWords = shuffle([...currentWords]).slice(0, 24);
+      presentWord();
+    }
+
+    function presentWord() {
+      const word = currentWords[0];
+      const trainer = document.getElementById("trainer");
+      trainer.innerHTML = `
+        <div class="word-box">
+          <h3>Spell this word:</h3>
+          <button class="btn" onclick="speak('${word}')"><i class='fas fa-volume-up'></i> Speak</button>
+        </div>
+      `;
+    }
+
+    function speak(text) {
+      synth.cancel();
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.lang = currentAccent;
+      synth.speak(utterance);
+    }
+
+    function shuffle(arr) {
+      for (let i = arr.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [arr[i], arr[j]] = [arr[j], arr[i]];
+      }
+      return arr;
+    }
+  </script>
+</body>
+</html>
