@@ -173,17 +173,31 @@
       return text.split(/[\n,\s]+/).filter(Boolean);
     }
 
+    function speakWord(word) {
+      const utterance = new SpeechSynthesisUtterance(word);
+      utterance.lang = document.getElementById("accentSelect").value;
+      speechSynthesis.speak(utterance);
+    }
+
     function startPractice() {
+      const exam = document.getElementById("examType").value;
       const words = getWordList();
       if (!words.length) return alert("No words to practice.");
       let index = 0;
       function nextWord() {
         const word = words[index];
-        const userInput = prompt("Spell: " + word);
-        if (userInput && userInput.toLowerCase() === word.toLowerCase()) {
-          alert("Correct");
+        if (exam === "SpellingBee") {
+          speakWord(word);
+          const micInput = prompt("Spell the word (say each letter)");
+          // Placeholder logic
+          alert("You said: " + micInput);
         } else {
-          alert("Wrong. Correct: " + word);
+          const userInput = prompt("Spell: " + word);
+          if (userInput && userInput.toLowerCase() === word.toLowerCase()) {
+            alert("Correct");
+          } else {
+            alert("Wrong. Correct: " + word);
+          }
         }
         index++;
         if (index < words.length) nextWord();
@@ -217,8 +231,6 @@
       const selected = this.value;
       if (selected === "") {
         alert("Blank mode: You can enter or upload your own words.");
-      } else if (selected === "SpellingBee") {
-        alert("Spelling Bee mode coming soon.");
       }
     });
   </script>
