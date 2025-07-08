@@ -102,27 +102,40 @@
     }
 
     function handleExamChange() {
-      const selectedExam = document.getElementById("examSelect").addEventListener("change", function () {
-  const selectedExam = this.value;
-
-  if (selectedExam === "OET") {
-      if (typeof oetWords !== 'undefined' && Array.isArray(oetWords)) {
-        loadWords(oetWords);
-      } else {
-        alert("OET word list not loaded correctly.");
-        console.error("oetWords is undefined or not an array");
+      const selectedExam = document.getElementById("examSelect").value;
+      if (selectedExam === "OET") {
+        if (typeof oetWords !== 'undefined' && Array.isArray(oetWords)) {
+          loadWords(oetWords);
+        } else {
+          alert("OET word list not loaded correctly.");
+          console.error("oetWords is undefined or not an array");
+        }
+      } else if (selectedExam === "SpellingBee") {
+        const spellingBeeWords = ["apple", "banana", "cherry"];
+        loadWords(spellingBeeWords);
+        startSpellingBeePractice();
+      } else if (selectedExam === "Custom") {
+        loadCustomWords();
       }
     }
-});
+
+    function loadWords(wordArray) {
+      words = wordArray;
+      document.getElementById("trainer").innerText = "Loaded " + words.length + " words.";
+    }
+
+    function startSpellingBeePractice() {
+      if (!words.length) return alert("No words loaded.");
+      alert("Spelling Bee starting with " + words.length + " words.");
+      // Add microphone/spelling bee logic here
+    }
 
     function startPractice() {
       alert("Practice mode starting with " + words.length + " words.");
-      // Insert actual practice logic
     }
 
     function startTest() {
       alert("Test mode starting with " + words.length + " words.");
-      // Insert actual test logic
     }
   </script>
 </body>
