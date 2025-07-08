@@ -95,22 +95,35 @@
   </div>
 
   <script>
+    let words = [];
+
     function toggleDarkMode() {
       document.body.classList.toggle('dark-mode');
     }
 
     function handleExamChange() {
       const selectedExam = document.getElementById('examSelect').value;
-      const trainer = document.getElementById('trainer');
-      trainer.innerHTML = 'Exam selected: ' + selectedExam;
+      if (selectedExam === 'OET') {
+        if (typeof oetWordList !== 'undefined') {
+          words = oetWordList;
+        } else {
+          alert("OET word list not loaded correctly.");
+        }
+      } else if (selectedExam === 'SpellingBee') {
+        words = ['apple', 'banana', 'grape', 'elephant', 'xylophone'];
+      } else {
+        words = [];
+      }
     }
 
     function startPractice() {
-      alert("Practice session starting...");
+      alert("Practice mode starting with " + words.length + " words.");
+      // Insert actual practice logic
     }
 
     function startTest() {
-      alert("Test session starting...");
+      alert("Test mode starting with " + words.length + " words.");
+      // Insert actual test logic
     }
   </script>
 </body>
