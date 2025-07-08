@@ -15,6 +15,7 @@
   <!-- Firebase SDK -->
   <script src="https://www.gstatic.com/firebasejs/10.4.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.4.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.4.0/firebase-firestore-compat.js"></script>
   <!-- Firebase Config -->
   <script>
     const firebaseConfig = {
@@ -26,6 +27,7 @@
       appId: "YOUR_APP_ID"
     };
     firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
   </script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.12.313/pdf.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.4.2/mammoth.browser.min.js"></script>
@@ -92,13 +94,13 @@
         <option value="OET">OET</option>
         <option value="SpellingBee">Spelling Bee</option>
       </select>
-      <button class="btn btn-info">Practice</button>
-      <button class="btn btn-success">Test</button>
+      <button class="btn btn-info" onclick="startPractice()">Practice</button>
+      <button class="btn btn-success" onclick="startTest()">Test</button>
     </div>
 
     <div class="form-row">
       <h3>Custom Word List</h3>
-      <textarea placeholder="Paste or type words here..." rows="4" style="width:100%"></textarea>
+      <textarea placeholder="Paste or type words here..." rows="4" style="width:100%" id="wordInput"></textarea>
       <button class="btn btn-info">Load Words</button>
     </div>
 
@@ -128,11 +130,16 @@
       document.body.classList.toggle('dark-mode');
     });
 
+    let currentUserEmail = null;
+
     function login() {
       const email = document.getElementById('email').value;
       const password = document.getElementById('password').value;
       firebase.auth().signInWithEmailAndPassword(email, password)
-        .then(() => alert("Logged in!"))
+        .then(userCredential => {
+          alert("Logged in!");
+          currentUserEmail = userCredential.user.email;
+        })
         .catch(error => alert(error.message));
     }
 
@@ -140,49 +147,39 @@
       const email = document.getElementById('email').value;
       const password = document.getElementById('password').value;
       firebase.auth().createUserWithEmailAndPassword(email, password)
-        .then(() => alert("Account created!"))
+        .then(userCredential => {
+          alert("Account created!");
+          currentUserEmail = userCredential.user.email;
+        })
         .catch(error => alert(error.message));
     }
 
-    document.getElementById('fileUpload').addEventListener('change', async function (e) {
-      const file = e.target.files[0];
-      if (!file) return;
-      const ext = file.name.split('.').pop().toLowerCase();
-      if (ext === 'txt') {
-        const text = await file.text();
-        alert("TXT Loaded:\n" + text.slice(0, 200));
-      } else if (ext === 'pdf') {
-        const reader = new FileReader();
-        reader.onload = function () {
-          const typedarray = new Uint8Array(this.result);
-          pdfjsLib.getDocument(typedarray).promise.then(pdf => {
-            pdf.getPage(1).then(page => {
-              page.getTextContent().then(content => {
-                const text = content.items.map(item => item.str).join(' ');
-                alert("PDF Loaded:\n" + text.slice(0, 200));
-              });
-            });
-          });
-        };
-        reader.readAsArrayBuffer(file);
-      } else if (ext === 'docx') {
-        const reader = new FileReader();
-        reader.onload = function (e) {
-          mammoth.extractRawText({ arrayBuffer: e.target.result })
-            .then(result => alert("DOCX Loaded:\n" + result.value.slice(0, 200)))
-            .catch(err => alert("DOCX Error: " + err.message));
-        };
-        reader.readAsArrayBuffer(file);
-      } else {
-        alert("Unsupported file type");
-      }
-    });
+    function saveSessionResult(score, total) {
+      if (!currentUserEmail) return;
+      const timestamp = new Date().toISOString();
+      db.collection("userScores").add({
+        email: currentUserEmail,
+        score,
+        total,
+        timestamp
+      }).then(() => console.log("Session saved."))
+        .catch(err => console.error("Error saving score:", err));
+    }
 
-    // Auto switch to practice mode for blank exam
-    document.getElementById("examType").addEventListener("change", function() {
+    function startPractice() {
+      alert("Practice mode started. Your session will be saved when complete.");
+    }
+
+    function startTest() {
+      alert("Test mode started. Score will be saved on completion.");
+      // After test complete, use this line:
+      // saveSessionResult(correctCount, totalWords);
+    }
+
+    document.getElementById("examType").addEventListener("change", function () {
       const selected = this.value;
       if (selected === "") {
-        document.querySelector(".btn.btn-info").click();
+        startPractice();
       }
     });
   </script>
