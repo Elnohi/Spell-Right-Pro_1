@@ -1,4 +1,5 @@
-const oetWords = [
+// oet_word_list.js
+const oetWordList = [
     "Building sites",
   "Blotches",
   "Scalp",
