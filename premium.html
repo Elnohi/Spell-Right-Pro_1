@@ -8,266 +8,109 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.10.377/pdf.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.4.0/mammoth.browser.min.js"></script>
   <style>
-    body { font-family: Arial, sans-serif; margin: 0; padding: 0; background: #f4f4f4; }
-    header { text-align: center; padding: 20px; background: #007bff; color: white; }
-    .container { max-width: 800px; margin: auto; padding: 20px; }
-    .word-box, .review-section { background: white; padding: 15px; margin: 15px 0; border-radius: 8px; box-shadow: 0 0 5px rgba(0,0,0,0.1); }
-    .btn { background: #007bff; color: white; padding: 10px 15px; border: none; border-radius: 5px; cursor: pointer; margin: 5px; }
-    .controls { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 10px; }
-    textarea, select, input[type="email"] { width: 100%; padding: 10px; margin-top: 10px; border-radius: 4px; border: 1px solid #ccc; }
-    .btn-secondary { background: #6c757d; }
-    .status.correct { color: green; }
-    .status.incorrect { color: red; }
-    #scoreDisplay { font-weight: bold; margin-top: 10px; }
+    body { font-family: Arial, sans-serif; margin: 0; padding: 0; background: #f4f4f4; transition: background 0.3s, color 0.3s; }
+    header { display: flex; align-items: center; padding: 10px 20px; background: #fff; border-bottom: 1px solid #ddd; }
+    header img { height: 40px; margin-right: 10px; }
+    header h1 { flex-grow: 1; font-size: 24px; margin: 0; }
+    .container { max-width: 900px; margin: auto; padding: 20px; }
+    select, input[type="email"], input[type="password"], textarea { padding: 8px; margin: 8px 0; border-radius: 5px; border: 1px solid #ccc; width: 100%; }
+    button { padding: 10px 15px; border: none; border-radius: 5px; cursor: pointer; margin: 5px 0; }
+    .btn-primary { background-color: #007bff; color: white; }
+    .btn-secondary { background-color: #17a2b8; color: white; }
+    .btn-warning { background-color: #ffc107; color: black; }
+    .btn-success { background-color: #28a745; color: white; }
+    .btn-danger { background-color: #dc3545; color: white; }
+    .btn-icon { background-color: #007bff; color: white; width: 32px; height: 32px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; }
+    .row { display: flex; flex-wrap: wrap; gap: 10px; }
+    .col { flex: 1; min-width: 150px; }
+    .form-section { margin-bottom: 20px; }
+    .dark-mode { background-color: #121212; color: white; }
+    .dark-mode header { background: #1e1e1e; color: white; }
+    .dark-mode input, .dark-mode select, .dark-mode textarea { background: #333; color: white; border: 1px solid #555; }
   </style>
 </head>
 <body>
   <header>
-    <h1>SpellRightPro Premium</h1>
+    <img src="logo.png" alt="Logo">
+    <h1>SpellRightPro</h1>
+    <button onclick="toggleDarkMode()" class="btn-icon">🌙</button>
   </header>
+
   <div class="container">
-    <label>Email: <input type="email" id="userEmail"></label>
-    <button onclick="loginUser()" class="btn">Login</button>
-
-    <label>Accent:
-      <select id="accentSelect" onchange="changeAccent()">
-        <option value="en-GB">British</option>
-        <option value="en-US">American</option>
-        <option value="en-CA">Canadian</option>
-        <option value="en-AU">Australian</option>
-      </select>
-    </label>
-
-    <label>Select Exam:
-      <select id="examSelect" onchange="selectExamWords()">
-        <option value="">-- Custom --</option>
-        <option value="OET">OET</option>
-        <option value="SpellingBee">Spelling Bee</option>
-      </select>
-    </label>
-
-    <div class="controls">
-      <button onclick="startPractice()" class="btn">Practice</button>
-      <button onclick="startTest()" class="btn">Test</button>
+    <div class="form-section row">
+      <div class="col"><input type="email" id="email" placeholder="Enter email"></div>
+      <div class="col"><input type="password" id="password" placeholder="Enter password"></div>
+      <div class="col">
+        <button onclick="login()" class="btn-primary">Login</button>
+        <button onclick="signup()" class="btn-secondary">Sign Up</button>
+        <button onclick="logout()" class="btn-warning">Logout</button>
+      </div>
     </div>
-
-    <textarea id="wordInput" placeholder="Paste your custom words here..."></textarea>
-    <div class="controls">
-      <button onclick="addCustomWords()" class="btn">Add Words</button>
-      <label class="btn">Upload File<input type="file" id="fileUpload" accept=".txt,.pdf,.docx" onchange="handleFileUpload(event)" style="display:none;"></label>
-      <button onclick="loadWordList()" class="btn btn-secondary">Load Words</button>
+    <div class="form-section row">
+      <div class="col">
+        <label for="examSelect">Select Exam:</label>
+        <select id="examSelect" onchange="handleExamChange()">
+          <option value="">-- Choose --</option>
+          <option value="OET">OET</option>
+          <option value="SpellingBee">Spelling Bee</option>
+          <option value="Custom">Custom</option>
+        </select>
+      </div>
+      <div class="col">
+        <label for="accent">Accent:</label>
+        <select id="accent" onchange="changeAccent()">
+          <option value="en-GB">British</option>
+          <option value="en-US">American</option>
+          <option value="en-CA">Canadian</option>
+          <option value="en-AU">Australian</option>
+        </select>
+      </div>
     </div>
-
+    <div class="form-section row">
+      <div class="col">
+        <button onclick="startPractice()" class="btn-secondary">Practice</button>
+        <button onclick="startTest()" class="btn-success">Test</button>
+      </div>
+    </div>
+    <div class="form-section">
+      <label>Upload Word File:</label>
+      <input type="file" id="fileUpload" accept=".txt,.pdf,.docx" onchange="handleFileUpload(event)">
+    </div>
+    <div class="form-section">
+      <textarea id="customWords" rows="3" placeholder="Enter custom words here..."></textarea>
+      <div class="row">
+        <div class="col">
+          <button onclick="saveCustomWords()" class="btn-success">Save Words</button>
+          <button onclick="loadCustomWords()" class="btn-primary">Load Words</button>
+          <button onclick="clearWords()" class="btn-warning">Clear Words</button>
+        </div>
+      </div>
+    </div>
+    <div class="form-section">
+      <textarea id="commentBox" rows="2" placeholder="Write your notes or comments here..."></textarea>
+      <button onclick="submitComment()" class="btn-success">Send Comment</button>
+    </div>
     <div id="trainer"></div>
     <div id="scoreDisplay"></div>
   </div>
 
   <script>
-    let words = [];
-    let currentWordIndex = 0;
-    let correctCount = 0;
-    let userEmail = "";
-    let currentAccent = "en-GB";
-
-    function loginUser() {
-      userEmail = document.getElementById("userEmail").value.trim();
+    function toggleDarkMode() {
+      document.body.classList.toggle('dark-mode');
     }
 
-    function changeAccent() {
-      currentAccent = document.getElementById("accentSelect").value;
-    }
-
-    function selectExamWords() {
-      const selected = document.getElementById("examSelect").value;
-      if (selected === "OET") {
-        words = [...oetWordList];
-        alert("OET words loaded.");
-      } else if (selected === "SpellingBee") {
-        words = ["example", "banana", "language", "computer", "apple"];
-        alert("Spelling Bee words loaded. Speak letter by letter.");
-        startSpellingBee();
-      } else {
-        words = [];
-        document.getElementById("trainer").innerHTML = "<p>Paste or upload your custom words to begin.</p>";
-      }
+    function handleExamChange() {
+      const selectedExam = document.getElementById('examSelect').value;
+      const trainer = document.getElementById('trainer');
+      trainer.innerHTML = 'Exam selected: ' + selectedExam;
     }
 
     function startPractice() {
-      if (!words.length) return alert("Please load or input words.");
-      currentWordIndex = 0;
-      correctCount = 0;
-      presentWord();
+      alert("Practice session starting...");
     }
 
     function startTest() {
-      if (!words.length) return alert("Please load or input words.");
-      words = shuffle([...words]).slice(0, 24);
-      currentWordIndex = 0;
-      correctCount = 0;
-      presentWord();
-    }
-
-    function shuffle(arr) {
-      for (let i = arr.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [arr[i], arr[j]] = [arr[j], arr[i]];
-      }
-      return arr;
-    }
-
-    function presentWord() {
-      const container = document.getElementById("trainer");
-      container.innerHTML = "";
-      const word = words[currentWordIndex];
-
-      const box = document.createElement("div");
-      box.className = "word-box";
-
-      box.innerHTML = `<h3>Word ${currentWordIndex + 1}/${words.length}</h3>`;
-
-      const speakBtn = document.createElement("button");
-      speakBtn.textContent = "Speak";
-      speakBtn.className = "btn";
-      speakBtn.onclick = () => speak(word);
-
-      const input = document.createElement("input");
-      input.type = "text";
-      input.placeholder = "Type the word...";
-
-      const checkBtn = document.createElement("button");
-      checkBtn.textContent = "Check";
-      checkBtn.className = "btn";
-      checkBtn.onclick = () => {
-        const userAnswer = input.value.trim().toLowerCase();
-        const expected = word.toLowerCase();
-        const status = document.createElement("div");
-        status.className = "status";
-        if (userAnswer === expected) {
-          status.textContent = "Correct!";
-          status.classList.add("correct");
-          correctCount++;
-        } else {
-          status.textContent = `Incorrect. Correct: ${word}`;
-          status.classList.add("incorrect");
-        }
-        box.appendChild(status);
-        setTimeout(() => {
-          currentWordIndex++;
-          if (currentWordIndex < words.length) {
-            presentWord();
-          } else {
-            showScore();
-          }
-        }, 1500);
-      };
-
-      box.appendChild(speakBtn);
-      box.appendChild(input);
-      box.appendChild(checkBtn);
-
-      container.appendChild(box);
-      speak(word);
-      input.focus();
-    }
-
-    function speak(text) {
-      const utter = new SpeechSynthesisUtterance(text);
-      utter.lang = currentAccent;
-      speechSynthesis.speak(utter);
-    }
-
-    function showScore() {
-      const scoreEl = document.getElementById("scoreDisplay");
-      const percentage = Math.round((correctCount / words.length) * 100);
-      scoreEl.innerHTML = `Test complete! Score: ${correctCount}/${words.length} (${percentage}%)`;
-    }
-
-    function addCustomWords() {
-      const input = document.getElementById("wordInput").value.trim();
-      if (!input) return;
-      words = input.split(/[^a-zA-Z]+/).filter(Boolean);
-      alert(`${words.length} words added.`);
-    }
-
-    function handleFileUpload(event) {
-      const file = event.target.files[0];
-      if (!file) return;
-      const ext = file.name.split('.').pop().toLowerCase();
-      const reader = new FileReader();
-      reader.onload = async (e) => {
-        let text = "";
-        if (ext === "txt") text = e.target.result;
-        else if (ext === "pdf") {
-          const pdf = await pdfjsLib.getDocument({ data: e.target.result }).promise;
-          for (let i = 1; i <= pdf.numPages; i++) {
-            const page = await pdf.getPage(i);
-            const content = await page.getTextContent();
-            text += content.items.map(item => item.str).join(" ") + " ";
-          }
-        } else if (ext === "docx") {
-          const result = await mammoth.extractRawText({ arrayBuffer: e.target.result });
-          text = result.value;
-        }
-        words = text.split(/[^a-zA-Z]+/).filter(Boolean);
-        alert(`${words.length} words loaded.`);
-      };
-      if (ext === "pdf" || ext === "docx") reader.readAsArrayBuffer(file);
-      else reader.readAsText(file);
-    }
-
-    function loadWordList() {
-      if (!userEmail) return alert("Login first.");
-      const saved = localStorage.getItem(`spellright-list-${userEmail}`);
-      if (saved) {
-        words = JSON.parse(saved);
-        alert("Words loaded from saved list.");
-      } else alert("No saved words for this email.");
-    }
-
-    function startSpellingBee() {
-      let index = 0;
-      let correct = 0;
-      const trainer = document.getElementById("trainer");
-      trainer.innerHTML = "";
-
-      function next() {
-        if (index >= words.length) {
-          trainer.innerHTML = `<div class="word-box">Spelling Bee complete. You got ${correct}/${words.length} correct.</div>`;
-          return;
-        }
-
-        const word = words[index];
-        const box = document.createElement("div");
-        box.className = "word-box";
-        box.innerHTML = `<h3>Word ${index + 1}</h3><p>Spell it aloud or enter below</p>`;
-        trainer.innerHTML = "";
-        trainer.appendChild(box);
-
-        const input = document.createElement("input");
-        input.type = "text";
-        input.placeholder = "Type letter by letter...";
-
-        const checkBtn = document.createElement("button");
-        checkBtn.textContent = "Check";
-        checkBtn.className = "btn";
-        checkBtn.onclick = () => {
-          const typed = input.value.replace(/[^a-zA-Z]/g, "").toLowerCase();
-          if (typed === word.toLowerCase()) {
-            box.innerHTML += `<p class="correct">Correct!</p>`;
-            correct++;
-          } else {
-            box.innerHTML += `<p class="incorrect">Wrong. You said: ${typed}. Correct: ${word}</p>`;
-          }
-          setTimeout(() => { index++; next(); }, 2000);
-        };
-
-        speak(word);
-        box.appendChild(input);
-        box.appendChild(checkBtn);
-        input.focus();
-      }
-
-      next();
+      alert("Test session starting...");
     }
   </script>
 </body>
