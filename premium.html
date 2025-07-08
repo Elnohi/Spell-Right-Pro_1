@@ -106,12 +106,13 @@
   const selectedExam = this.value;
 
   if (selectedExam === "OET") {
-    if (typeof oetWords !== 'undefined' && Array.isArray(oetWords)) {
-      loadWords(oetWords);
-    } else {
-      alert("OET word list not loaded correctly.");
+      if (typeof oetWords !== 'undefined' && Array.isArray(oetWords)) {
+        loadWords(oetWords);
+      } else {
+        alert("OET word list not loaded correctly.");
+        console.error("oetWords is undefined or not an array");
+      }
     }
-  }
 });
 
     function startPractice() {
