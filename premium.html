@@ -31,6 +31,7 @@
   </script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.12.313/pdf.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.4.2/mammoth.browser.min.js"></script>
+  <script src="oet_word_list.js"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
   <style>
     body { font-family: Arial, sans-serif; margin: 0; padding: 0; background: #f8f9fa; transition: background 0.3s ease; }
@@ -101,7 +102,6 @@
     <div class="form-row">
       <h3>Custom Word List</h3>
       <textarea placeholder="Paste or type words here..." rows="4" style="width:100%" id="wordInput"></textarea>
-      <button class="btn btn-info">Load Words</button>
     </div>
 
     <div class="form-row">
@@ -166,20 +166,59 @@
         .catch(err => console.error("Error saving score:", err));
     }
 
+    function getWordList() {
+      const exam = document.getElementById("examType").value;
+      if (exam === "OET") return oetWordList;
+      const text = document.getElementById("wordInput").value.trim();
+      return text.split(/[\n,\s]+/).filter(Boolean);
+    }
+
     function startPractice() {
-      alert("Practice mode started. Your session will be saved when complete.");
+      const words = getWordList();
+      if (!words.length) return alert("No words to practice.");
+      let index = 0;
+      function nextWord() {
+        const word = words[index];
+        const userInput = prompt("Spell: " + word);
+        if (userInput && userInput.toLowerCase() === word.toLowerCase()) {
+          alert("Correct");
+        } else {
+          alert("Wrong. Correct: " + word);
+        }
+        index++;
+        if (index < words.length) nextWord();
+        else alert("Practice complete.");
+      }
+      nextWord();
     }
 
     function startTest() {
-      alert("Test mode started. Score will be saved on completion.");
-      // After test complete, use this line:
-      // saveSessionResult(correctCount, totalWords);
+      const words = getWordList();
+      if (words.length < 24) return alert("Need at least 24 words.");
+      const testWords = words.sort(() => 0.5 - Math.random()).slice(0, 24);
+      let score = 0, index = 0;
+      function next() {
+        const word = testWords[index];
+        const userInput = prompt("Spell: " + word);
+        if (userInput && userInput.toLowerCase() === word.toLowerCase()) {
+          score++;
+        }
+        index++;
+        if (index < testWords.length) next();
+        else {
+          alert(`Test complete. Score: ${score}/24`);
+          saveSessionResult(score, 24);
+        }
+      }
+      next();
     }
 
     document.getElementById("examType").addEventListener("change", function () {
       const selected = this.value;
       if (selected === "") {
-        startPractice();
+        alert("Blank mode: You can enter or upload your own words.");
+      } else if (selected === "SpellingBee") {
+        alert("Spelling Bee mode coming soon.");
       }
     });
   </script>
