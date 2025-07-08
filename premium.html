@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>SpellRightPro Premium</title>
+  <!-- Google Analytics -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-H09MF13297"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-H09MF13297');
+  </script>
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/10.4.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.4.0/firebase-auth-compat.js"></script>
+  <!-- Firebase Config -->
+  <script>
+    const firebaseConfig = {
+      apiKey: "YOUR_API_KEY",
+      authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
+      projectId: "YOUR_PROJECT_ID",
+      storageBucket: "YOUR_PROJECT_ID.appspot.com",
+      messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
+      appId: "YOUR_APP_ID"
+    };
+    firebase.initializeApp(firebaseConfig);
+  </script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.12.313/pdf.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.4.2/mammoth.browser.min.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <style>
+    body { font-family: Arial, sans-serif; margin: 0; padding: 0; background: #f8f9fa; transition: background 0.3s ease; }
+    .container { max-width: 960px; margin: auto; padding: 20px; }
+    .form-row { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-top: 15px; }
+    .form-row label { min-width: 100px; }
+    .form-row input, .form-row select, .form-row textarea {
+      flex: 1; padding: 8px; border: 1px solid #ccc; border-radius: 5px;
+    }
+    .btn { padding: 10px 15px; margin: 5px; border: none; background: #007bff; color: white; border-radius: 5px; cursor: pointer; }
+    .btn:hover { background: #0056b3; }
+    .btn-success { background: #28a745; }
+    .btn-info { background: #17a2b8; }
+    .btn-danger { background: #dc3545; }
+    .upgrade-btn { background: #e83e8c; color: white; font-weight: bold; }
+    .ad-banner { margin: 20px 0; padding: 10px; background: #eee; text-align: center; border: 1px dashed #aaa; color: #666; }
+    .hidden { display: none; }
+    #darkModeToggle { position: fixed; top: 20px; right: 20px; z-index: 1000; }
+    body.dark-mode { background: #1c1c1c; color: white; }
+    body.dark-mode .container { background: #2c2c2c; }
+    body.dark-mode .btn { background: #444; color: #fff; }
+    footer { text-align: center; margin-top: 40px; color: #666; }
+    footer a { color: #666; text-decoration: underline; }
+  </style>
+</head>
+<body>
+  <button id="darkModeToggle" class="btn btn-info">Toggle Dark Mode</button>
+  <div class="container">
+    <img src="logo.png" alt="SpellRightPro Logo" style="height:50px; vertical-align:middle; margin-right:10px;" />
+    <h1 style="display:inline-block; vertical-align:middle;">SpellRightPro Premium</h1>
+
+    <div style="text-align:center; margin-top: 20px;">
+      <a href="index.html" class="btn btn-secondary">
+        Want the Free Version? <strong>Click here</strong>
+      </a>
+    </div>
+
+    <div class="form-row">
+      <label>Email:</label>
+      <input type="email" id="email" placeholder="Enter email" />
+      <label>Password:</label>
+      <input type="password" id="password" placeholder="Enter password" />
+      <button class="btn" onclick="login()">Login</button>
+      <button class="btn btn-info" onclick="signUp()">Sign Up</button>
+    </div>
+
+    <div class="form-row">
+      <label>Accent:</label>
+      <select id="accentSelect">
+        <option value="en-GB">British</option>
+        <option value="en-US">American</option>
+        <option value="en-AU">Australian</option>
+        <option value="en-CA">Canadian</option>
+      </select>
+    </div>
+
+    <div class="form-row">
+      <label>Exam Type:</label>
+      <select id="examType">
+        <option value="">-- Custom / Blank --</option>
+        <option value="OET">OET</option>
+        <option value="SpellingBee">Spelling Bee</option>
+      </select>
+      <button class="btn btn-info">Practice</button>
+      <button class="btn btn-success">Test</button>
+    </div>
+
+    <div class="form-row">
+      <h3>Custom Word List</h3>
+      <textarea placeholder="Paste or type words here..." rows="4" style="width:100%"></textarea>
+      <button class="btn btn-info">Load Words</button>
+    </div>
+
+    <div class="form-row">
+      <label>Upload File:</label>
+      <input type="file" id="fileUpload" />
+    </div>
+
+    <div class="form-row">
+      <form name="feedback" netlify>
+        <textarea name="message" placeholder="Submit Feedback..." rows="4" style="width:100%"></textarea>
+        <button class="btn" type="submit">Send</button>
+      </form>
+    </div>
+
+    <div class="ad-banner">[Ad placeholder - Premium users see fewer ads]</div>
+  </div>
+
+  <footer>
+    <small>
+      <a href="index.html">Return to Free Version</a>
+    </small>
+  </footer>
+
+  <script>
+    document.getElementById('darkModeToggle').addEventListener('click', function () {
+      document.body.classList.toggle('dark-mode');
+    });
+
+    function login() {
+      const email = document.getElementById('email').value;
+      const password = document.getElementById('password').value;
+      firebase.auth().signInWithEmailAndPassword(email, password)
+        .then(() => alert("Logged in!"))
+        .catch(error => alert(error.message));
+    }
+
+    function signUp() {
+      const email = document.getElementById('email').value;
+      const password = document.getElementById('password').value;
+      firebase.auth().createUserWithEmailAndPassword(email, password)
+        .then(() => alert("Account created!"))
+        .catch(error => alert(error.message));
+    }
+
+    document.getElementById('fileUpload').addEventListener('change', async function (e) {
+      const file = e.target.files[0];
+      if (!file) return;
+      const ext = file.name.split('.').pop().toLowerCase();
+      if (ext === 'txt') {
+        const text = await file.text();
+        alert("TXT Loaded:\n" + text.slice(0, 200));
+      } else if (ext === 'pdf') {
+        const reader = new FileReader();
+        reader.onload = function () {
+          const typedarray = new Uint8Array(this.result);
+          pdfjsLib.getDocument(typedarray).promise.then(pdf => {
+            pdf.getPage(1).then(page => {
+              page.getTextContent().then(content => {
+                const text = content.items.map(item => item.str).join(' ');
+                alert("PDF Loaded:\n" + text.slice(0, 200));
+              });
+            });
+          });
+        };
+        reader.readAsArrayBuffer(file);
+      } else if (ext === 'docx') {
+        const reader = new FileReader();
+        reader.onload = function (e) {
+          mammoth.extractRawText({ arrayBuffer: e.target.result })
+            .then(result => alert("DOCX Loaded:\n" + result.value.slice(0, 200)))
+            .catch(err => alert("DOCX Error: " + err.message));
+        };
+        reader.readAsArrayBuffer(file);
+      } else {
+        alert("Unsupported file type");
+      }
+    });
+
+    // Auto switch to practice mode for blank exam
+    document.getElementById("examType").addEventListener("change", function() {
+      const selected = this.value;
+      if (selected === "") {
+        document.querySelector(".btn.btn-info").click();
+      }
+    });
+  </script>
+</body>
+</html>
