@@ -10,22 +10,6 @@
   <script src="https://www.gstatic.com/firebasejs/10.4.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.4.0/firebase-database-compat.js"></script>
   
-  <script>
-    const firebaseConfig = {
-      apiKey: "AIzaSyCZ-rAPnRgVjSRFOFvbiQlowE6A3RVvwWo",
-      authDomain: "spellrightpro-firebase.firebaseapp.com",
-      databaseURL: "https://spellrightpro-firebase-default-rtdb.firebaseio.com",
-      projectId: "spellrightpro-firebase",
-      storageBucket: "spellrightpro-firebase.appspot.com",
-      messagingSenderId: "798456641137",
-      appId: "1:798456641137:web:5c6d79db5bf49d04928dd0",
-      measurementId: "G-H09MF13297"
-    };
-    firebase.initializeApp(firebaseConfig);
-    const auth = firebase.auth();
-    const database = firebase.database();
-  </script>
-
   <!-- FontAwesome -->
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet"/>
 
@@ -295,6 +279,19 @@
       display: block;
     }
 
+    .listening-indicator {
+      display: none;
+      margin: 15px 0;
+      padding: 10px;
+      background: rgba(0,123,255,0.1);
+      border-radius: 5px;
+      text-align: center;
+    }
+    
+    .dark-mode .listening-indicator {
+      background: rgba(0,123,255,0.2);
+    }
+
     @media (max-width: 768px) {
       .form-row {
         flex-direction: column;
@@ -453,10 +450,9 @@
         <input type="text" id="userAnswer" placeholder="Type the word here">
       </div>
       <div id="spellingBeeResponse" style="display:none;">
-        <p id="recordingStatus">Press the microphone button to spell the word</p>
-        <button id="startListeningBtn" class="btn btn-premium">
-          <i class='fas fa-microphone'></i> Start Spelling
-        </button>
+        <div id="listeningIndicator" class="listening-indicator">
+          <i class="fas fa-microphone"></i> Listening for spelling...
+        </div>
         <div id="spellingFeedback" style="margin-top:15px;"></div>
       </div>
       <div class="controls">
@@ -489,8 +485,7 @@
       </form>
     </div>
   </div>
-
-  <script src="oet_word_list.js"></script>
+    <script src="oet_word_list.js"></script>
   <script>
     const synth = window.speechSynthesis;
     let currentWords = [];
@@ -504,6 +499,24 @@
     let currentMode = 'oet';
     let recognition;
     let spellingBeeExpectedLetters = '';
+    let spellingBeeTimeout;
+    const LISTENING_DELAY = 2000; // 2 seconds after word is spoken
+    const PROCESSING_DELAY = 3000; // 3 seconds after spelling is recognized
+
+    // Initialize Firebase
+    const firebaseConfig = {
+      apiKey: "AIzaSyCZ-rAPnRgVjSRFOFvbiQlowE6A3RVvwWo",
+      authDomain: "spellrightpro-firebase.firebaseapp.com",
+      databaseURL: "https://spellrightpro-firebase-default-rtdb.firebaseio.com",
+      projectId: "spellrightpro-firebase",
+      storageBucket: "spellrightpro-firebase.appspot.com",
+      messagingSenderId: "798456641137",
+      appId: "1:798456641137:web:5c6d79db5bf49d04928dd0",
+      measurementId: "G-H09MF13297"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    const database = firebase.database();
 
     // Initialize
     document.addEventListener('DOMContentLoaded', () => {
@@ -531,7 +544,6 @@
       document.getElementById('userAnswer').addEventListener('keypress', (e) => {
         if (e.key === 'Enter') checkAnswer();
       });
-      document.getElementById('startListeningBtn').addEventListener('click', startListening);
 
       // Authentication state
       auth.onAuthStateChanged(user => {
@@ -627,8 +639,7 @@
           .catch(error => console.error("Error saving progress:", error));
       }
     }
-
-    // Session management
+        // Session management
     function startOetSession() {
       currentMode = 'oet';
       isTestMode = document.getElementById("oetMode").value === 'test';
@@ -654,8 +665,10 @@
     }
 
     function startSpellingBeeSession() {
+      if (!ensureWordsLoaded()) return;
+      
       currentMode = 'spellingBee';
-      isTestMode = false; // Spelling Bee is always practice mode
+      isTestMode = false;
       currentIndex = 0;
       score = 0;
       sessionData = [];
@@ -703,6 +716,14 @@
       presentWord();
     }
 
+    function ensureWordsLoaded() {
+      if (currentWords.length === 0) {
+        alert("No words available. Please load or enter words first.");
+        return false;
+      }
+      return true;
+    }
+
     function setupTrainerUI(responseType) {
       document.getElementById("trainer").style.display = "block";
       document.getElementById("scoreDisplay").style.display = "none";
@@ -719,6 +740,10 @@
     }
 
     function resetSession() {
+      clearTimeout(spellingBeeTimeout);
+      if (recognition) {
+        recognition.stop();
+      }
       document.getElementById("trainer").style.display = "none";
       document.getElementById("scoreDisplay").style.display = "none";
       document.getElementById("userAnswer").value = "";
@@ -729,7 +754,6 @@
       showSummary();
     }
 
-    // Word presentation
     function presentWord() {
       if (currentIndex >= currentWords.length) {
         endSession();
@@ -758,14 +782,94 @@
       if (currentMode === 'spellingBee') {
         spellingBeeExpectedLetters = word.toLowerCase().split('').join(' ');
         document.getElementById("spellingFeedback").innerHTML = "";
-        document.getElementById("recordingStatus").textContent = 
-          "Press the microphone button to spell the word";
+        document.getElementById("listeningIndicator").style.display = "none";
+        
+        // Automatically start listening after speaking the word
+        speakCurrentWord();
+        setTimeout(startAutoListening, LISTENING_DELAY);
       } else {
         document.getElementById("userAnswer").focus();
       }
       
-      speakCurrentWord();
       updateProgress();
+    }
+
+    function startAutoListening() {
+      if (currentMode !== 'spellingBee') return;
+      
+      document.getElementById("listeningIndicator").style.display = "block";
+      document.getElementById("spellingFeedback").innerHTML = "";
+      
+      if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
+        document.getElementById("spellingFeedback").innerHTML = 
+          "<p class='incorrect'>Speech recognition not supported in your browser</p>";
+        return;
+      }
+
+      recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+      recognition.lang = document.getElementById("beeAccent").value;
+      recognition.interimResults = false;
+      recognition.maxAlternatives = 1;
+      
+      recognition.onresult = (event) => {
+        const spokenLetters = event.results[0][0].transcript.trim().toLowerCase();
+        const feedbackEl = document.getElementById("spellingFeedback");
+        
+        clearTimeout(spellingBeeTimeout);
+        document.getElementById("listeningIndicator").style.display = "none";
+        
+        if (spokenLetters === spellingBeeExpectedLetters) {
+          feedbackEl.innerHTML = `<p class="correct">Correct! You spelled: ${spokenLetters}</p>`;
+          score++;
+          sessionData.push({
+            word: currentWords[currentIndex],
+            answer: spokenLetters,
+            correct: true,
+            flagged: !!flaggedWords[currentIndex],
+            timestamp: new Date().toISOString()
+          });
+        } else {
+          feedbackEl.innerHTML = `
+            <p class="incorrect">Incorrect. You spelled: ${spokenLetters}</p>
+            <p>Correct spelling: ${spellingBeeExpectedLetters}</p>
+          `;
+          sessionData.push({
+            word: currentWords[currentIndex],
+            answer: spokenLetters,
+            correct: false,
+            flagged: !!flaggedWords[currentIndex],
+            timestamp: new Date().toISOString()
+          });
+        }
+        
+        // Automatically proceed to next word after delay
+        spellingBeeTimeout = setTimeout(() => {
+          currentIndex++;
+          if (currentIndex < currentWords.length) {
+            presentWord();
+          } else {
+            endSession();
+          }
+        }, PROCESSING_DELAY);
+      };
+      
+      recognition.onerror = (event) => {
+        document.getElementById("listeningIndicator").style.display = "none";
+        document.getElementById("spellingFeedback").innerHTML = 
+          `<p class="incorrect">Error: ${event.error}. Trying again...</p>`;
+        
+        // Retry listening after error
+        spellingBeeTimeout = setTimeout(startAutoListening, 1000);
+      };
+      
+      recognition.onend = () => {
+        if (currentIndex < currentWords.length && currentMode === 'spellingBee') {
+          // Restart listening if not moving to next word yet
+          spellingBeeTimeout = setTimeout(startAutoListening, 500);
+        }
+      };
+      
+      recognition.start();
     }
 
     function speakCurrentWord() {
@@ -785,7 +889,6 @@
       synth.speak(utterance);
     }
 
-    // Navigation
     function nextWord() {
       if (currentMode === 'spellingBee' && !sessionData[currentIndex]) {
         alert("Please spell the word first");
@@ -824,69 +927,6 @@
       }
     }
 
-    // Spelling Bee functions
-    function startListening() {
-      if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
-        alert("Speech recognition not supported in your browser");
-        return;
-      }
-
-      document.getElementById("recordingStatus").textContent = "Listening...";
-      
-      recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
-      
-      // Set appropriate accent based on mode
-      if (currentMode === 'oet') {
-        recognition.lang = document.getElementById("oetAccent").value;
-      } else if (currentMode === 'spellingBee') {
-        recognition.lang = document.getElementById("beeAccent").value;
-      } else {
-        recognition.lang = document.getElementById("customAccent").value;
-      }
-      
-      recognition.interimResults = false;
-      
-      recognition.onresult = (event) => {
-        const spokenLetters = event.results[0][0].transcript.trim().toLowerCase();
-        const feedbackEl = document.getElementById("spellingFeedback");
-        
-        if (spokenLetters === spellingBeeExpectedLetters) {
-          feedbackEl.innerHTML = `<p class="correct">Correct! You spelled: ${spokenLetters}</p>`;
-          score++;
-          sessionData.push({
-            word: currentWords[currentIndex],
-            answer: spokenLetters,
-            correct: true,
-            flagged: !!flaggedWords[currentIndex],
-            timestamp: new Date().toISOString()
-          });
-        } else {
-          feedbackEl.innerHTML = `
-            <p class="incorrect">Incorrect. You spelled: ${spokenLetters}</p>
-            <p>Correct spelling: ${spellingBeeExpectedLetters}</p>
-          `;
-          sessionData.push({
-            word: currentWords[currentIndex],
-            answer: spokenLetters,
-            correct: false,
-            flagged: !!flaggedWords[currentIndex],
-            timestamp: new Date().toISOString()
-          });
-        }
-        
-        document.getElementById("recordingStatus").textContent = 
-          "Press Next to continue or spell again";
-      };
-      
-      recognition.onerror = (event) => {
-        document.getElementById("recordingStatus").textContent = 
-          "Error: " + event.error + ". Try again.";
-      };
-      
-      recognition.start();
-    }
-
-    // Answer checking for typing modes
     function checkAnswer() {
       const word = currentWords[currentIndex];
       const userAnswer = document.getElementById("userAnswer").value.trim();
@@ -936,13 +976,11 @@
       }
     }
 
-    // Progress tracking
     function updateProgress() {
       const progress = ((currentIndex) / totalQuestions) * 100;
       document.getElementById("progressBar").style.width = `${progress}%`;
     }
 
-    // Summary display
     function showSummary() {
       const accuracy = totalQuestions > 0 ? Math.round((score / totalQuestions) * 100) : 0;
       let summaryHTML = `
