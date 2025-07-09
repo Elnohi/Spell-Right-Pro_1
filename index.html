@@ -19,6 +19,10 @@
   <script src="https://www.gstatic.com/firebasejs/10.4.0/firebase-auth-compat.js"></script>
 
   <script>
+    const WORD_DELAY = 1500; // 1.5 seconds between words
+    const CHECK_DELAY = 2000; // 2 seconds after answer before next word
+    const LISTENING_DELAY = 2000; // 2 seconds after word is spoken
+    const PROCESSING_DELAY = 3000; // 3 seconds after spelling is recognized
     const firebaseConfig = {
       apiKey: "AIzaSyCZ-rAPnRgVjSRFOFvbiQlowE6A3RVvwWo",
       authDomain: "spellrightpro-firebase.firebaseapp.com",
@@ -36,6 +40,10 @@
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet"/>
 
   <style>
+    #userAnswer:focus {
+  outline: 2px solid var(--primary-color);
+  box-shadow: 0 0 5px rgba(0,123,255,0.5);
+}
     body { 
       font-family: Arial, sans-serif; 
       margin: 0; 
@@ -221,8 +229,12 @@
       if (typeof OET_WORD_LIST !== 'undefined') {
         currentWords = [...OET_WORD_LIST];
       }
-      currentAccent = document.getElementById("accentSelect").value;
-    });
+     document.getElementById('userAnswer').addEventListener('keypress', (e) => {
+  if (e.key === 'Enter') {
+    e.preventDefault(); // Prevent form submission
+    checkAnswer(); // This will now auto-proceed after checking
+  }
+});
 
     // Accent change handler
     document.getElementById("accentSelect").addEventListener("change", function() {
@@ -275,53 +287,87 @@
     }
 
     function presentWord() {
-      if (currentWords.length === 0) {
-        const accuracy = totalQuestions > 0 ? Math.round((score / totalQuestions) * 100) : 0;
-        document.getElementById("trainer").innerHTML = `
-          <h3>Test Completed!</h3>
-          <p>Your score: ${score}/${totalQuestions}</p>
-          <p>Accuracy: ${accuracy}%</p>
-          <button class="btn" onclick="startTest()">Restart Test</button>
-        `;
-        return;
-      }
+  if (currentIndex >= currentWords.length) {
+    endSession();
+    return;
+  }
 
-      const word = currentWords[0];
-      document.getElementById("trainer").innerHTML = `
-        <h3>Spell this word:</h3>
-        <button class="btn" onclick="speak('${word}')">
-          <i class='fas fa-volume-up'></i> Hear Word
-        </button>
-        <input type="text" id="userAnswer" placeholder="Type the word here">
-        <button class="btn" onclick="checkAnswer('${word}')">Submit</button>
-      `;
-      speak(word);
+  const word = currentWords[currentIndex];
+  document.getElementById("questionPrompt").textContent = 
+    `Spell this word (${currentIndex + 1}/${totalQuestions}):`;
+  
+  // Update flag button
+  const flagBtn = document.getElementById("flagBtn");
+  if (flaggedWords[currentIndex]) {
+    flagBtn.innerHTML = '<i class="fas fa-flag"></i>';
+    flagBtn.classList.add("flagged");
+  } else {
+    flagBtn.innerHTML = '<i class="far fa-flag"></i>';
+    flagBtn.classList.remove("flagged");
+  }
+  
+  // Update navigation buttons
+  document.getElementById("prevBtn").disabled = currentIndex === 0;
+  
+  if (currentMode === 'spellingBee') {
+    spellingBeeExpectedLetters = word.toLowerCase().split('').join(' ');
+    document.getElementById("spellingFeedback").innerHTML = "";
+    document.getElementById("listeningIndicator").style.display = "none";
+    
+    // Automatically start listening after speaking the word
+    speakCurrentWord();
+    setTimeout(startAutoListening, LISTENING_DELAY);
+  } else {
+    // Auto-focus and clear the input field for typing modes
+    const userAnswer = document.getElementById("userAnswer");
+    userAnswer.value = "";
+    userAnswer.focus();
+    
+    // Automatically speak the word after a brief delay
+    setTimeout(speakCurrentWord, 300);
+  }
+  
+  updateProgress();
+}
+
+    function checkAnswer() {
+  const word = currentWords[currentIndex];
+  const userAnswer = document.getElementById("userAnswer").value.trim();
+  const isCorrect = userAnswer.toLowerCase() === word.toLowerCase();
+  
+  // Record session data
+  sessionData.push({
+    word: word,
+    answer: userAnswer,
+    correct: isCorrect,
+    flagged: !!flaggedWords[currentIndex],
+    timestamp: new Date().toISOString()
+  });
+
+  if (isCorrect) {
+    score++;
+    showFeedback("Correct!", "correct");
+  } else {
+    showFeedback(`Incorrect. The correct spelling is: ${word}`, "incorrect");
+  }
+
+  // Save progress
+  if (!isTestMode) {
+    userProgress[currentMode + 'LastIndex'] = currentIndex + 1;
+    localStorage.setItem('userProgress', JSON.stringify(userProgress));
+    if (auth.currentUser) {
+      saveUserProgress(auth.currentUser.uid);
     }
+  }
 
-    function checkAnswer(correctWord) {
-      const userAnswer = document.getElementById("userAnswer").value.trim();
-      const scoreDisplay = document.getElementById("scoreDisplay");
-      
-      if (userAnswer.toLowerCase() === correctWord.toLowerCase()) {
-        score++;
-        scoreDisplay.innerHTML = "<p style='color:green'>Correct!</p>";
-        currentWords.shift();
-      } else {
-        scoreDisplay.innerHTML = `
-          <p style='color:red'>Incorrect.</p>
-          <p>Correct spelling: ${correctWord}</p>
-        `;
-        if (isTestMode) {
-          currentWords.shift();
-        }
-      }
-
-      if (isTestMode) {
-        scoreDisplay.innerHTML += `<p>Progress: ${totalQuestions - currentWords.length}/${totalQuestions}</p>`;
-      }
-
-      setTimeout(presentWord, 2000);
-    }
+  currentIndex++;
+  
+  if (currentIndex < currentWords.length) {
+    setTimeout(presentWord, CHECK_DELAY); // Auto-proceed after delay
+  } else {
+    setTimeout(endSession, CHECK_DELAY); // End session after delay
+  }
+}
 
     function speak(text) {
       synth.cancel();
