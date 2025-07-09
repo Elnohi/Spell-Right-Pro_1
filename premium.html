@@ -208,6 +208,11 @@
       margin-bottom: 15px;
     }
 
+    input[type="text"]:focus {
+      outline: 2px solid var(--primary-color);
+      box-shadow: 0 0 5px rgba(0,123,255,0.5);
+    }
+
     .form-row {
       display: flex;
       gap: 15px;
@@ -485,8 +490,16 @@
       </form>
     </div>
   </div>
-    <script src="oet_word_list.js"></script>
+
+  <script src="oet_word_list.js"></script>
   <script>
+    // Constants
+    const WORD_DELAY = 1500;
+    const CHECK_DELAY = 2000;
+    const LISTENING_DELAY = 2000;
+    const PROCESSING_DELAY = 3000;
+
+    // Initialize variables
     const synth = window.speechSynthesis;
     let currentWords = [];
     let currentIndex = 0;
@@ -500,12 +513,7 @@
     let recognition;
     let spellingBeeExpectedLetters = '';
     let spellingBeeTimeout;
-    const LISTENING_DELAY = 2000; // 2 seconds after word is spoken
-    const PROCESSING_DELAY = 3000; // 3 seconds after spelling is recognized
-    const WORD_DELAY = 1500; // 1.5 seconds between words
-    const CHECK_DELAY = 2000; // 2 seconds after answer before next word
-    const LISTENING_DELAY = 2000; // 2 seconds after word is spoken
-    const PROCESSING_DELAY = 3000; // 3 seconds after spelling is recognized
+    let currentAccent = "en-GB";
 
     // Initialize Firebase
     const firebaseConfig = {
@@ -522,13 +530,13 @@
     const auth = firebase.auth();
     const database = firebase.database();
 
-    // Initialize
+    // Initialize the application
     document.addEventListener('DOMContentLoaded', () => {
       if (typeof OET_WORD_LIST !== 'undefined') {
         currentWords = [...OET_WORD_LIST];
       }
       
-      // Load user progress from localStorage
+      // Load user progress
       const savedProgress = localStorage.getItem('userProgress');
       if (savedProgress) {
         userProgress = JSON.parse(savedProgress);
@@ -546,11 +554,11 @@
       document.getElementById('prevBtn').addEventListener('click', prevWord);
       document.getElementById('flagBtn').addEventListener('click', toggleFlag);
       document.getElementById('userAnswer').addEventListener('keypress', (e) => {
-  if (e.key === 'Enter') {
-    e.preventDefault(); // Prevent form submission
-    checkAnswer(); // This will now auto-proceed after checking
-  }
-});
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          checkAnswer();
+        }
+      });
 
       // Authentication state
       auth.onAuthStateChanged(user => {
@@ -646,7 +654,8 @@
           .catch(error => console.error("Error saving progress:", error));
       }
     }
-        // Session management
+
+    // Session management
     function startOetSession() {
       currentMode = 'oet';
       isTestMode = document.getElementById("oetMode").value === 'test';
@@ -762,129 +771,126 @@
     }
 
     function presentWord() {
-  if (currentIndex >= currentWords.length) {
-    endSession();
-    return;
-  }
+      if (currentIndex >= currentWords.length) {
+        endSession();
+        return;
+      }
 
-  const word = currentWords[currentIndex];
-  document.getElementById("questionPrompt").textContent = 
-    `Spell this word (${currentIndex + 1}/${totalQuestions}):`;
-  
-  // Update flag button
-  const flagBtn = document.getElementById("flagBtn");
-  if (flaggedWords[currentIndex]) {
-    flagBtn.innerHTML = '<i class="fas fa-flag"></i>';
-    flagBtn.classList.add("flagged");
-  } else {
-    flagBtn.innerHTML = '<i class="far fa-flag"></i>';
-    flagBtn.classList.remove("flagged");
-  }
-  
-  // Update navigation buttons
-  document.getElementById("prevBtn").disabled = currentIndex === 0;
-  
-  if (currentMode === 'spellingBee') {
-    spellingBeeExpectedLetters = word.toLowerCase().split('').join(' ');
-    document.getElementById("spellingFeedback").innerHTML = "";
-    document.getElementById("listeningIndicator").style.display = "none";
-    
-    // Automatically start listening after speaking the word
-    speakCurrentWord();
-    setTimeout(startAutoListening, LISTENING_DELAY);
-  } else {
-    // Auto-focus and clear the input field for typing modes
-    const userAnswer = document.getElementById("userAnswer");
-    userAnswer.value = "";
-    #userAnswer:focus {
-  outline: 2px solid var(--primary-color);
-  box-shadow: 0 0 5px rgba(0,123,255,0.5);
-}
-    
-    // Automatically speak the word after a brief delay
-    setTimeout(speakCurrentWord, 300);
-  }
-  
-  updateProgress();
-}
+      const word = currentWords[currentIndex];
+      document.getElementById("questionPrompt").textContent = 
+        `Spell this word (${currentIndex + 1}/${totalQuestions}):`;
+      
+      // Update flag button
+      const flagBtn = document.getElementById("flagBtn");
+      if (flaggedWords[currentIndex]) {
+        flagBtn.innerHTML = '<i class="fas fa-flag"></i>';
+        flagBtn.classList.add("flagged");
+      } else {
+        flagBtn.innerHTML = '<i class="far fa-flag"></i>';
+        flagBtn.classList.remove("flagged");
+      }
+      
+      // Update navigation buttons
+      document.getElementById("prevBtn").disabled = currentIndex === 0;
+      
+      if (currentMode === 'spellingBee') {
+        spellingBeeExpectedLetters = word.toLowerCase().split('').join(' ');
+        document.getElementById("spellingFeedback").innerHTML = "";
+        document.getElementById("listeningIndicator").style.display = "none";
+        
+        // Automatically start listening after speaking the word
+        speakCurrentWord();
+        setTimeout(startAutoListening, LISTENING_DELAY);
+      } else {
+        // Auto-focus and clear the input field for typing modes
+        const userAnswer = document.getElementById("userAnswer");
+        userAnswer.value = "";
+        userAnswer.focus();
+        
+        // Automatically speak the word after a brief delay
+        setTimeout(speakCurrentWord, 300);
+      }
+      
+      updateProgress();
+    }
 
     function startAutoListening() {
-  if (currentMode !== 'spellingBee') return;
-  
-  document.getElementById("listeningIndicator").style.display = "block";
-  document.getElementById("spellingFeedback").innerHTML = "";
-  
-  if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
-    document.getElementById("spellingFeedback").innerHTML = 
-      "<p class='incorrect'>Speech recognition not supported in your browser</p>";
-    return;
-  }
-
-  recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
-  recognition.lang = document.getElementById("beeAccent").value;
-  recognition.interimResults = false;
-  recognition.maxAlternatives = 1;
-  
-  recognition.onresult = (event) => {
-    const spokenLetters = event.results[0][0].transcript.trim().toLowerCase();
-    const feedbackEl = document.getElementById("spellingFeedback");
-    
-    clearTimeout(spellingBeeTimeout);
-    document.getElementById("listeningIndicator").style.display = "none";
-    
-    if (spokenLetters === spellingBeeExpectedLetters) {
-      feedbackEl.innerHTML = `<p class="correct">Correct! You spelled: ${spokenLetters}</p>`;
-      score++;
-      sessionData.push({
-        word: currentWords[currentIndex],
-        answer: spokenLetters,
-        correct: true,
-        flagged: !!flaggedWords[currentIndex],
-        timestamp: new Date().toISOString()
-      });
-    } else {
-      feedbackEl.innerHTML = `
-        <p class="incorrect">Incorrect. You spelled: ${spokenLetters}</p>
-        <p>Correct spelling: ${spellingBeeExpectedLetters}</p>
-      `;
-      sessionData.push({
-        word: currentWords[currentIndex],
-        answer: spokenLetters,
-        correct: false,
-        flagged: !!flaggedWords[currentIndex],
-        timestamp: new Date().toISOString()
-      });
-    }
-    
-    // Automatically proceed to next word after delay
-    spellingBeeTimeout = setTimeout(() => {
-      currentIndex++;
-      if (currentIndex < currentWords.length) {
-        presentWord(); // This will auto-speak the next word
-      } else {
-        endSession();
+      if (currentMode !== 'spellingBee') return;
+      
+      document.getElementById("listeningIndicator").style.display = "block";
+      document.getElementById("spellingFeedback").innerHTML = "";
+      
+      if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
+        document.getElementById("spellingFeedback").innerHTML = 
+          "<p class='incorrect'>Speech recognition not supported in your browser</p>";
+        return;
       }
-    }, PROCESSING_DELAY);
-  };
-  
-  recognition.onerror = (event) => {
-    document.getElementById("listeningIndicator").style.display = "none";
-    document.getElementById("spellingFeedback").innerHTML = 
-      `<p class="incorrect">Error: ${event.error}. Trying again...</p>`;
-    
-    // Retry listening after error
-    spellingBeeTimeout = setTimeout(startAutoListening, 1000);
-  };
-  
-  recognition.onend = () => {
-    if (currentIndex < currentWords.length && currentMode === 'spellingBee') {
-      // Restart listening if not moving to next word yet
-      spellingBeeTimeout = setTimeout(startAutoListening, 500);
+
+      recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+      recognition.lang = document.getElementById("beeAccent").value;
+      recognition.interimResults = false;
+      recognition.maxAlternatives = 1;
+      
+      recognition.onresult = (event) => {
+        const spokenLetters = event.results[0][0].transcript.trim().toLowerCase();
+        const feedbackEl = document.getElementById("spellingFeedback");
+        
+        clearTimeout(spellingBeeTimeout);
+        document.getElementById("listeningIndicator").style.display = "none";
+        
+        if (spokenLetters === spellingBeeExpectedLetters) {
+          feedbackEl.innerHTML = `<p class="correct">Correct! You spelled: ${spokenLetters}</p>`;
+          score++;
+          sessionData.push({
+            word: currentWords[currentIndex],
+            answer: spokenLetters,
+            correct: true,
+            flagged: !!flaggedWords[currentIndex],
+            timestamp: new Date().toISOString()
+          });
+        } else {
+          feedbackEl.innerHTML = `
+            <p class="incorrect">Incorrect. You spelled: ${spokenLetters}</p>
+            <p>Correct spelling: ${spellingBeeExpectedLetters}</p>
+          `;
+          sessionData.push({
+            word: currentWords[currentIndex],
+            answer: spokenLetters,
+            correct: false,
+            flagged: !!flaggedWords[currentIndex],
+            timestamp: new Date().toISOString()
+          });
+        }
+        
+        // Automatically proceed to next word after delay
+        spellingBeeTimeout = setTimeout(() => {
+          currentIndex++;
+          if (currentIndex < currentWords.length) {
+            presentWord();
+          } else {
+            endSession();
+          }
+        }, PROCESSING_DELAY);
+      };
+      
+      recognition.onerror = (event) => {
+        document.getElementById("listeningIndicator").style.display = "none";
+        document.getElementById("spellingFeedback").innerHTML = 
+          `<p class="incorrect">Error: ${event.error}. Trying again...</p>`;
+        
+        // Retry listening after error
+        spellingBeeTimeout = setTimeout(startAutoListening, 1000);
+      };
+      
+      recognition.onend = () => {
+        if (currentIndex < currentWords.length && currentMode === 'spellingBee') {
+          // Restart listening if not moving to next word yet
+          spellingBeeTimeout = setTimeout(startAutoListening, 500);
+        }
+      };
+      
+      recognition.start();
     }
-  };
-  
-  recognition.start();
-}
 
     function speakCurrentWord() {
       const word = currentWords[currentIndex];
@@ -942,43 +948,44 @@
     }
 
     function checkAnswer() {
-  const word = currentWords[currentIndex];
-  const userAnswer = document.getElementById("userAnswer").value.trim();
-  const isCorrect = userAnswer.toLowerCase() === word.toLowerCase();
-  
-  // Record session data
-  sessionData.push({
-    word: word,
-    answer: userAnswer,
-    correct: isCorrect,
-    flagged: !!flaggedWords[currentIndex],
-    timestamp: new Date().toISOString()
-  });
+      const word = currentWords[currentIndex];
+      const userAnswer = document.getElementById("userAnswer").value.trim();
+      const isCorrect = userAnswer.toLowerCase() === word.toLowerCase();
+      
+      // Record session data
+      sessionData.push({
+        word: word,
+        answer: userAnswer,
+        correct: isCorrect,
+        flagged: !!flaggedWords[currentIndex],
+        timestamp: new Date().toISOString()
+      });
 
-  if (isCorrect) {
-    score++;
-    showFeedback("Correct!", "correct");
-  } else {
-    showFeedback(`Incorrect. The correct spelling is: ${word}`, "incorrect");
-  }
+      if (isCorrect) {
+        score++;
+        showFeedback("Correct!", "correct");
+      } else {
+        showFeedback(`Incorrect. The correct spelling is: ${word}`, "incorrect");
+      }
 
-  // Save progress
-  if (!isTestMode) {
-    userProgress[currentMode + 'LastIndex'] = currentIndex + 1;
-    localStorage.setItem('userProgress', JSON.stringify(userProgress));
-    if (auth.currentUser) {
-      saveUserProgress(auth.currentUser.uid);
+      // Save progress
+      if (!isTestMode) {
+        userProgress[currentMode + 'LastIndex'] = currentIndex + 1;
+        localStorage.setItem('userProgress', JSON.stringify(userProgress));
+        if (auth.currentUser) {
+          saveUserProgress(auth.currentUser.uid);
+        }
+      }
+
+      currentIndex++;
+      
+      if (currentIndex < currentWords.length) {
+        setTimeout(presentWord, CHECK_DELAY);
+      } else {
+        setTimeout(endSession, CHECK_DELAY);
+      }
     }
-  }
 
-  currentIndex++;
-  
-  if (currentIndex < currentWords.length) {
-    setTimeout(presentWord, CHECK_DELAY); // Auto-proceed after delay
-  } else {
-    setTimeout(endSession, CHECK_DELAY); // End session after delay
-  }
-}
     function showFeedback(message, type) {
       const scoreDisplay = document.getElementById("scoreDisplay");
       scoreDisplay.style.display = "block";
@@ -1024,7 +1031,7 @@
               ${item.correct ? '✓ Correct' : '✗ Incorrect'}
             </td>
             <td class="${item.flagged ? 'flagged' : ''}">
-              ${item.flagged ? '✓' : ''}
+              ${item.flagged ? '⚑' : ''}
             </td>
           </tr>
         `;
