@@ -4,138 +4,1043 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>SpellRightPro Premium</title>
-  <script src="oet_word_list.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.10.377/pdf.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.4.0/mammoth.browser.min.js"></script>
+  
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/10.4.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.4.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.4.0/firebase-database-compat.js"></script>
+  
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyCZ-rAPnRgVjSRFOFvbiQlowE6A3RVvwWo",
+      authDomain: "spellrightpro-firebase.firebaseapp.com",
+      databaseURL: "https://spellrightpro-firebase-default-rtdb.firebaseio.com",
+      projectId: "spellrightpro-firebase",
+      storageBucket: "spellrightpro-firebase.appspot.com",
+      messagingSenderId: "798456641137",
+      appId: "1:798456641137:web:5c6d79db5bf49d04928dd0",
+      measurementId: "G-H09MF13297"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    const database = firebase.database();
+  </script>
+
+  <!-- FontAwesome -->
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet"/>
+
   <style>
-    body { font-family: Arial, sans-serif; margin: 0; padding: 0; background: #f4f4f4; transition: background 0.3s, color 0.3s; }
-    header { display: flex; align-items: center; padding: 10px 20px; background: #fff; border-bottom: 1px solid #ddd; }
-    header img { height: 40px; margin-right: 10px; }
-    header h1 { flex-grow: 1; font-size: 24px; margin: 0; }
-    .container { max-width: 900px; margin: auto; padding: 20px; }
-    select, input[type="email"], input[type="password"], textarea { padding: 8px; margin: 8px 0; border-radius: 5px; border: 1px solid #ccc; width: 100%; }
-    button { padding: 10px 15px; border: none; border-radius: 5px; cursor: pointer; margin: 5px 0; }
-    .btn-primary { background-color: #007bff; color: white; }
-    .btn-secondary { background-color: #17a2b8; color: white; }
-    .btn-warning { background-color: #ffc107; color: black; }
-    .btn-success { background-color: #28a745; color: white; }
-    .btn-danger { background-color: #dc3545; color: white; }
-    .btn-icon { background-color: #007bff; color: white; width: 32px; height: 32px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; }
-    .row { display: flex; flex-wrap: wrap; gap: 10px; }
-    .col { flex: 1; min-width: 150px; }
-    .form-section { margin-bottom: 20px; }
-    .dark-mode { background-color: #121212; color: white; }
-    .dark-mode header { background: #1e1e1e; color: white; }
-    .dark-mode input, .dark-mode select, .dark-mode textarea { background: #333; color: white; border: 1px solid #555; }
+    :root {
+      --primary-color: #007bff;
+      --secondary-color: #6c757d;
+      --success-color: #28a745;
+      --danger-color: #dc3545;
+      --warning-color: #ffc107;
+      --info-color: #17a2b8;
+      --light-color: #f8f9fa;
+      --dark-color: #343a40;
+      --background-color: #f8f9fa;
+      --text-color: #212529;
+      --card-bg: #ffffff;
+      --border-color: #dee2e6;
+      --premium-color: #9c27b0;
+    }
+
+    .dark-mode {
+      --background-color: #121212;
+      --text-color: #f8f9fa;
+      --card-bg: #1e1e1e;
+      --border-color: #444;
+      --primary-color: #0d6efd;
+      --secondary-color: #5c636a;
+      --premium-color: #ba68c8;
+    }
+
+    body { 
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      margin: 0; 
+      padding: 0; 
+      background: var(--background-color);
+      color: var(--text-color);
+      transition: all 0.3s ease;
+    }
+
+    .container { 
+      max-width: 900px; 
+      margin: 0 auto; 
+      padding: 20px; 
+    }
+
+    header {
+      display: flex;
+      align-items: center;
+      padding: 15px 20px;
+      background: var(--card-bg);
+      border-bottom: 1px solid var(--border-color);
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+
+    header img { 
+      height: 40px; 
+      margin-right: 15px; 
+    }
+
+    header h1 { 
+      flex-grow: 1; 
+      font-size: 1.5rem; 
+      margin: 0; 
+      font-weight: 600;
+      color: var(--premium-color);
+    }
+
+    .badge-premium {
+      background: var(--premium-color);
+      color: white;
+      padding: 3px 8px;
+      border-radius: 12px;
+      font-size: 0.75rem;
+      font-weight: bold;
+      margin-left: 8px;
+    }
+
+    .btn {
+      padding: 10px 15px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: 500;
+      transition: all 0.2s;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .btn-primary {
+      background: var(--primary-color);
+      color: white;
+    }
+
+    .btn-secondary {
+      background: var(--secondary-color);
+      color: white;
+    }
+
+    .btn-success {
+      background: var(--success-color);
+      color: white;
+    }
+
+    .btn-danger {
+      background: var(--danger-color);
+      color: white;
+    }
+
+    .btn-warning {
+      background: var(--warning-color);
+      color: var(--dark-color);
+    }
+
+    .btn-info {
+      background: var(--info-color);
+      color: white;
+    }
+
+    .btn-premium {
+      background: var(--premium-color);
+      color: white;
+    }
+
+    .btn-outline {
+      background: transparent;
+      border: 1px solid var(--primary-color);
+      color: var(--primary-color);
+    }
+
+    .btn-icon {
+      background: transparent;
+      border: none;
+      font-size: 1.25rem;
+      color: var(--text-color);
+      cursor: pointer;
+    }
+
+    .card {
+      background: var(--card-bg);
+      border-radius: 8px;
+      padding: 20px;
+      margin-bottom: 20px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+      border: 1px solid var(--border-color);
+    }
+
+    .word-box {
+      padding: 25px;
+      border-radius: 8px;
+      background: var(--card-bg);
+      margin-bottom: 20px;
+      text-align: center;
+    }
+
+    .controls {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 20px;
+    }
+
+    .progress-bar {
+      height: 6px;
+      background: var(--border-color);
+      border-radius: 3px;
+      margin: 15px 0;
+      overflow: hidden;
+    }
+
+    .progress {
+      height: 100%;
+      background: var(--primary-color);
+      width: 0%;
+      transition: width 0.3s;
+    }
+
+    .flag-btn {
+      background: none;
+      border: none;
+      color: var(--warning-color);
+      cursor: pointer;
+      font-size: 1.2rem;
+    }
+
+    .flag-btn.flagged {
+      color: var(--danger-color);
+    }
+
+    input[type="text"], input[type="email"], input[type="password"], textarea, select {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid var(--border-color);
+      border-radius: 6px;
+      background: var(--card-bg);
+      color: var(--text-color);
+      margin-bottom: 15px;
+    }
+
+    .form-row {
+      display: flex;
+      gap: 15px;
+      margin-bottom: 15px;
+      flex-wrap: wrap;
+    }
+
+    .form-row > * {
+      flex: 1;
+      min-width: 200px;
+    }
+
+    .summary-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 20px 0;
+    }
+
+    .summary-table th, .summary-table td {
+      padding: 12px;
+      text-align: left;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .summary-table th {
+      background: rgba(0,0,0,0.05);
+    }
+
+    .correct { color: var(--success-color); }
+    .incorrect { color: var(--danger-color); }
+    .flagged { color: var(--warning-color); }
+
+    .mode-selector {
+      display: flex;
+      margin-bottom: 20px;
+      border-radius: 8px;
+      overflow: hidden;
+      border: 1px solid var(--border-color);
+    }
+
+    .mode-selector button {
+      flex: 1;
+      padding: 12px;
+      border: none;
+      background: var(--card-bg);
+      cursor: pointer;
+      font-weight: 500;
+      transition: all 0.2s;
+    }
+
+    .mode-selector button.active {
+      background: var(--primary-color);
+      color: white;
+    }
+
+    .mode-settings {
+      display: none;
+    }
+
+    .mode-settings.active {
+      display: block;
+    }
+
+    .tab-content {
+      display: none;
+    }
+
+    .tab-content.active {
+      display: block;
+    }
+
+    @media (max-width: 768px) {
+      .form-row {
+        flex-direction: column;
+        gap: 10px;
+      }
+      .controls {
+        flex-direction: column;
+        gap: 10px;
+      }
+      .mode-selector {
+        flex-direction: column;
+      }
+    }
   </style>
 </head>
 <body>
   <header>
     <img src="logo.png" alt="Logo">
-    <h1>SpellRightPro</h1>
-    <button onclick="toggleDarkMode()" class="btn-icon">🌙</button>
+    <h1>SpellRightPro <span class="badge-premium">Premium</span></h1>
+    <button onclick="toggleDarkMode()" class="btn-icon" title="Toggle Dark Mode">
+      <i class="fas fa-moon"></i>
+    </button>
   </header>
 
   <div class="container">
-    <div class="form-section row">
-      <div class="col"><input type="email" id="email" placeholder="Enter email"></div>
-      <div class="col"><input type="password" id="password" placeholder="Enter password"></div>
-      <div class="col">
-        <button onclick="login()" class="btn-primary">Login</button>
-        <button onclick="signup()" class="btn-secondary">Sign Up</button>
-        <button onclick="logout()" class="btn-warning">Logout</button>
-      </div>
+    <div class="card form-row" id="authSection">
+      <input type="email" id="email" placeholder="Enter email" />
+      <input type="password" id="password" placeholder="Enter password" />
+      <button onclick="login()" class="btn btn-primary">
+        <i class="fas fa-sign-in-alt"></i> Login
+      </button>
+      <button onclick="signup()" class="btn btn-secondary">
+        <i class="fas fa-user-plus"></i> Sign Up
+      </button>
+      <button onclick="logout()" class="btn btn-warning">
+        <i class="fas fa-sign-out-alt"></i> Logout
+      </button>
+      <span id="loginStatus"></span>
     </div>
-    <div class="form-section row">
-      <div class="col">
-        <label for="examSelect">Select Exam:</label>
-        <select id="examSelect" onchange="handleExamChange()">
-          <option value="">-- Choose --</option>
-          <option value="OET">OET</option>
-          <option value="SpellingBee">Spelling Bee</option>
-          <option value="Custom">Custom</option>
-        </select>
+
+    <div class="card">
+      <div class="mode-selector">
+        <button onclick="setMode('oet')" class="active">OET Mode</button>
+        <button onclick="setMode('spellingBee')">Spelling Bee</button>
+        <button onclick="setMode('custom')">Custom Exam</button>
       </div>
-      <div class="col">
-        <label for="accent">Accent:</label>
-        <select id="accent" onchange="changeAccent()">
-          <option value="en-GB">British</option>
-          <option value="en-US">American</option>
-          <option value="en-CA">Canadian</option>
-          <option value="en-AU">Australian</option>
-        </select>
-      </div>
-    </div>
-    <div class="form-section row">
-      <div class="col">
-        <button onclick="startPractice()" class="btn-secondary">Practice</button>
-        <button onclick="startTest()" class="btn-success">Test</button>
-      </div>
-    </div>
-    <div class="form-section">
-      <label>Upload Word File:</label>
-      <input type="file" id="fileUpload" accept=".txt,.pdf,.docx" onchange="handleFileUpload(event)">
-    </div>
-    <div class="form-section">
-      <textarea id="customWords" rows="3" placeholder="Enter custom words here..."></textarea>
-      <div class="row">
-        <div class="col">
-          <button onclick="saveCustomWords()" class="btn-success">Save Words</button>
-          <button onclick="loadCustomWords()" class="btn-primary">Load Words</button>
-          <button onclick="clearWords()" class="btn-warning">Clear Words</button>
+
+      <div id="oetSettings" class="mode-settings active">
+        <div class="form-row">
+          <div>
+            <label>Accent:</label>
+            <select id="oetAccent">
+              <option value="en-GB">British</option>
+              <option value="en-US">American</option>
+              <option value="en-AU">Australian</option>
+            </select>
+          </div>
+          <div>
+            <label>Mode:</label>
+            <select id="oetMode">
+              <option value="practice">Practice</option>
+              <option value="test">Test (20 words)</option>
+            </select>
+          </div>
         </div>
+        <button onclick="startOetSession()" class="btn btn-success">
+          <i class="fas fa-play"></i> Start OET Practice
+        </button>
+      </div>
+
+      <div id="spellingBeeSettings" class="mode-settings">
+        <div class="form-row">
+          <div>
+            <label>Accent:</label>
+            <select id="beeAccent">
+              <option value="en-GB">British</option>
+              <option value="en-US">American</option>
+              <option value="en-AU">Australian</option>
+            </select>
+          </div>
+          <div>
+            <label>Word Source:</label>
+            <select id="beeWordSource" onchange="toggleBeeCustomWords()">
+              <option value="sample">Sample Words</option>
+              <option value="custom">Custom Words</option>
+            </select>
+          </div>
+        </div>
+        <div id="beeCustomWordsSection" style="display:none;">
+          <textarea id="beeCustomWords" rows="3" placeholder="Enter words for Spelling Bee, one per line..."></textarea>
+          <div class="form-row">
+            <button onclick="saveBeeCustomWords()" class="btn btn-info">
+              <i class="fas fa-save"></i> Save Words
+            </button>
+            <button onclick="loadBeeCustomWords()" class="btn btn-info">
+              <i class="fas fa-folder-open"></i> Load Words
+            </button>
+          </div>
+        </div>
+        <button onclick="startSpellingBeeSession()" class="btn btn-premium">
+          <i class="fas fa-spell-check"></i> Start Spelling Bee
+        </button>
+      </div>
+
+      <div id="customSettings" class="mode-settings">
+        <div class="form-row">
+          <div>
+            <label>Accent:</label>
+            <select id="customAccent">
+              <option value="en-GB">British</option>
+              <option value="en-US">American</option>
+              <option value="en-AU">Australian</option>
+            </select>
+          </div>
+          <div>
+            <label>Mode:</label>
+            <select id="customMode">
+              <option value="practice">Practice</option>
+              <option value="test">Test (20 words)</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-row">
+          <div>
+            <label>Upload Word File:</label>
+            <input type="file" id="customFileUpload" accept=".txt,.csv">
+          </div>
+          <div>
+            <label>Or enter words:</label>
+            <textarea id="customWords" rows="3" placeholder="Enter words, one per line..."></textarea>
+          </div>
+        </div>
+        <div class="form-row">
+          <button onclick="loadCustomWordsFromFile()" class="btn btn-info">
+            <i class="fas fa-upload"></i> Upload Words
+          </button>
+          <button onclick="saveCustomWords()" class="btn btn-info">
+            <i class="fas fa-save"></i> Save Words
+          </button>
+          <button onclick="loadCustomWords()" class="btn btn-info">
+            <i class="fas fa-folder-open"></i> Load Words
+          </button>
+        </div>
+        <button onclick="startCustomSession()" class="btn btn-premium">
+          <i class="fas fa-play-circle"></i> Start Custom Exam
+        </button>
       </div>
     </div>
-    <div class="form-section">
-      <textarea id="commentBox" rows="2" placeholder="Write your notes or comments here..."></textarea>
-      <button onclick="submitComment()" class="btn-success">Send Comment</button>
+
+    <div id="trainer" class="word-box" style="display:none;">
+      <h3 id="questionPrompt">Spell this word:</h3>
+      <button id="speakBtn" class="btn btn-primary">
+        <i class='fas fa-volume-up'></i> Hear Word
+      </button>
+      <div id="typingResponse" style="margin: 20px 0;">
+        <input type="text" id="userAnswer" placeholder="Type the word here">
+      </div>
+      <div id="spellingBeeResponse" style="display:none;">
+        <p id="recordingStatus">Press the microphone button to spell the word</p>
+        <button id="startListeningBtn" class="btn btn-premium">
+          <i class='fas fa-microphone'></i> Start Spelling
+        </button>
+        <div id="spellingFeedback" style="margin-top:15px;"></div>
+      </div>
+      <div class="controls">
+        <button id="prevBtn" class="btn btn-outline" disabled>
+          <i class="fas fa-arrow-left"></i> Previous
+        </button>
+        <button id="flagBtn" class="flag-btn" title="Flag for review">
+          <i class="far fa-flag"></i>
+        </button>
+        <button id="nextBtn" class="btn btn-primary">
+          Next <i class="fas fa-arrow-right"></i>
+        </button>
+      </div>
+      <div class="progress-bar">
+        <div class="progress" id="progressBar"></div>
+      </div>
     </div>
-    <div id="trainer"></div>
-    <div id="scoreDisplay"></div>
+
+    <div id="scoreDisplay" class="card" style="display:none;"></div>
+
+    <div class="card">
+      <form name="feedback" method="POST" data-netlify="true" netlify-honeypot="bot-field">
+        <input type="hidden" name="form-name" value="feedback" />
+        <input type="hidden" name="user-email" id="formHiddenEmail" />
+        <h3>Feedback</h3>
+        <textarea name="message" rows="3" placeholder="Write your feedback here..." required></textarea>
+        <button type="submit" class="btn btn-success">
+          <i class="fas fa-paper-plane"></i> Submit Feedback
+        </button>
+      </form>
+    </div>
   </div>
 
+  <script src="oet_word_list.js"></script>
   <script>
-    let words = [];
+    const synth = window.speechSynthesis;
+    let currentWords = [];
+    let currentIndex = 0;
+    let isTestMode = false;
+    let score = 0;
+    let totalQuestions = 0;
+    let flaggedWords = {};
+    let sessionData = [];
+    let userProgress = {};
+    let currentMode = 'oet';
+    let recognition;
+    let spellingBeeExpectedLetters = '';
 
+    // Initialize
+    document.addEventListener('DOMContentLoaded', () => {
+      if (typeof OET_WORD_LIST !== 'undefined') {
+        currentWords = [...OET_WORD_LIST];
+      }
+      
+      // Load user progress from localStorage
+      const savedProgress = localStorage.getItem('userProgress');
+      if (savedProgress) {
+        userProgress = JSON.parse(savedProgress);
+      }
+
+      // Check for dark mode preference
+      if (localStorage.getItem('darkMode') === 'true') {
+        document.body.classList.add('dark-mode');
+        document.querySelector('header .btn-icon i').classList.replace('fa-moon', 'fa-sun');
+      }
+
+      // Set up event listeners
+      document.getElementById('speakBtn').addEventListener('click', speakCurrentWord);
+      document.getElementById('nextBtn').addEventListener('click', nextWord);
+      document.getElementById('prevBtn').addEventListener('click', prevWord);
+      document.getElementById('flagBtn').addEventListener('click', toggleFlag);
+      document.getElementById('userAnswer').addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') checkAnswer();
+      });
+      document.getElementById('startListeningBtn').addEventListener('click', startListening);
+
+      // Authentication state
+      auth.onAuthStateChanged(user => {
+        const status = document.getElementById("loginStatus");
+        if (user) {
+          status.textContent = `Logged in as ${user.email}`;
+          status.style.color = "var(--success-color)";
+          document.getElementById("formHiddenEmail").value = user.email;
+          loadUserData(user.uid);
+        } else {
+          status.textContent = "Not logged in";
+          status.style.color = "var(--danger-color)";
+        }
+      });
+    });
+
+    // Dark mode toggle
     function toggleDarkMode() {
       document.body.classList.toggle('dark-mode');
-    }
-
-    function handleExamChange() {
-      const selectedExam = document.getElementById("examSelect").value;
-      if (selectedExam === "OET") {
-        if (typeof oetWords !== 'undefined' && Array.isArray(oetWords)) {
-          loadWords(oetWords);
-        } else {
-          alert("OET word list not loaded correctly.");
-          console.error("oetWords is undefined or not an array");
-        }
-      } else if (selectedExam === "SpellingBee") {
-        const spellingBeeWords = ["apple", "banana", "cherry"];
-        loadWords(spellingBeeWords);
-        startSpellingBeePractice();
-      } else if (selectedExam === "Custom") {
-        loadCustomWords();
+      localStorage.setItem('darkMode', document.body.classList.contains('dark-mode'));
+      const icon = document.querySelector('header .btn-icon i');
+      if (document.body.classList.contains('dark-mode')) {
+        icon.classList.replace('fa-moon', 'fa-sun');
+      } else {
+        icon.classList.replace('fa-sun', 'fa-moon');
       }
     }
 
-    function loadWords(wordArray) {
-      words = wordArray;
-      document.getElementById("trainer").innerText = "Loaded " + words.length + " words.";
+    // Mode selection
+    function setMode(mode) {
+      currentMode = mode;
+      
+      // Update UI
+      document.querySelectorAll('.mode-selector button').forEach(btn => {
+        btn.classList.remove('active');
+      });
+      event.target.classList.add('active');
+      
+      // Show/hide settings
+      document.querySelectorAll('.mode-settings').forEach(el => {
+        el.classList.remove('active');
+      });
+      document.getElementById(mode + 'Settings').classList.add('active');
     }
 
-    function startSpellingBeePractice() {
-      if (!words.length) return alert("No words loaded.");
-      alert("Spelling Bee starting with " + words.length + " words.");
-      // Add microphone/spelling bee logic here
+    function toggleBeeCustomWords() {
+      const show = document.getElementById('beeWordSource').value === 'custom';
+      document.getElementById('beeCustomWordsSection').style.display = show ? 'block' : 'none';
     }
 
-    function startPractice() {
-      alert("Practice mode starting with " + words.length + " words.");
+    // Authentication functions
+    function login() {
+      const email = document.getElementById("email").value.trim();
+      const password = document.getElementById("password").value;
+      if (!email || !password) return alert("Email and password required");
+      auth.signInWithEmailAndPassword(email, password)
+        .then(() => alert("Login successful!"))
+        .catch(error => alert(error.message));
     }
 
-    function startTest() {
-      alert("Test mode starting with " + words.length + " words.");
+    function signup() {
+      const email = document.getElementById("email").value.trim();
+      const password = document.getElementById("password").value;
+      if (!email || !password) return alert("Email and password required");
+      auth.createUserWithEmailAndPassword(email, password)
+        .then(() => alert("Account created and signed in!"))
+        .catch(error => alert(error.message));
+    }
+
+    function logout() {
+      auth.signOut().then(() => {
+        alert("Logged out");
+        resetSession();
+      });
+    }
+
+    // Load user data from Firebase
+    function loadUserData(userId) {
+      database.ref('users/' + userId + '/progress').once('value')
+        .then(snapshot => {
+          if (snapshot.exists()) {
+            userProgress = snapshot.val();
+            localStorage.setItem('userProgress', JSON.stringify(userProgress));
+          }
+        });
+    }
+
+    // Save user progress to Firebase
+    function saveUserProgress(userId) {
+      if (auth.currentUser) {
+        database.ref('users/' + userId + '/progress').set(userProgress)
+          .then(() => console.log("Progress saved to cloud"))
+          .catch(error => console.error("Error saving progress:", error));
+      }
+    }
+
+    // Session management
+    function startOetSession() {
+      currentMode = 'oet';
+      isTestMode = document.getElementById("oetMode").value === 'test';
+      currentIndex = 0;
+      score = 0;
+      sessionData = [];
+      flaggedWords = {};
+
+      if (isTestMode) {
+        totalQuestions = Math.min(20, currentWords.length);
+        currentWords = shuffle([...currentWords]).slice(0, totalQuestions);
+      } else {
+        totalQuestions = currentWords.length;
+        // Start from saved progress if available
+        const lastIndex = userProgress.oetLastIndex || 0;
+        if (lastIndex > 0 && confirm(`Continue from where you left off (word ${lastIndex + 1})?`)) {
+          currentIndex = lastIndex;
+        }
+      }
+
+      setupTrainerUI('typing');
+      presentWord();
+    }
+
+    function startSpellingBeeSession() {
+      currentMode = 'spellingBee';
+      isTestMode = false; // Spelling Bee is always practice mode
+      currentIndex = 0;
+      score = 0;
+      sessionData = [];
+      flaggedWords = {};
+
+      // Load appropriate word list
+      if (document.getElementById('beeWordSource').value === 'sample') {
+        currentWords = ["apple", "banana", "cherry", "dolphin", "elephant", 
+                       "giraffe", "hospital", "kangaroo", "mountain", "octopus"];
+      } else {
+        const customText = document.getElementById('beeCustomWords').value;
+        currentWords = customText.split('\n').filter(w => w.trim());
+      }
+
+      totalQuestions = currentWords.length;
+      setupTrainerUI('spellingBee');
+      presentWord();
+    }
+
+    function startCustomSession() {
+      currentMode = 'custom';
+      isTestMode = document.getElementById("customMode").value === 'test';
+      currentIndex = 0;
+      score = 0;
+      sessionData = [];
+      flaggedWords = {};
+
+      // Load custom words
+      const customText = document.getElementById('customWords').value;
+      currentWords = customText.split('\n').filter(w => w.trim());
+
+      if (isTestMode) {
+        totalQuestions = Math.min(20, currentWords.length);
+        currentWords = shuffle([...currentWords]).slice(0, totalQuestions);
+      } else {
+        totalQuestions = currentWords.length;
+        // Start from saved progress if available
+        const lastIndex = userProgress.customLastIndex || 0;
+        if (lastIndex > 0 && confirm(`Continue from where you left off (word ${lastIndex + 1})?`)) {
+          currentIndex = lastIndex;
+        }
+      }
+
+      setupTrainerUI('typing');
+      presentWord();
+    }
+
+    function setupTrainerUI(responseType) {
+      document.getElementById("trainer").style.display = "block";
+      document.getElementById("scoreDisplay").style.display = "none";
+      
+      if (responseType === 'typing') {
+        document.getElementById("typingResponse").style.display = "block";
+        document.getElementById("spellingBeeResponse").style.display = "none";
+      } else {
+        document.getElementById("typingResponse").style.display = "none";
+        document.getElementById("spellingBeeResponse").style.display = "block";
+      }
+      
+      updateProgress();
+    }
+
+    function resetSession() {
+      document.getElementById("trainer").style.display = "none";
+      document.getElementById("scoreDisplay").style.display = "none";
+      document.getElementById("userAnswer").value = "";
+    }
+
+    function endSession() {
+      document.getElementById("trainer").style.display = "none";
+      showSummary();
+    }
+
+    // Word presentation
+    function presentWord() {
+      if (currentIndex >= currentWords.length) {
+        endSession();
+        return;
+      }
+
+      const word = currentWords[currentIndex];
+      document.getElementById("questionPrompt").textContent = 
+        `Spell this word (${currentIndex + 1}/${totalQuestions}):`;
+      
+      document.getElementById("userAnswer").value = "";
+      
+      // Update flag button
+      const flagBtn = document.getElementById("flagBtn");
+      if (flaggedWords[currentIndex]) {
+        flagBtn.innerHTML = '<i class="fas fa-flag"></i>';
+        flagBtn.classList.add("flagged");
+      } else {
+        flagBtn.innerHTML = '<i class="far fa-flag"></i>';
+        flagBtn.classList.remove("flagged");
+      }
+      
+      // Update navigation buttons
+      document.getElementById("prevBtn").disabled = currentIndex === 0;
+      
+      if (currentMode === 'spellingBee') {
+        spellingBeeExpectedLetters = word.toLowerCase().split('').join(' ');
+        document.getElementById("spellingFeedback").innerHTML = "";
+        document.getElementById("recordingStatus").textContent = 
+          "Press the microphone button to spell the word";
+      } else {
+        document.getElementById("userAnswer").focus();
+      }
+      
+      speakCurrentWord();
+      updateProgress();
+    }
+
+    function speakCurrentWord() {
+      const word = currentWords[currentIndex];
+      synth.cancel();
+      const utterance = new SpeechSynthesisUtterance(word);
+      
+      // Set appropriate accent based on mode
+      if (currentMode === 'oet') {
+        utterance.lang = document.getElementById("oetAccent").value;
+      } else if (currentMode === 'spellingBee') {
+        utterance.lang = document.getElementById("beeAccent").value;
+      } else {
+        utterance.lang = document.getElementById("customAccent").value;
+      }
+      
+      synth.speak(utterance);
+    }
+
+    // Navigation
+    function nextWord() {
+      if (currentMode === 'spellingBee' && !sessionData[currentIndex]) {
+        alert("Please spell the word first");
+        return;
+      }
+      
+      if (currentMode !== 'spellingBee') {
+        checkAnswer();
+      } else {
+        currentIndex++;
+        if (currentIndex < currentWords.length) {
+          presentWord();
+        } else {
+          endSession();
+        }
+      }
+    }
+
+    function prevWord() {
+      if (currentIndex > 0) {
+        currentIndex--;
+        presentWord();
+      }
+    }
+
+    function toggleFlag() {
+      flaggedWords[currentIndex] = !flaggedWords[currentIndex];
+      const flagBtn = document.getElementById("flagBtn");
+      
+      if (flaggedWords[currentIndex]) {
+        flagBtn.innerHTML = '<i class="fas fa-flag"></i>';
+        flagBtn.classList.add("flagged");
+      } else {
+        flagBtn.innerHTML = '<i class="far fa-flag"></i>';
+        flagBtn.classList.remove("flagged");
+      }
+    }
+
+    // Spelling Bee functions
+    function startListening() {
+      if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
+        alert("Speech recognition not supported in your browser");
+        return;
+      }
+
+      document.getElementById("recordingStatus").textContent = "Listening...";
+      
+      recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+      
+      // Set appropriate accent based on mode
+      if (currentMode === 'oet') {
+        recognition.lang = document.getElementById("oetAccent").value;
+      } else if (currentMode === 'spellingBee') {
+        recognition.lang = document.getElementById("beeAccent").value;
+      } else {
+        recognition.lang = document.getElementById("customAccent").value;
+      }
+      
+      recognition.interimResults = false;
+      
+      recognition.onresult = (event) => {
+        const spokenLetters = event.results[0][0].transcript.trim().toLowerCase();
+        const feedbackEl = document.getElementById("spellingFeedback");
+        
+        if (spokenLetters === spellingBeeExpectedLetters) {
+          feedbackEl.innerHTML = `<p class="correct">Correct! You spelled: ${spokenLetters}</p>`;
+          score++;
+          sessionData.push({
+            word: currentWords[currentIndex],
+            answer: spokenLetters,
+            correct: true,
+            flagged: !!flaggedWords[currentIndex],
+            timestamp: new Date().toISOString()
+          });
+        } else {
+          feedbackEl.innerHTML = `
+            <p class="incorrect">Incorrect. You spelled: ${spokenLetters}</p>
+            <p>Correct spelling: ${spellingBeeExpectedLetters}</p>
+          `;
+          sessionData.push({
+            word: currentWords[currentIndex],
+            answer: spokenLetters,
+            correct: false,
+            flagged: !!flaggedWords[currentIndex],
+            timestamp: new Date().toISOString()
+          });
+        }
+        
+        document.getElementById("recordingStatus").textContent = 
+          "Press Next to continue or spell again";
+      };
+      
+      recognition.onerror = (event) => {
+        document.getElementById("recordingStatus").textContent = 
+          "Error: " + event.error + ". Try again.";
+      };
+      
+      recognition.start();
+    }
+
+    // Answer checking for typing modes
+    function checkAnswer() {
+      const word = currentWords[currentIndex];
+      const userAnswer = document.getElementById("userAnswer").value.trim();
+      const isCorrect = userAnswer.toLowerCase() === word.toLowerCase();
+      
+      // Record session data
+      sessionData.push({
+        word: word,
+        answer: userAnswer,
+        correct: isCorrect,
+        flagged: !!flaggedWords[currentIndex],
+        timestamp: new Date().toISOString()
+      });
+
+      if (isCorrect) {
+        score++;
+        showFeedback("Correct!", "correct");
+      } else {
+        showFeedback(`Incorrect. The correct spelling is: ${word}`, "incorrect");
+      }
+
+      // Save progress
+      if (!isTestMode) {
+        userProgress[currentMode + 'LastIndex'] = currentIndex + 1;
+        localStorage.setItem('userProgress', JSON.stringify(userProgress));
+        if (auth.currentUser) {
+          saveUserProgress(auth.currentUser.uid);
+        }
+      }
+
+      currentIndex++;
+      
+      if (currentIndex < currentWords.length) {
+        setTimeout(presentWord, 1500);
+      } else {
+        endSession();
+      }
+    }
+
+    function showFeedback(message, type) {
+      const scoreDisplay = document.getElementById("scoreDisplay");
+      scoreDisplay.style.display = "block";
+      scoreDisplay.innerHTML = `<p class="${type}">${message}</p>`;
+      
+      if (type === "incorrect") {
+        scoreDisplay.innerHTML += `<p>Progress: ${currentIndex + 1}/${totalQuestions}</p>`;
+      }
+    }
+
+    // Progress tracking
+    function updateProgress() {
+      const progress = ((currentIndex) / totalQuestions) * 100;
+      document.getElementById("progressBar").style.width = `${progress}%`;
+    }
+
+    // Summary display
+    function showSummary() {
+      const accuracy = totalQuestions > 0 ? Math.round((score / totalQuestions) * 100) : 0;
+      let summaryHTML = `
+        <h2>Session Summary</h2>
+        <p>Mode: ${currentMode === 'oet' ? 'OET' : currentMode === 'spellingBee' ? 'Spelling Bee' : 'Custom'}</p>
+        <p>Your score: ${score}/${totalQuestions}</p>
+        <p>Accuracy: ${accuracy}%</p>
+        
+        <h3>Details</h3>
+        <table class="summary-table">
+          <thead>
+            <tr>
+              <th>Word</th>
+              <th>Your Answer</th>
+              <th>Result</th>
+              <th>Flagged</th>
+            </tr>
+          </thead>
+          <tbody>
+      `;
+
+      sessionData.forEach((item, index) => {
+        summaryHTML += `
+          <tr>
+            <td>${item.word}</td>
+            <td>${item.answer || '—'}</td>
+            <td class="${item.correct ? 'correct' : 'incorrect'}">
+              ${item.correct ? '✓ Correct' : '✗ Incorrect'}
+            </td>
+            <td class="${item.flagged ? 'flagged' : ''}">
+              ${item.flagged ? '✓' : ''}
+            </td>
+          </tr>
+        `;
+      });
+
+      summaryHTML += `
+          </tbody>
+        </table>
+        <button onclick="start${currentMode === 'oet' ? 'Oet' : currentMode === 'spellingBee' ? 'SpellingBee' : 'Custom'}Session()" class="btn btn-primary">
+          <i class="fas fa-redo"></i> Try Again
+        </button>
+      `;
+
+      document.getElementById("scoreDisplay").innerHTML = summaryHTML;
+      document.getElementById("scoreDisplay").style.display = "block";
+    }
+
+    // Word list management
+    function loadCustomWordsFromFile() {
+      const file = document.getElementById('customFileUpload').files[0];
+      if (!file) return alert("Please select a file first");
+      
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        document.getElementById('customWords').value = e.target.result;
+        alert(`Loaded ${e.target.result.split('\n').length} words from file`);
+      };
+      reader.readAsText(file);
+    }
+
+    function saveCustomWords() {
+      localStorage.setItem('customWords', document.getElementById('customWords').value);
+      alert('Custom words saved!');
+    }
+
+    function loadCustomWords() {
+      const savedWords = localStorage.getItem('customWords');
+      if (savedWords) {
+        document.getElementById('customWords').value = savedWords;
+        alert(`Loaded ${savedWords.split('\n').length} custom words`);
+      } else {
+        alert('No saved words found');
+      }
+    }
+
+    function saveBeeCustomWords() {
+      localStorage.setItem('spellingBeeWords', document.getElementById('beeCustomWords').value);
+      alert('Spelling Bee words saved!');
+    }
+
+    function loadBeeCustomWords() {
+      const savedWords = localStorage.getItem('spellingBeeWords');
+      if (savedWords) {
+        document.getElementById('beeCustomWords').value = savedWords;
+        alert(`Loaded ${savedWords.split('\n').length} words`);
+      } else {
+        alert('No saved words found');
+      }
+    }
+
+    // Utility functions
+    function shuffle(arr) {
+      for (let i = arr.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [arr[i], arr[j]] = [arr[j], arr[i]];
+      }
+      return arr;
     }
   </script>
 </body>
