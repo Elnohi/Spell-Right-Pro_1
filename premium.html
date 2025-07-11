@@ -590,7 +590,7 @@
     // Mode selection
     function setMode(mode) {
       currentMode = mode;
-      
+            
       // Update UI
       document.querySelectorAll('.mode-selector button').forEach(btn => {
         btn.classList.remove('active');
@@ -600,6 +600,7 @@
       // Show/hide settings
       document.querySelectorAll('.mode-settings').forEach(el => {
         el.classList.remove('active');
+        if (mode === 'spellingBee') toggleBeeCustomWords();
       });
       document.getElementById(mode + 'Settings').classList.add('active');
     }
@@ -826,7 +827,13 @@
         return;
       }
 
-      recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+if (!SpeechRecognition) {
+  document.getElementById("spellingFeedback").innerHTML = 
+    "<p class='incorrect'>Speech recognition not supported in your browser</p>";
+  return;
+}
+      recognition = new SpeechRecognition();
       recognition.lang = document.getElementById("beeAccent").value;
       recognition.interimResults = false;
       recognition.maxAlternatives = 1;
@@ -890,6 +897,7 @@
       };
       
       recognition.start();
+      console.log("Listening started...");
     }
 
     function speakCurrentWord() {
