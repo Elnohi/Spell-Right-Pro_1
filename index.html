@@ -2,74 +2,391 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>SpellRightPro Premium</title>
-  <link rel="stylesheet" href="styles.css">
-  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
-  <script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
-  <script src="oet_word_list.js"></script>
-</head>
-<body class="light-mode">
-  <div id="app">
-    <button onclick="startOetSession()" class="btn btn-success">Start OET</button>
-    <button onclick="startSpellingBeeSession()" class="btn btn-premium">Start Spelling Bee</button>
-    
-  </div>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>SpellRightPro – Freemium Edition</title>
+
+  <!-- Google Analytics -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-H09MF13297"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-H09MF13297');
+  </script>
+
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/10.4.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.4.0/firebase-auth-compat.js"></script>
 
   <script>
-    const synth = window.speechSynthesis;
-    const CHECK_DELAY = 1200;
-    const PROCESSING_DELAY = 2500;
-    const LISTENING_DELAY = 800;
-    let spellingBeeTimeout, recognition;
-    let auth, database, currentWords = [], userProgress = {}, currentIndex = 0, score = 0;
-    let currentMode = '', isTestMode = false, sessionData = [], flaggedWords = {}, spellingBeeExpectedLetters = "";
-
+    const WORD_DELAY = 1500; // 1.5 seconds between words
+    const CHECK_DELAY = 2000; // 2 seconds after answer before next word
+    const LISTENING_DELAY = 2000; // 2 seconds after word is spoken
+    const PROCESSING_DELAY = 3000; // 3 seconds after spelling is recognized
     const firebaseConfig = {
-      apiKey: "your-api-key",
-      authDomain: "your-auth-domain",
-      projectId: "your-project-id",
-      storageBucket: "your-storage-bucket",
-      messagingSenderId: "your-messaging-sender-id",
-      appId: "your-app-id"
+      apiKey: "AIzaSyCZ-rAPnRgVjSRFOFvbiQlowE6A3RVvwWo",
+      authDomain: "spellrightpro-firebase.firebaseapp.com",
+      projectId: "spellrightpro-firebase",
+      storageBucket: "spellrightpro-firebase.appspot.com",
+      messagingSenderId: "798456641137",
+      appId: "1:798456641137:web:5c6d79db5bf49d04928dd0",
+      measurementId: "G-H09MF13297"
     };
-
     firebase.initializeApp(firebaseConfig);
-    auth = firebase.auth();
-    database = firebase.database();
+    const auth = firebase.auth();
+  </script>
 
+  <!-- FontAwesome -->
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet"/>
+
+  <style>
+    #userAnswer:focus {
+      outline: 2px solid var(--primary-color);
+      box-shadow: 0 0 5px rgba(0,123,255,0.5);
+    }
+    body { 
+      font-family: Arial, sans-serif; 
+      margin: 0; 
+      padding: 0; 
+      background: #f8f9fa;
+      transition: background 0.3s, color 0.3s;
+    }
+    .dark-mode {
+      background-color: #121212;
+      color: white;
+    }
+    .dark-mode header {
+      background: #1e1e1e;
+      color: white;
+    }
+    .dark-mode input, 
+    .dark-mode select, 
+    .dark-mode textarea {
+      background: #333;
+      color: white;
+      border: 1px solid #555;
+    }
+    .dark-mode .word-box {
+      background: #333;
+      border-color: #555;
+    }
+    .container { max-width: 960px; margin: auto; padding: 20px; }
+    header {
+      display: flex;
+      align-items: center;
+      padding: 10px 20px;
+      background: #fff;
+      border-bottom: 1px solid #ddd;
+    }
+    header img { height: 40px; margin-right: 10px; }
+    header h1 { flex-grow: 1; font-size: 24px; margin: 0; }
+    .form-row { 
+      display: flex; 
+      flex-wrap: wrap; 
+      gap: 10px; 
+      align-items: center; 
+      margin-top: 15px; 
+    }
+    .form-row label { min-width: 100px; }
+    .form-row select, 
+    .form-row input[type="email"], 
+    .form-row input[type="password"],
+    .form-row input[type="text"] {
+      flex: 1; 
+      padding: 8px; 
+      border: 1px solid #ccc; 
+      border-radius: 5px;
+    }
+    .btn { 
+      padding: 10px 15px; 
+      border: none; 
+      background: #007bff; 
+      color: white; 
+      border-radius: 5px; 
+      cursor: pointer; 
+    }
+    .btn:hover { background: #0056b3; }
+    .btn-warning { background: #ffc107; color: black; }
+    .btn-icon {
+      background: transparent;
+      border: none;
+      font-size: 1.5em;
+      cursor: pointer;
+    }
+    .word-box { 
+      padding: 20px; 
+      border: 2px solid #007bff; 
+      border-radius: 10px; 
+      background: white; 
+      margin-bottom: 20px; 
+    }
+    .ad-banner { 
+      margin: 20px 0; 
+      text-align: center; 
+      border: 1px dashed #ccc; 
+      padding: 10px; 
+      background: #fff; 
+    }
+    #scoreDisplay {
+      margin-top: 20px;
+      padding: 15px;
+      border-radius: 5px;
+      background: #f0f0f0;
+    }
+    .dark-mode #scoreDisplay {
+      background: #333;
+    }
+    .correct { color: green; }
+    .incorrect { color: red; }
+    @media (max-width: 600px) { 
+      .form-row { flex-direction: column; align-items: stretch; } 
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <img src="logo.png" alt="SpellRightPro Logo" />
+    <h1>SpellRightPro</h1>
+    <button onclick="toggleDarkMode()" class="btn-icon">
+      <i class="fas fa-moon"></i>
+    </button>
+  </header>
+
+  <div class="container">
+    <div class="form-row" id="authSection">
+      <label>Email:</label>
+      <input type="email" id="userEmail" placeholder="Enter email" />
+      <label>Password:</label>
+      <input type="password" id="userPassword" placeholder="Enter password" />
+      <button onclick="loginUser()" class="btn">Login</button>
+      <button onclick="signUpUser()" class="btn">Sign Up</button>
+      <button onclick="logoutUser()" class="btn btn-warning">Logout</button>
+      <span id="loginStatus"></span>
+    </div>
+
+    <div class="form-row">
+      <label>Accent:</label>
+      <select id="accentSelect">
+        <option value="en-GB">British</option>
+        <option value="en-US">American</option>
+      </select>
+    </div>
+
+    <div class="form-row">
+      <button onclick="startPractice()" class="btn">Start Practice</button>
+      <button onclick="startTest()" class="btn">Start Test</button>
+      <button onclick="window.location.href='premium.html'" class="btn btn-warning">Upgrade to Premium</button>
+    </div>
+
+    <div id="trainer" class="word-box" style="display:none;">
+      <h3 id="questionPrompt">Spell this word:</h3>
+      <button onclick="speakCurrentWord()" class="btn">
+        <i class="fas fa-volume-up"></i> Hear Word
+      </button>
+      <div style="margin: 20px 0;">
+        <input type="text" id="userAnswer" placeholder="Type the word here">
+      </div>
+      <button onclick="checkAnswer()" class="btn">Check Answer</button>
+    </div>
+    <div id="scoreDisplay"></div>
+
+    <div class="ad-banner">
+      <p>Ad Placeholder — Your AdSense ad will appear here</p>
+    </div>
+
+    <form name="feedback" method="POST" data-netlify="true" netlify-honeypot="bot-field" class="form-row">
+      <input type="hidden" name="form-name" value="feedback" />
+      <input type="hidden" name="user-email" id="formHiddenEmail" />
+      <textarea name="message" rows="3" placeholder="Write your feedback here..." style="width:100%;" required></textarea>
+      <button type="submit" class="btn">
+        <i class="fas fa-paper-plane"></i> Send Feedback
+      </button>
+    </form>
+  </div>
+
+  <script src="oet_word_list.js"></script>
+  <script>
+    const synth = window.speechSynthesis;
+    let currentWords = [];
+    let currentIndex = 0;
+    let currentAccent = "en-GB";
+    let isTestMode = false;
+    let score = 0;
+    let totalQuestions = 0;
+
+    // Dark mode toggle
+    function toggleDarkMode() {
+      document.body.classList.toggle('dark-mode');
+      const icon = document.querySelector('.btn-icon i');
+      if (document.body.classList.contains('dark-mode')) {
+        icon.classList.replace('fa-moon', 'fa-sun');
+      } else {
+        icon.classList.replace('fa-sun', 'fa-moon');
+      }
+      localStorage.setItem('darkMode', document.body.classList.contains('dark-mode'));
+    }
+
+    // Check for saved dark mode preference
+    if (localStorage.getItem('darkMode') === 'true') {
+      document.body.classList.add('dark-mode');
+      document.querySelector('.btn-icon i').classList.replace('fa-moon', 'fa-sun');
+    }
+
+    // Initialize with OET words
     document.addEventListener('DOMContentLoaded', () => {
       if (typeof OET_WORD_LIST !== 'undefined') {
-        currentWords = OET_WORD_LIST;
+        currentWords = [...OET_WORD_LIST];
+      }
+      
+      document.getElementById('userAnswer').addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          checkAnswer();
+        }
+      });
+
+      // Accent change handler
+      document.getElementById("accentSelect").addEventListener("change", function() {
+        currentAccent = this.value;
+      });
+    });
+
+    // Authentication functions
+    function loginUser() {
+      const email = document.getElementById("userEmail").value.trim();
+      const password = document.getElementById("userPassword").value;
+      if (!email || !password) return alert("Email and password required");
+      auth.signInWithEmailAndPassword(email, password)
+        .then(() => alert("Login successful!"))
+        .catch(error => alert(error.message));
+    }
+
+    function signUpUser() {
+      const email = document.getElementById("userEmail").value.trim();
+      const password = document.getElementById("userPassword").value;
+      if (!email || !password) return alert("Email and password required");
+      auth.createUserWithEmailAndPassword(email, password)
+        .then(() => alert("Account created and signed in!"))
+        .catch(error => alert(error.message));
+    }
+
+    function logoutUser() {
+      auth.signOut().then(() => {
+        alert("Logged out");
+        document.getElementById("trainer").style.display = "none";
+        document.getElementById("scoreDisplay").innerHTML = "";
+      });
+    }
+
+    // Authentication state
+    auth.onAuthStateChanged(user => {
+      const status = document.getElementById("loginStatus");
+      if (user) {
+        status.textContent = `Logged in as ${user.email}`;
+        status.style.color = "green";
+        document.getElementById("formHiddenEmail").value = user.email;
       } else {
-        currentWords = ["patient", "hospital", "symptom"];
+        status.textContent = "Not logged in";
+        status.style.color = "red";
       }
     });
 
-    function toggleDarkMode() {
-      document.body.classList.toggle('dark-mode');
-      const icon = document.querySelector('header .btn-icon i');
-      if (icon) {
-        icon.classList.toggle('fa-sun');
-        icon.classList.toggle('fa-moon');
+    // Test functions
+    function startPractice() {
+      if (!currentWords.length) return alert("Please wait while words load");
+      isTestMode = false;
+      score = 0;
+      totalQuestions = currentWords.length;
+      currentIndex = 0;
+      document.getElementById("trainer").style.display = "block";
+      presentWord();
+    }
+
+    function startTest() {
+      if (!currentWords.length) return alert("Please wait while words load");
+      isTestMode = true;
+      score = 0;
+      totalQuestions = Math.min(20, currentWords.length);
+      currentWords = shuffle([...currentWords]).slice(0, totalQuestions);
+      currentIndex = 0;
+      document.getElementById("trainer").style.display = "block";
+      presentWord();
+    }
+
+    function presentWord() {
+      if (currentIndex >= currentWords.length) {
+        endSession();
+        return;
+      }
+
+      const word = currentWords[currentIndex];
+      document.getElementById("questionPrompt").textContent = 
+        `Spell this word (${currentIndex + 1}/${totalQuestions}):`;
+      
+      const userAnswer = document.getElementById("userAnswer");
+      userAnswer.value = "";
+      userAnswer.focus();
+      
+      speakCurrentWord();
+    }
+
+    function speakCurrentWord() {
+      const word = currentWords[currentIndex];
+      synth.cancel();
+      const utterance = new SpeechSynthesisUtterance(word);
+      utterance.lang = currentAccent;
+      synth.speak(utterance);
+    }
+
+    function checkAnswer() {
+      const word = currentWords[currentIndex];
+      const userAnswer = document.getElementById("userAnswer").value.trim();
+      const isCorrect = userAnswer.toLowerCase() === word.toLowerCase();
+
+      if (isCorrect) {
+        score++;
+        showFeedback("Correct!", "correct");
+      } else {
+        showFeedback(`Incorrect. The correct spelling is: ${word}`, "incorrect");
+      }
+
+      currentIndex++;
+      
+      if (currentIndex < currentWords.length) {
+        setTimeout(presentWord, CHECK_DELAY);
+      } else {
+        setTimeout(endSession, CHECK_DELAY);
       }
     }
 
-    function showSummary() {
-      let summaryHTML = `<h2>Session Summary</h2><table><thead><tr><th>Word</th><th>Your Answer</th><th>Result</th><th>Flagged</th></tr></thead><tbody>`;
-      sessionData.forEach(item => {
-        summaryHTML += `<tr>
-          <td>${item.word}</td>
-          <td>${item.answer || '—'}</td>
-          <td class="${item.correct ? 'correct' : 'incorrect'}">${item.correct ? '✔ Correct' : '❌ Incorrect'}</td>
-          <td class="${item.flagged ? 'flagged' : ''}">${item.flagged ? '⚠' : ''}</td>
-        </tr>`;
-      });
-      summaryHTML += `</tbody></table>`;
-      document.getElementById("scoreDisplay").innerHTML = summaryHTML;
-      document.getElementById("scoreDisplay").style.display = "block";
+    function showFeedback(message, type) {
+      const scoreDisplay = document.getElementById("scoreDisplay");
+      scoreDisplay.innerHTML = `<p class="${type}">${message}</p>`;
+      
+      if (type === "incorrect") {
+        scoreDisplay.innerHTML += `<p>Progress: ${currentIndex + 1}/${totalQuestions}</p>`;
+      }
+    }
+
+    function endSession() {
+      const accuracy = totalQuestions > 0 ? Math.round((score / totalQuestions) * 100) : 0;
+      document.getElementById("trainer").style.display = "none";
+      document.getElementById("scoreDisplay").innerHTML = `
+        <h3>Session Summary</h3>
+        <p>Your score: ${score}/${totalQuestions}</p>
+        <p>Accuracy: ${accuracy}%</p>
+        <button onclick="${isTestMode ? 'startTest' : 'startPractice'}()" class="btn">
+          <i class="fas fa-redo"></i> Try Again
+        </button>
+      `;
+    }
+
+    function shuffle(arr) {
+      for (let i = arr.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [arr[i], arr[j]] = [arr[j], arr[i]];
+      }
+      return arr;
     }
   </script>
 </body>
