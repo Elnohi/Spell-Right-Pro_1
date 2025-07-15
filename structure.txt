@@ -1,0 +1,18 @@
+SpellRightPro/
+├── index.html                # Freemium version
+├── premium.html              # Premium version
+├── css/
+│   └── styles.css            # Shared CSS styles
+├── js/
+│   ├── firebase-config.js    # Firebase config + auth
+│   ├── oet_word_list.js      # OET words
+│   ├── exam-loader.js        # Logic to load different exam modes
+│   ├── spelling-check.js     # Scoring + checking spelling
+│   ├── tts.js                # Speech synthesis logic
+│   ├── stt.js                # Speech recognition logic (Spelling Bee)
+│   └── ui-utils.js           # Utility functions (dark mode, toggles, etc.)
+├── assets/
+│   └── logo.png              # App logo
+├── ads/
+│   └── adsense-desktop.html  # Optional ad code snippet
+└── README.md
