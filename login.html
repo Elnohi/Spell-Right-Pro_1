@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Login - SpellRightPro</title>
+  <script src="https://www.gstatic.com/firebasejs/10.4.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.4.0/firebase-auth-compat.js"></script>
+  <script>
+    const firebaseConfig = {
+      apiKey: "YOUR_API_KEY",
+      authDomain: "YOUR_PROJECT.firebaseapp.com",
+      projectId: "YOUR_PROJECT_ID",
+      appId: "YOUR_APP_ID"
+    };
+    firebase.initializeApp(firebaseConfig);
+
+    function signInAnonymously() {
+      firebase.auth().signInAnonymously()
+        .then(() => {
+          window.location.href = "index.html"; // or premium.html if preferred
+        })
+        .catch((error) => {
+          alert("Login error: " + error.message);
+        });
+    }
+  </script>
+</head>
+<body>
+  <h2>Welcome to SpellRightPro</h2>
+  <p>Click below to sign in and begin:</p>
+  <button onclick="signInAnonymously()">Login Anonymously</button>
+</body>
+</html>
