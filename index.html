@@ -306,7 +306,7 @@
       if (!currentWords.length) return alert("Please wait while words load");
       isTestMode = true;
       score = 0;
-      totalQuestions = Math.min(20, currentWords.length);
+      totalQuestions = Math.min(24, currentWords.length);
       currentWords = shuffle([...currentWords]).slice(0, totalQuestions);
       currentIndex = 0;
       document.getElementById("trainer").style.display = "block";
