@@ -1,62 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SpellRightPro - Freemium</title>
+
+  <!-- FontAwesome -->
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet"/>
+
+  <!-- Custom Styles -->
+  <link rel="stylesheet" href="css/styles.css" />
+
+  <!-- Firebase -->
+  <script src="https://www.gstatic.com/firebasejs/10.4.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.4.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.4.0/firebase-firestore-compat.js"></script>
+
+  <!-- Firebase Config -->
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyCZ-rAPnRgVjSRFOFvbiQlowE6A3RVvwWo",
+      authDomain: "spellrightpro-firebase.firebaseapp.com",
+      projectId: "spellrightpro-firebase",
+      storageBucket: "spellrightpro-firebase.firebasestorage.app",
+      messagingSenderId: "798456641137",
+      appId: "1:798456641137:web:5c6d79db5bf49d04928dd0",
+      measurementId: "G-H09MF13297"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    const db = firebase.firestore();
+  </script>
+</head>
 <body>
-  <header class="header">
-    <img src="assets/logo.png" alt="SpellRightPro Logo" class="logo" />
-    <h1>SpellRightPro (Freemium)</h1>
-    <button onclick="logout()" class="logout-btn">Logout</button>
-  </header>
+  <div class="app-container">
+    <header>
+      <img src="logo.png" alt="Logo" class="logo" />
+      <h1>SpellRightPro</h1>
+      <button id="modeToggle" class="btn"><i id="modeIcon" class="fas fa-moon"></i></button>
+    </header>
 
-  <main class="main-container">
-    <section class="section">
-      <label for="exam-select">Select Exam:</label>
-      <select id="exam-select">
-        <option value="oet">OET</option>
+    <section id="authSection" class="form-row">
+      <input type="email" id="userEmail" placeholder="Email" />
+      <input type="password" id="userPassword" placeholder="Password" />
+      <button onclick="loginUser()" class="btn">Login</button>
+      <button onclick="signUpUser()" class="btn btn-info">Sign Up</button>
+      <button onclick="logoutUser()" class="btn btn-warning">Logout</button>
+      <span id="loginStatus"></span>
+    </section>
+
+    <section class="form-row">
+      <label>Select Exam:</label>
+      <select id="examSelect">
+        <option value="">-- Choose --</option>
+        <option value="OET">OET</option>
       </select>
-      <button onclick="loadExam()">Start</button>
+      <label>Accent:</label>
+      <select id="accentSelect">
+        <option value="en-GB">British</option>
+        <option value="en-US">American</option>
+      </select>
     </section>
 
-    <section class="section row">
-      <div>
-        <label>Accent:</label>
-        <select id="accent-select">
-          <option value="en-US">American</option>
-          <option value="en-GB">British</option>
-        </select>
+    <section class="form-row">
+      <button onclick="startPractice()" class="btn btn-info">Start Practice</button>
+      <button onclick="startTest()" class="btn btn-success">Start Test</button>
+    </section>
+
+    <section class="form-row">
+      <textarea id="wordInput" rows="3" placeholder="Enter custom words..." disabled></textarea>
+      <button type="button" onclick="addCustomWords()" class="btn" disabled>Add Custom Words</button>
+    </section>
+
+    <div class="upgrade-notice">
+      <p>Upgrade to <a href="premium.html">Premium</a> to unlock custom words, Spelling Bee, and more!</p>
+    </div>
+
+    <div id="trainer" class="card"></div>
+    <div id="scoreDisplay" class="card"></div>
+
+    <footer>
+      <p>&copy; 2025 SpellRightPro. <a href="premium.html">Upgrade</a></p>
+      <div class="ad-container desktop-only">
+        <!-- Placeholder for AdSense -->
+        <div class="adsense-placeholder">Ad Banner</div>
       </div>
-
-      <div>
-        <input type="file" id="fileInput" accept=".txt,.pdf,.docx" />
-        <p class="small-note">1 upload per day allowed</p>
-      </div>
-    </section>
-
-    <section class="section">
-      <textarea id="customWords" placeholder="Enter custom words (one per line)..."></textarea>
-    </section>
-
-    <section class="section row">
-      <button onclick="speakWord()">🔊 Speak</button>
-      <input type="text" id="user-input" placeholder="Type what you heard" />
-      <button onclick="checkSpelling()">Check</button>
-    </section>
-
-    <section class="section score-box">
-      <p>✅ Correct: <span id="correct-count">0</span></p>
-      <p>❌ Wrong: <span id="wrong-count">0</span></p>
-    </section>
-
-    <section class="section upgrade-link">
-      <a href="premium.html">Upgrade to Premium</a>
-    </section>
-  </main>
-
-  <aside class="ads-desktop">
-    <iframe src="ads/adsense-desktop.html" frameborder="0"></iframe>
-  </aside>
+    </footer>
+  </div>
 
   <!-- Scripts -->
-  <script src="js/firebase-config.js"></script>
   <script src="js/oet_word_list.js"></script>
-  <script src="js/exam-loader.js"></script>
-  <script src="js/tts.js"></script>
-  <script src="js/spelling-check.js"></script>
+  <script src="js/main.js"></script>
 </body>
+</html>
