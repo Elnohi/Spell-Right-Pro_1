@@ -2,67 +2,38 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>SpellRightPro - Premium</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SpellRightPro Premium</title>
   <link rel="stylesheet" href="css/styles.css" />
 </head>
 <body>
   <header>
-    <img src="assets/logo.png" alt="Logo" class="logo" />
-    <h1>SpellRightPro (Premium)</h1>
-    <button onclick="logout()">Logout</button>
+    <img src="assets/logo.png" alt="SpellRightPro Logo" class="logo" />
+    <h1>SpellRightPro Premium</h1>
+    <button id="toggle-dark">🌙</button>
   </header>
-
   <main>
-    <section>
-      <label for="exam-select">Select Exam:</label>
-      <select id="exam-select">
-        <option value="oet">OET</option>
+    <section class="controls">
+      <select id="examType">
+        <option value="oet">OET Exam</option>
         <option value="spellingbee">Spelling Bee</option>
-        <option value="custom">Custom</option>
+        <option value="custom">Custom Exam</option>
       </select>
-      <button onclick="loadExam()">Start</button>
+      <button id="startExam">Start</button>
+      <input type="file" id="wordUpload" accept=".txt,.docx,.pdf" />
     </section>
-
-    <section id="tts-options">
-      <label>Accent:</label>
-      <select id="accent-select">
-        <option value="en-US">American</option>
-        <option value="en-GB">British</option>
-      </select>
+    <section class="exam">
+      <p id="currentWord">Press Start to Begin</p>
+      <button id="playWord">🔊</button>
+      <input type="text" id="userAnswer" placeholder="Type or speak your answer" />
+      <button id="submitAnswer">Submit</button>
+      <button id="flagWord">🚩 Flag</button>
     </section>
-
-    <section id="upload-section">
-      <input type="file" id="fileInput" accept=".txt,.pdf,.docx" />
-    </section>
-
-    <section id="custom-words-section">
-      <textarea id="customWords" placeholder="Enter your own word list (one per line)"></textarea>
-    </section>
-
-    <section id="controls">
-      <button onclick="speakWord()">🔊 Speak</button>
-      <input type="text" id="user-input" placeholder="Type or spell the word you hear" />
-      <button onclick="checkSpelling()">Check</button>
-      <button onclick="startListening()">🎤 Speak (Spelling Bee)</button>
-    </section>
-
-    <section id="score-summary">
-      <p>✅ Correct: <span id="correct-count">0</span></p>
-      <p>❌ Wrong: <span id="wrong-count">0</span></p>
+    <section class="results">
+      <p id="summary"></p>
     </section>
   </main>
-
-  <!-- Firebase + Logic Scripts -->
-  <script src="https://www.gstatic.com/firebasejs/10.4.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.4.0/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.4.0/firebase-analytics-compat.js"></script>
-  <script src="js/firebase-config.js"></script>
   <script src="js/oet_word_list.js"></script>
-  <script src="js/exam-loader.js"></script>
-  <script src="js/tts.js"></script>
-  <script src="js/stt.js"></script>
-  <script src="js/spelling-check.js"></script>
-  <script src="main.js"></script>
+  <script src="js/premium.js"></script>
 </body>
 </html>
