@@ -1,20 +1,12 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>SpellRightPro - Freemium</title>
-  <link rel="stylesheet" href="css/styles.css" />
-</head>
 <body>
-  <header>
-    <img src="assets/logo.png" alt="Logo" class="logo" />
+  <header class="header">
+    <img src="assets/logo.png" alt="SpellRightPro Logo" class="logo" />
     <h1>SpellRightPro (Freemium)</h1>
-    <button onclick="logout()">Logout</button>
+    <button onclick="logout()" class="logout-btn">Logout</button>
   </header>
 
-  <main>
-    <section>
+  <main class="main-container">
+    <section class="section">
       <label for="exam-select">Select Exam:</label>
       <select id="exam-select">
         <option value="oet">OET</option>
@@ -22,53 +14,49 @@
       <button onclick="loadExam()">Start</button>
     </section>
 
-    <section id="tts-options">
-      <label>Accent:</label>
-      <select id="accent-select">
-        <option value="en-US">American</option>
-        <option value="en-GB">British</option>
-      </select>
+    <section class="section row">
+      <div>
+        <label>Accent:</label>
+        <select id="accent-select">
+          <option value="en-US">American</option>
+          <option value="en-GB">British</option>
+        </select>
+      </div>
+
+      <div>
+        <input type="file" id="fileInput" accept=".txt,.pdf,.docx" />
+        <p class="small-note">1 upload per day allowed</p>
+      </div>
     </section>
 
-    <section id="upload-section">
-      <input type="file" id="fileInput" accept=".txt,.pdf,.docx" />
-      <p>One upload per day allowed.</p>
-    </section>
-
-    <section id="custom-words-section">
+    <section class="section">
       <textarea id="customWords" placeholder="Enter custom words (one per line)..."></textarea>
     </section>
 
-    <section id="controls">
+    <section class="section row">
       <button onclick="speakWord()">🔊 Speak</button>
       <input type="text" id="user-input" placeholder="Type what you heard" />
       <button onclick="checkSpelling()">Check</button>
     </section>
 
-    <section id="score-summary">
+    <section class="section score-box">
       <p>✅ Correct: <span id="correct-count">0</span></p>
       <p>❌ Wrong: <span id="wrong-count">0</span></p>
     </section>
 
-    <section id="upgrade">
+    <section class="section upgrade-link">
       <a href="premium.html">Upgrade to Premium</a>
     </section>
   </main>
 
-  <!-- Ads (desktop only) -->
   <aside class="ads-desktop">
-    <!-- AdSense Placeholder -->
     <iframe src="ads/adsense-desktop.html" frameborder="0"></iframe>
   </aside>
 
-  <!-- Firebase + Logic Scripts -->
-  <script src="https://www.gstatic.com/firebasejs/10.4.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.4.0/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.4.0/firebase-analytics-compat.js"></script>
+  <!-- Scripts -->
   <script src="js/firebase-config.js"></script>
   <script src="js/oet_word_list.js"></script>
   <script src="js/exam-loader.js"></script>
   <script src="js/tts.js"></script>
   <script src="js/spelling-check.js"></script>
 </body>
-</html>
