@@ -1,5 +1,5 @@
-const OET_WORD_LIST = [
-    "Building sites",
+const oetWords = [
+  "Building sites",
   "Blotches",
   "Scalp",
   "Swelling",
