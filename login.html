@@ -2,57 +2,79 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Login – SpellRightPro</title>
   <link rel="stylesheet" href="css/styles.css" />
   <style>
     body {
+      font-family: Arial, sans-serif;
+      background: linear-gradient(to right, #dbeafe, #eff6ff);
+      margin: 0;
       display: flex;
-      flex-direction: column;
       align-items: center;
       justify-content: center;
       height: 100vh;
-      margin: 0;
-      background: linear-gradient(to right, #dbeafe, #eff6ff);
-      font-family: Arial, sans-serif;
     }
-    .login-card {
+
+    .container {
       background: white;
       padding: 2rem;
-      border-radius: 10px;
-      box-shadow: 0 8px 20px rgba(0,0,0,0.1);
-      text-align: center;
-      width: 90%;
+      border-radius: 12px;
+      box-shadow: 0 0 20px rgba(0,0,0,0.1);
       max-width: 400px;
+      width: 90%;
+      text-align: center;
     }
-    .login-card img {
+
+    .container img {
       width: 80px;
       margin-bottom: 1rem;
     }
-    .login-card h2 {
-      margin-bottom: 1rem;
+
+    h1 {
+      margin: 0.5rem 0;
     }
-    .login-card button {
-      padding: 0.75rem 1.5rem;
-      font-size: 1rem;
-      border: none;
+
+    p {
+      font-size: 0.95rem;
+      color: #444;
+    }
+
+    .login-btn {
       background-color: #3b82f6;
       color: white;
+      border: none;
+      padding: 0.75rem 1.5rem;
       border-radius: 8px;
       cursor: pointer;
+      font-size: 1rem;
+      margin-top: 1rem;
     }
-    .login-card button:hover {
+
+    .login-btn:hover {
       background-color: #2563eb;
+    }
+
+    .footer-note {
+      margin-top: 2rem;
+      font-size: 0.8rem;
+      color: #666;
     }
   </style>
 </head>
 <body>
 
-  <div class="login-card">
+  <div class="container">
     <img src="assets/logo.png" alt="SpellRightPro Logo" />
-    <h2>Welcome to SpellRightPro</h2>
-    <p>Click below to sign in and begin your training session.</p>
-    <button onclick="signInAnonymously()">Login Anonymously</button>
+    <h1>Welcome to SpellRightPro</h1>
+    <p>
+      A secure spelling trainer trusted by students and professionals. <br />
+      Sign in below to start your practice session.
+    </p>
+    <button class="login-btn" onclick="signInAnonymously()">Continue</button>
+    <div class="footer-note">
+      Your login is anonymous. We do not collect any personal data.
+    </div>
   </div>
 
   <!-- Firebase -->
@@ -73,7 +95,7 @@
     function signInAnonymously() {
       firebase.auth().signInAnonymously()
         .then(() => {
-          window.location.href = "index.html"; // or premium.html
+          window.location.href = "index.html";
         })
         .catch((error) => {
           alert("Login failed: " + error.message);
