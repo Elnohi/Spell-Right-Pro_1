@@ -4,36 +4,98 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>SpellRightPro Premium</title>
+
+  <!-- Styles & Icons -->
   <link rel="stylesheet" href="css/styles.css" />
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet"/>
+
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/10.4.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.4.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.4.0/firebase-firestore-compat.js"></script>
+  <script src="js/firebase-config.js"></script>
+
+  <!-- Google Analytics -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-H09MF13297"></script>
+  <script src="js/analytics.js"></script>
 </head>
 <body>
-  <header>
+  <div class="container">
     <img src="assets/logo.png" alt="SpellRightPro Logo" class="logo" />
-    <h1>SpellRightPro Premium</h1>
-    <button id="toggle-dark">🌙</button>
-  </header>
-  <main>
-    <section class="controls">
-      <select id="examType">
-        <option value="oet">OET Exam</option>
-        <option value="spellingbee">Spelling Bee</option>
-        <option value="custom">Custom Exam</option>
+    <h1>SpellRightPro (Premium)</h1>
+
+    <div class="form-row">
+      <label>Email:</label>
+      <input type="email" id="userEmail" placeholder="Enter email" />
+      <label>Password:</label>
+      <input type="password" id="userPassword" placeholder="Enter password" />
+      <button onclick="loginUser()" class="btn">Login</button>
+      <button onclick="signUpUser()" class="btn btn-info">Sign Up</button>
+      <button onclick="logoutUser()" class="btn btn-warning">Logout</button>
+      <span id="loginStatus"></span>
+    </div>
+
+    <div class="form-row">
+      <label>Select Exam:</label>
+      <select id="examSelect">
+        <option value="OET">OET</option>
+        <option value="SpellingBee">Spelling Bee</option>
+        <option value="Custom">Custom</option>
       </select>
-      <button id="startExam">Start</button>
-      <input type="file" id="wordUpload" accept=".txt,.docx,.pdf" />
-    </section>
-    <section class="exam">
-      <p id="currentWord">Press Start to Begin</p>
-      <button id="playWord">🔊</button>
-      <input type="text" id="userAnswer" placeholder="Type or speak your answer" />
-      <button id="submitAnswer">Submit</button>
-      <button id="flagWord">🚩 Flag</button>
-    </section>
-    <section class="results">
-      <p id="summary"></p>
-    </section>
-  </main>
-  <script src="js/oet_word_list.js"></script>
-  <script src="js/premium.js"></script>
+      <label>Accent:</label>
+      <select id="accentSelect">
+        <option value="en-GB">British</option>
+        <option value="en-US">American</option>
+        <option value="en-AU">Australian</option>
+        <option value="en-IN">Indian</option>
+      </select>
+      <button id="modeToggle" class="btn"><i id="modeIcon" class="fas fa-moon"></i></button>
+    </div>
+
+    <div class="form-row">
+      <button onclick="startPractice()" class="btn btn-info">Start Practice</button>
+      <button onclick="startTest()" class="btn btn-success">Start Test</button>
+    </div>
+
+    <div class="form-row">
+      <label>Upload Word File:</label>
+      <input type="file" id="fileInput" onchange="handleFileUpload(event)" />
+    </div>
+
+    <div class="form-row">
+      <textarea id="wordInput" rows="3" placeholder="Enter custom words here..."></textarea>
+      <button type="button" onclick="addCustomWords()" class="btn">Add Custom Words</button>
+    </div>
+
+    <div class="form-row">
+      <button onclick="saveWordList()" class="btn btn-info">Save Words</button>
+      <button onclick="loadWordList()" class="btn btn-success">Load Words</button>
+      <button onclick="clearWordList()" class="btn btn-warning">Clear Words</button>
+    </div>
+
+    <div id="trainer" class="card"></div>
+    <div id="scoreDisplay" class="card"></div>
+
+    <form name="feedback" method="POST" data-netlify="true" netlify-honeypot="bot-field" class="form-row">
+      <input type="hidden" name="form-name" value="feedback" />
+      <input type="hidden" name="user-email" id="formHiddenEmail" />
+      <p hidden>
+        <label>Don't fill this out: <input name="bot-field" /></label>
+      </p>
+      <textarea name="message" rows="3" placeholder="Write your notes or comments here..." style="width:100%;" required></textarea>
+      <button type="submit" class="btn btn-success" id="submitBtn">
+        <i class="fas fa-paper-plane"></i> Send Comment
+      </button>
+    </form>
+
+    <div class="progress-container" id="loadingIndicator" style="display:none;">
+      <div class="progress-bar"></div>
+    </div>
+  </div>
+
+  <script src="oet_word_list.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.10.377/pdf.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.4.0/mammoth.browser.min.js"></script>
+  <script src="js/main-premium.js"></script>
 </body>
 </html>
