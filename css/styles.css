@@ -1,31 +1,104 @@
 body {
-  font-family: Arial, sans-serif;
   margin: 0;
-  padding: 1em;
-  background-color: #f9f9f9;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background: #f4f7fa;
+  color: #333;
 }
 
-header {
+.header {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  padding: 1rem 2rem;
+  background: #1e40af;
+  color: white;
 }
 
 .logo {
-  height: 50px;
+  height: 40px;
 }
 
-main {
-  max-width: 600px;
-  margin: auto;
-  padding: 1em;
+.logout-btn {
+  background: #f87171;
+  color: white;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.logout-btn:hover {
+  background: #dc2626;
+}
+
+.main-container {
+  max-width: 900px;
+  margin: 2rem auto;
+  padding: 1rem;
   background: white;
-  border-radius: 10px;
-  box-shadow: 0 0 8px rgba(0,0,0,0.1);
+  border-radius: 12px;
+  box-shadow: 0 0 20px rgba(0,0,0,0.05);
 }
 
-section {
-  margin: 1em 0;
+.section {
+  margin-bottom: 1.5rem;
+}
+
+.row {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+textarea {
+  width: 100%;
+  min-height: 100px;
+  font-size: 1rem;
+  padding: 0.75rem;
+  border-radius: 8px;
+  border: 1px solid #ccc;
+}
+
+input[type="text"] {
+  flex: 1;
+  padding: 0.5rem;
+  font-size: 1rem;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+}
+
+button {
+  padding: 0.6rem 1.2rem;
+  font-size: 1rem;
+  background: #3b82f6;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+button:hover {
+  background: #2563eb;
+}
+
+.score-box p {
+  font-size: 1.1rem;
+  margin: 0.5rem 0;
+}
+
+.upgrade-link {
+  text-align: center;
+}
+
+.upgrade-link a {
+  font-weight: bold;
+  color: #1d4ed8;
+  text-decoration: none;
+}
+
+.upgrade-link a:hover {
+  text-decoration: underline;
 }
 
 .ads-desktop {
@@ -36,8 +109,8 @@ section {
   .ads-desktop {
     display: block;
     position: fixed;
-    right: 0;
-    top: 100px;
+    right: 20px;
+    top: 120px;
     width: 160px;
     height: 600px;
   }
@@ -46,4 +119,9 @@ section {
     width: 100%;
     height: 100%;
   }
+}
+
+.small-note {
+  font-size: 0.75rem;
+  color: #666;
 }
