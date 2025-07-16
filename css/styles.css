@@ -1,127 +1,163 @@
 body {
   margin: 0;
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  background: #f4f7fa;
+  padding: 0;
+  font-family: Arial, sans-serif;
+  background: #f0f2f5;
   color: #333;
+  transition: background 0.3s ease, color 0.3s ease;
 }
 
-.header {
+.app-container {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 1rem 2rem;
-  background: #1e40af;
-  color: white;
+  flex-wrap: wrap;
+  margin-bottom: 20px;
+}
+
+header h1 {
+  margin: 0;
+  font-size: 1.8rem;
 }
 
 .logo {
-  height: 40px;
+  height: 50px;
+  margin-right: 15px;
 }
 
-.logout-btn {
-  background: #f87171;
-  color: white;
-  border: none;
-  padding: 0.5rem 1rem;
-  border-radius: 6px;
-  cursor: pointer;
-}
-
-.logout-btn:hover {
-  background: #dc2626;
-}
-
-.main-container {
-  max-width: 900px;
-  margin: 2rem auto;
-  padding: 1rem;
-  background: white;
-  border-radius: 12px;
-  box-shadow: 0 0 20px rgba(0,0,0,0.05);
-}
-
-.section {
-  margin-bottom: 1.5rem;
-}
-
-.row {
+.form-row {
   display: flex;
-  gap: 1rem;
   flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 15px;
   align-items: center;
 }
 
-textarea {
-  width: 100%;
-  min-height: 100px;
-  font-size: 1rem;
-  padding: 0.75rem;
-  border-radius: 8px;
-  border: 1px solid #ccc;
+.form-row label {
+  min-width: 100px;
 }
 
-input[type="text"] {
+textarea,
+input[type="email"],
+input[type="password"],
+select {
   flex: 1;
-  padding: 0.5rem;
-  font-size: 1rem;
-  border-radius: 6px;
+  padding: 8px;
+  border-radius: 5px;
   border: 1px solid #ccc;
-}
-
-button {
-  padding: 0.6rem 1.2rem;
   font-size: 1rem;
-  background: #3b82f6;
-  color: white;
+  transition: all 0.3s ease;
+}
+
+.btn {
+  background: #007bff;
+  color: #fff;
   border: none;
-  border-radius: 6px;
+  border-radius: 5px;
+  padding: 10px 16px;
   cursor: pointer;
+  font-size: 1rem;
+  transition: background 0.3s ease, transform 0.2s ease;
 }
 
-button:hover {
-  background: #2563eb;
+.btn:hover {
+  background: #0056b3;
+  transform: translateY(-2px);
 }
 
-.score-box p {
-  font-size: 1.1rem;
-  margin: 0.5rem 0;
+.btn:disabled {
+  background: #ccc;
+  cursor: not-allowed;
 }
 
-.upgrade-link {
+.btn-info {
+  background: #17a2b8;
+}
+
+.btn-success {
+  background: #28a745;
+}
+
+.btn-warning {
+  background: #ffc107;
+  color: black;
+}
+
+.card {
+  background: white;
+  border-radius: 10px;
+  padding: 20px;
+  box-shadow: 0 0 10px rgba(0,0,0,0.1);
+  margin-bottom: 20px;
+}
+
+footer {
+  margin-top: 30px;
+  padding-top: 20px;
+  border-top: 1px solid #ccc;
   text-align: center;
+  font-size: 0.9rem;
+  color: #555;
 }
 
-.upgrade-link a {
-  font-weight: bold;
-  color: #1d4ed8;
-  text-decoration: none;
+.upgrade-notice {
+  background: #fff3cd;
+  border: 1px solid #ffeeba;
+  padding: 15px;
+  border-radius: 5px;
+  margin-bottom: 20px;
+  font-size: 1rem;
 }
 
-.upgrade-link a:hover {
-  text-decoration: underline;
+.adsense-placeholder {
+  width: 100%;
+  height: 90px;
+  background: #e0e0e0;
+  color: #999;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border: 2px dashed #ccc;
+  font-size: 0.9rem;
+  margin-top: 10px;
 }
 
-.ads-desktop {
+.desktop-only {
   display: none;
 }
 
-@media (min-width: 1024px) {
-  .ads-desktop {
+@media (min-width: 768px) {
+  .desktop-only {
     display: block;
-    position: fixed;
-    right: 20px;
-    top: 120px;
-    width: 160px;
-    height: 600px;
-  }
-
-  iframe {
-    width: 100%;
-    height: 100%;
   }
 }
 
-.small-note {
-  font-size: 0.75rem;
-  color: #666;
+.dark-mode {
+  background: #121212;
+  color: #eee;
+}
+
+.dark-mode .card {
+  background: #1f1f1f;
+  color: #eee;
+}
+
+.dark-mode textarea,
+.dark-mode input,
+.dark-mode select {
+  background: #333;
+  color: #fff;
+  border-color: #555;
+}
+
+.dark-mode .adsense-placeholder {
+  background: #333;
+  border-color: #555;
+  color: #aaa;
 }
