@@ -2,47 +2,114 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>SpellRightPro</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>SpellRightPro - Freemium</title>
+
+  <!-- Google Analytics -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-H09MF13297"></script>
+  <script src="js/analytics.js"></script>
+
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/10.4.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.4.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.4.0/firebase-firestore-compat.js"></script>
+  <script src="js/firebase-config.js"></script>
+
+  <!-- FontAwesome -->
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet"/>
+
+  <!-- Styles -->
   <link rel="stylesheet" href="css/styles.css" />
-  <!-- AdSense Placeholder -->
-  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js"></script>
-  <script>
-    (adsbygoogle = window.adsbygoogle || []).push({});
-  </script>
 </head>
 <body>
-  <header>
+  <div class="container">
     <img src="assets/logo.png" alt="SpellRightPro Logo" class="logo" />
-    <h1>SpellRightPro</h1>
-    <button id="toggle-dark">🌙</button>
-  </header>
-  <main>
-    <section class="controls">
-      <select id="examType">
-        <option value="oet">OET Exam</option>
+    <h1 style="display:inline-block; vertical-align:middle;">SpellRightPro (Freemium)</h1>
+
+    <!-- Auth Section -->
+    <div class="form-row" id="authSection">
+      <label>Email:</label>
+      <input type="email" id="userEmail" placeholder="Enter email" />
+      <label>Password:</label>
+      <input type="password" id="userPassword" placeholder="Enter password" />
+      <button onclick="loginUser()" class="btn">Login</button>
+      <button onclick="signUpUser()" class="btn btn-info">Sign Up</button>
+      <button onclick="logoutUser()" class="btn btn-warning">Logout</button>
+      <span id="loginStatus"></span>
+    </div>
+
+    <!-- Exam & Accent Select -->
+    <div class="form-row">
+      <label>Select Exam:</label>
+      <select id="examSelect">
+        <option value="">-- Choose --</option>
+        <option value="OET">OET</option>
       </select>
-      <button id="startExam">Start</button>
-      <input type="file" id="wordUpload" accept=".txt,.docx,.pdf" />
-    </section>
-    <section class="exam">
-      <p id="currentWord">Press Start to Begin</p>
-      <button id="playWord">🔊</button>
-      <input type="text" id="userAnswer" placeholder="Type your spelling here" />
-      <button id="submitAnswer">Submit</button>
-    </section>
-    <section class="results">
-      <p id="summary"></p>
-    </section>
-    <section class="upgrade">
-      <p>Want more features? <a href="premium.html">Upgrade to Premium</a></p>
-    </section>
-    <section class="ads">
-      <!-- AdSense Placeholder -->
-      <ins class="adsbygoogle" style="display:block" data-ad-client="ca-pub-XXXX" data-ad-slot="YYYY" data-ad-format="auto"></ins>
-    </section>
-  </main>
-  <script src="js/oet_word_list.js"></script>
-  <script src="js/freemium.js"></script>
+      <label>Accent:</label>
+      <select id="accentSelect">
+        <option value="en-GB">British</option>
+        <option value="en-US">American</option>
+      </select>
+      <button id="modeToggle" class="btn"><i id="modeIcon" class="fas fa-moon"></i></button>
+    </div>
+
+    <!-- Action Buttons -->
+    <div class="form-row">
+      <button onclick="startPractice()" class="btn btn-info">Start Practice</button>
+      <button onclick="startTest()" class="btn btn-success">Start Test</button>
+    </div>
+
+    <!-- Upload File -->
+    <div class="form-row">
+      <label>Upload Word File:</label>
+      <input type="file" id="fileInput" onchange="handleFileUpload(event)" />
+    </div>
+
+    <!-- Custom Words (disabled) -->
+    <div class="form-row">
+      <textarea id="wordInput" rows="3" placeholder="Enter custom words here..." disabled></textarea>
+      <button type="button" onclick="addCustomWords()" class="btn" disabled>Add Custom Words</button>
+    </div>
+
+    <!-- Word Save/Load/Clear -->
+    <div class="form-row">
+      <button onclick="saveWordList()" class="btn btn-info" disabled>Save Words</button>
+      <button onclick="loadWordList()" class="btn btn-success">Load Words</button>
+      <button onclick="clearWordList()" class="btn btn-warning">Clear Words</button>
+    </div>
+
+    <div id="trainer" class="card"></div>
+    <div id="scoreDisplay" class="card"></div>
+    <div id="loadingIndicator" style="display:none;">
+      <div class="progress-container">
+        <div class="progress-bar"></div>
+      </div>
+    </div>
+
+    <!-- Netlify Form -->
+    <form name="feedback" method="POST" data-netlify="true" netlify-honeypot="bot-field" class="form-row">
+      <input type="hidden" name="form-name" value="feedback" />
+      <input type="hidden" name="user-email" id="formHiddenEmail" />
+      <p hidden>
+        <label>Don't fill this out: <input name="bot-field" /></label>
+      </p>
+      <textarea name="message" rows="3" placeholder="Write your notes or comments here..." style="width:100%;" required></textarea>
+      <button type="submit" class="btn btn-success" id="submitBtn">
+        <i class="fas fa-paper-plane"></i> Send Comment
+      </button>
+    </form>
+
+    <!-- Hidden Netlify Form for Fallback Submission -->
+    <form name="feedback" netlify netlify-honeypot="bot-field" hidden>
+      <input type="text" name="user-email" />
+      <textarea name="message"></textarea>
+    </form>
+  </div>
+
+  <!-- External JS Files -->
+  <script src="data/oet_word_list.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.10.377/pdf.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.4.0/mammoth.browser.min.js"></script>
+  <script src="js/main-freemium.js"></script>
 </body>
 </html>
