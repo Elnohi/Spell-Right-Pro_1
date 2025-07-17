@@ -1,4 +1,4 @@
-// main-premium.js (Enhanced)
+// main-premium.js (Enhanced with Analytics)
 
 let words = [];
 let currentIndex = 0;
@@ -32,6 +32,10 @@ startButton.addEventListener("click", () => {
   const exam = examSelect.value;
   if (!exam) return alert("Please select an exam type.");
   mode = exam;
+
+  if (typeof gtag === 'function') {
+    gtag('event', 'start_exam', { exam });
+  }
 
   if (exam === "OET") {
     fetch("js/oet_word_list.js")
@@ -105,6 +109,14 @@ function listenSpelling(correctWord) {
       incorrectWords.push({ word: correctWord, heard: spoken });
       alert(`❌ Incorrect. You said: ${spoken}`);
     }
+
+    if (typeof gtag === 'function') {
+      gtag('event', 'word_checked', {
+        word: correctWord,
+        correct: spoken === correct,
+        heard: spoken
+      });
+    }
   };
 
   recognition.onerror = (e) => {
@@ -115,6 +127,16 @@ function listenSpelling(correctWord) {
 
 function showSummary() {
   const percent = Math.round((correctCount / words.length) * 100);
+
+  if (typeof gtag === 'function') {
+    gtag('event', 'session_complete', {
+      exam: mode,
+      score: percent,
+      totalWords: words.length,
+      correctCount
+    });
+  }
+
   summaryDiv.innerHTML = `
     <div class="word-box">
       <h3>Premium Session Summary</h3>
