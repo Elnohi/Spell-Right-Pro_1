@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SpellRightPro - Spelling Bee (Free)</title>
+  <link rel="stylesheet" href="css/styles.css" />
+  <script src="js/firebase.js"></script>
+  <script defer src="js/main-freemium-bee.js"></script>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <img src="assets/logo.png" alt="SpellRightPro Logo" class="logo" />
+      <h1>SpellRightPro - Spelling Bee (Free Version)</h1>
+    </header>
+
+    <div class="controls">
+      <label for="accentSelect">Accent:</label>
+      <select id="accentSelect">
+        <option value="en-GB">British</option>
+        <option value="en-US">American</option>
+      </select>
+
+      <button id="startBee">Start Bee</button>
+      <button id="repeatBee">Repeat Word</button>
+      <button id="submitSpelling">Submit Spelling</button>
+    </div>
+
+    <div class="summary" id="summary"></div>
+
+    <div class="upgrade">
+      <p>Need full access to custom word uploads and unlimited practice?</p>
+      <a href="premium.html" class="upgrade-btn">Upgrade to Premium</a>
+    </div>
+  </div>
+
+  <footer>
+    <p>SpellRightPro &copy; 2025</p>
+  </footer>
+</body>
+</html>
