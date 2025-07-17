@@ -1,4 +1,4 @@
-// main-premium.js
+// main-premium.js (Enhanced)
 
 let words = [];
 let currentIndex = 0;
@@ -14,8 +14,23 @@ const nextButton = document.getElementById("nextButton");
 const speakButton = document.getElementById("speakButton");
 const summaryDiv = document.getElementById("summary");
 
+// Display selected file name
+fileUpload.addEventListener("change", (e) => {
+  const file = e.target.files[0];
+  const reader = new FileReader();
+  if (file) {
+    alert(`📄 File selected: ${file.name}`);
+    reader.onload = function (e) {
+      words = e.target.result.split(/\r?\n/).map(w => w.trim()).filter(w => w);
+      alert("✅ Custom words loaded. Choose 'Custom' to begin.");
+    };
+    reader.readAsText(file);
+  }
+});
+
 startButton.addEventListener("click", () => {
   const exam = examSelect.value;
+  if (!exam) return alert("Please select an exam type.");
   mode = exam;
 
   if (exam === "OET") {
@@ -24,27 +39,18 @@ startButton.addEventListener("click", () => {
       .then(data => {
         words = data.split(/\r?\n/).filter(w => w.trim());
         startSession();
-      });
+      })
+      .catch(err => alert("❌ Failed to load OET words."));
   } else if (exam === "SpellingBee") {
     words = ["articulate", "pharaoh", "onomatopoeia", "surveillance"];
     startSession();
   } else if (exam === "Custom") {
     if (words.length === 0) {
-      alert("Please upload a custom word list.");
+      alert("⚠️ Please upload a custom word list.");
       return;
     }
     startSession();
   }
-});
-
-fileUpload.addEventListener("change", (e) => {
-  const file = e.target.files[0];
-  const reader = new FileReader();
-  reader.onload = function (e) {
-    words = e.target.result.split(/\r?\n/).map(w => w.trim()).filter(w => w);
-    alert("Custom words loaded. Choose 'Custom' to begin.");
-  };
-  reader.readAsText(file);
 });
 
 nextButton.addEventListener("click", () => {
@@ -72,10 +78,16 @@ function startSession() {
 function speakWord(word) {
   const utterance = new SpeechSynthesisUtterance(word);
   utterance.lang = accentSelect.value;
+  utterance.rate = 0.9;
+  speechSynthesis.cancel();
   speechSynthesis.speak(utterance);
 }
 
 function listenSpelling(correctWord) {
+  if (!window.SpeechRecognition && !window.webkitSpeechRecognition) {
+    alert("⚠️ Speech recognition not supported in this browser.");
+    return;
+  }
   const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
   recognition.lang = accentSelect.value;
   recognition.interimResults = false;
@@ -95,20 +107,26 @@ function listenSpelling(correctWord) {
     }
   };
 
-  recognition.onerror = () => alert("Speech recognition error.");
+  recognition.onerror = (e) => {
+    console.error("Speech recognition error:", e);
+    alert("❌ Speech recognition error occurred.");
+  };
 }
 
 function showSummary() {
   const percent = Math.round((correctCount / words.length) * 100);
   summaryDiv.innerHTML = `
-    <h3>Premium Session Summary</h3>
-    <p>Total: ${words.length}</p>
-    <p>Correct: ${correctCount}</p>
-    <p>Score: ${percent}%</p>
-    ${
-      incorrectWords.length
-        ? `<ul>${incorrectWords.map(w => `<li>${w.word} - You said: ${w.heard}</li>`).join('')}</ul>`
-        : `<p>No mistakes. Excellent!</p>`
-    }
+    <div class="word-box">
+      <h3>Premium Session Summary</h3>
+      <p><strong>Total:</strong> ${words.length}</p>
+      <p><strong>Correct:</strong> ${correctCount}</p>
+      <p><strong>Score:</strong> ${percent}%</p>
+      ${
+        incorrectWords.length
+          ? `<h4>Incorrect Words</h4><ul>${incorrectWords.map(w => `<li><strong>${w.word}</strong> – You said: <em>${w.heard}</em></li>`).join('')}</ul>`
+          : `<p>🎉 No mistakes. Excellent work!</p>`
+      }
+      <button onclick="location.reload()" class="btn btn-info">🔄 Start New Session</button>
+    </div>
   `;
 }
