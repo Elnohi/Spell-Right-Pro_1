@@ -3,47 +3,62 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>SpellRightPro - Premium</title>
+  <title>SpellRightPro Premium</title>
   <link rel="stylesheet" href="css/styles.css" />
-  <script src="js/firebase.js"></script>
-  <script defer src="js/main-premium.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/js/all.min.js" defer></script>
 </head>
 <body>
   <div class="container">
-    <header>
-      <img src="assets/logo.png" alt="SpellRightPro Logo" class="logo" />
-      <h1>SpellRightPro - Premium</h1>
-    </header>
+    <h1>SpellRightPro - Premium</h1>
 
-    <div class="controls">
-      <label for="examSelect">Exam:</label>
+    <div class="form-row">
+      <label for="examSelect">Select Exam Type</label>
       <select id="examSelect">
+        <option value="">-- Choose --</option>
         <option value="OET">OET</option>
         <option value="SpellingBee">Spelling Bee</option>
         <option value="Custom">Custom</option>
       </select>
+    </div>
 
-      <label for="accentSelect">Accent:</label>
+    <div class="form-row">
+      <label for="accentSelect">Accent</label>
       <select id="accentSelect">
         <option value="en-GB">British</option>
         <option value="en-US">American</option>
       </select>
-
-      <input type="file" id="fileUpload" accept=".txt,.docx,.pdf" />
-      <button id="startButton">Start</button>
-      <button id="nextButton">Next</button>
-      <button id="speakButton">Repeat</button>
     </div>
 
-    <div class="summary" id="summary"></div>
+    <div class="form-row">
+      <label for="fileUpload">Upload Word List (txt)</label>
+      <input type="file" id="fileUpload" accept=".txt" />
+    </div>
 
-    <div class="upgrade">
-      <p>You are using the full version of SpellRightPro.</p>
+    <div class="form-row">
+      <button id="startButton" class="btn btn-info">▶️ Start</button>
+      <button id="speakButton" class="btn">🔊 Repeat</button>
+      <button id="nextButton" class="btn">⏭️ Next</button>
+    </div>
+
+    <div id="summary"></div>
+
+    <!-- Feedback Form -->
+    <form name="feedback" method="POST" data-netlify="true" class="word-box" style="margin-top: 30px;">
+      <h3>📩 Send Feedback</h3>
+      <label for="email">Email (optional):</label>
+      <input type="email" name="email" id="email" placeholder="you@example.com" />
+
+      <label for="message">Your Message</label>
+      <textarea name="message" id="message" rows="4" placeholder="Let us know how we can improve..." required></textarea>
+
+      <button type="submit" class="btn btn-info"><i class="fas fa-paper-plane"></i> Send Feedback</button>
+    </form>
+
+    <div style="margin-top: 30px; border-top: 1px solid #ccc; padding-top: 20px;">
+      <p style="text-align: center;">Thank you for choosing Premium 💎</p>
     </div>
   </div>
 
-  <footer>
-    <p>SpellRightPro &copy; 2025</p>
-  </footer>
+  <script src="js/main-premium.js"></script>
 </body>
 </html>
