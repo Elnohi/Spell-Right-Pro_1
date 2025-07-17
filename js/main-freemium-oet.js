@@ -1,144 +1,154 @@
-// main-freemium-oet.js
+// main-premium.js (Enhanced with Analytics)
 
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-app.js";
-import {
-  getAuth,
-  onAuthStateChanged,
-  signInWithPopup,
-  GoogleAuthProvider
-} from "https://www.gstatic.com/firebasejs/10.4.0/firebase-auth.js";
+let words = [];
+let currentIndex = 0;
+let correctCount = 0;
+let incorrectWords = [];
+let mode = "";
 
-// Your Firebase configuration (replace with your own if needed)
-const firebaseConfig = {
-  apiKey: "YOUR_API_KEY",
-  authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
-  projectId: "YOUR_PROJECT_ID",
-  appId: "YOUR_APP_ID"
-};
-
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
-
-// Basic Elements
+const examSelect = document.getElementById("examSelect");
+const accentSelect = document.getElementById("accentSelect");
 const fileUpload = document.getElementById("fileUpload");
 const startButton = document.getElementById("startButton");
 const nextButton = document.getElementById("nextButton");
 const speakButton = document.getElementById("speakButton");
-const accentSelect = document.getElementById("accentSelect");
 const summaryDiv = document.getElementById("summary");
 
-let wordList = [];
-let currentWordIndex = 0;
-let correctCount = 0;
-let incorrectCount = 0;
-
-// Load and process file upload (limited to 1 per day - enforced manually for now)
+// Display selected file name
 fileUpload.addEventListener("change", (e) => {
   const file = e.target.files[0];
-  if (!file) return;
   const reader = new FileReader();
-
-  reader.onload = function (e) {
-    const content = e.target.result;
-    wordList = content
-      .split(/\r?\n/)
-      .map(w => w.trim())
-      .filter(w => w.length > 0);
-    alert("Word list loaded. Click Start to begin.");
-  };
-
-  if (file.type === "text/plain") {
+  if (file) {
+    alert(`📄 File selected: ${file.name}`);
+    reader.onload = function (e) {
+      words = e.target.result.split(/\r?\n/).map(w => w.trim()).filter(w => w);
+      alert("✅ Custom words loaded. Choose 'Custom' to begin.");
+    };
     reader.readAsText(file);
-  } else {
-    alert("Only .txt files are supported in freemium.");
   }
 });
 
-// Start test
 startButton.addEventListener("click", () => {
-  if (wordList.length === 0) {
-    alert("Please upload a word list first.");
-    return;
+  const exam = examSelect.value;
+  if (!exam) return alert("Please select an exam type.");
+  mode = exam;
+
+  if (typeof gtag === 'function') {
+    gtag('event', 'start_exam', { exam });
   }
-  currentWordIndex = 0;
-  correctCount = 0;
-  incorrectCount = 0;
-  speakWord(wordList[currentWordIndex]);
+
+  if (exam === "OET") {
+    fetch("js/oet_word_list.js")
+      .then(res => res.text())
+      .then(data => {
+        words = data.split(/\r?\n/).filter(w => w.trim());
+        startSession();
+      })
+      .catch(err => alert("❌ Failed to load OET words."));
+  } else if (exam === "SpellingBee") {
+    words = ["articulate", "pharaoh", "onomatopoeia", "surveillance"];
+    startSession();
+  } else if (exam === "Custom") {
+    if (words.length === 0) {
+      alert("⚠️ Please upload a custom word list.");
+      return;
+    }
+    startSession();
+  }
 });
 
-// Next word
 nextButton.addEventListener("click", () => {
-  if (currentWordIndex >= wordList.length - 1) {
+  currentIndex++;
+  if (currentIndex < words.length) {
+    speakWord(words[currentIndex]);
+    if (mode === "SpellingBee") listenSpelling(words[currentIndex]);
+  } else {
     showSummary();
-    return;
   }
-  currentWordIndex++;
-  speakWord(wordList[currentWordIndex]);
 });
 
-// Repeat word
 speakButton.addEventListener("click", () => {
-  if (wordList[currentWordIndex]) {
-    speakWord(wordList[currentWordIndex]);
-  }
+  if (words[currentIndex]) speakWord(words[currentIndex]);
 });
 
-// Text-to-speech
+function startSession() {
+  currentIndex = 0;
+  correctCount = 0;
+  incorrectWords = [];
+  speakWord(words[0]);
+  if (mode === "SpellingBee") listenSpelling(words[0]);
+}
+
 function speakWord(word) {
   const utterance = new SpeechSynthesisUtterance(word);
   utterance.lang = accentSelect.value;
+  utterance.rate = 0.9;
+  speechSynthesis.cancel();
   speechSynthesis.speak(utterance);
-
-  promptSpelling(word);
 }
 
-// Prompt spelling using speech recognition
-function promptSpelling(correctWord) {
+function listenSpelling(correctWord) {
+  if (!window.SpeechRecognition && !window.webkitSpeechRecognition) {
+    alert("⚠️ Speech recognition not supported in this browser.");
+    return;
+  }
   const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
   recognition.lang = accentSelect.value;
   recognition.interimResults = false;
   recognition.maxAlternatives = 1;
-
   recognition.start();
 
-  recognition.onresult = function (event) {
-    const transcript = event.results[0][0].transcript.trim().toLowerCase();
-    if (transcript === correctWord.toLowerCase()) {
+  recognition.onresult = (event) => {
+    const spoken = event.results[0][0].transcript.toLowerCase().replace(/\s+/g, "");
+    const correct = correctWord.toLowerCase().replace(/\s+/g, "");
+
+    if (spoken === correct) {
       correctCount++;
       alert("✅ Correct!");
     } else {
-      incorrectCount++;
-      alert(`❌ Incorrect. You said: "${transcript}", expected: "${correctWord}"`);
+      incorrectWords.push({ word: correctWord, heard: spoken });
+      alert(`❌ Incorrect. You said: ${spoken}`);
+    }
+
+    if (typeof gtag === 'function') {
+      gtag('event', 'word_checked', {
+        word: correctWord,
+        correct: spoken === correct,
+        heard: spoken
+      });
     }
   };
 
-  recognition.onerror = function () {
-    alert("Speech recognition error. Please try again.");
+  recognition.onerror = (e) => {
+    console.error("Speech recognition error:", e);
+    alert("❌ Speech recognition error occurred.");
   };
 }
 
-// Display session summary
 function showSummary() {
+  const percent = Math.round((correctCount / words.length) * 100);
+
+  if (typeof gtag === 'function') {
+    gtag('event', 'session_complete', {
+      exam: mode,
+      score: percent,
+      totalWords: words.length,
+      correctCount
+    });
+  }
+
   summaryDiv.innerHTML = `
-    <h3>Session Summary</h3>
-    <p>Total Words: ${wordList.length}</p>
-    <p>Correct: ${correctCount}</p>
-    <p>Incorrect: ${incorrectCount}</p>
+    <div class="word-box">
+      <h3>Premium Session Summary</h3>
+      <p><strong>Total:</strong> ${words.length}</p>
+      <p><strong>Correct:</strong> ${correctCount}</p>
+      <p><strong>Score:</strong> ${percent}%</p>
+      ${
+        incorrectWords.length
+          ? `<h4>Incorrect Words</h4><ul>${incorrectWords.map(w => `<li><strong>${w.word}</strong> – You said: <em>${w.heard}</em></li>`).join('')}</ul>`
+          : `<p>🎉 No mistakes. Excellent work!</p>`
+      }
+      <button onclick="location.reload()" class="btn btn-info">🔄 Start New Session</button>
+    </div>
   `;
 }
-
-// Optional: Auto sign in with Google (freemium can be anonymous too)
-onAuthStateChanged(auth, (user) => {
-  if (!user) {
-    const provider = new GoogleAuthProvider();
-    signInWithPopup(auth, provider)
-      .then(result => {
-        console.log("Signed in as", result.user.displayName);
-      })
-      .catch(error => {
-        console.error("Authentication failed", error);
-      });
-  } else {
-    console.log("Already signed in:", user.email);
-  }
-});
