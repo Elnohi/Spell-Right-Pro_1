@@ -4,86 +4,75 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>SpellRightPro - Premium</title>
-
-  <!-- Styles -->
-  <link rel="stylesheet" href="../css/styles.css" />
-  <link rel="icon" href="../assets/logo.png" type="image/png">
-  <script src="https://kit.fontawesome.com/a2e00e4c5f.js" crossorigin="anonymous"></script>
-
-  <!-- Firebase -->
-  <script src="https://www.gstatic.com/firebasejs/10.4.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.4.0/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.4.0/firebase-firestore-compat.js"></script>
+  <link rel="stylesheet" href="css/styles.css" />
+  <link rel="icon" href="assets/logo.png" type="image/png" />
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-XXXXXXXXXX"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag() { dataLayer.push(arguments); }
+    gtag('js', new Date());
+    gtag('config', 'G-XXXXXXXXXX');
+  </script>
 </head>
 <body>
   <header>
-    <img src="../assets/logo.png" alt="Logo" class="logo" />
-    <h1>SpellRightPro <span class="premium-tag">Premium</span></h1>
+    <img src="assets/logo.png" alt="Logo" class="logo" />
+    <h1>SpellRightPro (Premium)</h1>
   </header>
 
   <main class="container">
-    <section class="controls">
-      <div class="form-row">
-        <select id="selectExam">
-          <option value="">-- Select Exam --</option>
-          <option value="OET">OET</option>
-          <option value="SpellingBee">Spelling Bee</option>
-          <option value="Custom">Custom</option>
-        </select>
+    <section class="card">
+      <h2>Select Exam</h2>
+      <select id="examSelect">
+        <option value="OET">OET</option>
+        <option value="SpellingBee">Spelling Bee</option>
+        <option value="Custom">Custom</option>
+      </select>
 
+      <div id="fileUploadSection">
+        <label for="fileInput">Upload Word List (.txt/.docx/.pdf)</label>
         <input type="file" id="fileInput" accept=".txt,.docx,.pdf" />
-        <button id="uploadBtn">Upload List</button>
-
-        <textarea id="customWords" placeholder="Enter custom words here..."></textarea>
       </div>
 
-      <div class="form-row">
-        <select id="accentSelect">
-          <option value="en-GB">British</option>
-          <option value="en-US">American</option>
-        </select>
+      <div class="row">
+        <textarea id="customWords" rows="4" placeholder="Or enter custom words here..."></textarea>
+      </div>
 
-        <button id="startBtn"><i class="fas fa-play"></i> Start</button>
-        <button id="stopBtn"><i class="fas fa-stop"></i> Stop</button>
-        <button id="saveBtn"><i class="fas fa-save"></i> Save</button>
+      <div class="row">
+        <label for="voiceSelect">Voice:</label>
+        <select id="voiceSelect"></select>
+      </div>
+
+      <div class="row">
+        <button id="startExamBtn" class="btn">Start Exam</button>
       </div>
     </section>
 
-    <section id="spellingArea">
-      <div id="questionBox"></div>
-      <input type="text" id="answerInput" placeholder="Type your answer..." />
-      <button id="checkBtn">Check</button>
-      <button id="speakBtn"><i class="fas fa-volume-up"></i></button>
-      <button id="micBtn"><i class="fas fa-microphone"></i></button>
+    <section class="card">
+      <div id="wordDisplay" class="display-area">Press Start to begin</div>
+      <input type="text" id="userInput" placeholder="Type the word here" />
+      <div class="row">
+        <button id="checkSpellingBtn" class="btn secondary">Check</button>
+        <button id="nextWordBtn" class="btn">Next</button>
+      </div>
+      <div id="feedback"></div>
     </section>
 
-    <section id="summaryArea" class="hidden">
-      <h3>Summary</h3>
-      <div id="summaryContent"></div>
+    <section class="card">
+      <form name="feedback" method="POST" data-netlify="true">
+        <h3>Send us feedback</h3>
+        <textarea name="message" rows="3" placeholder="Your message..."></textarea>
+        <button type="submit" class="btn">Send</button>
+      </form>
     </section>
   </main>
 
-  <footer>
-    <form name="contact" netlify>
-      <input type="text" name="name" placeholder="Name" required />
-      <input type="email" name="email" placeholder="Email" required />
-      <textarea name="message" placeholder="Feedback" required></textarea>
-      <button type="submit">Send Feedback</button>
-    </form>
-  </footer>
-
-  <!-- Notifications -->
   <div id="notification" class="notification"></div>
 
-  <!-- App Scripts -->
-  <script src="../js/analytics.js"></script>
-  <script src="../js/firebase-config.js"></script>
-  <script src="../js/oet_word_list.js"></script>
-  <script src="../js/exam-loader.js"></script>
-  <script src="../js/tts.js"></script>
-  <script src="../js/stt.js"></script>
-  <script src="../js/spelling-check.js"></script>
-  <script src="../js/ui-utils.js"></script>
-  <script src="../js/main-premium.js"></script>
+  <footer>
+    <p>&copy; 2025 SpellRightPro.org</p>
+  </footer>
+
+  <script type="module" src="js/main-premium.js"></script>
 </body>
 </html>
