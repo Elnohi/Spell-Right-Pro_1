@@ -3,40 +3,31 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>SpellRightPro - Spelling Bee (Free)</title>
+  <title>SpellRightPro Freemium - Spelling Bee</title>
   <link rel="stylesheet" href="css/styles.css" />
-  <script src="js/firebase.js"></script>
-  <script defer src="js/main-freemium-bee.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/js/all.min.js" defer></script>
 </head>
 <body>
   <div class="container">
-    <header>
-      <img src="assets/logo.png" alt="SpellRightPro Logo" class="logo" />
-      <h1>SpellRightPro - Spelling Bee (Free Version)</h1>
-    </header>
+    <h1>SpellRightPro - Spelling Bee Freemium</h1>
 
-    <div class="controls">
-      <label for="accentSelect">Accent:</label>
-      <select id="accentSelect">
-        <option value="en-GB">British</option>
-        <option value="en-US">American</option>
-      </select>
+    <label for="accentSelect">Choose Accent</label>
+    <select id="accentSelect">
+      <option value="en-GB">British</option>
+      <option value="en-US">American</option>
+    </select>
 
-      <button id="startButton">Start</button>
-      <button id="nextButton">Next</button>
-      <button id="speakButton">Repeat</button>
-    </div>
+    <button id="startButton" class="btn btn-info">▶️ Start</button>
+    <button id="speakButton" class="btn">🔊 Repeat</button>
+    <button id="nextButton" class="btn">⏭️ Next</button>
 
-    <div class="summary" id="summary"></div>
+    <div id="summary"></div>
 
-    <div class="upgrade">
-      <p>Want access to detailed summaries, unlimited word lists, and custom exams?</p>
-      <a href="premium.html" class="upgrade-btn">Upgrade to Premium</a>
+    <div style="margin-top: 30px; border-top: 1px solid #ccc; padding-top: 20px;">
+      <p style="text-align: center;">Need full features? <a href="premium.html" style="color: #007bff; font-weight: bold;">Go Premium</a></p>
     </div>
   </div>
 
-  <footer>
-    <p>SpellRightPro &copy; 2025</p>
-  </footer>
+  <script src="js/main-freemium-bee.js"></script>
 </body>
 </html>
