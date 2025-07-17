@@ -1,175 +1,147 @@
-/* styles.css for SpellRightPro Freemium */
+/* Updated styles.css for SpellRightPro (Freemium) */
 
 body {
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
   margin: 0;
   padding: 0;
-  background: #f7f7f7;
+  background-color: #f9f9f9;
   color: #333;
 }
 
 .container {
-  max-width: 750px;
-  margin: 2rem auto;
+  max-width: 700px;
+  margin: 30px auto;
   background: white;
-  padding: 2rem;
+  padding: 20px 30px;
   border-radius: 12px;
-  box-shadow: 0 0 12px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
-.app-header {
+header {
   text-align: center;
-  margin-bottom: 1.5rem;
+  margin-bottom: 20px;
 }
 
 .logo {
-  height: 64px;
-  margin-bottom: 0.5rem;
+  width: 60px;
+  margin-bottom: 10px;
 }
 
 h1 {
-  font-size: 1.8rem;
-  color: #444;
+  font-size: 1.8em;
+  margin: 0;
+  color: #222;
 }
 
 .upgrade-banner {
-  background: #fff8e1;
-  border-left: 4px solid #ffc107;
-  padding: 1rem;
-  margin-bottom: 1.5rem;
+  background-color: #fff5d1;
+  padding: 15px 20px;
+  border-radius: 10px;
+  border-left: 6px solid #ffc107;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  border-radius: 8px;
+  margin-bottom: 25px;
 }
 
-.btn-upgrade {
-  background: #ffc107;
+.upgrade-banner .btn-upgrade {
+  background-color: #ffc107;
+  color: #000;
   border: none;
-  color: #333;
-  padding: 0.5rem 1rem;
+  padding: 8px 18px;
   font-weight: bold;
-  border-radius: 6px;
+  border-radius: 8px;
   cursor: pointer;
   transition: background 0.3s;
 }
 
-.btn-upgrade:hover {
-  background: #ffb300;
+.upgrade-banner .btn-upgrade:hover {
+  background-color: #e0a800;
 }
 
-.exam-section {
-  margin-bottom: 2rem;
-}
-
-.form-row {
-  display: flex;
-  flex-direction: row;
-  gap: 1rem;
-  align-items: center;
-  margin-bottom: 1rem;
-  flex-wrap: wrap;
-}
-
-input[type="text"] {
-  flex: 1;
-  padding: 0.6rem;
+select#accentSelect {
+  padding: 6px 12px;
   font-size: 1rem;
   border: 1px solid #ccc;
   border-radius: 6px;
+  background: white;
+  margin-bottom: 20px;
   width: 100%;
-}
-
-select {
-  padding: 0.6rem;
-  border-radius: 6px;
-  border: 1px solid #ccc;
-  font-size: 1rem;
+  max-width: 250px;
 }
 
 button {
-  cursor: pointer;
-  border: none;
+  padding: 10px 16px;
+  font-size: 1rem;
+  margin: 6px 8px 10px 0;
   border-radius: 6px;
-  padding: 0.6rem 1rem;
-  font-size: 0.95rem;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
+  border: none;
+  cursor: pointer;
 }
 
-.btn-primary {
+button.btn-start {
   background-color: #007bff;
   color: white;
 }
 
-.btn-secondary {
+button.btn-hear {
   background-color: #6c757d;
   color: white;
 }
 
-.btn-check {
+button.btn-check {
   background-color: #28a745;
   color: white;
 }
 
-.btn-darkmode {
-  background-color: #343a40;
-  color: white;
+input[type="text"] {
+  width: 100%;
+  padding: 12px;
+  margin-top: 10px;
+  font-size: 1rem;
+  border-radius: 6px;
+  border: 1px solid #ccc;
 }
 
-.btn-primary:hover {
-  background-color: #0056b3;
+#darkModeToggle {
+  margin-top: 20px;
+  padding: 8px 14px;
+  background: #333;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
 }
 
-.btn-secondary:hover {
-  background-color: #545b62;
-}
-
-.btn-check:hover {
-  background-color: #218838;
-}
-
-.btn-darkmode:hover {
-  background-color: #23272b;
-}
-
-.note {
+footer {
+  margin-top: 30px;
+  text-align: center;
   font-size: 0.9rem;
-  color: #777;
-  text-align: center;
+  color: #888;
 }
 
-.footer {
-  text-align: center;
-  margin-top: 2rem;
+/* Dark Mode Support */
+body.dark-mode {
+  background-color: #121212;
+  color: #eee;
 }
 
-.notification {
-  position: fixed;
-  bottom: 20px;
-  left: 50%;
-  transform: translateX(-50%);
-  background: #323232;
-  color: white;
-  padding: 1rem 1.5rem;
-  border-radius: 8px;
-  box-shadow: 0 4px 8px rgba(0,0,0,0.2);
-  z-index: 1000;
-  display: none;
+body.dark-mode .container {
+  background-color: #1e1e1e;
+  color: #fff;
 }
 
-.notification.show {
-  display: block;
+body.dark-mode input[type="text"],
+body.dark-mode select#accentSelect {
+  background-color: #333;
+  color: #fff;
+  border-color: #555;
 }
 
-@media (max-width: 600px) {
-  .form-row {
-    flex-direction: column;
-    align-items: stretch;
-  }
+body.dark-mode button {
+  opacity: 0.95;
+}
 
-  button, select, input[type="text"] {
-    width: 100%;
-  }
+body.dark-mode footer {
+  color: #bbb;
 }
