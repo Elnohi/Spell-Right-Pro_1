@@ -3,41 +3,31 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>SpellRightPro - OET (Free)</title>
+  <title>SpellRightPro Freemium - OET</title>
   <link rel="stylesheet" href="css/styles.css" />
-  <script src="js/firebase.js"></script>
-  <script defer src="js/main-freemium-oet.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/js/all.min.js" defer></script>
 </head>
 <body>
   <div class="container">
-    <header>
-      <img src="assets/logo.png" alt="SpellRightPro Logo" class="logo" />
-      <h1>SpellRightPro - OET (Free Version)</h1>
-    </header>
+    <h1>SpellRightPro - OET Freemium</h1>
 
-    <div class="controls">
-      <label for="accentSelect">Accent:</label>
-      <select id="accentSelect">
-        <option value="en-GB">British</option>
-        <option value="en-US">American</option>
-      </select>
+    <label for="accentSelect">Choose Accent</label>
+    <select id="accentSelect">
+      <option value="en-GB">British</option>
+      <option value="en-US">American</option>
+    </select>
 
-      <input type="file" id="fileUpload" accept=".txt,.docx,.pdf" />
-      <button id="startButton">Start Test</button>
-      <button id="nextButton">Next Word</button>
-      <button id="speakButton">Repeat Word</button>
-    </div>
+    <button id="startButton" class="btn btn-info">▶️ Start</button>
+    <button id="speakButton" class="btn">🔊 Repeat</button>
+    <button id="nextButton" class="btn">⏭️ Next</button>
 
-    <div class="summary" id="summary"></div>
+    <div id="summary"></div>
 
-    <div class="upgrade">
-      <p>Want access to Spelling Bee, custom exams, and detailed summaries?</p>
-      <a href="premium.html" class="upgrade-btn">Upgrade to Premium</a>
+    <div style="margin-top: 30px; border-top: 1px solid #ccc; padding-top: 20px;">
+      <p style="text-align: center;">Want more features? <a href="premium.html" style="color: #007bff; font-weight: bold;">Upgrade to Premium</a></p>
     </div>
   </div>
 
-  <footer>
-    <p>SpellRightPro &copy; 2025</p>
-  </footer>
+  <script src="js/main-freemium.js"></script>
 </body>
 </html>
