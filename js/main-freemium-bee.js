@@ -1,75 +1,63 @@
-// main-freemium-bee.js
+// main-freemium.js (Updated with enhanced logic)
 
-import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.4.0/firebase-app.js';
-import { getAuth, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.4.0/firebase-auth.js';
+let words = [];
+let currentIndex = 0;
+let correctCount = 0;
+let incorrectWords = [];
 
-import { firebaseConfig } from './firebase.js';
+const accentSelect = document.getElementById("accentSelect");
+const startButton = document.getElementById("startButton");
+const nextButton = document.getElementById("nextButton");
+const speakButton = document.getElementById("speakButton");
+const summaryDiv = document.getElementById("summary");
 
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
+startButton.addEventListener("click", () => {
+  fetch("js/oet_word_list.js")
+    .then(res => res.text())
+    .then(data => {
+      words = data.split(/\r?\n/).filter(w => w.trim());
+      startSession();
+    })
+    .catch(() => alert("❌ Failed to load OET words."));
+});
 
-let currentWord = '';
-let wordList = ['apple', 'banana', 'elephant', 'giraffe', 'library']; // Default list
-let wordIndex = 0;
-let recognition;
+nextButton.addEventListener("click", () => {
+  currentIndex++;
+  if (currentIndex < words.length) {
+    speakWord(words[currentIndex]);
+  } else {
+    showSummary();
+  }
+});
 
-const startButton = document.getElementById('startButton');
-const nextButton = document.getElementById('nextButton');
-const speakButton = document.getElementById('speakButton');
-const accentSelect = document.getElementById('accentSelect');
+speakButton.addEventListener("click", () => {
+  if (words[currentIndex]) speakWord(words[currentIndex]);
+});
+
+function startSession() {
+  currentIndex = 0;
+  correctCount = 0;
+  incorrectWords = [];
+  speakWord(words[0]);
+}
 
 function speakWord(word) {
   const utterance = new SpeechSynthesisUtterance(word);
   utterance.lang = accentSelect.value;
+  utterance.rate = 0.9;
+  speechSynthesis.cancel();
   speechSynthesis.speak(utterance);
 }
 
-function startTest() {
-  wordIndex = 0;
-  currentWord = wordList[wordIndex];
-  speakWord(currentWord);
-  startRecognition();
-}
-
-function nextWord() {
-  wordIndex++;
-  if (wordIndex < wordList.length) {
-    currentWord = wordList[wordIndex];
-    speakWord(currentWord);
-    startRecognition();
-  } else {
-    showSummary();
-  }
-}
-
-function startRecognition() {
-  recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
-  recognition.lang = 'en-US';
-  recognition.onresult = (event) => {
-    const result = event.results[0][0].transcript.trim().toLowerCase();
-    console.log('User spelled:', result);
-    // For Spelling Bee, ideally we compare letter-by-letter
-    // Currently doing simple match
-    if (result.replace(/\s+/g, '') === currentWord.replace(/\s+/g, '')) {
-      alert('Correct!');
-    } else {
-      alert(`Incorrect. You said: ${result}`);
-    }
-  };
-  recognition.start();
-}
-
 function showSummary() {
-  document.getElementById('summary').innerText = 'Session completed. Upgrade to Premium for detailed results.';
+  const percent = Math.round((correctCount / words.length) * 100);
+  summaryDiv.innerHTML = `
+    <div class="word-box">
+      <h3>Practice Summary</h3>
+      <p><strong>Total:</strong> ${words.length}</p>
+      <p><strong>Correct:</strong> ${correctCount}</p>
+      <p><strong>Score:</strong> ${percent}%</p>
+      <button onclick="location.reload()" class="btn btn-info">🔄 Try Again</button>
+    </div>
+  `;
 }
-
-startButton?.addEventListener('click', startTest);
-nextButton?.addEventListener('click', nextWord);
-speakButton?.addEventListener('click', () => speakWord(currentWord));
-
-onAuthStateChanged(auth, (user) => {
-  if (!user) {
-    alert('Please log in to use this feature.');
-    window.location.href = 'index.html';
-  }
-});
