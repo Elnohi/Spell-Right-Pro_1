@@ -1,69 +1,107 @@
-// Main logic for SpellRightPro Premium
-// Assumes presence of Firebase auth/db, DOM is ready
+import { loadVoices, speakWord, showNotification } from './shared/audio.js';
+import { extractWordsFromFile } from './shared/fileHandler.js';
+import { oetWords } from './shared/oet_word_list.js';
 
-// Initialize global variables
-let words = [];
-let currentAccent = "en-GB";
-let currentWordIndex = 0;
-let correctCount = 0;
-let flaggedWords = [];
-let incorrectWords = [];
-let previousWords = [];
-let mode = "";
-const synth = window.speechSynthesis;
-const storageKey = "spellrightpro-progress";
+let wordList = [];
+let currentIndex = 0;
+let voices = [];
 
-function loginUser() {
-  // Implementation similar to full version
+const examSelect = document.getElementById('examSelect');
+const voiceSelect = document.getElementById('voiceSelect');
+const startBtn = document.getElementById('startExamBtn');
+const wordDisplay = document.getElementById('wordDisplay');
+const userInput = document.getElementById('userInput');
+const checkBtn = document.getElementById('checkSpellingBtn');
+const nextBtn = document.getElementById('nextWordBtn');
+const fileInput = document.getElementById('fileInput');
+const customWordsInput = document.getElementById('customWords');
+const feedback = document.getElementById('feedback');
+
+window.speechSynthesis.onvoiceschanged = async () => {
+  voices = await loadVoices();
+  voiceSelect.innerHTML = voices.map(v => `<option value="${v.name}">${v.name}</option>`).join('');
+};
+
+fileInput.addEventListener('change', async (e) => {
+  const file = e.target.files[0];
+  if (file) {
+    wordList = await extractWordsFromFile(file);
+    showNotification(`Loaded ${wordList.length} words from file.`);
+  }
+});
+
+startBtn.addEventListener('click', () => {
+  const examType = examSelect.value;
+  feedback.textContent = '';
+
+  if (examType === 'OET') {
+    wordList = [...oetWords];
+  } else if (examType === 'Custom') {
+    const manualWords = customWordsInput.value.trim().split(/\n|,/).map(w => w.trim()).filter(Boolean);
+    if (manualWords.length) wordList = manualWords;
+    else {
+      showNotification('Please upload or enter words for Custom exam.');
+      return;
+    }
+  } else if (examType === 'SpellingBee') {
+    wordList = [...oetWords];
+    useSpeechRecognition();
+  }
+
+  currentIndex = 0;
+  showWord();
+});
+
+checkBtn.addEventListener('click', () => {
+  const currentWord = wordList[currentIndex];
+  const userAnswer = userInput.value.trim();
+  feedback.textContent = userAnswer.toLowerCase() === currentWord.toLowerCase()
+    ? '✅ Correct!'
+    : `❌ Incorrect. The word was: ${currentWord}`;
+});
+
+nextBtn.addEventListener('click', () => {
+  currentIndex++;
+  if (currentIndex < wordList.length) {
+    showWord();
+  } else {
+    wordDisplay.textContent = '✅ Exam complete!';
+    userInput.value = '';
+    feedback.textContent = '';
+  }
+});
+
+function showWord() {
+  const word = wordList[currentIndex];
+  wordDisplay.textContent = `Spell this word:`;
+  userInput.value = '';
+  speakWord(word, voiceSelect.value);
 }
 
-function signUpUser() {
-  // Implementation similar to full version
-}
+function useSpeechRecognition() {
+  if (!('webkitSpeechRecognition' in window)) {
+    showNotification('Speech recognition not supported on this browser.');
+    return;
+  }
 
-function logoutUser() {
-  // Implementation similar to full version
-}
+  const recognition = new webkitSpeechRecognition();
+  recognition.lang = 'en-US';
+  recognition.continuous = false;
+  recognition.interimResults = false;
 
-function startPractice() {
-  // Start practice session
-}
+  recognition.onresult = (event) => {
+    const result = event.results[0][0].transcript;
+    userInput.value = result.replace(/\s+/g, '').toLowerCase();
+    checkBtn.click();
+  };
 
-function startTest() {
-  // Start test session
-}
+  recognition.onerror = (e) => {
+    showNotification('Speech recognition error: ' + e.error);
+  };
 
-function speak(text) {
-  synth.cancel();
-  const utterance = new SpeechSynthesisUtterance(text);
-  utterance.lang = currentAccent;
-  utterance.rate = 0.9;
-  utterance.volume = 1;
-  const voices = synth.getVoices();
-  const voice = voices.find(v => v.lang === currentAccent) || voices[0];
-  if (voice) utterance.voice = voice;
-  synth.speak(utterance);
-}
+  recognition.onend = () => {
+    // Autostart next word?
+  };
 
-function showNotification(message, type = "info") {
-  const note = document.createElement("div");
-  note.className = `notification ${type}`;
-  note.innerHTML = `<i class="fas fa-${
-    type === 'error' ? 'exclamation-circle' :
-    type === 'success' ? 'check-circle' : 'info-circle'
-  }"></i> <span>${message}</span>`;
-  document.body.appendChild(note);
-  setTimeout(() => note.classList.add("show"), 10);
-  setTimeout(() => {
-    note.classList.remove("show");
-    setTimeout(() => note.remove(), 300);
-  }, 5000);
-}
-
-function attachLoginEmail() {
-  const user = auth.currentUser;
-  const email = user ? user.email : document.getElementById("userEmail").value.trim();
-  if (!email) return false;
-  document.getElementById("formHiddenEmail").value = email;
-  return true;
+  recognition.start();
 }
