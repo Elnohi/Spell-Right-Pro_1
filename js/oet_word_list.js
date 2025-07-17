@@ -1,4 +1,4 @@
-const oetWords = [
+export const oetWords = [
   "Building sites",
   "Blotches",
   "Scalp",
