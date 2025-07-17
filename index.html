@@ -2,67 +2,52 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>SpellRightPro - Freemium</title>
   <link rel="stylesheet" href="css/styles.css" />
-  <script src="https://kit.fontawesome.com/4ad9095c5c.js" crossorigin="anonymous"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <script src="https://www.googletagmanager.com/gtag/js?id=G-H09MF13297" async></script>
+  <script src="js/analytics.js" defer></script>
+  <script src="js/main-freemium.js" type="module" defer></script>
 </head>
 <body>
-  <header class="header">
-    <div class="logo-container">
-      <img src="assets/logo.png" alt="Logo" class="logo" />
-      <h1>SpellRightPro <span class="tag-freemium">(Freemium)</span></h1>
-    </div>
-  </header>
-
-  <main class="container">
-    <div class="button-row">
-      <button id="oetExamBtn" class="btn"><i class="fas fa-notes-medical"></i> OET Exam</button>
-      <button id="spellingBeeBtn" class="btn btn-disabled" disabled><i class="fas fa-microphone-alt"></i> Spelling Bee (Premium)</button>
-      <button id="customExamBtn" class="btn btn-disabled" disabled><i class="fas fa-file-upload"></i> Custom Exam (Premium)</button>
-    </div>
-
-    <div id="exam-section" class="exam-section">
-      <h2 class="section-title">Start Practicing</h2>
-      <div class="form-row">
-        <label for="accent">Select Accent:</label>
-        <select id="accent">
-          <option value="en-US">American</option>
-          <option value="en-GB">British</option>
-        </select>
-      </div>
-      <div class="form-row">
-        <button id="startBtn" class="btn start">Start</button>
-        <button id="stopBtn" class="btn stop">Stop</button>
-      </div>
-    </div>
-
-    <div id="word-display" class="word-display">Press "Start" to begin</div>
-    <div id="feedback" class="feedback"></div>
-
-    <div class="results-section">
-      <h3>Session Summary</h3>
-      <ul id="resultsList"></ul>
-    </div>
+  <div class="container">
+    <header class="app-header">
+      <img src="assets/logo.png" alt="SpellRightPro Logo" class="logo" />
+      <h1>SpellRightPro (Freemium)</h1>
+    </header>
 
     <div class="upgrade-banner">
-      <p>Want more features like Spelling Bee and unlimited uploads?</p>
-      <a href="premium.html" class="btn upgrade">Upgrade to Premium</a>
+      <p>Upgrade to <strong>Premium</strong> to unlock Spelling Bee, Custom Exams, and more!</p>
+      <button id="upgrade-btn" class="btn-upgrade"><i class="fas fa-star"></i> Upgrade</button>
     </div>
-  </main>
 
-  <footer class="footer">
-    <p>&copy; 2025 SpellRightPro. All rights reserved.</p>
-  </footer>
+    <section class="exam-section">
+      <div class="form-row">
+        <label for="voice-select">Accent:</label>
+        <select id="voice-select"></select>
+      </div>
 
-  <!-- JS Scripts -->
-  <script src="js/firebase-config.js"></script>
-  <script src="js/oet_word_list.js"></script>
-  <script src="js/tts.js"></script>
-  <script src="js/stt.js"></script>
-  <script src="js/spelling-check.js"></script>
-  <script src="js/ui-utils.js"></script>
-  <script src="js/exam-loader.js"></script>
-  <script src="js/main-freemium.js"></script>
+      <div class="form-row">
+        <button id="start-btn" class="btn-primary"><i class="fas fa-microphone"></i> Start</button>
+        <button id="hear-btn" class="btn-secondary"><i class="fas fa-volume-up"></i> Hear</button>
+        <button id="check-btn" class="btn-check"><i class="fas fa-check-circle"></i> Check</button>
+      </div>
+
+      <div class="form-row">
+        <input type="text" id="user-input" placeholder="Type the spelling here..." />
+      </div>
+    </section>
+
+    <section class="info-section">
+      <p class="note">Only <strong>OET</strong> word list available in this version. One list per day.</p>
+    </section>
+
+    <footer class="footer">
+      <button id="dark-mode-toggle" class="btn-darkmode"><i class="fas fa-moon"></i> Dark Mode</button>
+    </footer>
+
+    <div id="notification" class="notification hidden"></div>
+  </div>
 </body>
 </html>
