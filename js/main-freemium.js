@@ -1,7 +1,6 @@
 // main-freemium.js
 
 import { oetWords } from './oet_word_list.js';
-
 const examSelect = document.getElementById('examSelect');
 const startButton = document.getElementById('startExamBtn');
 const checkButton = document.getElementById('checkSpellingBtn');
