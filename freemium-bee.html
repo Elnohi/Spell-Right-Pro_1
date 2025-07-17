@@ -23,6 +23,18 @@
 
     <div id="summary"></div>
 
+    <!-- Feedback Form -->
+    <form name="feedback" method="POST" data-netlify="true" class="word-box" style="margin-top: 30px;">
+      <h3>📩 Send Feedback</h3>
+      <label for="email">Email (optional):</label>
+      <input type="email" name="email" id="email" placeholder="you@example.com" />
+
+      <label for="message">Your Message</label>
+      <textarea name="message" id="message" rows="4" placeholder="Let us know how we can improve..." required></textarea>
+
+      <button type="submit" class="btn btn-info"><i class="fas fa-paper-plane"></i> Send Feedback</button>
+    </form>
+
     <div style="margin-top: 30px; border-top: 1px solid #ccc; padding-top: 20px;">
       <p style="text-align: center;">Need full features? <a href="premium.html" style="color: #007bff; font-weight: bold;">Go Premium</a></p>
     </div>
