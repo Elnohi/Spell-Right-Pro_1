@@ -4,112 +4,65 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>SpellRightPro - Freemium</title>
-
-  <!-- Google Analytics -->
-  <script async src="https://www.googletagmanager.com/gtag/js?id=G-H09MF13297"></script>
-  <script src="js/analytics.js"></script>
-
-  <!-- Firebase SDK -->
-  <script src="https://www.gstatic.com/firebasejs/10.4.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.4.0/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.4.0/firebase-firestore-compat.js"></script>
-  <script src="js/firebase-config.js"></script>
-
-  <!-- FontAwesome -->
-  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet"/>
-
-  <!-- Styles -->
   <link rel="stylesheet" href="css/styles.css" />
+  <script src="https://kit.fontawesome.com/4ad9095c5c.js" crossorigin="anonymous"></script>
 </head>
 <body>
-  <div class="container">
-    <img src="assets/logo.png" alt="SpellRightPro Logo" class="logo" />
-    <h1 style="display:inline-block; vertical-align:middle;">SpellRightPro (Freemium)</h1>
+  <header class="header">
+    <div class="logo-container">
+      <img src="assets/logo.png" alt="Logo" class="logo" />
+      <h1>SpellRightPro <span class="tag-freemium">(Freemium)</span></h1>
+    </div>
+  </header>
 
-    <!-- Auth Section -->
-    <div class="form-row" id="authSection">
-      <label>Email:</label>
-      <input type="email" id="userEmail" placeholder="Enter email" />
-      <label>Password:</label>
-      <input type="password" id="userPassword" placeholder="Enter password" />
-      <button onclick="loginUser()" class="btn">Login</button>
-      <button onclick="signUpUser()" class="btn btn-info">Sign Up</button>
-      <button onclick="logoutUser()" class="btn btn-warning">Logout</button>
-      <span id="loginStatus"></span>
+  <main class="container">
+    <div class="button-row">
+      <button id="oetExamBtn" class="btn"><i class="fas fa-notes-medical"></i> OET Exam</button>
+      <button id="spellingBeeBtn" class="btn btn-disabled" disabled><i class="fas fa-microphone-alt"></i> Spelling Bee (Premium)</button>
+      <button id="customExamBtn" class="btn btn-disabled" disabled><i class="fas fa-file-upload"></i> Custom Exam (Premium)</button>
     </div>
 
-    <!-- Exam & Accent Select -->
-    <div class="form-row">
-      <label>Select Exam:</label>
-      <select id="examSelect">
-        <option value="">-- Choose --</option>
-        <option value="OET">OET</option>
-      </select>
-      <label>Accent:</label>
-      <select id="accentSelect">
-        <option value="en-GB">British</option>
-        <option value="en-US">American</option>
-      </select>
-      <button id="modeToggle" class="btn"><i id="modeIcon" class="fas fa-moon"></i></button>
-    </div>
-
-    <!-- Action Buttons -->
-    <div class="form-row">
-      <button onclick="startPractice()" class="btn btn-info">Start Practice</button>
-      <button onclick="startTest()" class="btn btn-success">Start Test</button>
-    </div>
-
-    <!-- Upload File -->
-    <div class="form-row">
-      <label>Upload Word File:</label>
-      <input type="file" id="fileInput" onchange="handleFileUpload(event)" />
-    </div>
-
-    <!-- Custom Words (disabled) -->
-    <div class="form-row">
-      <textarea id="wordInput" rows="3" placeholder="Enter custom words here..." disabled></textarea>
-      <button type="button" onclick="addCustomWords()" class="btn" disabled>Add Custom Words</button>
-    </div>
-
-    <!-- Word Save/Load/Clear -->
-    <div class="form-row">
-      <button onclick="saveWordList()" class="btn btn-info" disabled>Save Words</button>
-      <button onclick="loadWordList()" class="btn btn-success">Load Words</button>
-      <button onclick="clearWordList()" class="btn btn-warning">Clear Words</button>
-    </div>
-
-    <div id="trainer" class="card"></div>
-    <div id="scoreDisplay" class="card"></div>
-    <div id="loadingIndicator" style="display:none;">
-      <div class="progress-container">
-        <div class="progress-bar"></div>
+    <div id="exam-section" class="exam-section">
+      <h2 class="section-title">Start Practicing</h2>
+      <div class="form-row">
+        <label for="accent">Select Accent:</label>
+        <select id="accent">
+          <option value="en-US">American</option>
+          <option value="en-GB">British</option>
+        </select>
+      </div>
+      <div class="form-row">
+        <button id="startBtn" class="btn start">Start</button>
+        <button id="stopBtn" class="btn stop">Stop</button>
       </div>
     </div>
 
-    <!-- Netlify Form -->
-    <form name="feedback" method="POST" data-netlify="true" netlify-honeypot="bot-field" class="form-row">
-      <input type="hidden" name="form-name" value="feedback" />
-      <input type="hidden" name="user-email" id="formHiddenEmail" />
-      <p hidden>
-        <label>Don't fill this out: <input name="bot-field" /></label>
-      </p>
-      <textarea name="message" rows="3" placeholder="Write your notes or comments here..." style="width:100%;" required></textarea>
-      <button type="submit" class="btn btn-success" id="submitBtn">
-        <i class="fas fa-paper-plane"></i> Send Comment
-      </button>
-    </form>
+    <div id="word-display" class="word-display">Press "Start" to begin</div>
+    <div id="feedback" class="feedback"></div>
 
-    <!-- Hidden Netlify Form for Fallback Submission -->
-    <form name="feedback" netlify netlify-honeypot="bot-field" hidden>
-      <input type="text" name="user-email" />
-      <textarea name="message"></textarea>
-    </form>
-  </div>
+    <div class="results-section">
+      <h3>Session Summary</h3>
+      <ul id="resultsList"></ul>
+    </div>
 
-  <!-- External JS Files -->
-  <script src="data/oet_word_list.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.10.377/pdf.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.4.0/mammoth.browser.min.js"></script>
+    <div class="upgrade-banner">
+      <p>Want more features like Spelling Bee and unlimited uploads?</p>
+      <a href="premium.html" class="btn upgrade">Upgrade to Premium</a>
+    </div>
+  </main>
+
+  <footer class="footer">
+    <p>&copy; 2025 SpellRightPro. All rights reserved.</p>
+  </footer>
+
+  <!-- JS Scripts -->
+  <script src="js/firebase-config.js"></script>
+  <script src="js/oet_word_list.js"></script>
+  <script src="js/tts.js"></script>
+  <script src="js/stt.js"></script>
+  <script src="js/spelling-check.js"></script>
+  <script src="js/ui-utils.js"></script>
+  <script src="js/exam-loader.js"></script>
   <script src="js/main-freemium.js"></script>
 </body>
 </html>
