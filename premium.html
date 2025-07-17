@@ -3,99 +3,87 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>SpellRightPro Premium</title>
+  <title>SpellRightPro - Premium</title>
 
-  <!-- Styles & Icons -->
-  <link rel="stylesheet" href="css/styles.css" />
-  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet"/>
+  <!-- Styles -->
+  <link rel="stylesheet" href="../css/styles.css" />
+  <link rel="icon" href="../assets/logo.png" type="image/png">
+  <script src="https://kit.fontawesome.com/a2e00e4c5f.js" crossorigin="anonymous"></script>
 
-  <!-- Firebase SDK -->
+  <!-- Firebase -->
   <script src="https://www.gstatic.com/firebasejs/10.4.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.4.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.4.0/firebase-firestore-compat.js"></script>
-  <script src="js/firebase-config.js"></script>
-
-  <!-- Google Analytics -->
-  <script async src="https://www.googletagmanager.com/gtag/js?id=G-H09MF13297"></script>
-  <script src="js/analytics.js"></script>
 </head>
 <body>
-  <div class="container">
-    <img src="assets/logo.png" alt="SpellRightPro Logo" class="logo" />
-    <h1>SpellRightPro (Premium)</h1>
+  <header>
+    <img src="../assets/logo.png" alt="Logo" class="logo" />
+    <h1>SpellRightPro <span class="premium-tag">Premium</span></h1>
+  </header>
 
-    <div class="form-row">
-      <label>Email:</label>
-      <input type="email" id="userEmail" placeholder="Enter email" />
-      <label>Password:</label>
-      <input type="password" id="userPassword" placeholder="Enter password" />
-      <button onclick="loginUser()" class="btn">Login</button>
-      <button onclick="signUpUser()" class="btn btn-info">Sign Up</button>
-      <button onclick="logoutUser()" class="btn btn-warning">Logout</button>
-      <span id="loginStatus"></span>
-    </div>
+  <main class="container">
+    <section class="controls">
+      <div class="form-row">
+        <select id="selectExam">
+          <option value="">-- Select Exam --</option>
+          <option value="OET">OET</option>
+          <option value="SpellingBee">Spelling Bee</option>
+          <option value="Custom">Custom</option>
+        </select>
 
-    <div class="form-row">
-      <label>Select Exam:</label>
-      <select id="examSelect">
-        <option value="OET">OET</option>
-        <option value="SpellingBee">Spelling Bee</option>
-        <option value="Custom">Custom</option>
-      </select>
-      <label>Accent:</label>
-      <select id="accentSelect">
-        <option value="en-GB">British</option>
-        <option value="en-US">American</option>
-        <option value="en-AU">Australian</option>
-        <option value="en-IN">Indian</option>
-      </select>
-      <button id="modeToggle" class="btn"><i id="modeIcon" class="fas fa-moon"></i></button>
-    </div>
+        <input type="file" id="fileInput" accept=".txt,.docx,.pdf" />
+        <button id="uploadBtn">Upload List</button>
 
-    <div class="form-row">
-      <button onclick="startPractice()" class="btn btn-info">Start Practice</button>
-      <button onclick="startTest()" class="btn btn-success">Start Test</button>
-    </div>
+        <textarea id="customWords" placeholder="Enter custom words here..."></textarea>
+      </div>
 
-    <div class="form-row">
-      <label>Upload Word File:</label>
-      <input type="file" id="fileInput" onchange="handleFileUpload(event)" />
-    </div>
+      <div class="form-row">
+        <select id="accentSelect">
+          <option value="en-GB">British</option>
+          <option value="en-US">American</option>
+        </select>
 
-    <div class="form-row">
-      <textarea id="wordInput" rows="3" placeholder="Enter custom words here..."></textarea>
-      <button type="button" onclick="addCustomWords()" class="btn">Add Custom Words</button>
-    </div>
+        <button id="startBtn"><i class="fas fa-play"></i> Start</button>
+        <button id="stopBtn"><i class="fas fa-stop"></i> Stop</button>
+        <button id="saveBtn"><i class="fas fa-save"></i> Save</button>
+      </div>
+    </section>
 
-    <div class="form-row">
-      <button onclick="saveWordList()" class="btn btn-info">Save Words</button>
-      <button onclick="loadWordList()" class="btn btn-success">Load Words</button>
-      <button onclick="clearWordList()" class="btn btn-warning">Clear Words</button>
-    </div>
+    <section id="spellingArea">
+      <div id="questionBox"></div>
+      <input type="text" id="answerInput" placeholder="Type your answer..." />
+      <button id="checkBtn">Check</button>
+      <button id="speakBtn"><i class="fas fa-volume-up"></i></button>
+      <button id="micBtn"><i class="fas fa-microphone"></i></button>
+    </section>
 
-    <div id="trainer" class="card"></div>
-    <div id="scoreDisplay" class="card"></div>
+    <section id="summaryArea" class="hidden">
+      <h3>Summary</h3>
+      <div id="summaryContent"></div>
+    </section>
+  </main>
 
-    <form name="feedback" method="POST" data-netlify="true" netlify-honeypot="bot-field" class="form-row">
-      <input type="hidden" name="form-name" value="feedback" />
-      <input type="hidden" name="user-email" id="formHiddenEmail" />
-      <p hidden>
-        <label>Don't fill this out: <input name="bot-field" /></label>
-      </p>
-      <textarea name="message" rows="3" placeholder="Write your notes or comments here..." style="width:100%;" required></textarea>
-      <button type="submit" class="btn btn-success" id="submitBtn">
-        <i class="fas fa-paper-plane"></i> Send Comment
-      </button>
+  <footer>
+    <form name="contact" netlify>
+      <input type="text" name="name" placeholder="Name" required />
+      <input type="email" name="email" placeholder="Email" required />
+      <textarea name="message" placeholder="Feedback" required></textarea>
+      <button type="submit">Send Feedback</button>
     </form>
+  </footer>
 
-    <div class="progress-container" id="loadingIndicator" style="display:none;">
-      <div class="progress-bar"></div>
-    </div>
-  </div>
+  <!-- Notifications -->
+  <div id="notification" class="notification"></div>
 
-  <script src="oet_word_list.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.10.377/pdf.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.4.0/mammoth.browser.min.js"></script>
-  <script src="js/main-premium.js"></script>
+  <!-- App Scripts -->
+  <script src="../js/analytics.js"></script>
+  <script src="../js/firebase-config.js"></script>
+  <script src="../js/oet_word_list.js"></script>
+  <script src="../js/exam-loader.js"></script>
+  <script src="../js/tts.js"></script>
+  <script src="../js/stt.js"></script>
+  <script src="../js/spelling-check.js"></script>
+  <script src="../js/ui-utils.js"></script>
+  <script src="../js/main-premium.js"></script>
 </body>
 </html>
