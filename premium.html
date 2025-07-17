@@ -5,74 +5,45 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>SpellRightPro - Premium</title>
   <link rel="stylesheet" href="css/styles.css" />
-  <link rel="icon" href="assets/logo.png" type="image/png" />
-  <script async src="https://www.googletagmanager.com/gtag/js?id=G-XXXXXXXXXX"></script>
-  <script>
-    window.dataLayer = window.dataLayer || [];
-    function gtag() { dataLayer.push(arguments); }
-    gtag('js', new Date());
-    gtag('config', 'G-XXXXXXXXXX');
-  </script>
+  <script src="js/firebase.js"></script>
+  <script defer src="js/main-premium.js"></script>
 </head>
 <body>
-  <header>
-    <img src="assets/logo.png" alt="Logo" class="logo" />
-    <h1>SpellRightPro (Premium)</h1>
-  </header>
+  <div class="container">
+    <header>
+      <img src="assets/logo.png" alt="SpellRightPro Logo" class="logo" />
+      <h1>SpellRightPro - Premium</h1>
+    </header>
 
-  <main class="container">
-    <section class="card">
-      <h2>Select Exam</h2>
+    <div class="controls">
+      <label for="examSelect">Exam:</label>
       <select id="examSelect">
         <option value="OET">OET</option>
         <option value="SpellingBee">Spelling Bee</option>
         <option value="Custom">Custom</option>
       </select>
 
-      <div id="fileUploadSection">
-        <label for="fileInput">Upload Word List (.txt/.docx/.pdf)</label>
-        <input type="file" id="fileInput" accept=".txt,.docx,.pdf" />
-      </div>
+      <label for="accentSelect">Accent:</label>
+      <select id="accentSelect">
+        <option value="en-GB">British</option>
+        <option value="en-US">American</option>
+      </select>
 
-      <div class="row">
-        <textarea id="customWords" rows="4" placeholder="Or enter custom words here..."></textarea>
-      </div>
+      <input type="file" id="fileUpload" accept=".txt,.docx,.pdf" />
+      <button id="startButton">Start</button>
+      <button id="nextButton">Next</button>
+      <button id="speakButton">Repeat</button>
+    </div>
 
-      <div class="row">
-        <label for="voiceSelect">Voice:</label>
-        <select id="voiceSelect"></select>
-      </div>
+    <div class="summary" id="summary"></div>
 
-      <div class="row">
-        <button id="startExamBtn" class="btn">Start Exam</button>
-      </div>
-    </section>
-
-    <section class="card">
-      <div id="wordDisplay" class="display-area">Press Start to begin</div>
-      <input type="text" id="userInput" placeholder="Type the word here" />
-      <div class="row">
-        <button id="checkSpellingBtn" class="btn secondary">Check</button>
-        <button id="nextWordBtn" class="btn">Next</button>
-      </div>
-      <div id="feedback"></div>
-    </section>
-
-    <section class="card">
-      <form name="feedback" method="POST" data-netlify="true">
-        <h3>Send us feedback</h3>
-        <textarea name="message" rows="3" placeholder="Your message..."></textarea>
-        <button type="submit" class="btn">Send</button>
-      </form>
-    </section>
-  </main>
-
-  <div id="notification" class="notification"></div>
+    <div class="upgrade">
+      <p>You are using the full version of SpellRightPro.</p>
+    </div>
+  </div>
 
   <footer>
-    <p>&copy; 2025 SpellRightPro.org</p>
+    <p>SpellRightPro &copy; 2025</p>
   </footer>
-
-  <script type="module" src="js/main-premium.js"></script>
 </body>
 </html>
