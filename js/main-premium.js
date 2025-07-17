@@ -1,107 +1,114 @@
-import { loadVoices, speakWord, showNotification } from './shared/audio.js';
-import { extractWordsFromFile } from './shared/fileHandler.js';
-import { oetWords } from './shared/oet_word_list.js';
+// main-premium.js
 
-let wordList = [];
+let words = [];
 let currentIndex = 0;
-let voices = [];
+let correctCount = 0;
+let incorrectWords = [];
+let mode = "";
 
-const examSelect = document.getElementById('examSelect');
-const voiceSelect = document.getElementById('voiceSelect');
-const startBtn = document.getElementById('startExamBtn');
-const wordDisplay = document.getElementById('wordDisplay');
-const userInput = document.getElementById('userInput');
-const checkBtn = document.getElementById('checkSpellingBtn');
-const nextBtn = document.getElementById('nextWordBtn');
-const fileInput = document.getElementById('fileInput');
-const customWordsInput = document.getElementById('customWords');
-const feedback = document.getElementById('feedback');
+const examSelect = document.getElementById("examSelect");
+const accentSelect = document.getElementById("accentSelect");
+const fileUpload = document.getElementById("fileUpload");
+const startButton = document.getElementById("startButton");
+const nextButton = document.getElementById("nextButton");
+const speakButton = document.getElementById("speakButton");
+const summaryDiv = document.getElementById("summary");
 
-window.speechSynthesis.onvoiceschanged = async () => {
-  voices = await loadVoices();
-  voiceSelect.innerHTML = voices.map(v => `<option value="${v.name}">${v.name}</option>`).join('');
-};
+startButton.addEventListener("click", () => {
+  const exam = examSelect.value;
+  mode = exam;
 
-fileInput.addEventListener('change', async (e) => {
-  const file = e.target.files[0];
-  if (file) {
-    wordList = await extractWordsFromFile(file);
-    showNotification(`Loaded ${wordList.length} words from file.`);
-  }
-});
-
-startBtn.addEventListener('click', () => {
-  const examType = examSelect.value;
-  feedback.textContent = '';
-
-  if (examType === 'OET') {
-    wordList = [...oetWords];
-  } else if (examType === 'Custom') {
-    const manualWords = customWordsInput.value.trim().split(/\n|,/).map(w => w.trim()).filter(Boolean);
-    if (manualWords.length) wordList = manualWords;
-    else {
-      showNotification('Please upload or enter words for Custom exam.');
+  if (exam === "OET") {
+    fetch("js/oet_word_list.js")
+      .then(res => res.text())
+      .then(data => {
+        words = data.split(/\r?\n/).filter(w => w.trim());
+        startSession();
+      });
+  } else if (exam === "SpellingBee") {
+    words = ["articulate", "pharaoh", "onomatopoeia", "surveillance"];
+    startSession();
+  } else if (exam === "Custom") {
+    if (words.length === 0) {
+      alert("Please upload a custom word list.");
       return;
     }
-  } else if (examType === 'SpellingBee') {
-    wordList = [...oetWords];
-    useSpeechRecognition();
+    startSession();
   }
-
-  currentIndex = 0;
-  showWord();
 });
 
-checkBtn.addEventListener('click', () => {
-  const currentWord = wordList[currentIndex];
-  const userAnswer = userInput.value.trim();
-  feedback.textContent = userAnswer.toLowerCase() === currentWord.toLowerCase()
-    ? '✅ Correct!'
-    : `❌ Incorrect. The word was: ${currentWord}`;
+fileUpload.addEventListener("change", (e) => {
+  const file = e.target.files[0];
+  const reader = new FileReader();
+  reader.onload = function (e) {
+    words = e.target.result.split(/\r?\n/).map(w => w.trim()).filter(w => w);
+    alert("Custom words loaded. Choose 'Custom' to begin.");
+  };
+  reader.readAsText(file);
 });
 
-nextBtn.addEventListener('click', () => {
+nextButton.addEventListener("click", () => {
   currentIndex++;
-  if (currentIndex < wordList.length) {
-    showWord();
+  if (currentIndex < words.length) {
+    speakWord(words[currentIndex]);
+    if (mode === "SpellingBee") listenSpelling(words[currentIndex]);
   } else {
-    wordDisplay.textContent = '✅ Exam complete!';
-    userInput.value = '';
-    feedback.textContent = '';
+    showSummary();
   }
 });
 
-function showWord() {
-  const word = wordList[currentIndex];
-  wordDisplay.textContent = `Spell this word:`;
-  userInput.value = '';
-  speakWord(word, voiceSelect.value);
+speakButton.addEventListener("click", () => {
+  if (words[currentIndex]) speakWord(words[currentIndex]);
+});
+
+function startSession() {
+  currentIndex = 0;
+  correctCount = 0;
+  incorrectWords = [];
+  speakWord(words[0]);
+  if (mode === "SpellingBee") listenSpelling(words[0]);
 }
 
-function useSpeechRecognition() {
-  if (!('webkitSpeechRecognition' in window)) {
-    showNotification('Speech recognition not supported on this browser.');
-    return;
-  }
+function speakWord(word) {
+  const utterance = new SpeechSynthesisUtterance(word);
+  utterance.lang = accentSelect.value;
+  speechSynthesis.speak(utterance);
+}
 
-  const recognition = new webkitSpeechRecognition();
-  recognition.lang = 'en-US';
-  recognition.continuous = false;
+function listenSpelling(correctWord) {
+  const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+  recognition.lang = accentSelect.value;
   recognition.interimResults = false;
+  recognition.maxAlternatives = 1;
+  recognition.start();
 
   recognition.onresult = (event) => {
-    const result = event.results[0][0].transcript;
-    userInput.value = result.replace(/\s+/g, '').toLowerCase();
-    checkBtn.click();
+    const spoken = event.results[0][0].transcript.toLowerCase().replace(/\s+/g, "");
+    const correct = correctWord.toLowerCase().replace(/\s+/g, "");
+
+    if (spoken === correct) {
+      correctCount++;
+      alert("✅ Correct!");
+    } else {
+      incorrectWords.push({ word: correctWord, heard: spoken });
+      alert(`❌ Incorrect. You said: ${spoken}`);
+    }
   };
 
-  recognition.onerror = (e) => {
-    showNotification('Speech recognition error: ' + e.error);
-  };
+  recognition.onerror = () => alert("Speech recognition error.");
+}
 
-  recognition.onend = () => {
-    // Autostart next word?
-  };
-
-  recognition.start();
+function showSummary() {
+  const percent = Math.round((correctCount / words.length) * 100);
+  summaryDiv.innerHTML = `
+    <h3>Premium Session Summary</h3>
+    <p>Total: ${words.length}</p>
+    <p>Correct: ${correctCount}</p>
+    <p>Score: ${percent}%</p>
+    ${
+      incorrectWords.length
+        ? `<ul>${incorrectWords.map(w => `<li>${w.word} - You said: ${w.heard}</li>`).join('')}</ul>`
+        : `<p>No mistakes. Excellent!</p>`
+    }
+  `;
 }
