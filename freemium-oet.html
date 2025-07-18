@@ -3,43 +3,64 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>SpellRightPro Freemium - OET</title>
+  <title>SpellRightPro - Freemium OET</title>
+
+  <!-- FontAwesome for icons -->
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet" />
+
+  <!-- Custom Styles -->
   <link rel="stylesheet" href="css/styles.css" />
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/js/all.min.js" defer></script>
 </head>
 <body>
   <div class="container">
-    <h1>SpellRightPro - OET Freemium</h1>
+    <header>
+      <img src="assets/logo.png" alt="Logo" class="logo" />
+      <h1>SpellRightPro - OET Practice</h1>
+    </header>
 
-    <label for="accentSelect">Choose Accent</label>
-    <select id="accentSelect">
-      <option value="en-GB">British</option>
-      <option value="en-US">American</option>
-    </select>
-
-    <button id="startButton" class="btn btn-info">▶️ Start</button>
-    <button id="speakButton" class="btn">🔊 Repeat</button>
-    <button id="nextButton" class="btn">⏭️ Next</button>
-
-    <div id="summary"></div>
-
-    <!-- Feedback Form -->
-    <form name="feedback" method="POST" data-netlify="true" class="word-box" style="margin-top: 30px;">
-      <h3>📩 Send Feedback</h3>
-      <label for="email">Email (optional):</label>
-      <input type="email" name="email" id="email" placeholder="you@example.com" />
-
-      <label for="message">Your Message</label>
-      <textarea name="message" id="message" rows="4" placeholder="Let us know how we can improve..." required></textarea>
-
-      <button type="submit" class="btn btn-info"><i class="fas fa-paper-plane"></i> Send Feedback</button>
-    </form>
-
-    <div style="margin-top: 30px; border-top: 1px solid #ccc; padding-top: 20px;">
-      <p style="text-align: center;">Want more features? <a href="premium.html" style="color: #007bff; font-weight: bold;">Upgrade to Premium</a></p>
+    <div class="form-row">
+      <label for="accentSelect">Accent:</label>
+      <select id="accentSelect">
+        <option value="en-GB">British</option>
+        <option value="en-US">American</option>
+      </select>
     </div>
+
+    <div class="form-row">
+      <button onclick="startPractice()" class="btn btn-info">Start Practice</button>
+      <button onclick="startTest()" class="btn btn-success">Start Test</button>
+    </div>
+
+    <div id="trainer" class="card"></div>
+    <div id="scoreDisplay" class="card"></div>
   </div>
 
-  <script src="js/main-freemium.js"></script>
+  <!-- Word List -->
+  <script src="js/oet_word_list.js"></script>
+  <!-- Script -->
+  <script src="js/main-freemium-oet.js"></script>
+  <script>
+    const synth = window.speechSynthesis;
+    function startPractice() {
+      words = oetWords;
+      mode = "practice";
+      currentIndex = 0;
+      correctCount = 0;
+      incorrectWords = [];
+      flaggedWords = [];
+      previousIndexes = [];
+      presentWord();
+    }
+    function startTest() {
+      words = oetWords.slice().sort(() => Math.random() - 0.5).slice(0, 25);
+      mode = "test";
+      currentIndex = 0;
+      correctCount = 0;
+      incorrectWords = [];
+      flaggedWords = [];
+      previousIndexes = [];
+      presentWord();
+    }
+  </script>
 </body>
 </html>
