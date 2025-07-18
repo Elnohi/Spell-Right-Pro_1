@@ -1,4 +1,4 @@
-// main-freemium-bee.js (Enhanced Freemium Spelling Bee with Firebase Auth + Feedback + Test Mode)
+// main-freemium-bee.js (Fixed: Functional Buttons, Dark Mode, Word Loading, Start Session)
 
 // Firebase Initialization
 const firebaseConfig = {
@@ -13,21 +13,11 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
 
-// DOM Elements
-const words = [
+// Default words array (used if no custom words are added)
+let words = [
   "articulate", "pharaoh", "onomatopoeia", "surveillance",
   "metamorphosis", "onomastics", "entrepreneur", "mnemonic"
 ];
-const modeToggle = document.getElementById("modeToggle");
-const modeIcon = document.getElementById("modeIcon");
-
-if (modeToggle) {
-  modeToggle.addEventListener("click", () => {
-    document.body.classList.toggle("dark-mode");
-    modeIcon.classList.toggle("fa-moon");
-    modeIcon.classList.toggle("fa-sun");
-  });
-}
 
 let currentIndex = 0;
 let correctCount = 0;
@@ -42,11 +32,26 @@ const form = document.querySelector("form[data-netlify='true']");
 const submitBtn = document.getElementById("submitBtn");
 const hiddenEmail = document.getElementById("formHiddenEmail");
 const testToggle = document.getElementById("toggleTestMode");
+const wordInput = document.getElementById("wordInput");
+const modeToggle = document.getElementById("modeToggle");
+const modeIcon = document.getElementById("modeIcon");
+
+// Theme toggle
+if (modeToggle && modeIcon) {
+  modeToggle.addEventListener("click", () => {
+    document.body.classList.toggle("dark-mode");
+    modeIcon.classList.toggle("fa-moon");
+    modeIcon.classList.toggle("fa-sun");
+  });
+}
 
 // Auth status
 auth.onAuthStateChanged(user => {
   if (user) {
     hiddenEmail.value = user.email;
+    document.getElementById("loginStatus").innerText = `Logged in as ${user.email}`;
+  } else {
+    document.getElementById("loginStatus").innerText = "Not logged in";
   }
 });
 
@@ -60,6 +65,13 @@ startButton.addEventListener("click", () => {
   currentIndex = 0;
   correctCount = 0;
   incorrectWords = [];
+  if (wordInput && wordInput.value.trim()) {
+    words = wordInput.value.trim().split(/\n+/).map(w => w.trim()).filter(w => w);
+  }
+  if (!words.length) {
+    alert("Please enter at least one word to begin.");
+    return;
+  }
   trainerDiv.innerHTML = "<p>🎤 Listening...</p>";
   speakWord(words[currentIndex]);
   listenAndCheck(words[currentIndex]);
@@ -157,4 +169,21 @@ if (form) {
       }, 2000);
     }
   });
+}
+
+// Optional login logic (if not yet added)
+function loginUser() {
+  const email = document.getElementById("userEmail").value;
+  const password = document.getElementById("userPassword").value;
+  auth.signInWithEmailAndPassword(email, password).catch(e => alert(e.message));
+}
+
+function signUpUser() {
+  const email = document.getElementById("userEmail").value;
+  const password = document.getElementById("userPassword").value;
+  auth.createUserWithEmailAndPassword(email, password).catch(e => alert(e.message));
+}
+
+function logoutUser() {
+  auth.signOut();
 }
