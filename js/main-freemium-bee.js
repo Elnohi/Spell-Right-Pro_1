@@ -1,59 +1,41 @@
-// main-freemium-bee.js (with Analytics)
+// main-freemium-bee.js (Enhanced Freemium Spelling Bee)
 
-let words = ["articulate", "pharaoh", "onomatopoeia", "surveillance"];
+const words = [
+  "articulate", "pharaoh", "onomatopoeia", "surveillance",
+  "metamorphosis", "onomastics", "entrepreneur", "mnemonic"
+];
+
 let currentIndex = 0;
 let correctCount = 0;
 let incorrectWords = [];
-
 const accentSelect = document.getElementById("accentSelect");
-const startButton = document.getElementById("startButton");
-const nextButton = document.getElementById("nextButton");
-const speakButton = document.getElementById("speakButton");
-const summaryDiv = document.getElementById("summary");
+const startButton = document.getElementById("startTest");
+const trainerDiv = document.getElementById("trainer");
+const scoreDiv = document.getElementById("scoreDisplay");
 
 startButton.addEventListener("click", () => {
   currentIndex = 0;
   correctCount = 0;
   incorrectWords = [];
-  speakWord(words[0]);
-  listenSpelling(words[0]);
-
-  if (typeof gtag === 'function') {
-    gtag('event', 'start_exam', {
-      exam: 'SpellingBee',
-      variant: 'freemium'
-    });
-  }
-});
-
-nextButton.addEventListener("click", () => {
-  currentIndex++;
-  if (currentIndex < words.length) {
-    speakWord(words[currentIndex]);
-    listenSpelling(words[currentIndex]);
-  } else {
-    showSummary();
-  }
-});
-
-speakButton.addEventListener("click", () => {
-  if (words[currentIndex]) speakWord(words[currentIndex]);
+  speakWord(words[currentIndex]);
+  listenAndCheck(words[currentIndex]);
 });
 
 function speakWord(word) {
-  const utterance = new SpeechSynthesisUtterance(word);
-  utterance.lang = accentSelect.value;
-  utterance.rate = 0.9;
+  const utter = new SpeechSynthesisUtterance(word);
+  utter.lang = accentSelect.value;
+  utter.rate = 0.9;
   speechSynthesis.cancel();
-  speechSynthesis.speak(utterance);
+  speechSynthesis.speak(utter);
 }
 
-function listenSpelling(correctWord) {
-  if (!window.SpeechRecognition && !window.webkitSpeechRecognition) {
-    alert("⚠️ Speech recognition not supported in this browser.");
+function listenAndCheck(correctWord) {
+  if (!("SpeechRecognition" in window || "webkitSpeechRecognition" in window)) {
+    alert("Speech recognition not supported in this browser.");
     return;
   }
-  const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+  const Recognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+  const recognition = new Recognition();
   recognition.lang = accentSelect.value;
   recognition.interimResults = false;
   recognition.maxAlternatives = 1;
@@ -61,58 +43,56 @@ function listenSpelling(correctWord) {
 
   recognition.onresult = (event) => {
     const spoken = event.results[0][0].transcript.toLowerCase().replace(/\s+/g, "");
-    const correct = correctWord.toLowerCase().replace(/\s+/g, "");
+    const expected = correctWord.toLowerCase().replace(/\s+/g, "");
 
-    const isCorrect = spoken === correct;
-
-    if (isCorrect) {
+    const box = document.createElement("div");
+    box.className = "word-box";
+    if (spoken === expected) {
       correctCount++;
-      alert("✅ Correct!");
+      box.innerHTML = `✅ <strong>Correct!</strong> You spelled: ${spoken}`;
     } else {
       incorrectWords.push({ word: correctWord, heard: spoken });
-      alert(`❌ Incorrect. You said: ${spoken}`);
+      box.innerHTML = `❌ <strong>Incorrect.</strong> You said: <em>${spoken}</em><br>Correct spelling was: <strong>${correctWord}</strong>`;
     }
+    trainerDiv.innerHTML = "";
+    trainerDiv.appendChild(box);
 
-    if (typeof gtag === 'function') {
-      gtag('event', 'word_checked', {
-        word: correctWord,
-        correct: isCorrect,
-        heard: spoken
-      });
+    currentIndex++;
+    if (currentIndex < words.length) {
+      setTimeout(() => {
+        trainerDiv.innerHTML = "";
+        speakWord(words[currentIndex]);
+        listenAndCheck(words[currentIndex]);
+      }, 2500);
+    } else {
+      showScore();
     }
   };
 
   recognition.onerror = (e) => {
     console.error("Speech recognition error:", e);
-    alert("❌ Speech recognition error occurred.");
+    alert("Speech recognition error. Please try again.");
   };
 }
 
-function showSummary() {
+function showScore() {
   const percent = Math.round((correctCount / words.length) * 100);
+  let color = "#28a745";
+  if (percent < 50) color = "#dc3545";
+  else if (percent < 75) color = "#ffc107";
 
-  if (typeof gtag === 'function') {
-    gtag('event', 'session_complete', {
-      exam: 'SpellingBee',
-      variant: 'freemium',
-      score: percent,
-      totalWords: words.length,
-      correctCount
-    });
-  }
-
-  summaryDiv.innerHTML = `
+  scoreDiv.innerHTML = `
     <div class="word-box">
-      <h3>Freemium Bee Summary</h3>
+      <h3 style="color:${color};">Test Completed</h3>
       <p><strong>Total:</strong> ${words.length}</p>
       <p><strong>Correct:</strong> ${correctCount}</p>
       <p><strong>Score:</strong> ${percent}%</p>
       ${
         incorrectWords.length
           ? `<h4>Incorrect Words</h4><ul>${incorrectWords.map(w => `<li><strong>${w.word}</strong> – You said: <em>${w.heard}</em></li>`).join('')}</ul>`
-          : `<p>🎉 Excellent! All correct.</p>`
+          : `<p>🎉 No mistakes. Excellent spelling!</p>`
       }
-      <button onclick="location.reload()" class="btn btn-info">🔄 Try Again</button>
+      <button onclick="location.reload()" class="btn btn-info">🔁 Try Again</button>
     </div>
   `;
 }
