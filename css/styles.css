@@ -1,173 +1,127 @@
-/* General Layout */
+/* styles.css – Upgraded Layout and Responsiveness */
+
 body {
-  font-family: Arial, sans-serif;
   margin: 0;
-  padding: 0;
-  background: #f8f9fa;
-  transition: background 0.3s ease;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background-color: #f9f9f9;
+  color: #333;
 }
 
 .container {
   max-width: 960px;
   margin: auto;
-  padding: 20px;
+  padding: 2rem;
+  background: #fff;
+  box-shadow: 0 0 10px rgba(0,0,0,0.05);
+  border-radius: 12px;
 }
 
-/* Form Row Layout */
+header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+header h1 {
+  font-size: 1.8rem;
+  color: #00509e;
+}
+
 .form-row {
   display: flex;
   flex-wrap: wrap;
-  gap: 10px;
   align-items: center;
-  margin-top: 15px;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
 }
 
 .form-row label {
-  min-width: 100px;
-  font-weight: bold;
+  font-weight: 500;
+  min-width: 80px;
 }
 
-.form-row select,
-.form-row input[type="email"],
-.form-row input[type="password"],
-.form-row textarea,
-.form-row input[type="file"] {
-  flex: 1;
-  padding: 8px;
+input[type="text"],
+input[type="email"],
+input[type="password"],
+select,
+textarea {
+  padding: 0.6rem;
   border: 1px solid #ccc;
-  border-radius: 5px;
+  border-radius: 8px;
   font-size: 1rem;
-  transition: background-color 0.3s ease, color 0.3s ease;
+  flex: 1;
+  min-width: 200px;
 }
 
-/* Buttons */
-.btn {
-  padding: 10px 15px;
-  margin: 5px 0;
-  border: none;
-  background: #007bff;
-  color: white;
-  border-radius: 5px;
+select {
   cursor: pointer;
+}
+
+textarea {
+  width: 100%;
+  resize: vertical;
+}
+
+button.btn {
+  padding: 0.6rem 1rem;
+  background: #007bff;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
   font-size: 1rem;
-  transition: all 0.3s ease;
+  cursor: pointer;
+  transition: background 0.3s ease;
 }
 
-.btn:hover {
+button.btn:hover {
   background: #0056b3;
-  transform: translateY(-1px);
 }
 
-.btn:disabled {
-  background: #cccccc;
-  cursor: not-allowed;
-  transform: none;
+button.btn-info {
+  background-color: #17a2b8;
 }
 
-.btn:focus {
-  outline: none;
-  box-shadow: 0 0 0 3px rgba(0,123,255,0.4);
+button.btn-warning {
+  background-color: #ffc107;
+  color: #000;
 }
 
-.btn-info {
-  background: #17a2b8;
+button.btn-success {
+  background-color: #28a745;
 }
 
-.btn-success {
-  background: #28a745;
-}
-
-.btn-warning {
-  background: #ffc107;
-  color: black;
-}
-
-/* Card / Output */
 .card {
-  margin-top: 20px;
+  background: #f1f1f1;
+  border-radius: 10px;
+  padding: 1rem;
+  margin-top: 1rem;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.08);
 }
 
 .word-box {
-  padding: 20px;
-  border: 2px solid #007bff;
-  border-radius: 10px;
-  background: white;
-  margin-bottom: 20px;
-  opacity: 0;
-  transform: translateY(10px);
-  animation: fadeInSlide 0.5s ease forwards;
-  transition: background-color 0.3s ease, color 0.3s ease;
+  background: #fff;
+  border-left: 4px solid #007bff;
+  padding: 1rem;
+  border-radius: 8px;
+  margin-bottom: 1rem;
 }
 
-@keyframes fadeInSlide {
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+#notificationContainer {
+  margin-top: 2rem;
 }
 
-/* Status Styling */
-.status.correct {
-  color: green;
-  font-weight: bold;
-}
-
-.status.incorrect {
-  color: red;
-  font-weight: bold;
-}
-
-/* Accent Select Fix */
-#accentSelect {
-  min-width: 160px;
-  transition: all 0.3s ease;
-  background-color: #fff;
-}
-
-#accentSelect:focus {
-  border-color: #007bff;
-  box-shadow: 0 0 0 3px rgba(0,123,255,0.2);
-}
-
-/* Feedback Form */
-textarea[name="message"] {
-  width: 100%;
-  min-height: 80px;
-  resize: vertical;
-  border: 1px solid #ccc;
-  border-radius: 5px;
-}
-
-/* Responsive Enhancements */
 @media (max-width: 600px) {
   .form-row {
     flex-direction: column;
     align-items: stretch;
   }
 
-  .form-row label {
-    min-width: auto;
-  }
-
-  .btn {
+  button.btn {
     width: 100%;
   }
 
-  #accentSelect {
+  input, select, textarea {
     width: 100%;
   }
-}
-
-/* Scrollbar Styling */
-body::-webkit-scrollbar {
-  width: 8px;
-}
-
-body::-webkit-scrollbar-thumb {
-  background: #007bff;
-  border-radius: 4px;
-}
-
-body::-webkit-scrollbar-track {
-  background: #f1f1f1;
 }
