@@ -18,30 +18,33 @@
 </head>
 <body>
   <div class="container">
-    <!-- Login block at top -->
-    <div class="form-row">
+    <!-- Logo + App Name at top -->
+    <div style="text-align:center; margin-bottom:1rem;">
+      <img src="assets/logo.png" alt="Logo" style="height:60px;vertical-align:middle;margin-bottom:5px;" />
+      <span style="font-size:2rem;font-weight:bold;color:#007bff;vertical-align:middle;margin-left:10px;">
+        SpellRightPro <span style="font-size:1.1rem;color:#222;">(Spelling Bee - Freemium)</span>
+      </span>
+    </div>
+
+    <!-- Login block -->
+    <div class="form-row" style="justify-content:center;">
       <input type="email" id="userEmail" placeholder="Email" />
       <input type="password" id="userPassword" placeholder="Password" />
       <button class="btn" id="loginBtn">Login</button>
       <button class="btn" id="signupBtn">Sign Up</button>
       <button class="btn" id="logoutBtn">Logout</button>
     </div>
-    <h3 id="loginStatus">Loading...</h3>
+    <h3 id="loginStatus" style="text-align:center;">Loading...</h3>
 
-    <header>
-      <img src="assets/logo.png" alt="Logo" class="logo" width="50" />
-      <h1>SpellRightPro (Spelling Bee - Freemium)</h1>
-    </header>
-
+    <!-- Controls -->
     <div class="form-row">
       <label for="accentSelect">Accent:</label>
       <select id="accentSelect">
         <option value="en-US">American</option>
         <option value="en-GB">British</option>
       </select>
-      <label for="toggleTestMode">Test Mode:</label>
-      <input type="checkbox" id="toggleTestMode" title="Spell letter by letter" />
-      <button class="btn btn-warning" id="modeToggle">
+      <!-- Only dark mode toggle -->
+      <button class="btn btn-warning" id="modeToggle" style="margin-left:auto;">
         <i class="fas fa-moon" id="modeIcon"></i>
       </button>
     </div>
@@ -58,7 +61,7 @@
     <div id="trainer" class="card"></div>
     <div id="scoreDisplay" class="card"></div>
 
-    <h2>Feedback</h2>
+    <h2 style="margin-top:2rem;">Feedback</h2>
     <form name="feedback" method="POST" data-netlify="true" action="/thankyou.html">
       <input type="hidden" name="email" id="formHiddenEmail" />
       <div class="form-row">
