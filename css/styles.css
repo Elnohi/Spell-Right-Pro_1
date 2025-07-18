@@ -1,4 +1,4 @@
-/* styles.css – Upgraded Layout, Responsiveness, Theme Colors, and Animations */
+/* styles.css – Final Layout, Responsive Enhancements, Theme, and Dark Mode Polishing */
 
 :root {
   --primary: #007bff;
@@ -17,6 +17,7 @@ body {
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
   background-color: var(--bg);
   color: var(--text);
+  transition: background 0.3s ease, color 0.3s ease;
 }
 
 .container {
@@ -127,32 +128,15 @@ button.btn-success {
   margin-top: 2rem;
 }
 
-@keyframes fadeIn {
-  0% {
-    opacity: 0;
-    transform: translateY(10px);
-  }
-  100% {
-    opacity: 1;
-    transform: translateY(0);
+/* Dark Mode Styles */
+.dark-mode {
+  background: #121212;
+  color: #f0f0f0;
 }
 
-@media (max-width: 600px) {
-  .form-row {
-    flex-direction: column;
-    align-items: stretch;
-  }
-
-  button.btn {
-    width: 100%;
-  }
-
-  input, select, textarea {
-    width: 100%;
-  }
-  .dark-mode {
+.dark-mode .container {
   background: #1e1e1e;
-  color: #f0f0f0;
+  box-shadow: 0 0 10px rgba(255, 255, 255, 0.05);
 }
 
 .dark-mode .card,
@@ -168,4 +152,34 @@ button.btn-success {
   color: #fff;
   border-color: #555;
 }
-} 
+
+.dark-mode button.btn-warning {
+  background-color: #333;
+  color: #ffc107;
+}
+
+@keyframes fadeIn {
+  0% {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (max-width: 600px) {
+  .form-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  button.btn {
+    width: 100%;
+  }
+
+  input, select, textarea {
+    width: 100%;
+  }
+}
