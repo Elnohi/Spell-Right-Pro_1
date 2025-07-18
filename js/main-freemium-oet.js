@@ -1,25 +1,47 @@
-// main-freemium-oet.js – Improved for UX, feedback, accessibility
+// main-freemium-oet.js – Improved: one word at a time, same logic for custom or OET list
+
+import { initThemeToggle, initAuth, addAuthListeners, showNotification, gaEvent } from './common.js';
+
+const oetWords = [ /* ... (your OET word list) ... */ ];
 
 let words = [];
-let currentIndex = 0;
-let correctCount = 0;
-let incorrectWords = [];
-let flaggedWords = [];
-let previousIndexes = [];
+let currentIndex = 0, correctCount = 0, incorrectWords = [];
+let flaggedWords = [], previousIndexes = [];
+let mode = "";
 
 const trainer = document.getElementById("trainer");
 const summaryDiv = document.getElementById("scoreDisplay");
 const accentSelect = document.getElementById("accentSelect");
+const wordInput = document.getElementById("wordInput");
 const synth = window.speechSynthesis;
+const startButton = document.getElementById("startTest");
 
-function resetState() {
+// Theme/Account
+initThemeToggle("modeToggle", "modeIcon");
+const auth = initAuth(firebase, "loginStatus", "formHiddenEmail");
+addAuthListeners(auth, "loginBtn", "signupBtn", "logoutBtn", "userEmail", "userPassword");
+
+startButton.addEventListener("click", () => {
   currentIndex = 0;
   correctCount = 0;
   incorrectWords = [];
   flaggedWords = [];
   previousIndexes = [];
+
+  // Prefer custom words if present, else OET
+  if (wordInput && wordInput.value.trim()) {
+    words = wordInput.value.trim().split(/\n+/).map(w => w.trim()).filter(w => w);
+  } else {
+    words = [...oetWords];
+  }
+  if (!words.length) {
+    showNotification("Please enter at least one word to begin.", "error");
+    return;
+  }
   summaryDiv.innerHTML = "";
-}
+  presentWord();
+  gaEvent('test', 'start', 'oet-freemium');
+});
 
 function presentWord() {
   trainer.innerHTML = "";
@@ -28,26 +50,17 @@ function presentWord() {
   const box = document.createElement("div");
   box.className = "word-box";
 
-  const progress = document.createElement("div");
-  progress.className = "progress-info";
-  progress.innerHTML = `<strong>Word ${currentIndex + 1} / ${words.length}</strong>`;
-  box.append(progress);
-
   const title = document.createElement("h3");
-  title.textContent = "Listen and Spell:";
-  box.append(title);
+  title.textContent = `Word ${currentIndex + 1} of ${words.length}`;
 
   const input = document.createElement("input");
   input.type = "text";
   input.placeholder = "Type what you heard...";
-  input.autocomplete = "off";
   input.addEventListener("keypress", e => e.key === "Enter" && check());
 
   const status = document.createElement("div");
   status.className = "status";
   status.style.margin = "10px 0";
-  status.setAttribute("aria-live", "polite");
-  box.append(input, status);
 
   const checkBtn = document.createElement("button");
   checkBtn.textContent = "Check";
@@ -97,7 +110,7 @@ function presentWord() {
   controls.style.display = "flex";
   controls.style.gap = "10px";
   controls.style.marginTop = "15px";
-  controls.append(backBtn, flagBtn, nextBtn, checkBtn, speakBtn);
+  controls.append(backBtn, flagBtn, nextBtn);
 
   function check() {
     const typed = input.value.trim().toLowerCase();
@@ -114,7 +127,7 @@ function presentWord() {
     }
   }
 
-  box.appendChild(controls);
+  box.append(title, speakBtn, document.createElement("br"), input, checkBtn, status, controls);
   trainer.appendChild(box);
   setTimeout(() => speak(word), 500);
   input.focus();
@@ -157,4 +170,24 @@ function showScore() {
       </button>
     </div>
   `;
+}
+
+// Feedback form logic (Netlify, same as above)
+const form = document.querySelector("form[data-netlify='true']");
+const submitBtn = document.getElementById("submitBtn");
+const hiddenEmail = document.getElementById("formHiddenEmail");
+if (form) {
+  form.addEventListener("submit", function (event) {
+    if (!hiddenEmail.value) {
+      showNotification("Please log in before submitting feedback.", "error");
+      event.preventDefault();
+    } else {
+      submitBtn.disabled = true;
+      submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sending...';
+      setTimeout(() => {
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = '<i class="fas fa-paper-plane"></i> Send Comment';
+      }, 2000);
+    }
+  });
 }
