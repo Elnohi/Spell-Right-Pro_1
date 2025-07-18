@@ -1,4 +1,5 @@
-// main-freemium-bee.js – Correct Spelling Bee logic & modular imports
+// main-freemium-bee.js – Improved, bugfixed, one-by-one speaking
+
 import { initThemeToggle, initAuth, addAuthListeners, showNotification, gaEvent } from './common.js';
 
 // --- Firebase ---
@@ -23,34 +24,34 @@ let words = [
   "articulate", "pharaoh", "onomatopoeia", "surveillance",
   "metamorphosis", "onomastics", "entrepreneur", "mnemonic"
 ];
-let currentIndex = 0, correctCount = 0, incorrectWords = [], testMode = false;
+let currentIndex = 0, correctCount = 0, incorrectWords = [];
 
 const accentSelect = document.getElementById("accentSelect");
 const startButton = document.getElementById("startTest");
 const trainerDiv = document.getElementById("trainer");
 const scoreDiv = document.getElementById("scoreDisplay");
 const wordInput = document.getElementById("wordInput");
-const testToggle = document.getElementById("toggleTestMode");
 
-// Test mode checkbox logic
-if (testToggle) {
-  testToggle.addEventListener("change", (e) => {
-    testMode = e.target.checked;
-  });
-}
-
+// Start test
 startButton.addEventListener("click", () => {
   currentIndex = 0;
   correctCount = 0;
   incorrectWords = [];
+  // Use custom words if present, else fallback to default sample words
   if (wordInput && wordInput.value.trim()) {
     words = wordInput.value.trim().split(/\n+/).map(w => w.trim()).filter(w => w);
+  } else {
+    words = [
+      "articulate", "pharaoh", "onomatopoeia", "surveillance",
+      "metamorphosis", "onomastics", "entrepreneur", "mnemonic"
+    ];
   }
   if (!words.length) {
     showNotification("Please enter at least one word to begin.", "error");
     return;
   }
   trainerDiv.innerHTML = "<p>🎤 Listening...</p>";
+  scoreDiv.innerHTML = "";
   speakWord(words[currentIndex]);
   setTimeout(() => listenAndCheck(words[currentIndex]), 1000); // Give a small pause after speaking
   gaEvent('test', 'start', 'bee-freemium');
@@ -60,7 +61,7 @@ function speakWord(word) {
   const utter = new SpeechSynthesisUtterance();
   utter.lang = accentSelect.value;
   utter.rate = 0.9;
-  utter.text = word; // Always speaks the whole word!
+  utter.text = word; // App speaks whole word only!
   speechSynthesis.cancel();
   speechSynthesis.speak(utter);
 }
@@ -100,7 +101,7 @@ function listenAndCheck(correctWord) {
         trainerDiv.innerHTML = "<p>🎤 Listening...</p>";
         speakWord(words[currentIndex]);
         setTimeout(() => listenAndCheck(words[currentIndex]), 1000);
-      }, 2500);
+      }, 2200);
     } else {
       showScore();
     }
@@ -140,7 +141,6 @@ const submitBtn = document.getElementById("submitBtn");
 const hiddenEmail = document.getElementById("formHiddenEmail");
 if (form) {
   form.addEventListener("submit", function (event) {
-    // Let Netlify handle the POST and redirect to thankyou.html
     if (!hiddenEmail.value) {
       showNotification("Please log in before submitting feedback.", "error");
       event.preventDefault();
