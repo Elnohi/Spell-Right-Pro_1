@@ -1,62 +1,68 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
+  <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>SpellRightPro (Spelling Bee - Freemium)</title>
-  <link rel="stylesheet" href="css/styles.css" />
-  <script src="https://kit.fontawesome.com/ef25d26b8f.js" crossorigin="anonymous"></script>
+  <title>SpellRightPro – Spelling Bee (Freemium)</title>
+  <link rel="stylesheet" href="css/styles.css"/>
+  <link rel="icon" href="assets/logo.png"/>
+  <script src="https://kit.fontawesome.com/19b43c6b5c.js" crossorigin="anonymous"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
 </head>
 <body>
-  <header>
-    <div class="header-bar">
-      <img src="assets/logo.png" alt="Logo" class="logo">
-      <h1>SpellRightPro <span class="subtitle">(Spelling Bee - Freemium)</span></h1>
-    </div>
-    <!-- Login/Sign Up Area (centered under logo/app name) -->
-    <div class="login-bar">
-      <input type="email" id="userEmail" placeholder="Email" autocomplete="username">
-      <input type="password" id="userPassword" placeholder="Password" autocomplete="current-password">
-      <button id="loginBtn" class="btn btn-info">Login</button>
-      <button id="signupBtn" class="btn btn-info">Sign Up</button>
-      <button id="logoutBtn" class="btn btn-danger">Logout</button>
-      <span id="loginStatus" style="margin-left: 10px; font-weight: 500;"></span>
-      <input type="hidden" id="formHiddenEmail" />
-    </div>
-  </header>
-
-  <div class="trainer-area">
-    <div class="header-row" style="margin-bottom: 20px;">
-      <label for="accentSelect"><b>Accent:</b></label>
-      <select id="accentSelect">
-        <option value="en-US">American</option>
-        <option value="en-GB">British</option>
-      </select>
-      <!-- Remove/clarify Test Mode if not needed; here we comment it out:
-      <label for="modeToggle" style="margin-left:12px;">Test Mode:</label>
-      <input type="checkbox" id="modeToggle" style="margin-right: 12px;">
-      <button class="btn" id="modeIcon"><i class="fas fa-moon"></i></button>
-      -->
-      <button class="btn" id="modeIcon" style="margin-left:12px;"><i class="fas fa-moon"></i></button>
-    </div>
-
-    <label for="wordInput"><b>Custom Words:</b></label>
-    <textarea id="wordInput" placeholder="Enter one word per line..."></textarea>
-    <br><br>
-
-    <button class="btn btn-success" id="startTest">▶ Start Test</button>
-
-    <div id="trainer" style="margin-top:30px"></div>
-    <div id="scoreDisplay"></div>
-  </div>
-
-  <div class="trainer-area">
-    <h2>Feedback</h2>
-    <form data-netlify="true">
-      <textarea placeholder="Your feedback..." style="width:100%;"></textarea>
-      <button type="submit" class="btn btn-info" id="submitBtn"><i class="fas fa-paper-plane"></i> Send Comment</button>
-    </form>
+  <div class="app-container">
+    <header class="header">
+      <img src="assets/logo.png" class="logo" alt="SpellRightPro"/>
+      <span class="app-title">SpellRightPro</span>
+      <div class="auth-area">
+        <input type="email" id="userEmail" placeholder="Email"/>
+        <input type="password" id="userPassword" placeholder="Password"/>
+        <button id="loginBtn">Login</button>
+        <button id="signupBtn">Sign Up</button>
+        <button id="logoutBtn">Logout</button>
+      </div>
+      <button id="modeToggle" title="Toggle dark mode"><i class="fas fa-moon" id="modeIcon"></i></button>
+    </header>
+    <main>
+      <div class="practice-header">
+        <h1>Spelling Bee <span class="freemium-tag">(Freemium)</span></h1>
+        <a href="premium.html" class="btn premium-btn"><i class="fas fa-star"></i> Go Premium</a>
+      </div>
+      <div class="card practice-card">
+        <div class="row">
+          <label for="accentSelect">Accent:</label>
+          <select id="accentSelect">
+            <option value="en-US">American</option>
+            <option value="en-GB">British</option>
+          </select>
+        </div>
+        <div class="row">
+          <label for="wordInput">Custom Words:</label>
+          <textarea id="wordInput" rows="2" placeholder="Enter one word per line..."></textarea>
+        </div>
+        <div class="row">
+          <button id="startTest" class="btn btn-success"><i class="fas fa-play"></i> Start Test</button>
+        </div>
+        <div id="trainer" class="trainer"></div>
+        <div id="scoreDisplay"></div>
+      </div>
+      <div class="card feedback-card">
+        <h2>Feedback</h2>
+        <form name="feedback" method="POST" data-netlify="true" netlify>
+          <input type="hidden" name="email" id="formHiddenEmail"/>
+          <textarea name="message" id="feedbackInput" rows="2" placeholder="Your feedback..."></textarea>
+          <button type="submit" id="submitBtn" class="btn btn-primary">
+            <i class="fas fa-paper-plane"></i> Send Comment
+          </button>
+        </form>
+      </div>
+    </main>
+    <footer>
+      <span>© 2025 SpellRightPro. All rights reserved.</span>
+    </footer>
   </div>
   <script type="module" src="js/main-freemium-bee.js"></script>
+  <script type="module" src="js/common.js"></script>
 </body>
 </html>
