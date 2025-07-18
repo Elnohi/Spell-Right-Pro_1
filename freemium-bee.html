@@ -2,19 +2,34 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>SpellRightPro - Freemium Spelling Bee</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>SpellRightPro - Bee</title>
 
   <!-- FontAwesome -->
-  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet" />
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet"/>
   <link rel="stylesheet" href="css/styles.css" />
+
+  <!-- Firebase -->
+  <script src="https://www.gstatic.com/firebasejs/10.4.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.4.0/firebase-auth-compat.js"></script>
 </head>
 <body>
   <div class="container">
     <header>
-      <img src="assets/logo.png" alt="Logo" class="logo" />
-      <h1>SpellRightPro - Spelling Bee</h1>
+      <img src="assets/logo.png" alt="SpellRightPro Logo" style="height:50px; margin-right:10px;">
+      <h1 style="display:inline-block;">SpellRightPro - Spelling Bee</h1>
     </header>
+
+    <div class="form-row" id="authSection">
+      <label>Email:</label>
+      <input type="email" id="userEmail" placeholder="Enter email" />
+      <label>Password:</label>
+      <input type="password" id="userPassword" placeholder="Enter password" />
+      <button onclick="loginUser()" class="btn">Login</button>
+      <button onclick="signUpUser()" class="btn btn-info">Sign Up</button>
+      <button onclick="logoutUser()" class="btn btn-warning">Logout</button>
+      <span id="loginStatus"></span>
+    </div>
 
     <div class="form-row">
       <label for="accentSelect">Accent:</label>
@@ -22,17 +37,55 @@
         <option value="en-GB">British</option>
         <option value="en-US">American</option>
       </select>
-    </div>
-
-    <div class="form-row">
-      <button id="startTest" class="btn btn-success">Start Bee Test</button>
+      <button id="startTest" class="btn btn-success">🎤 Start Bee Test</button>
     </div>
 
     <div id="trainer" class="card"></div>
     <div id="scoreDisplay" class="card"></div>
+
+    <!-- Feedback Form -->
+    <form name="feedback" method="POST" data-netlify="true" netlify-honeypot="bot-field" class="form-row">
+      <input type="hidden" name="form-name" value="feedback" />
+      <input type="hidden" name="user-email" id="formHiddenEmail" />
+      <p hidden><label>Don’t fill this out: <input name="bot-field" /></label></p>
+      <textarea name="message" rows="3" placeholder="Write your notes or comments here..." style="width:100%;" required></textarea>
+      <button type="submit" class="btn btn-success" id="submitBtn">
+        <i class="fas fa-paper-plane"></i> Send Comment
+      </button>
+    </form>
   </div>
 
-  <!-- Script -->
+  <script>
+    const auth = firebase.auth();
+    auth.onAuthStateChanged(user => {
+      const status = document.getElementById("loginStatus");
+      if (user) {
+        document.getElementById("formHiddenEmail").value = user.email;
+        status.textContent = `✔ Logged in as ${user.email}`;
+        status.style.color = "green";
+      } else {
+        status.textContent = "✖ Not logged in";
+        status.style.color = "red";
+      }
+    });
+
+    function loginUser() {
+      const email = document.getElementById("userEmail").value;
+      const password = document.getElementById("userPassword").value;
+      auth.signInWithEmailAndPassword(email, password).catch(err => alert(err.message));
+    }
+
+    function signUpUser() {
+      const email = document.getElementById("userEmail").value;
+      const password = document.getElementById("userPassword").value;
+      auth.createUserWithEmailAndPassword(email, password).catch(err => alert(err.message));
+    }
+
+    function logoutUser() {
+      auth.signOut();
+    }
+  </script>
+
   <script src="js/main-freemium-bee.js"></script>
 </body>
 </html>
