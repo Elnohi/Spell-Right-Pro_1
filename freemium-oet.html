@@ -3,39 +3,49 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>SpellRightPro – OET Trainer</title>
+  <title>SpellRightPro (OET - Freemium)</title>
   <link rel="stylesheet" href="css/styles.css" />
+  <script src="https://kit.fontawesome.com/ef25d26b8f.js" crossorigin="anonymous"></script>
 </head>
 <body>
   <header>
     <div class="header-bar">
-      <img src="assets/logo.png" alt="Logo" class="logo" />
-      <h1>SpellRightPro <span class="subtitle">OET Trainer (Free)</span></h1>
-      <a href="premium.html" class="btn btn-premium btn-header"><i class="fas fa-gem"></i> Go Premium</a>
+      <img src="assets/logo.png" alt="Logo" class="logo">
+      <h1>SpellRightPro <span class="subtitle">(OET - Freemium)</span></h1>
+    </div>
+    <!-- Login/Sign Up Area (centered under logo/app name) -->
+    <div class="login-bar">
+      <input type="email" id="userEmail" placeholder="Email" autocomplete="username">
+      <input type="password" id="userPassword" placeholder="Password" autocomplete="current-password">
+      <button id="loginBtn" class="btn btn-info">Login</button>
+      <button id="signupBtn" class="btn btn-info">Sign Up</button>
+      <button id="logoutBtn" class="btn btn-danger">Logout</button>
+      <span id="loginStatus" style="margin-left: 10px; font-weight: 500;"></span>
+      <input type="hidden" id="formHiddenEmail" />
     </div>
   </header>
-  <main>
-    <section class="trainer-area">
-      <h2>OET Listening Trainer</h2>
-      <div class="trainer-controls">
-        <label for="accentSelect">Accent:</label>
-        <select id="accentSelect">
-          <option value="en-GB">British</option>
-          <option value="en-US">American</option>
-        </select>
-        <textarea id="wordInput" placeholder="(Optional) Paste your own OET words, one per line..."></textarea>
-        <button id="startTest" class="btn btn-success">Start Practice</button>
-      </div>
-      <div id="trainer"></div>
-      <div id="scoreDisplay"></div>
-    </section>
-    <footer>
-      <small>SpellRightPro &copy; 2025. <a href="index.html">Back to Home</a></small>
-    </footer>
-  </main>
-  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+
+  <div class="trainer-area">
+    <div class="header-row" style="margin-bottom: 20px;">
+      <label for="accentSelect"><b>Accent:</b></label>
+      <select id="accentSelect">
+        <option value="en-US">American</option>
+        <option value="en-GB">British</option>
+      </select>
+      <button class="btn" id="modeIcon" style="margin-left:12px;"><i class="fas fa-moon"></i></button>
+    </div>
+    <button class="btn btn-success" id="startOET">▶ Start OET Practice</button>
+    <div id="trainer" style="margin-top:30px"></div>
+    <div id="scoreDisplay"></div>
+  </div>
+
+  <div class="trainer-area">
+    <h2>Feedback</h2>
+    <form data-netlify="true">
+      <textarea placeholder="Your feedback..." style="width:100%;"></textarea>
+      <button type="submit" class="btn btn-info" id="submitBtn"><i class="fas fa-paper-plane"></i> Send Comment</button>
+    </form>
+  </div>
   <script type="module" src="js/main-freemium-oet.js"></script>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css"/>
 </body>
 </html>
