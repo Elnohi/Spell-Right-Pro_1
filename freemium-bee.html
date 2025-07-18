@@ -2,71 +2,40 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>SpellRightPro - Bee (Freemium)</title>
-  <link rel="stylesheet" href="../css/styles.css" />
-  <script src="https://kit.fontawesome.com/a2d9d5b5dc.js" crossorigin="anonymous"></script>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>SpellRightPro – Spelling Bee</title>
+  <link rel="stylesheet" href="css/styles.css" />
 </head>
 <body>
-  <div class="container">
-    <header>
-      <img src="../assets/logo.png" alt="Logo" class="logo" width="50" />
-      <h1>SpellRightPro (Spelling Bee - Freemium)</h1>
-    </header>
-
-    <div class="form-row">
-      <label for="accentSelect">Accent:</label>
-      <select id="accentSelect">
-        <option value="en-US">American</option>
-        <option value="en-GB">British</option>
-      </select>
-
-      <label for="toggleTestMode">Test Mode:</label>
-      <input type="checkbox" id="toggleTestMode" title="Spell letter by letter" />
-
-      <button class="btn btn-warning" id="modeToggle">
-        <i class="fas fa-moon" id="modeIcon"></i>
-      </button>
+  <header>
+    <div class="header-bar">
+      <img src="assets/logo.png" alt="Logo" class="logo" />
+      <h1>SpellRightPro <span class="subtitle">Spelling Bee (Free)</span></h1>
+      <a href="premium.html" class="btn btn-premium btn-header"><i class="fas fa-gem"></i> Go Premium</a>
     </div>
-
-    <div class="form-row">
-      <label for="wordInput">Custom Words:</label>
-      <textarea id="wordInput" rows="4" placeholder="Enter one word per line..."></textarea>
-    </div>
-
-    <div class="form-row">
-      <button class="btn btn-success" id="startTest">▶ Start Test</button>
-    </div>
-
-    <div id="trainer" class="card"></div>
-    <div id="scoreDisplay" class="card"></div>
-
-    <h2>Feedback</h2>
-    <form name="feedback" method="POST" data-netlify="true">
-      <input type="hidden" name="email" id="formHiddenEmail" />
-      <div class="form-row">
-        <textarea name="comment" placeholder="Your feedback..." required></textarea>
-        <button class="btn" id="submitBtn">
-          <i class="fas fa-paper-plane"></i> Send Comment
-        </button>
+  </header>
+  <main>
+    <section class="trainer-area">
+      <h2>Spelling Bee Practice</h2>
+      <div class="trainer-controls">
+        <label for="accentSelect">Accent:</label>
+        <select id="accentSelect">
+          <option value="en-GB">British</option>
+          <option value="en-US">American</option>
+        </select>
+        <textarea id="wordInput" placeholder="(Optional) Paste your own spelling bee words, one per line..."></textarea>
+        <button id="startTest" class="btn btn-success">Start Practice</button>
       </div>
-    </form>
-
-    <h3 id="loginStatus">Loading...</h3>
-    <div class="form-row">
-      <input type="email" id="userEmail" placeholder="Email" />
-      <input type="password" id="userPassword" placeholder="Password" />
-      <button class="btn" onclick="loginUser()">Login</button>
-      <button class="btn" onclick="signUpUser()">Sign Up</button>
-      <button class="btn" onclick="logoutUser()">Logout</button>
-    </div>
-  </div>
-
-  <!-- Firebase SDK -->
-  <script src="https://www.gstatic.com/firebasejs/10.4.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.4.0/firebase-auth-compat.js"></script>
-
-  <!-- Main Script -->
-  <script src="../js/main-freemium-bee.js"></script>
+      <div id="trainer"></div>
+      <div id="scoreDisplay"></div>
+    </section>
+    <footer>
+      <small>SpellRightPro &copy; 2025. <a href="index.html">Back to Home</a></small>
+    </footer>
+  </main>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+  <script type="module" src="js/main-freemium-bee.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css"/>
 </body>
 </html>
