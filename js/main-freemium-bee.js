@@ -18,6 +18,16 @@ const words = [
   "articulate", "pharaoh", "onomatopoeia", "surveillance",
   "metamorphosis", "onomastics", "entrepreneur", "mnemonic"
 ];
+const modeToggle = document.getElementById("modeToggle");
+const modeIcon = document.getElementById("modeIcon");
+
+if (modeToggle) {
+  modeToggle.addEventListener("click", () => {
+    document.body.classList.toggle("dark-mode");
+    modeIcon.classList.toggle("fa-moon");
+    modeIcon.classList.toggle("fa-sun");
+  });
+}
 
 let currentIndex = 0;
 let correctCount = 0;
