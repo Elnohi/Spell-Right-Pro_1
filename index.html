@@ -69,6 +69,15 @@
       </select>
     </label>
 
+    <label>Select Exam:
+      <select id="examSelect" onchange="loadExamWords()">
+        <option value="">-- None --</option>
+        <option value="OET">OET</option>
+        <option value="IELTS">IELTS</option>
+        <option value="TOEFL">TOEFL</option>
+      </select>
+    </label>
+
     <button onclick="startPractice()">📝 Practice Mode</button>
     <button onclick="startTest()">🧪 Test Yourself (24 Words)</button>
   </div>
@@ -99,6 +108,11 @@
       "Nausea", "Diabetes", "Scarlet fever", "Cirrhosis", "Injection",
       "Hearing loss", "Swallow", "Pneumonia", "Constipation", "Booster injection"
     ];
+    const examWordLists = {
+      OET: oetWordList,
+      IELTS: ["confidence", "resilience", "education"],
+      TOEFL: ["academic", "theory", "research"]
+    };
 
     let words = [], currentAccent = 'en-GB', currentWordIndex = 0, correctCount = 0;
     let flaggedWords = [], incorrectWords = [], previousWords = [], mode = "";
@@ -111,6 +125,14 @@
 
     function changeAccent() {
       currentAccent = document.getElementById("accentSelect").value;
+    }
+
+    function loadExamWords() {
+      const exam = document.getElementById("examSelect").value;
+      if (exam && examWordLists[exam]) {
+        words = [...examWordLists[exam]];
+        startPractice();
+      }
     }
 
     function startPractice() {
@@ -253,6 +275,19 @@
           scoreDisplay.appendChild(div);
         });
       }
+    }
+
+    function submitForm(e) {
+      e.preventDefault();
+      const form = e.target;
+      const data = new FormData(form);
+      fetch("/", {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: new URLSearchParams(data).toString(),
+      })
+      .then(() => alert("Thank you! Message sent."))
+      .catch(() => alert("Form submission failed."));
     }
   </script>
 </body>
