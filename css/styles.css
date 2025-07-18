@@ -37,6 +37,7 @@ body {
   border: 1px solid #ccc;
   border-radius: 5px;
   font-size: 1rem;
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
 
 /* Buttons */
@@ -63,6 +64,11 @@ body {
   transform: none;
 }
 
+.btn:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(0,123,255,0.4);
+}
+
 .btn-info {
   background: #17a2b8;
 }
@@ -87,6 +93,17 @@ body {
   border-radius: 10px;
   background: white;
   margin-bottom: 20px;
+  opacity: 0;
+  transform: translateY(10px);
+  animation: fadeInSlide 0.5s ease forwards;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+@keyframes fadeInSlide {
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 /* Status Styling */
@@ -103,6 +120,13 @@ body {
 /* Accent Select Fix */
 #accentSelect {
   min-width: 160px;
+  transition: all 0.3s ease;
+  background-color: #fff;
+}
+
+#accentSelect:focus {
+  border-color: #007bff;
+  box-shadow: 0 0 0 3px rgba(0,123,255,0.2);
 }
 
 /* Feedback Form */
@@ -132,4 +156,18 @@ textarea[name="message"] {
   #accentSelect {
     width: 100%;
   }
+}
+
+/* Scrollbar Styling */
+body::-webkit-scrollbar {
+  width: 8px;
+}
+
+body::-webkit-scrollbar-thumb {
+  background: #007bff;
+  border-radius: 4px;
+}
+
+body::-webkit-scrollbar-track {
+  background: #f1f1f1;
 }
