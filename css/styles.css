@@ -1,19 +1,32 @@
-/* styles.css – Upgraded Layout and Responsiveness */
+/* styles.css – Upgraded Layout, Responsiveness, Theme Colors, and Animations */
+
+:root {
+  --primary: #007bff;
+  --accent: #17a2b8;
+  --success: #28a745;
+  --warning: #ffc107;
+  --danger: #dc3545;
+  --text: #333;
+  --bg: #f9f9f9;
+  --card-bg: #fff;
+  --card-shadow: rgba(0, 0, 0, 0.05);
+}
 
 body {
   margin: 0;
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  background-color: #f9f9f9;
-  color: #333;
+  background-color: var(--bg);
+  color: var(--text);
 }
 
 .container {
   max-width: 960px;
   margin: auto;
   padding: 2rem;
-  background: #fff;
-  box-shadow: 0 0 10px rgba(0,0,0,0.05);
+  background: var(--card-bg);
+  box-shadow: 0 0 10px var(--card-shadow);
   border-radius: 12px;
+  animation: fadeIn 0.5s ease-in-out;
 }
 
 header {
@@ -25,7 +38,7 @@ header {
 
 header h1 {
   font-size: 1.8rem;
-  color: #00509e;
+  color: var(--primary);
 }
 
 .form-row {
@@ -65,30 +78,31 @@ textarea {
 
 button.btn {
   padding: 0.6rem 1rem;
-  background: #007bff;
+  background: var(--primary);
   color: #fff;
   border: none;
   border-radius: 8px;
   font-size: 1rem;
   cursor: pointer;
-  transition: background 0.3s ease;
+  transition: background 0.3s ease, transform 0.2s ease;
 }
 
 button.btn:hover {
   background: #0056b3;
+  transform: scale(1.03);
 }
 
 button.btn-info {
-  background-color: #17a2b8;
+  background-color: var(--accent);
 }
 
 button.btn-warning {
-  background-color: #ffc107;
+  background-color: var(--warning);
   color: #000;
 }
 
 button.btn-success {
-  background-color: #28a745;
+  background-color: var(--success);
 }
 
 .card {
@@ -96,19 +110,32 @@ button.btn-success {
   border-radius: 10px;
   padding: 1rem;
   margin-top: 1rem;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.08);
+  box-shadow: 0 2px 4px var(--card-shadow);
+  animation: fadeIn 0.4s ease-in-out;
 }
 
 .word-box {
-  background: #fff;
-  border-left: 4px solid #007bff;
+  background: var(--card-bg);
+  border-left: 4px solid var(--primary);
   padding: 1rem;
   border-radius: 8px;
   margin-bottom: 1rem;
+  animation: fadeIn 0.4s ease-in-out;
 }
 
 #notificationContainer {
   margin-top: 2rem;
+}
+
+@keyframes fadeIn {
+  0% {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 @media (max-width: 600px) {
