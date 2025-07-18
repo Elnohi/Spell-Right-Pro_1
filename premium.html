@@ -2,63 +2,46 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>SpellRightPro Premium</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>SpellRightPro – Premium</title>
   <link rel="stylesheet" href="css/styles.css" />
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/js/all.min.js" defer></script>
 </head>
 <body>
-  <div class="container">
-    <h1>SpellRightPro - Premium</h1>
-
-    <div class="form-row">
-      <label for="examSelect">Select Exam Type</label>
-      <select id="examSelect">
-        <option value="">-- Choose --</option>
-        <option value="OET">OET</option>
-        <option value="SpellingBee">Spelling Bee</option>
-        <option value="Custom">Custom</option>
-      </select>
+  <header>
+    <div class="header-bar">
+      <img src="assets/logo.png" alt="Logo" class="logo" />
+      <h1>SpellRightPro <span class="subtitle">Premium</span></h1>
+      <a href="index.html" class="btn btn-outline-secondary btn-header"><i class="fas fa-home"></i> Home</a>
     </div>
-
-    <div class="form-row">
-      <label for="accentSelect">Accent</label>
-      <select id="accentSelect">
-        <option value="en-GB">British</option>
-        <option value="en-US">American</option>
-      </select>
-    </div>
-
-    <div class="form-row">
-      <label for="fileUpload">Upload Word List (txt)</label>
-      <input type="file" id="fileUpload" accept=".txt" />
-    </div>
-
-    <div class="form-row">
-      <button id="startButton" class="btn btn-info">▶️ Start</button>
-      <button id="speakButton" class="btn">🔊 Repeat</button>
-      <button id="nextButton" class="btn">⏭️ Next</button>
-    </div>
-
-    <div id="summary"></div>
-
-    <!-- Feedback Form -->
-    <form name="feedback" method="POST" data-netlify="true" class="word-box" style="margin-top: 30px;">
-      <h3>📩 Send Feedback</h3>
-      <label for="email">Email (optional):</label>
-      <input type="email" name="email" id="email" placeholder="you@example.com" />
-
-      <label for="message">Your Message</label>
-      <textarea name="message" id="message" rows="4" placeholder="Let us know how we can improve..." required></textarea>
-
-      <button type="submit" class="btn btn-info"><i class="fas fa-paper-plane"></i> Send Feedback</button>
-    </form>
-
-    <div style="margin-top: 30px; border-top: 1px solid #ccc; padding-top: 20px;">
-      <p style="text-align: center;">Thank you for choosing Premium 💎</p>
-    </div>
-  </div>
-
-  <script src="js/main-premium.js"></script>
+  </header>
+  <main>
+    <section class="trainer-area">
+      <h2>Premium Spelling & OET Trainer</h2>
+      <div class="trainer-controls">
+        <label for="examSelect">Exam Type:</label>
+        <select id="examSelect">
+          <option value="">Select</option>
+          <option value="OET">OET</option>
+          <option value="SpellingBee">Spelling Bee</option>
+          <option value="Custom">Custom</option>
+        </select>
+        <label for="accentSelect">Accent:</label>
+        <select id="accentSelect">
+          <option value="en-GB">British</option>
+          <option value="en-US">American</option>
+        </select>
+        <input type="file" id="fileUpload" accept=".txt"/>
+        <button id="startButton" class="btn btn-success">Start</button>
+      </div>
+      <div id="summary"></div>
+    </section>
+    <footer>
+      <small>SpellRightPro &copy; 2025. <a href="index.html">Back to Home</a></small>
+    </footer>
+  </main>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+  <script type="module" src="js/main-premium.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css"/>
 </body>
 </html>
