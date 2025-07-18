@@ -1,94 +1,135 @@
-/* styles.css (Enhanced) */
-
+/* General Layout */
 body {
   font-family: Arial, sans-serif;
-  background-color: #f4f4f4;
   margin: 0;
   padding: 0;
-  color: #333;
+  background: #f8f9fa;
+  transition: background 0.3s ease;
 }
 
 .container {
-  max-width: 800px;
+  max-width: 960px;
   margin: auto;
   padding: 20px;
-  background: #fff;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  border-radius: 8px;
 }
 
-h1, h3 {
-  text-align: center;
-  color: #007bff;
+/* Form Row Layout */
+.form-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+  margin-top: 15px;
 }
 
-label {
+.form-row label {
+  min-width: 100px;
   font-weight: bold;
-  margin-bottom: 4px;
-  display: block;
 }
 
-select,
-input,
-button {
-  width: 100%;
-  padding: 10px;
-  margin-top: 8px;
-  margin-bottom: 16px;
+.form-row select,
+.form-row input[type="email"],
+.form-row input[type="password"],
+.form-row textarea,
+.form-row input[type="file"] {
+  flex: 1;
+  padding: 8px;
   border: 1px solid #ccc;
-  border-radius: 4px;
+  border-radius: 5px;
   font-size: 1rem;
 }
 
-select#accentSelect {
-  width: 100%;
-  font-size: 1rem;
-  padding: 10px;
-  border-radius: 4px;
-  border: 1px solid #ccc;
-  background: #fff;
-  appearance: auto;
-  color: #333;
-}
-
-button {
-  background-color: #007bff;
-  color: #fff;
+/* Buttons */
+.btn {
+  padding: 10px 15px;
+  margin: 5px 0;
   border: none;
+  background: #007bff;
+  color: white;
+  border-radius: 5px;
   cursor: pointer;
-  transition: background-color 0.3s ease;
+  font-size: 1rem;
+  transition: all 0.3s ease;
 }
 
-button:hover {
-  background-color: #0056b3;
+.btn:hover {
+  background: #0056b3;
+  transform: translateY(-1px);
+}
+
+.btn:disabled {
+  background: #cccccc;
+  cursor: not-allowed;
+  transform: none;
 }
 
 .btn-info {
-  background-color: #17a2b8;
+  background: #17a2b8;
+}
+
+.btn-success {
+  background: #28a745;
+}
+
+.btn-warning {
+  background: #ffc107;
+  color: black;
+}
+
+/* Card / Output */
+.card {
+  margin-top: 20px;
 }
 
 .word-box {
-  background: #fdfdfd;
   padding: 20px;
-  border-radius: 6px;
-  border: 1px solid #ddd;
+  border: 2px solid #007bff;
+  border-radius: 10px;
+  background: white;
   margin-bottom: 20px;
 }
 
-ul {
-  padding-left: 20px;
-  text-align: left;
+/* Status Styling */
+.status.correct {
+  color: green;
+  font-weight: bold;
 }
 
-@media (min-width: 600px) {
-  select,
-  input,
-  button {
-    width: auto;
-    display: inline-block;
-    margin-right: 10px;
+.status.incorrect {
+  color: red;
+  font-weight: bold;
+}
+
+/* Accent Select Fix */
+#accentSelect {
+  min-width: 160px;
+}
+
+/* Feedback Form */
+textarea[name="message"] {
+  width: 100%;
+  min-height: 80px;
+  resize: vertical;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+}
+
+/* Responsive Enhancements */
+@media (max-width: 600px) {
+  .form-row {
+    flex-direction: column;
+    align-items: stretch;
   }
-  select#accentSelect {
-    min-width: 160px;
+
+  .form-row label {
+    min-width: auto;
+  }
+
+  .btn {
+    width: 100%;
+  }
+
+  #accentSelect {
+    width: 100%;
   }
 }
