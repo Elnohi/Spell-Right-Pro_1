@@ -29,8 +29,10 @@ export function initAuth(firebase, loginStatusId = "loginStatus", hiddenEmailId 
     if (user) {
       if (hiddenEmail) hiddenEmail.value = user.email;
       if (loginStatus) loginStatus.innerText = `Logged in as ${user.email}`;
+      loginStatus.style.color = "#28a745";
     } else {
       if (loginStatus) loginStatus.innerText = "Not logged in";
+      if (loginStatus) loginStatus.style.color = "#dc3545";
       if (hiddenEmail) hiddenEmail.value = "";
     }
   });
@@ -44,30 +46,36 @@ export function addAuthListeners(auth, loginId, signupId, logoutId, emailInputId
   const logoutBtn = document.getElementById(logoutId);
 
   if (loginBtn) loginBtn.addEventListener("click", () => {
-    const email = document.getElementById(emailInputId).value;
+    const email = document.getElementById(emailInputId).value.trim();
     const pw = document.getElementById(pwInputId).value;
-    auth.signInWithEmailAndPassword(email, pw).catch(e => alert(e.message));
+    if (!email || !pw) return showNotification("Email and password required", "error");
+    auth.signInWithEmailAndPassword(email, pw).catch(e => showNotification(e.message, "error"));
   });
   if (signupBtn) signupBtn.addEventListener("click", () => {
-    const email = document.getElementById(emailInputId).value;
+    const email = document.getElementById(emailInputId).value.trim();
     const pw = document.getElementById(pwInputId).value;
-    auth.createUserWithEmailAndPassword(email, pw).catch(e => alert(e.message));
+    if (!email || !pw) return showNotification("Email and password required", "error");
+    auth.createUserWithEmailAndPassword(email, pw).catch(e => showNotification(e.message, "error"));
   });
   if (logoutBtn) logoutBtn.addEventListener("click", () => {
     auth.signOut();
+    showNotification("Logged out.", "info");
   });
 }
 
-// --- Notification Banner ---
+// --- Notification Banner (accessibility improved) ---
 export function showNotification(msg, type = 'info') {
   let c = document.createElement('div');
   c.className = `notification ${type}`;
+  c.setAttribute("role", "alert");
   c.innerText = msg;
   document.body.appendChild(c);
-  setTimeout(() => c.remove(), 3000);
+  setTimeout(() => c.classList.add("show"), 10);
+  setTimeout(() => c.classList.remove("show"), 2900);
+  setTimeout(() => c.remove(), 3200);
 }
 
-// --- Simple Google Analytics event trigger ---
+// --- Google Analytics event trigger ---
 export function gaEvent(category, action, label = "") {
   if (window.gtag) {
     window.gtag('event', action, {
