@@ -2,88 +2,71 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>SpellRightPro – Bee (Freemium)</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SpellRightPro - Bee (Freemium)</title>
+  <link rel="stylesheet" href="../css/styles.css" />
+  <script src="https://kit.fontawesome.com/a2d9d5b5dc.js" crossorigin="anonymous"></script>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <img src="../assets/logo.png" alt="Logo" class="logo" width="50" />
+      <h1>SpellRightPro (Spelling Bee - Freemium)</h1>
+    </header>
 
-  <!-- FontAwesome -->
-  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet"/>
+    <div class="form-row">
+      <label for="accentSelect">Accent:</label>
+      <select id="accentSelect">
+        <option value="en-US">American</option>
+        <option value="en-GB">British</option>
+      </select>
 
-  <!-- Styles -->
-  <link rel="stylesheet" href="css/styles.css" />
+      <label for="toggleTestMode">Test Mode:</label>
+      <input type="checkbox" id="toggleTestMode" title="Spell letter by letter" />
+
+      <button class="btn btn-warning" id="modeToggle">
+        <i class="fas fa-moon" id="modeIcon"></i>
+      </button>
+    </div>
+
+    <div class="form-row">
+      <label for="wordInput">Custom Words:</label>
+      <textarea id="wordInput" rows="4" placeholder="Enter one word per line..."></textarea>
+    </div>
+
+    <div class="form-row">
+      <button class="btn btn-success" id="startTest">▶ Start Test</button>
+    </div>
+
+    <div id="trainer" class="card"></div>
+    <div id="scoreDisplay" class="card"></div>
+
+    <h2>Feedback</h2>
+    <form name="feedback" method="POST" data-netlify="true">
+      <input type="hidden" name="email" id="formHiddenEmail" />
+      <div class="form-row">
+        <textarea name="comment" placeholder="Your feedback..." required></textarea>
+        <button class="btn" id="submitBtn">
+          <i class="fas fa-paper-plane"></i> Send Comment
+        </button>
+      </div>
+    </form>
+
+    <h3 id="loginStatus">Loading...</h3>
+    <div class="form-row">
+      <input type="email" id="userEmail" placeholder="Email" />
+      <input type="password" id="userPassword" placeholder="Password" />
+      <button class="btn" onclick="loginUser()">Login</button>
+      <button class="btn" onclick="signUpUser()">Sign Up</button>
+      <button class="btn" onclick="logoutUser()">Logout</button>
+    </div>
+  </div>
 
   <!-- Firebase SDK -->
   <script src="https://www.gstatic.com/firebasejs/10.4.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.4.0/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.4.0/firebase-firestore-compat.js"></script>
 
-  <!-- Firebase Config -->
-  <script>
-    const firebaseConfig = {
-      apiKey: "AIzaSyCZ-rAPnRgVjSRFOFvbiQlowE6A3RVvwWo",
-      authDomain: "spellrightpro-firebase.firebaseapp.com",
-      projectId: "spellrightpro-firebase",
-      storageBucket: "spellrightpro-firebase.firebasestorage.app",
-      messagingSenderId: "798456641137",
-      appId: "1:798456641137:web:5c6d79db5bf49d04928dd0",
-      measurementId: "G-H09MF13297"
-    };
-    firebase.initializeApp(firebaseConfig);
-    const auth = firebase.auth();
-    const db = firebase.firestore();
-  </script>
-</head>
-<body>
-  <div class="container">
-    <h1>
-      <img src="assets/logo.png" alt="Logo" style="height: 50px; vertical-align: middle; margin-right: 10px;" />
-      SpellRightPro – Bee
-    </h1>
-
-    <!-- Login -->
-    <div class="form-row" id="authSection">
-      <label>Email:</label>
-      <input type="email" id="userEmail" placeholder="Email" />
-      <label>Password:</label>
-      <input type="password" id="userPassword" placeholder="Password" />
-      <button onclick="loginUser()" class="btn">Login</button>
-      <button onclick="signUpUser()" class="btn btn-info">Sign Up</button>
-      <button onclick="logoutUser()" class="btn btn-warning">Logout</button>
-      <span id="loginStatus"></span>
-    </div>
-
-    <!-- Accent Selection -->
-    <div class="form-row">
-      <label>Accent:</label>
-      <select id="accentSelect">
-        <option value="en-GB">British</option>
-        <option value="en-US">American</option>
-      </select>
-      <button id="modeToggle" class="btn"><i id="modeIcon" class="fas fa-moon"></i></button>
-    </div>
-
-    <!-- Controls -->
-    <div class="form-row">
-      <button onclick="startPractice()" class="btn btn-info">Practice</button>
-      <button onclick="startTest()" class="btn btn-success">Test</button>
-    </div>
-
-    <!-- Spelling Area -->
-    <div id="trainer" class="card"></div>
-    <div id="scoreDisplay" class="card"></div>
-
-    <!-- Feedback Form -->
-    <form name="feedback" method="POST" data-netlify="true" class="form-row" netlify-honeypot="bot-field">
-      <input type="hidden" name="form-name" value="feedback" />
-      <input type="hidden" name="user-email" id="formHiddenEmail" />
-      <p hidden><label>Don’t fill this out: <input name="bot-field" /></label></p>
-      <textarea name="message" placeholder="Write your feedback..." required></textarea>
-      <button type="submit" class="btn btn-success" id="submitBtn">
-        <i class="fas fa-paper-plane"></i> Send Feedback
-      </button>
-    </form>
-  </div>
-
-  <!-- Script -->
-  <script src="js/main-freemium-bee.js"></script>
+  <!-- Main Script -->
+  <script src="../js/main-freemium-bee.js"></script>
 </body>
 </html>
