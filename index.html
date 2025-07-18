@@ -4,14 +4,9 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>SpellRightPro - Bee (Freemium)</title>
-
-  <!-- PWA Manifest -->
   <link rel="manifest" href="manifest.json" />
-
-  <!-- Styles and Icons -->
   <link rel="stylesheet" href="css/styles.css" />
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet"/>
-
   <!-- Google Analytics 4 -->
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-H09MF13297"></script>
   <script>
@@ -23,6 +18,16 @@
 </head>
 <body>
   <div class="container">
+    <!-- Login block at top -->
+    <div class="form-row">
+      <input type="email" id="userEmail" placeholder="Email" />
+      <input type="password" id="userPassword" placeholder="Password" />
+      <button class="btn" id="loginBtn">Login</button>
+      <button class="btn" id="signupBtn">Sign Up</button>
+      <button class="btn" id="logoutBtn">Logout</button>
+    </div>
+    <h3 id="loginStatus">Loading...</h3>
+
     <header>
       <img src="assets/logo.png" alt="Logo" class="logo" width="50" />
       <h1>SpellRightPro (Spelling Bee - Freemium)</h1>
@@ -54,7 +59,7 @@
     <div id="scoreDisplay" class="card"></div>
 
     <h2>Feedback</h2>
-    <form name="feedback" method="POST" data-netlify="true">
+    <form name="feedback" method="POST" data-netlify="true" action="/thankyou.html">
       <input type="hidden" name="email" id="formHiddenEmail" />
       <div class="form-row">
         <textarea name="comment" placeholder="Your feedback..." required></textarea>
@@ -63,15 +68,6 @@
         </button>
       </div>
     </form>
-
-    <h3 id="loginStatus">Loading...</h3>
-    <div class="form-row">
-      <input type="email" id="userEmail" placeholder="Email" />
-      <input type="password" id="userPassword" placeholder="Password" />
-      <button class="btn" id="loginBtn">Login</button>
-      <button class="btn" id="signupBtn">Sign Up</button>
-      <button class="btn" id="logoutBtn">Logout</button>
-    </div>
   </div>
 
   <!-- Firebase SDK -->
@@ -80,7 +76,7 @@
   <script src="https://www.gstatic.com/firebasejs/10.4.0/firebase-firestore-compat.js"></script>
   <!-- Modular Main Script -->
   <script type="module" src="js/main-freemium-bee.js"></script>
-  <!-- PWA Service Worker -->
+  <!-- Register PWA Service Worker -->
   <script>
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
