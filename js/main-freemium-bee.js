@@ -1,6 +1,7 @@
-// main-freemium-bee.js (Fixed: Functional Buttons, Dark Mode, Word Loading, Start Session)
+// main-freemium-bee.js – Modular, PWA/Analytics Ready
+import { initThemeToggle, initAuth, addAuthListeners, showNotification, gaEvent } from './common.js';
 
-// Firebase Initialization
+// --- Firebase ---
 const firebaseConfig = {
   apiKey: "AIzaSyCZ-rAPnRgVjSRFOFvbiQlowE6A3RVvwWo",
   authDomain: "spellrightpro-firebase.firebaseapp.com",
@@ -11,49 +12,25 @@ const firebaseConfig = {
   measurementId: "G-H09MF13297"
 };
 firebase.initializeApp(firebaseConfig);
-const auth = firebase.auth();
 
-// Default words array (used if no custom words are added)
+// --- Shared UI ---
+const auth = initAuth(firebase, "loginStatus", "formHiddenEmail");
+addAuthListeners(auth, "loginBtn", "signupBtn", "logoutBtn", "userEmail", "userPassword");
+initThemeToggle("modeToggle", "modeIcon");
+
+// --- Spelling Bee Logic ---
 let words = [
   "articulate", "pharaoh", "onomatopoeia", "surveillance",
   "metamorphosis", "onomastics", "entrepreneur", "mnemonic"
 ];
-
-let currentIndex = 0;
-let correctCount = 0;
-let incorrectWords = [];
-let testMode = false;
+let currentIndex = 0, correctCount = 0, incorrectWords = [], testMode = false;
 
 const accentSelect = document.getElementById("accentSelect");
 const startButton = document.getElementById("startTest");
 const trainerDiv = document.getElementById("trainer");
 const scoreDiv = document.getElementById("scoreDisplay");
-const form = document.querySelector("form[data-netlify='true']");
-const submitBtn = document.getElementById("submitBtn");
-const hiddenEmail = document.getElementById("formHiddenEmail");
-const testToggle = document.getElementById("toggleTestMode");
 const wordInput = document.getElementById("wordInput");
-const modeToggle = document.getElementById("modeToggle");
-const modeIcon = document.getElementById("modeIcon");
-
-// Theme toggle
-if (modeToggle && modeIcon) {
-  modeToggle.addEventListener("click", () => {
-    document.body.classList.toggle("dark-mode");
-    modeIcon.classList.toggle("fa-moon");
-    modeIcon.classList.toggle("fa-sun");
-  });
-}
-
-// Auth status
-auth.onAuthStateChanged(user => {
-  if (user) {
-    hiddenEmail.value = user.email;
-    document.getElementById("loginStatus").innerText = `Logged in as ${user.email}`;
-  } else {
-    document.getElementById("loginStatus").innerText = "Not logged in";
-  }
-});
+const testToggle = document.getElementById("toggleTestMode");
 
 if (testToggle) {
   testToggle.addEventListener("change", (e) => {
@@ -69,12 +46,13 @@ startButton.addEventListener("click", () => {
     words = wordInput.value.trim().split(/\n+/).map(w => w.trim()).filter(w => w);
   }
   if (!words.length) {
-    alert("Please enter at least one word to begin.");
+    showNotification("Please enter at least one word to begin.", "error");
     return;
   }
   trainerDiv.innerHTML = "<p>🎤 Listening...</p>";
   speakWord(words[currentIndex]);
   listenAndCheck(words[currentIndex]);
+  gaEvent('test', 'start', 'bee-freemium');
 });
 
 function speakWord(word) {
@@ -88,7 +66,7 @@ function speakWord(word) {
 
 function listenAndCheck(correctWord) {
   if (!("SpeechRecognition" in window || "webkitSpeechRecognition" in window)) {
-    alert("Speech recognition not supported in this browser.");
+    showNotification("Speech recognition not supported in this browser.", "error");
     return;
   }
   const Recognition = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -101,7 +79,6 @@ function listenAndCheck(correctWord) {
   recognition.onresult = (event) => {
     const spoken = event.results[0][0].transcript.toLowerCase().replace(/\s+/g, "");
     const expected = correctWord.toLowerCase().replace(/\s+/g, "");
-
     const box = document.createElement("div");
     box.className = "word-box";
     if (spoken === expected) {
@@ -128,7 +105,7 @@ function listenAndCheck(correctWord) {
 
   recognition.onerror = (e) => {
     console.error("Speech recognition error:", e);
-    alert("Speech recognition error. Please try again.");
+    showNotification("Speech recognition error. Please try again.", "error");
   };
 }
 
@@ -155,10 +132,13 @@ function showScore() {
 }
 
 // Feedback form submission
+const form = document.querySelector("form[data-netlify='true']");
+const submitBtn = document.getElementById("submitBtn");
+const hiddenEmail = document.getElementById("formHiddenEmail");
 if (form) {
   form.addEventListener("submit", function (event) {
     if (!hiddenEmail.value) {
-      alert("Please log in before submitting feedback.");
+      showNotification("Please log in before submitting feedback.", "error");
       event.preventDefault();
     } else {
       submitBtn.disabled = true;
@@ -169,21 +149,4 @@ if (form) {
       }, 2000);
     }
   });
-}
-
-// Optional login logic (if not yet added)
-function loginUser() {
-  const email = document.getElementById("userEmail").value;
-  const password = document.getElementById("userPassword").value;
-  auth.signInWithEmailAndPassword(email, password).catch(e => alert(e.message));
-}
-
-function signUpUser() {
-  const email = document.getElementById("userEmail").value;
-  const password = document.getElementById("userPassword").value;
-  auth.createUserWithEmailAndPassword(email, password).catch(e => alert(e.message));
-}
-
-function logoutUser() {
-  auth.signOut();
 }
