@@ -1,4 +1,4 @@
-// main-freemium-bee.js – Modular, PWA/Analytics Ready
+// main-freemium-bee.js – Correct Spelling Bee logic & modular imports
 import { initThemeToggle, initAuth, addAuthListeners, showNotification, gaEvent } from './common.js';
 
 // --- Firebase ---
@@ -32,6 +32,7 @@ const scoreDiv = document.getElementById("scoreDisplay");
 const wordInput = document.getElementById("wordInput");
 const testToggle = document.getElementById("toggleTestMode");
 
+// Test mode checkbox logic
 if (testToggle) {
   testToggle.addEventListener("change", (e) => {
     testMode = e.target.checked;
@@ -51,7 +52,7 @@ startButton.addEventListener("click", () => {
   }
   trainerDiv.innerHTML = "<p>🎤 Listening...</p>";
   speakWord(words[currentIndex]);
-  listenAndCheck(words[currentIndex]);
+  setTimeout(() => listenAndCheck(words[currentIndex]), 1000); // Give a small pause after speaking
   gaEvent('test', 'start', 'bee-freemium');
 });
 
@@ -59,7 +60,7 @@ function speakWord(word) {
   const utter = new SpeechSynthesisUtterance();
   utter.lang = accentSelect.value;
   utter.rate = 0.9;
-  utter.text = testMode ? word.split("").join(" ") : word;
+  utter.text = word; // Always speaks the whole word!
   speechSynthesis.cancel();
   speechSynthesis.speak(utter);
 }
@@ -77,16 +78,18 @@ function listenAndCheck(correctWord) {
   recognition.start();
 
   recognition.onresult = (event) => {
-    const spoken = event.results[0][0].transcript.toLowerCase().replace(/\s+/g, "");
-    const expected = correctWord.toLowerCase().replace(/\s+/g, "");
+    // User spells: "P H A R A O H"
+    let spoken = event.results[0][0].transcript.toUpperCase().replace(/[^A-Z]/g, "");
+    let expected = correctWord.toUpperCase().replace(/[^A-Z]/g, "");
+
     const box = document.createElement("div");
     box.className = "word-box";
     if (spoken === expected) {
       correctCount++;
-      box.innerHTML = `✅ <strong>Correct!</strong> You spelled: ${spoken}`;
+      box.innerHTML = `✅ <strong>Correct!</strong> You spelled: ${spoken.split("").join(" ")}`;
     } else {
       incorrectWords.push({ word: correctWord, heard: spoken });
-      box.innerHTML = `❌ <strong>Incorrect.</strong> You said: <em>${spoken}</em><br>Correct spelling was: <strong>${correctWord}</strong>`;
+      box.innerHTML = `❌ <strong>Incorrect.</strong> You spelled: <em>${spoken.split("").join(" ")}</em><br>Correct spelling was: <strong>${expected.split("").join(" ")}</strong>`;
     }
     trainerDiv.innerHTML = "";
     trainerDiv.appendChild(box);
@@ -96,7 +99,7 @@ function listenAndCheck(correctWord) {
       setTimeout(() => {
         trainerDiv.innerHTML = "<p>🎤 Listening...</p>";
         speakWord(words[currentIndex]);
-        listenAndCheck(words[currentIndex]);
+        setTimeout(() => listenAndCheck(words[currentIndex]), 1000);
       }, 2500);
     } else {
       showScore();
@@ -131,12 +134,13 @@ function showScore() {
   `;
 }
 
-// Feedback form submission
+// Feedback form (Netlify)
 const form = document.querySelector("form[data-netlify='true']");
 const submitBtn = document.getElementById("submitBtn");
 const hiddenEmail = document.getElementById("formHiddenEmail");
 if (form) {
   form.addEventListener("submit", function (event) {
+    // Let Netlify handle the POST and redirect to thankyou.html
     if (!hiddenEmail.value) {
       showNotification("Please log in before submitting feedback.", "error");
       event.preventDefault();
