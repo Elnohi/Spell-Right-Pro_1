@@ -3,28 +3,257 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>SpellRightPro – Choose Your Trainer</title>
-  <link rel="stylesheet" href="css/styles.css" />
+  <title>Spell Right Pro</title>
+  <link rel="icon" href="logo.png" />
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 20px;
+      background-color: #f0f4f8;
+      margin: 0;
+    }
+    h1 { text-align: center; }
+    .word-box {
+      background: white;
+      border-radius: 10px;
+      padding: 15px;
+      margin: 20px 0;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+    button {
+      padding: 8px 12px;
+      margin: 5px;
+      cursor: pointer;
+    }
+    .flagged { background-color: #fff3cd; }
+    .review-section {
+      margin-top: 20px;
+      padding: 15px;
+      background: #f8d7da;
+      border-radius: 10px;
+    }
+    .controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      justify-content: center;
+      margin-bottom: 20px;
+    }
+    input, select, textarea {
+      padding: 10px;
+      margin: 5px 0;
+      width: 100%;
+      max-width: 400px;
+      box-sizing: border-box;
+    }
+    footer {
+      margin-top: 60px;
+      background: #f0f4f8;
+      padding: 20px;
+      text-align: center;
+      font-size: 0.9em;
+      border-top: 1px solid #ccc;
+    }
+  </style>
 </head>
 <body>
-  <header>
-    <img src="assets/logo.png" alt="Logo" class="logo" />
-    <h1>SpellRightPro</h1>
-  </header>
-  <main class="main-landing">
-    <div class="choose-mode-card">
-      <h2>Welcome!</h2>
-      <p>Choose your training mode:</p>
-      <div class="mode-buttons">
-        <a href="freemium-oet.html" class="btn btn-oet"><i class="fas fa-notes-medical"></i> OET Trainer</a>
-        <a href="freemium-bee.html" class="btn btn-bee"><i class="fas fa-spell-check"></i> Spelling Bee</a>
-        <a href="premium.html" class="btn btn-premium"><i class="fas fa-gem"></i> Go Premium <span class="badge">⭐</span></a>
-      </div>
-    </div>
-    <footer style="margin-top:50px;">
-      <small>&copy; 2025 SpellRightPro. All rights reserved.</small>
-    </footer>
-  </main>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css"/>
+  <h1>Spell Right Pro</h1>
+
+  <div class="controls">
+    <label>Accent:
+      <select id="accentSelect" onchange="changeAccent()">
+        <option value="en-GB">British</option>
+        <option value="en-US">American</option>
+        <option value="en-CA">Canadian</option>
+        <option value="en-AU">Australian</option>
+      </select>
+    </label>
+
+    <button onclick="startPractice()">📝 Practice Mode</button>
+    <button onclick="startTest()">🧪 Test Yourself (24 Words)</button>
+  </div>
+
+  <div id="trainer"></div>
+  <div id="scoreDisplay" style="font-weight:bold; margin-top: 20px;"></div>
+
+  <footer>
+    <p>For inquiries, please contact us using the form below:</p>
+    <form name="contact" method="POST" data-netlify="true" netlify-honeypot="bot-field" style="display:inline-block; max-width:320px; background:#fff; padding:15px; border-radius:10px; box-shadow:0 2px 5px rgba(0,0,0,0.1);">
+      <input type="hidden" name="form-name" value="contact" />
+      <p style="display:none;"><label>Don’t fill this out: <input name="bot-field" /></label></p>
+      <label style="display:block; margin-bottom:10px;">
+        Email:<br>
+        <input type="email" name="email" required style="width:100%; padding:8px;">
+      </label>
+      <label style="display:block; margin-bottom:10px;">
+        Message:<br>
+        <textarea name="message" rows="3" required style="width:100%; padding:8px;"></textarea>
+      </label>
+      <button type="submit" style="width:100%;">Send Message</button>
+    </form>
+    <p style="margin-top:15px;">&copy; 2025 Spell Right Pro</p>
+  </footer>
+
+  <script>
+    const oetWordList = [
+      "Nausea", "Diabetes", "Scarlet fever", "Cirrhosis", "Injection",
+      "Hearing loss", "Swallow", "Pneumonia", "Constipation", "Booster injection"
+    ];
+
+    let words = [], currentAccent = 'en-GB', currentWordIndex = 0, correctCount = 0;
+    let flaggedWords = [], incorrectWords = [], previousWords = [], mode = "";
+
+    function speak(text) {
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.lang = currentAccent;
+      speechSynthesis.speak(utterance);
+    }
+
+    function changeAccent() {
+      currentAccent = document.getElementById("accentSelect").value;
+    }
+
+    function startPractice() {
+      words = [...oetWordList];
+      currentWordIndex = 0;
+      correctCount = 0;
+      flaggedWords = [];
+      incorrectWords = [];
+      previousWords = [];
+      mode = "practice";
+      presentWord();
+    }
+
+    function startTest() {
+      words = [...shuffle(oetWordList)].slice(0, 24);
+      currentWordIndex = 0;
+      correctCount = 0;
+      flaggedWords = [];
+      incorrectWords = [];
+      previousWords = [];
+      mode = "test";
+      presentWord();
+    }
+
+    function shuffle(array) {
+      for (let i = array.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [array[i], array[j]] = [array[j], array[i]];
+      }
+      return array;
+    }
+
+    function presentWord() {
+      const trainerDiv = document.getElementById("trainer");
+      trainerDiv.innerHTML = '';
+      const word = words[currentWordIndex];
+
+      const box = document.createElement("div");
+      box.className = "word-box";
+      if (flaggedWords.includes(currentWordIndex)) box.classList.add("flagged");
+
+      const title = document.createElement("div");
+      title.innerHTML = `<strong>Word ${currentWordIndex + 1} of ${words.length}</strong>`;
+
+      const speakBtn = document.createElement("button");
+      speakBtn.textContent = "🔊 Speak";
+      speakBtn.onclick = () => speak(word);
+
+      const input = document.createElement("input");
+      input.type = "text";
+      input.placeholder = "Type what you heard...";
+      input.addEventListener("keypress", function(e) {
+        if (e.key === "Enter") checkAnswer();
+      });
+
+      const checkBtn = document.createElement("button");
+      checkBtn.textContent = "✔️ Check";
+
+      const flagBtn = document.createElement("button");
+      flagBtn.textContent = flaggedWords.includes(currentWordIndex) ? "🚩 Unflag" : "🚩 Flag";
+      flagBtn.onclick = () => {
+        const idx = flaggedWords.indexOf(currentWordIndex);
+        if (idx === -1) {
+          flaggedWords.push(currentWordIndex);
+          flagBtn.textContent = "🚩 Unflag";
+          box.classList.add("flagged");
+        } else {
+          flaggedWords.splice(idx, 1);
+          flagBtn.textContent = "🚩 Flag";
+          box.classList.remove("flagged");
+        }
+      };
+
+      const backBtn = document.createElement("button");
+      backBtn.textContent = "↩️ Back";
+      backBtn.disabled = previousWords.length === 0;
+      backBtn.onclick = () => {
+        if (previousWords.length > 0) {
+          currentWordIndex = previousWords.pop();
+          presentWord();
+        }
+      };
+
+      const status = document.createElement("span");
+
+      checkBtn.onclick = function checkAnswer() {
+        const typed = input.value.trim().toLowerCase();
+        const expected = word.toLowerCase();
+        previousWords.push(currentWordIndex);
+
+        if (typed === expected) {
+          status.textContent = "✅ Correct";
+          status.style.color = "green";
+          correctCount++;
+        } else {
+          status.textContent = `❌ Wrong. Correct: ${word}`;
+          status.style.color = "red";
+          incorrectWords.push({ word, typed });
+        }
+
+        setTimeout(() => {
+          currentWordIndex++;
+          if (currentWordIndex < words.length) {
+            presentWord();
+          } else {
+            showScore();
+          }
+        }, 1500);
+      };
+
+      box.appendChild(title);
+      box.appendChild(speakBtn);
+      box.appendChild(document.createElement("br"));
+      box.appendChild(input);
+      box.appendChild(checkBtn);
+      box.appendChild(flagBtn);
+      box.appendChild(backBtn);
+      box.appendChild(status);
+      trainerDiv.appendChild(box);
+      speak(word);
+    }
+
+    function showScore() {
+      const scoreDisplay = document.getElementById("scoreDisplay");
+      scoreDisplay.innerHTML = `You got ${correctCount} out of ${words.length} correct. (${Math.round(correctCount / words.length * 100)}%)`;
+
+      if (incorrectWords.length > 0) {
+        incorrectWords.forEach(item => {
+          const div = document.createElement("div");
+          div.textContent = `❌ You wrote "${item.typed}" instead of "${item.word}"`;
+          scoreDisplay.appendChild(div);
+        });
+      }
+
+      if (flaggedWords.length > 0) {
+        scoreDisplay.innerHTML += `<h4>Flagged Words:</h4>`;
+        flaggedWords.forEach(idx => {
+          const div = document.createElement("div");
+          div.textContent = `🚩 ${words[idx]}`;
+          scoreDisplay.appendChild(div);
+        });
+      }
+    }
+  </script>
 </body>
 </html>
