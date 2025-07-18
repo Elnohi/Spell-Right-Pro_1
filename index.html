@@ -2,23 +2,94 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta http-equiv="refresh" content="0;url=freemium-oet.html" />
-  <title>Redirecting to SpellRightPro...</title>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      padding: 2rem;
-      background: #f0f0f0;
-      text-align: center;
-    }
-    a {
-      color: #007bff;
-      text-decoration: none;
-    }
-  </style>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>SpellRightPro - Spelling Bee (Freemium)</title>
+
+  <!-- Firebase -->
+  <script src="https://www.gstatic.com/firebasejs/10.4.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.4.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.4.0/firebase-firestore-compat.js"></script>
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyCZ-rAPnRgVjSRFOFvbiQlowE6A3RVvwWo",
+      authDomain: "spellrightpro-firebase.firebaseapp.com",
+      projectId: "spellrightpro-firebase",
+      storageBucket: "spellrightpro-firebase.firebasestorage.app",
+      messagingSenderId: "798456641137",
+      appId: "1:798456641137:web:5c6d79db5bf49d04928dd0",
+      measurementId: "G-H09MF13297"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    const db = firebase.firestore();
+  </script>
+
+  <!-- Styles and Icons -->
+  <link rel="stylesheet" href="css/styles.css" />
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet"/>
+
 </head>
 <body>
-  <h2>Redirecting you to SpellRightPro...</h2>
-  <p>If you're not redirected, <a href="freemium-oet.html">click here</a>.</p>
+  <div class="container">
+    <header class="form-row">
+      <img src="assets/logo.png" alt="Logo" style="height:50px; vertical-align:middle; margin-right:10px;">
+      <h1 style="display:inline-block; vertical-align:middle;">SpellRightPro - Spelling Bee</h1>
+    </header>
+
+    <!-- Auth Section -->
+    <div class="form-row" id="authSection">
+      <label>Email:</label>
+      <input type="email" id="userEmail" placeholder="Enter email" />
+      <label>Password:</label>
+      <input type="password" id="userPassword" placeholder="Enter password" />
+      <button onclick="loginUser()" class="btn">Login</button>
+      <button onclick="signUpUser()" class="btn btn-info">Sign Up</button>
+      <button onclick="logoutUser()" class="btn btn-warning">Logout</button>
+      <span id="loginStatus"></span>
+    </div>
+
+    <!-- Settings -->
+    <div class="form-row">
+      <label>Accent:</label>
+      <select id="accentSelect">
+        <option value="en-GB">British</option>
+        <option value="en-US">American</option>
+      </select>
+      <button id="modeToggle" class="btn"><i id="modeIcon" class="fas fa-moon"></i></button>
+    </div>
+
+    <!-- Word Entry -->
+    <div class="form-row">
+      <label>Enter Words:</label>
+      <textarea id="wordInput" rows="3" placeholder="One word per line..."></textarea>
+      <button onclick="addCustomWords()" class="btn">Add Words</button>
+    </div>
+
+    <!-- Test Start -->
+    <div class="form-row">
+      <button onclick="startBeeTest()" class="btn btn-success">Start Spelling Bee</button>
+    </div>
+
+    <!-- Trainer Area -->
+    <div id="trainer" class="card"></div>
+    <div id="scoreDisplay" class="card"></div>
+
+    <!-- Feedback -->
+    <form name="feedback" method="POST" data-netlify="true" netlify-honeypot="bot-field" class="form-row">
+      <input type="hidden" name="form-name" value="feedback" />
+      <input type="hidden" name="user-email" id="formHiddenEmail" />
+      <p hidden>
+        <label>Don’t fill this out: <input name="bot-field" /></label>
+      </p>
+      <textarea name="message" placeholder="Your comments or suggestions..." required></textarea>
+      <button type="submit" class="btn btn-info"><i class="fas fa-paper-plane"></i> Submit Feedback</button>
+    </form>
+
+    <!-- Notification Area -->
+    <div id="notificationContainer"></div>
+  </div>
+
+  <!-- Main JS -->
+  <script src="js/main-freemium-bee.js"></script>
 </body>
 </html>
