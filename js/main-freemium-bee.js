@@ -1,4 +1,5 @@
-// main-freemium-bee.js – Improved, bugfixed, one-by-one speaking
+// main-freemium-bee.js – Corrected: speaks words one by one, both for sample and custom list
+
 import { initThemeToggle, initAuth, addAuthListeners, showNotification, gaEvent } from './common.js';
 
 // --- Firebase ---
@@ -23,7 +24,7 @@ let defaultWords = [
   "articulate", "pharaoh", "onomatopoeia", "surveillance",
   "metamorphosis", "onomastics", "entrepreneur", "mnemonic"
 ];
-let words = [...defaultWords];
+let words = [];
 let currentIndex = 0, correctCount = 0, incorrectWords = [];
 
 const accentSelect = document.getElementById("accentSelect");
@@ -31,7 +32,6 @@ const startButton = document.getElementById("startTest");
 const trainerDiv = document.getElementById("trainer");
 const scoreDiv = document.getElementById("scoreDisplay");
 const wordInput = document.getElementById("wordInput");
-const progressDiv = document.getElementById("beeProgress");
 
 // Start test
 startButton.addEventListener("click", () => {
@@ -50,18 +50,17 @@ startButton.addEventListener("click", () => {
   }
   trainerDiv.innerHTML = "<p>🎤 Listening...</p>";
   scoreDiv.innerHTML = "";
-  showBeeProgress();
   speakWord(words[currentIndex]);
-  setTimeout(() => listenAndCheck(words[currentIndex]), 900); // Give a small pause after speaking
+  setTimeout(() => listenAndCheck(words[currentIndex]), 1000);
   gaEvent('test', 'start', 'bee-freemium');
 });
 
 function speakWord(word) {
-  speechSynthesis.cancel();
   const utter = new SpeechSynthesisUtterance();
   utter.lang = accentSelect.value;
   utter.rate = 0.9;
   utter.text = word; // App speaks whole word only!
+  speechSynthesis.cancel();
   speechSynthesis.speak(utter);
 }
 
@@ -95,13 +94,12 @@ function listenAndCheck(correctWord) {
     trainerDiv.appendChild(box);
 
     currentIndex++;
-    showBeeProgress();
     if (currentIndex < words.length) {
       setTimeout(() => {
         trainerDiv.innerHTML = "<p>🎤 Listening...</p>";
         speakWord(words[currentIndex]);
-        setTimeout(() => listenAndCheck(words[currentIndex]), 900);
-      }, 2000);
+        setTimeout(() => listenAndCheck(words[currentIndex]), 1000);
+      }, 2200);
     } else {
       showScore();
     }
@@ -111,12 +109,6 @@ function listenAndCheck(correctWord) {
     console.error("Speech recognition error:", e);
     showNotification("Speech recognition error. Please try again.", "error");
   };
-}
-
-function showBeeProgress() {
-  if (progressDiv) {
-    progressDiv.innerHTML = `<strong>Word ${currentIndex + 1} of ${words.length}</strong>`;
-  }
 }
 
 function showScore() {
@@ -156,7 +148,7 @@ if (form) {
       setTimeout(() => {
         submitBtn.disabled = false;
         submitBtn.innerHTML = '<i class="fas fa-paper-plane"></i> Send Comment';
-      }, 1800);
+      }, 2000);
     }
   });
 }
