@@ -3,97 +3,90 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>SpellRightPro - Spelling Bee (Freemium)</title>
+  <title>SpellRightPro - Bee (Freemium)</title>
 
-  <!-- Firebase -->
-  <script src="https://www.gstatic.com/firebasejs/10.4.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.4.0/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.4.0/firebase-firestore-compat.js"></script>
-  <script>
-    const firebaseConfig = {
-      apiKey: "AIzaSyCZ-rAPnRgVjSRFOFvbiQlowE6A3RVvwWo",
-      authDomain: "spellrightpro-firebase.firebaseapp.com",
-      projectId: "spellrightpro-firebase",
-      storageBucket: "spellrightpro-firebase.firebasestorage.app",
-      messagingSenderId: "798456641137",
-      appId: "1:798456641137:web:5c6d79db5bf49d04928dd0",
-      measurementId: "G-H09MF13297"
-    };
-    firebase.initializeApp(firebaseConfig);
-  </script>
+  <!-- PWA Manifest -->
+  <link rel="manifest" href="manifest.json" />
 
   <!-- Styles and Icons -->
   <link rel="stylesheet" href="css/styles.css" />
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet"/>
-</head>
 
+  <!-- Google Analytics 4 -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-H09MF13297"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-H09MF13297');
+  </script>
+</head>
 <body>
   <div class="container">
-    <header class="form-row">
-      <img src="assets/logo.png" alt="Logo" style="height:50px; vertical-align:middle; margin-right:10px;">
-      <h1 style="display:inline-block; vertical-align:middle;">SpellRightPro - Spelling Bee</h1>
+    <header>
+      <img src="assets/logo.png" alt="Logo" class="logo" width="50" />
+      <h1>SpellRightPro (Spelling Bee - Freemium)</h1>
     </header>
 
-    <!-- Auth Section -->
-    <div class="form-row" id="authSection">
-      <label>Email:</label>
-      <input type="email" id="userEmail" placeholder="Enter email" />
-      <label>Password:</label>
-      <input type="password" id="userPassword" placeholder="Enter password" />
-      <button onclick="loginUser()" class="btn">Login</button>
-      <button onclick="signUpUser()" class="btn btn-info">Sign Up</button>
-      <button onclick="logoutUser()" class="btn btn-warning">Logout</button>
-      <span id="loginStatus"></span>
-    </div>
-
-    <!-- Settings -->
     <div class="form-row">
       <label for="accentSelect">Accent:</label>
       <select id="accentSelect">
-        <option value="en-GB">British</option>
         <option value="en-US">American</option>
+        <option value="en-GB">British</option>
       </select>
-
-      <!-- ✅ Test Mode Toggle -->
-      <label for="toggleTestMode" style="margin-left:10px;">Test Mode:</label>
+      <label for="toggleTestMode">Test Mode:</label>
       <input type="checkbox" id="toggleTestMode" title="Spell letter by letter" />
-
-      <!-- Optional: Dark Mode Toggle -->
-      <button id="modeToggle" class="btn"><i id="modeIcon" class="fas fa-moon"></i></button>
+      <button class="btn btn-warning" id="modeToggle">
+        <i class="fas fa-moon" id="modeIcon"></i>
+      </button>
     </div>
 
-    <!-- Word Entry -->
     <div class="form-row">
-      <label>Enter Words:</label>
-      <textarea id="wordInput" rows="3" placeholder="One word per line..."></textarea>
-      <button onclick="addCustomWords()" class="btn">Add Words</button>
+      <label for="wordInput">Custom Words:</label>
+      <textarea id="wordInput" rows="4" placeholder="Enter one word per line..."></textarea>
     </div>
 
-    <!-- Test Start -->
     <div class="form-row">
-      <button id="startTest" class="btn btn-success">Start Spelling Bee</button>
+      <button class="btn btn-success" id="startTest">▶ Start Test</button>
     </div>
 
-    <!-- Trainer Area -->
     <div id="trainer" class="card"></div>
     <div id="scoreDisplay" class="card"></div>
 
-    <!-- Feedback -->
-    <form name="feedback" method="POST" data-netlify="true" netlify-honeypot="bot-field" class="form-row">
-      <input type="hidden" name="form-name" value="feedback" />
-      <input type="hidden" name="user-email" id="formHiddenEmail" />
-      <p hidden>
-        <label>Don’t fill this out: <input name="bot-field" /></label>
-      </p>
-      <textarea name="message" placeholder="Your comments or suggestions..." required></textarea>
-      <button type="submit" class="btn btn-info" id="submitBtn"><i class="fas fa-paper-plane"></i> Send Comment</button>
+    <h2>Feedback</h2>
+    <form name="feedback" method="POST" data-netlify="true">
+      <input type="hidden" name="email" id="formHiddenEmail" />
+      <div class="form-row">
+        <textarea name="comment" placeholder="Your feedback..." required></textarea>
+        <button class="btn" id="submitBtn">
+          <i class="fas fa-paper-plane"></i> Send Comment
+        </button>
+      </div>
     </form>
 
-    <!-- Notification Area -->
-    <div id="notificationContainer"></div>
+    <h3 id="loginStatus">Loading...</h3>
+    <div class="form-row">
+      <input type="email" id="userEmail" placeholder="Email" />
+      <input type="password" id="userPassword" placeholder="Password" />
+      <button class="btn" id="loginBtn">Login</button>
+      <button class="btn" id="signupBtn">Sign Up</button>
+      <button class="btn" id="logoutBtn">Logout</button>
+    </div>
   </div>
 
-  <!-- Main Logic -->
-  <script src="js/main-freemium-bee.js"></script>
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/10.4.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.4.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.4.0/firebase-firestore-compat.js"></script>
+  <!-- Modular Main Script -->
+  <script type="module" src="js/main-freemium-bee.js"></script>
+  <!-- PWA Service Worker -->
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('sw.js');
+      });
+    }
+  </script>
 </body>
 </html>
