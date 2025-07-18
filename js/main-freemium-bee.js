@@ -1,5 +1,4 @@
 // main-freemium-bee.js – Improved, bugfixed, one-by-one speaking
-
 import { initThemeToggle, initAuth, addAuthListeners, showNotification, gaEvent } from './common.js';
 
 // --- Firebase ---
@@ -20,10 +19,11 @@ addAuthListeners(auth, "loginBtn", "signupBtn", "logoutBtn", "userEmail", "userP
 initThemeToggle("modeToggle", "modeIcon");
 
 // --- Spelling Bee Logic ---
-let words = [
+let defaultWords = [
   "articulate", "pharaoh", "onomatopoeia", "surveillance",
   "metamorphosis", "onomastics", "entrepreneur", "mnemonic"
 ];
+let words = [...defaultWords];
 let currentIndex = 0, correctCount = 0, incorrectWords = [];
 
 const accentSelect = document.getElementById("accentSelect");
@@ -31,6 +31,7 @@ const startButton = document.getElementById("startTest");
 const trainerDiv = document.getElementById("trainer");
 const scoreDiv = document.getElementById("scoreDisplay");
 const wordInput = document.getElementById("wordInput");
+const progressDiv = document.getElementById("beeProgress");
 
 // Start test
 startButton.addEventListener("click", () => {
@@ -41,10 +42,7 @@ startButton.addEventListener("click", () => {
   if (wordInput && wordInput.value.trim()) {
     words = wordInput.value.trim().split(/\n+/).map(w => w.trim()).filter(w => w);
   } else {
-    words = [
-      "articulate", "pharaoh", "onomatopoeia", "surveillance",
-      "metamorphosis", "onomastics", "entrepreneur", "mnemonic"
-    ];
+    words = [...defaultWords];
   }
   if (!words.length) {
     showNotification("Please enter at least one word to begin.", "error");
@@ -52,17 +50,18 @@ startButton.addEventListener("click", () => {
   }
   trainerDiv.innerHTML = "<p>🎤 Listening...</p>";
   scoreDiv.innerHTML = "";
+  showBeeProgress();
   speakWord(words[currentIndex]);
-  setTimeout(() => listenAndCheck(words[currentIndex]), 1000); // Give a small pause after speaking
+  setTimeout(() => listenAndCheck(words[currentIndex]), 900); // Give a small pause after speaking
   gaEvent('test', 'start', 'bee-freemium');
 });
 
 function speakWord(word) {
+  speechSynthesis.cancel();
   const utter = new SpeechSynthesisUtterance();
   utter.lang = accentSelect.value;
   utter.rate = 0.9;
   utter.text = word; // App speaks whole word only!
-  speechSynthesis.cancel();
   speechSynthesis.speak(utter);
 }
 
@@ -96,12 +95,13 @@ function listenAndCheck(correctWord) {
     trainerDiv.appendChild(box);
 
     currentIndex++;
+    showBeeProgress();
     if (currentIndex < words.length) {
       setTimeout(() => {
         trainerDiv.innerHTML = "<p>🎤 Listening...</p>";
         speakWord(words[currentIndex]);
-        setTimeout(() => listenAndCheck(words[currentIndex]), 1000);
-      }, 2200);
+        setTimeout(() => listenAndCheck(words[currentIndex]), 900);
+      }, 2000);
     } else {
       showScore();
     }
@@ -111,6 +111,12 @@ function listenAndCheck(correctWord) {
     console.error("Speech recognition error:", e);
     showNotification("Speech recognition error. Please try again.", "error");
   };
+}
+
+function showBeeProgress() {
+  if (progressDiv) {
+    progressDiv.innerHTML = `<strong>Word ${currentIndex + 1} of ${words.length}</strong>`;
+  }
 }
 
 function showScore() {
@@ -150,7 +156,7 @@ if (form) {
       setTimeout(() => {
         submitBtn.disabled = false;
         submitBtn.innerHTML = '<i class="fas fa-paper-plane"></i> Send Comment';
-      }, 2000);
+      }, 1800);
     }
   });
 }
