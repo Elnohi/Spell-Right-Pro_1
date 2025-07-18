@@ -1,4 +1,4 @@
-// main-freemium-bee.js (Enhanced Freemium Spelling Bee with Firebase Auth + Feedback)
+// main-freemium-bee.js (Enhanced + Reviewed)
 
 // Firebase Initialization
 const firebaseConfig = {
@@ -22,6 +22,8 @@ const words = [
 let currentIndex = 0;
 let correctCount = 0;
 let incorrectWords = [];
+let testActive = false;
+
 const accentSelect = document.getElementById("accentSelect");
 const startButton = document.getElementById("startTest");
 const trainerDiv = document.getElementById("trainer");
@@ -29,21 +31,37 @@ const scoreDiv = document.getElementById("scoreDisplay");
 const form = document.querySelector("form[data-netlify='true']");
 const submitBtn = document.getElementById("submitBtn");
 const hiddenEmail = document.getElementById("formHiddenEmail");
+const loginStatus = document.getElementById("loginStatus");
 
 // Auth status
 auth.onAuthStateChanged(user => {
   if (user) {
     hiddenEmail.value = user.email;
+    if (loginStatus) loginStatus.textContent = `🔐 Logged in as ${user.email}`;
+  } else {
+    hiddenEmail.value = "";
+    if (loginStatus) loginStatus.textContent = "Not logged in";
   }
 });
 
-startButton.addEventListener("click", () => {
+// Compatibility check
+if (!("SpeechRecognition" in window || "webkitSpeechRecognition" in window)) {
+  startButton.disabled = true;
+  startButton.textContent = "Speech Recognition Not Supported";
+  alert("Your browser does not support speech recognition. Please try Chrome or Edge on desktop.");
+}
+
+startButton.addEventListener("click", startBeeTest);
+
+function startBeeTest() {
+  testActive = true;
   currentIndex = 0;
   correctCount = 0;
   incorrectWords = [];
+  trainerDiv.innerHTML = "<p class='word-box'>🎤 Listening... Please spell the word you hear.</p>";
   speakWord(words[currentIndex]);
   listenAndCheck(words[currentIndex]);
-});
+}
 
 function speakWord(word) {
   const utter = new SpeechSynthesisUtterance(word);
@@ -54,16 +72,15 @@ function speakWord(word) {
 }
 
 function listenAndCheck(correctWord) {
-  if (!("SpeechRecognition" in window || "webkitSpeechRecognition" in window)) {
-    alert("Speech recognition not supported in this browser.");
-    return;
-  }
+  if (!testActive) return;
   const Recognition = window.SpeechRecognition || window.webkitSpeechRecognition;
   const recognition = new Recognition();
   recognition.lang = accentSelect.value;
   recognition.interimResults = false;
   recognition.maxAlternatives = 1;
   recognition.start();
+
+  trainerDiv.innerHTML = "<p class='word-box'>🎙️ Listening for your response...</p>";
 
   recognition.onresult = (event) => {
     const spoken = event.results[0][0].transcript.toLowerCase().replace(/\s+/g, "");
@@ -78,16 +95,17 @@ function listenAndCheck(correctWord) {
       incorrectWords.push({ word: correctWord, heard: spoken });
       box.innerHTML = `❌ <strong>Incorrect.</strong> You said: <em>${spoken}</em><br>Correct spelling was: <strong>${correctWord}</strong>`;
     }
+
+    box.innerHTML += "<p>Next word in 2 seconds...</p>";
     trainerDiv.innerHTML = "";
     trainerDiv.appendChild(box);
 
     currentIndex++;
     if (currentIndex < words.length) {
       setTimeout(() => {
-        trainerDiv.innerHTML = "";
         speakWord(words[currentIndex]);
         listenAndCheck(words[currentIndex]);
-      }, 2500);
+      }, 2000);
     } else {
       showScore();
     }
@@ -95,11 +113,17 @@ function listenAndCheck(correctWord) {
 
   recognition.onerror = (e) => {
     console.error("Speech recognition error:", e);
-    alert("Speech recognition error. Please try again.");
+    const box = document.createElement("div");
+    box.className = "word-box";
+    box.innerHTML = `⚠️ <strong>Error:</strong> ${e.error}. <br>Please click Retry to continue.`;
+    box.innerHTML += '<br><button onclick="startBeeTest()" class="btn btn-warning">🔁 Retry Test</button>';
+    trainerDiv.innerHTML = "";
+    trainerDiv.appendChild(box);
   };
 }
 
 function showScore() {
+  testActive = false;
   const percent = Math.round((correctCount / words.length) * 100);
   let color = "#28a745";
   if (percent < 50) color = "#dc3545";
