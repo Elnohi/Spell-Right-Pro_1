@@ -20,15 +20,13 @@
       measurementId: "G-H09MF13297"
     };
     firebase.initializeApp(firebaseConfig);
-    const auth = firebase.auth();
-    const db = firebase.firestore();
   </script>
 
   <!-- Styles and Icons -->
   <link rel="stylesheet" href="css/styles.css" />
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet"/>
-
 </head>
+
 <body>
   <div class="container">
     <header class="form-row">
@@ -50,11 +48,17 @@
 
     <!-- Settings -->
     <div class="form-row">
-      <label>Accent:</label>
+      <label for="accentSelect">Accent:</label>
       <select id="accentSelect">
         <option value="en-GB">British</option>
         <option value="en-US">American</option>
       </select>
+
+      <!-- ✅ Test Mode Toggle -->
+      <label for="toggleTestMode" style="margin-left:10px;">Test Mode:</label>
+      <input type="checkbox" id="toggleTestMode" title="Spell letter by letter" />
+
+      <!-- Optional: Dark Mode Toggle -->
       <button id="modeToggle" class="btn"><i id="modeIcon" class="fas fa-moon"></i></button>
     </div>
 
@@ -67,7 +71,7 @@
 
     <!-- Test Start -->
     <div class="form-row">
-      <button onclick="startBeeTest()" class="btn btn-success">Start Spelling Bee</button>
+      <button id="startTest" class="btn btn-success">Start Spelling Bee</button>
     </div>
 
     <!-- Trainer Area -->
@@ -82,14 +86,14 @@
         <label>Don’t fill this out: <input name="bot-field" /></label>
       </p>
       <textarea name="message" placeholder="Your comments or suggestions..." required></textarea>
-      <button type="submit" class="btn btn-info"><i class="fas fa-paper-plane"></i> Submit Feedback</button>
+      <button type="submit" class="btn btn-info" id="submitBtn"><i class="fas fa-paper-plane"></i> Send Comment</button>
     </form>
 
     <!-- Notification Area -->
     <div id="notificationContainer"></div>
   </div>
 
-  <!-- Main JS -->
+  <!-- Main Logic -->
   <script src="js/main-freemium-bee.js"></script>
 </body>
 </html>
