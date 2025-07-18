@@ -192,7 +192,4 @@ export const oetWords = [
   "Concussions", "Anti-inflammatory", "Ethanol", "Fingers", "Freeze", "Joint pain", "Glaucoma", "Graphic designer", "Groggy", "Hearing loss", "Heat pads", "Heparin injection", "Herbal oil", "Impaction", "Injection", "Invasive", "Invitations", "Iron deficiency", "Japan", "Jobbing", "Jabbing", "Gapping", "Judge distance", "Kidney", "Layout", "Life-threatening", "Lifting", "Loss of energy", "Lunchtime", "Magazine editor", "Malaria", "Malaria tablets", "Meals", "Lunch", "Launch", "Mild fever", "Mouth ulcers", "Nail", "Nasal spray", "Nightmares", "Normal", "Off-colour", "Oil paint", "Opioid", "Optic disc", "Perception", "Pounding sound", "Pressure", "Prevention", "Psychological assessment", "Radiotherapy", "Red meat", "SLE (systemic lupus erythematosus)", "Salad", "Self-conscious", "Shadow", "Sharp brain", "Shooting", "Shower gels", "Skin rash", "Spots", "Steroid injections", "Superior aspect", "Temperature", "Tension headaches", "Tetanus vaccine", "Thyroid disease", "Toys", "Twisting", "Two toes", "Vascular", "Vertigo", "Vision", "Vitamin D", "Vocabulary", "Preventer", "Agitated", "Attack", "Autoimmune", "Bending over", "Bilirubin", "Bouncing sounds", "Brain scan", "Chubby", "Cleaner", "Clumps", "Concentration"
 ];
 
-// Export the word list for use in other modules if needed
-if (typeof module !== 'undefined' && module.exports) {
-  module.exports = oetWordList;
 }
