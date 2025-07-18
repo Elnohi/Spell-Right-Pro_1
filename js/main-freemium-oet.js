@@ -1,4 +1,4 @@
-// main-freemium-oet.js (Updated with fixed button logic and improved layout)
+// main-freemium-oet.js – Improved for UX, feedback, accessibility
 
 let words = [];
 let currentIndex = 0;
@@ -6,12 +6,20 @@ let correctCount = 0;
 let incorrectWords = [];
 let flaggedWords = [];
 let previousIndexes = [];
-let mode = "";
 
 const trainer = document.getElementById("trainer");
 const summaryDiv = document.getElementById("scoreDisplay");
 const accentSelect = document.getElementById("accentSelect");
 const synth = window.speechSynthesis;
+
+function resetState() {
+  currentIndex = 0;
+  correctCount = 0;
+  incorrectWords = [];
+  flaggedWords = [];
+  previousIndexes = [];
+  summaryDiv.innerHTML = "";
+}
 
 function presentWord() {
   trainer.innerHTML = "";
@@ -20,17 +28,26 @@ function presentWord() {
   const box = document.createElement("div");
   box.className = "word-box";
 
+  const progress = document.createElement("div");
+  progress.className = "progress-info";
+  progress.innerHTML = `<strong>Word ${currentIndex + 1} / ${words.length}</strong>`;
+  box.append(progress);
+
   const title = document.createElement("h3");
-  title.textContent = `Word ${currentIndex + 1} of ${words.length}`;
+  title.textContent = "Listen and Spell:";
+  box.append(title);
 
   const input = document.createElement("input");
   input.type = "text";
   input.placeholder = "Type what you heard...";
+  input.autocomplete = "off";
   input.addEventListener("keypress", e => e.key === "Enter" && check());
 
   const status = document.createElement("div");
   status.className = "status";
   status.style.margin = "10px 0";
+  status.setAttribute("aria-live", "polite");
+  box.append(input, status);
 
   const checkBtn = document.createElement("button");
   checkBtn.textContent = "Check";
@@ -80,7 +97,7 @@ function presentWord() {
   controls.style.display = "flex";
   controls.style.gap = "10px";
   controls.style.marginTop = "15px";
-  controls.append(backBtn, flagBtn, nextBtn);
+  controls.append(backBtn, flagBtn, nextBtn, checkBtn, speakBtn);
 
   function check() {
     const typed = input.value.trim().toLowerCase();
@@ -97,7 +114,7 @@ function presentWord() {
     }
   }
 
-  box.append(title, speakBtn, document.createElement("br"), input, checkBtn, status, controls);
+  box.appendChild(controls);
   trainer.appendChild(box);
   setTimeout(() => speak(word), 500);
   input.focus();
