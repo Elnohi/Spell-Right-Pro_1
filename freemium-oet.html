@@ -2,65 +2,40 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>SpellRightPro - Freemium OET</title>
-
-  <!-- FontAwesome for icons -->
-  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet" />
-
-  <!-- Custom Styles -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>SpellRightPro – OET Trainer</title>
   <link rel="stylesheet" href="css/styles.css" />
 </head>
 <body>
-  <div class="container">
-    <header>
+  <header>
+    <div class="header-bar">
       <img src="assets/logo.png" alt="Logo" class="logo" />
-      <h1>SpellRightPro - OET Practice</h1>
-    </header>
-
-    <div class="form-row">
-      <label for="accentSelect">Accent:</label>
-      <select id="accentSelect">
-        <option value="en-GB">British</option>
-        <option value="en-US">American</option>
-      </select>
+      <h1>SpellRightPro <span class="subtitle">OET Trainer (Free)</span></h1>
+      <a href="premium.html" class="btn btn-premium btn-header"><i class="fas fa-gem"></i> Go Premium</a>
     </div>
-
-    <div class="form-row">
-      <button onclick="startPractice()" class="btn btn-info">Start Practice</button>
-      <button onclick="startTest()" class="btn btn-success">Start Test</button>
-    </div>
-
-    <div id="trainer" class="card"></div>
-    <div id="scoreDisplay" class="card"></div>
-  </div>
-
-  <!-- Word List -->
-  <script src="js/oet_word_list.js"></script>
-  <!-- Script -->
-  <script src="js/main-freemium-oet.js"></script>
-  <script>
-    const synth = window.speechSynthesis;
-    function startPractice() {
-      words = oetWords;
-      mode = "practice";
-      currentIndex = 0;
-      correctCount = 0;
-      incorrectWords = [];
-      flaggedWords = [];
-      previousIndexes = [];
-      presentWord();
-    }
-    function startTest() {
-      words = oetWords.slice().sort(() => Math.random() - 0.5).slice(0, 25);
-      mode = "test";
-      currentIndex = 0;
-      correctCount = 0;
-      incorrectWords = [];
-      flaggedWords = [];
-      previousIndexes = [];
-      presentWord();
-    }
-  </script>
+  </header>
+  <main>
+    <section class="trainer-area">
+      <h2>OET Listening Trainer</h2>
+      <div class="trainer-controls">
+        <label for="accentSelect">Accent:</label>
+        <select id="accentSelect">
+          <option value="en-GB">British</option>
+          <option value="en-US">American</option>
+        </select>
+        <textarea id="wordInput" placeholder="(Optional) Paste your own OET words, one per line..."></textarea>
+        <button id="startTest" class="btn btn-success">Start Practice</button>
+      </div>
+      <div id="trainer"></div>
+      <div id="scoreDisplay"></div>
+    </section>
+    <footer>
+      <small>SpellRightPro &copy; 2025. <a href="index.html">Back to Home</a></small>
+    </footer>
+  </main>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+  <script type="module" src="js/main-freemium-oet.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css"/>
 </body>
 </html>
