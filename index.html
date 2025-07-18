@@ -3,89 +3,28 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>SpellRightPro - Bee (Freemium)</title>
-  <link rel="manifest" href="manifest.json" />
+  <title>SpellRightPro – Choose Your Trainer</title>
   <link rel="stylesheet" href="css/styles.css" />
-  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet"/>
-  <!-- Google Analytics 4 -->
-  <script async src="https://www.googletagmanager.com/gtag/js?id=G-H09MF13297"></script>
-  <script>
-    window.dataLayer = window.dataLayer || [];
-    function gtag(){dataLayer.push(arguments);}
-    gtag('js', new Date());
-    gtag('config', 'G-H09MF13297');
-  </script>
 </head>
 <body>
-  <div class="container">
-    <!-- Logo + App Name at top -->
-    <div style="text-align:center; margin-bottom:1rem;">
-      <img src="assets/logo.png" alt="Logo" style="height:60px;vertical-align:middle;margin-bottom:5px;" />
-      <span style="font-size:2rem;font-weight:bold;color:#007bff;vertical-align:middle;margin-left:10px;">
-        SpellRightPro <span style="font-size:1.1rem;color:#222;">(Spelling Bee - Freemium)</span>
-      </span>
-    </div>
-
-    <!-- Login block -->
-    <div class="form-row" style="justify-content:center;">
-      <input type="email" id="userEmail" placeholder="Email" />
-      <input type="password" id="userPassword" placeholder="Password" />
-      <button class="btn" id="loginBtn">Login</button>
-      <button class="btn" id="signupBtn">Sign Up</button>
-      <button class="btn" id="logoutBtn">Logout</button>
-    </div>
-    <h3 id="loginStatus" style="text-align:center;">Loading...</h3>
-
-    <!-- Controls -->
-    <div class="form-row">
-      <label for="accentSelect">Accent:</label>
-      <select id="accentSelect">
-        <option value="en-US">American</option>
-        <option value="en-GB">British</option>
-      </select>
-      <!-- Only dark mode toggle -->
-      <button class="btn btn-warning" id="modeToggle" style="margin-left:auto;">
-        <i class="fas fa-moon" id="modeIcon"></i>
-      </button>
-    </div>
-
-    <div class="form-row">
-      <label for="wordInput">Custom Words:</label>
-      <textarea id="wordInput" rows="4" placeholder="Enter one word per line..."></textarea>
-    </div>
-
-    <div class="form-row">
-      <button class="btn btn-success" id="startTest">▶ Start Test</button>
-    </div>
-
-    <div id="trainer" class="card"></div>
-    <div id="scoreDisplay" class="card"></div>
-
-    <h2 style="margin-top:2rem;">Feedback</h2>
-    <form name="feedback" method="POST" data-netlify="true" action="/thankyou.html">
-      <input type="hidden" name="email" id="formHiddenEmail" />
-      <div class="form-row">
-        <textarea name="comment" placeholder="Your feedback..." required></textarea>
-        <button class="btn" id="submitBtn">
-          <i class="fas fa-paper-plane"></i> Send Comment
-        </button>
+  <header>
+    <img src="assets/logo.png" alt="Logo" class="logo" />
+    <h1>SpellRightPro</h1>
+  </header>
+  <main class="main-landing">
+    <div class="choose-mode-card">
+      <h2>Welcome!</h2>
+      <p>Choose your training mode:</p>
+      <div class="mode-buttons">
+        <a href="freemium-oet.html" class="btn btn-oet"><i class="fas fa-notes-medical"></i> OET Trainer</a>
+        <a href="freemium-bee.html" class="btn btn-bee"><i class="fas fa-spell-check"></i> Spelling Bee</a>
+        <a href="premium.html" class="btn btn-premium"><i class="fas fa-gem"></i> Go Premium <span class="badge">⭐</span></a>
       </div>
-    </form>
-  </div>
-
-  <!-- Firebase SDK -->
-  <script src="https://www.gstatic.com/firebasejs/10.4.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.4.0/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.4.0/firebase-firestore-compat.js"></script>
-  <!-- Modular Main Script -->
-  <script type="module" src="js/main-freemium-bee.js"></script>
-  <!-- Register PWA Service Worker -->
-  <script>
-    if ('serviceWorker' in navigator) {
-      window.addEventListener('load', () => {
-        navigator.serviceWorker.register('sw.js');
-      });
-    }
-  </script>
+    </div>
+    <footer style="margin-top:50px;">
+      <small>&copy; 2025 SpellRightPro. All rights reserved.</small>
+    </footer>
+  </main>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css"/>
 </body>
 </html>
