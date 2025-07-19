@@ -4,44 +4,68 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>SpellRightPro – Premium</title>
-  <link rel="stylesheet" href="css/styles.css" />
+  <link rel="stylesheet" href="css/styles.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
 </head>
 <body>
-  <header>
-    <div class="header-bar">
-      <img src="assets/logo.png" alt="Logo" class="logo" />
-      <h1>SpellRightPro <span class="subtitle">Premium</span></h1>
-      <a href="index.html" class="btn btn-outline-secondary btn-header"><i class="fas fa-home"></i> Home</a>
+  <header class="header-bar">
+    <div class="logo-area">
+      <img src="assets/logo.png" class="logo-img" alt="Logo">
+      <span class="app-title">SpellRightPro</span>
+      <span class="subtitle">Premium Spelling & OET Trainer</span>
     </div>
+    <form class="auth-bar" onsubmit="return false;">
+      <input type="email" id="userEmail" placeholder="Email">
+      <input type="password" id="userPassword" placeholder="Password">
+      <button type="button" class="login" id="loginBtn">Login</button>
+      <button type="button" class="signup" id="signupBtn">Sign Up</button>
+      <button type="button" class="logout" id="logoutBtn">Logout</button>
+      <span id="loginStatus" class="auth-status not-logged">Not logged in</span>
+      <input type="hidden" id="formHiddenEmail" />
+    </form>
   </header>
   <main>
-    <section class="trainer-area">
-      <h2>Premium Spelling & OET Trainer</h2>
-      <div class="trainer-controls">
-        <label for="examSelect">Exam Type:</label>
+    <div class="main-card">
+      <div class="field-row">
+        <span class="field-label">Exam Type:</span>
         <select id="examSelect">
           <option value="">Select</option>
-          <option value="OET">OET</option>
-          <option value="SpellingBee">Spelling Bee</option>
-          <option value="Custom">Custom</option>
+          <option value="oet">OET</option>
+          <option value="spellingbee">Spelling Bee</option>
+          <option value="custom">Custom</option>
         </select>
-        <label for="accentSelect">Accent:</label>
+        <span class="field-label" style="margin-left:2em;">Accent:</span>
         <select id="accentSelect">
-          <option value="en-GB">British</option>
           <option value="en-US">American</option>
+          <option value="en-GB">British</option>
         </select>
-        <input type="file" id="fileUpload" accept=".txt"/>
-        <button id="startButton" class="btn btn-success">Start</button>
       </div>
-      <div id="summary"></div>
-    </section>
-    <footer>
-      <small>SpellRightPro &copy; 2025. <a href="index.html">Back to Home</a></small>
-    </footer>
+      <div class="field-row">
+        <span class="field-label">Upload Word File:</span>
+        <input type="file" id="fileUpload" accept=".txt,.docx,.pdf" />
+      </div>
+      <div class="field-row">
+        <span class="field-label">Custom Words:</span>
+        <textarea id="customWords" placeholder="Enter custom words here..."></textarea>
+        <button class="add-custom" id="addCustomWords" style="height:44px;margin-left:1rem;"><i class="fa-solid fa-plus"></i> Add Custom Words</button>
+      </div>
+      <div class="button-row">
+        <button id="startButton" class="start-practice"><i class="fas fa-play"></i> Start Practice</button>
+      </div>
+      <div id="trainer"></div>
+      <div id="scoreDisplay"></div>
+    </div>
+    <div class="feedback-card">
+      <div class="feedback-title"><i class="fa-regular fa-comment-dots"></i> Feedback</div>
+      <form method="POST" data-netlify="true" name="feedback">
+        <textarea name="feedback" id="feedbackInput" placeholder="Write your feedback..."></textarea>
+        <button type="submit" class="feedback-btn" id="submitBtn"><i class="fas fa-paper-plane"></i> Send Comment</button>
+      </form>
+    </div>
   </main>
-  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.4.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.4.0/firebase-auth-compat.js"></script>
   <script type="module" src="js/main-premium.js"></script>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css"/>
+  <script type="module" src="js/common.js"></script>
 </body>
 </html>
