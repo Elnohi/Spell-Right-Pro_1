@@ -3,56 +3,86 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>SpellRightPro - English Spelling Mastery</title>
-  <link rel="stylesheet" href="css/styles.css">
+  <title>SpellRightPro - Master English Spelling</title>
+  <meta name="description" content="Comprehensive spelling training for all levels">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+  <link rel="stylesheet" href="css/styles.css">
+  <link rel="manifest" href="/manifest.json">
+  <meta name="theme-color" content="#007bff">
+  <!-- Apple PWA Tags -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="SpellRightPro">
+  <link rel="apple-touch-icon" href="/assets/icons/icon-192x192.png">
+  <link rel="icon" href="/assets/favicon.ico">
 </head>
 <body class="landing-page">
   <header class="landing-header">
-    <img src="assets/logo.png" alt="Logo" class="logo-img" style="height:80px;">
-    <h1>SpellRightPro</h1>
-    <p class="tagline">Your complete English spelling solution</p>
+    <div class="logo-container">
+      <img src="assets/logo.png" alt="SpellRightPro Logo" class="logo">
+      <h1>SpellRightPro</h1>
+      <p class="tagline">Your Complete English Spelling Solution</p>
+    </div>
   </header>
 
-  <main>
-    <div class="container">
-      <div class="mode-selection">
-        <div class="mode-card">
+  <main class="landing-main">
+    <div class="mode-selection">
+      <div class="mode-row">
+        <div class="mode-card oet-card">
           <div class="card-icon">
             <i class="fas fa-notes-medical"></i>
           </div>
           <h2>Medical Terminology</h2>
-          <p>For healthcare professionals and OET test takers</p>
-          <a href="freemium-oet.html" class="btn btn-primary">
-            Start Training
+          <p>For healthcare professionals preparing for OET or medical communication</p>
+          <ul class="feature-list">
+            <li>Specialized medical vocabulary</li>
+            <li>Healthcare scenario practice</li>
+            <li>Accent-specific pronunciation</li>
+          </ul>
+          <a href="freemium-oet.html" class="btn btn-oet">
+            Start Medical Training
           </a>
         </div>
 
-        <div class="mode-card">
+        <div class="mode-card bee-card">
           <div class="card-icon">
             <i class="fas fa-spell-check"></i>
           </div>
           <h2>Spelling Bee</h2>
-          <p>For competitions and academic practice</p>
-          <a href="freemium-bee.html" class="btn btn-primary">
-            Start Practice
+          <p>For competition preparation and school spelling practice</p>
+          <ul class="feature-list">
+            <li>Competition-level words</li>
+            <li>Multiple English accents</li>
+            <li>Progress tracking</li>
+          </ul>
+          <a href="freemium-bee.html" class="btn btn-bee">
+            Start Spelling Practice
           </a>
         </div>
+      </div>
 
-        <div class="mode-card" style="grid-column: 1 / -1; max-width: 600px; margin: 0 auto;">
+      <div class="premium-cta">
+        <div class="premium-card">
           <div class="card-icon">
-            <i class="fas fa-crown"></i>
+            <i class="fas fa-gem"></i>
           </div>
-          <h2>Premium Version</h2>
-          <p>Unlock all features and advanced training modes</p>
-          <a href="premium.html" class="btn" style="background:var(--premium);color:white;">
-            Go Premium
+          <h2>Premium Experience</h2>
+          <p>Unlock all features for comprehensive spelling mastery</p>
+          <ul class="feature-list">
+            <li>Combine both medical and general spelling</li>
+            <li>Advanced progress analytics</li>
+            <li>Custom word list creation</li>
+          </ul>
+          <a href="premium.html" class="btn btn-premium">
+            <i class="fas fa-crown"></i> Explore Premium
           </a>
         </div>
       </div>
     </div>
   </main>
 
-  <script src="js/common.js"></script>
+  <footer class="landing-footer">
+    <p>&copy; 2025 SpellRightPro. All rights reserved.</p>
+  </footer>
 </body>
 </html>
