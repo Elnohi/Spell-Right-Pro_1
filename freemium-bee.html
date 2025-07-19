@@ -1,67 +1,83 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8"/>
+  <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>SpellRightPro – Spelling Bee (Freemium)</title>
-  <link rel="stylesheet" href="css/styles.css"/>
-  <link rel="icon" href="assets/logo.png"/>
-  <script src="https://kit.fontawesome.com/19b43c6b5c.js" crossorigin="anonymous"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+  <title>SpellRightPro | Spelling Bee (Freemium)</title>
+  <link rel="stylesheet" href="css/styles.css" />
+  <link rel="icon" type="image/png" href="assets/logo.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body>
-  <div class="app-container">
-    <header class="header">
-      <img src="assets/logo.png" class="logo" alt="SpellRightPro"/>
-      <span class="app-title">SpellRightPro</span>
-      <div class="auth-area">
-        <input type="email" id="userEmail" placeholder="Email"/>
-        <input type="password" id="userPassword" placeholder="Password"/>
-        <button id="loginBtn">Login</button>
-        <button id="signupBtn">Sign Up</button>
-        <button id="logoutBtn">Logout</button>
-      </div>
-      <button id="modeToggle" title="Toggle dark mode"><i class="fas fa-moon" id="modeIcon"></i></button>
-    </header>
-    <main>
-      <div class="practice-header">
-        <h1>Spelling Bee <span class="freemium-tag">(Freemium)</span></h1>
-        <a href="premium.html" class="btn premium-btn"><i class="fas fa-star"></i> Go Premium</a>
-      </div>
-      <div class="card practice-card">
-        <div class="row">
-          <label for="accentSelect">Accent:</label>
-          <select id="accentSelect">
-            <option value="en-US">American</option>
-            <option value="en-GB">British</option>
-          </select>
-        </div>
-        <div class="row">
-          <label for="wordInput">Custom Words:</label>
-          <textarea id="wordInput" rows="2" placeholder="Enter one word per line..."></textarea>
-        </div>
-        <div class="row">
-          <button id="startTest" class="btn btn-success"><i class="fas fa-play"></i> Start Test</button>
-        </div>
-        <div id="trainer" class="trainer"></div>
-        <div id="scoreDisplay"></div>
-      </div>
-      <div class="card feedback-card">
-        <h2>Feedback</h2>
-        <form name="feedback" method="POST" data-netlify="true" netlify>
-          <input type="hidden" name="email" id="formHiddenEmail"/>
-          <textarea name="message" id="feedbackInput" rows="2" placeholder="Your feedback..."></textarea>
-          <button type="submit" id="submitBtn" class="btn btn-primary">
-            <i class="fas fa-paper-plane"></i> Send Comment
-          </button>
-        </form>
-      </div>
-    </main>
-    <footer>
-      <span>© 2025 SpellRightPro. All rights reserved.</span>
-    </footer>
+  <!-- HEADER -->
+  <header class="header">
+    <div class="header-left">
+      <img src="assets/logo.png" alt="Logo" class="logo" />
+      <span class="app-title">SpellRightPro <span class="subtitle">(Spelling Bee - Freemium)</span></span>
+    </div>
+    <div class="header-right">
+      <a href="premium.html" class="btn btn-premium"><i class="fa fa-star"></i> Premium</a>
+      <button id="modeToggle" class="btn btn-circle" aria-label="Dark Mode">
+        <i id="modeIcon" class="fa fa-moon"></i>
+      </button>
+    </div>
+  </header>
+
+  <!-- LOGIN AREA -->
+  <div class="auth-row">
+    <input id="userEmail" type="email" placeholder="Email" autocomplete="username" />
+    <input id="userPassword" type="password" placeholder="Password" autocomplete="current-password" />
+    <button id="loginBtn" class="btn btn-sm">Login</button>
+    <button id="signupBtn" class="btn btn-sm btn-outline">Sign Up</button>
+    <button id="logoutBtn" class="btn btn-sm btn-danger">Logout</button>
+    <span id="loginStatus" class="login-status"></span>
+    <input type="hidden" id="formHiddenEmail" name="email" />
   </div>
+
+  <!-- MAIN CARD -->
+  <main>
+    <section class="card main-card">
+      <h2 class="centered"><i class="fa-solid fa-spell-check"></i> Spelling Bee (Freemium)</h2>
+      <div class="form-row">
+        <label for="accentSelect">Accent:</label>
+        <select id="accentSelect">
+          <option value="en-US">American</option>
+          <option value="en-GB">British</option>
+        </select>
+      </div>
+      <div class="form-row">
+        <label for="wordInput">Custom Words:</label>
+        <textarea id="wordInput" rows="2" placeholder="Enter one word per line..."></textarea>
+      </div>
+      <button id="startTest" class="btn btn-success big">
+        <i class="fa fa-play"></i> Start Test
+      </button>
+      <div id="trainer"></div>
+      <div id="scoreDisplay"></div>
+    </section>
+
+    <!-- FEEDBACK CARD -->
+    <section class="card feedback-card">
+      <h3><i class="fa-regular fa-comment-dots"></i> Feedback</h3>
+      <form name="feedback" method="POST" data-netlify="true">
+        <textarea name="message" id="feedback" rows="2" placeholder="Your feedback..."></textarea>
+        <button id="submitBtn" type="submit" class="btn btn-primary"><i class="fa fa-paper-plane"></i> Send Comment</button>
+      </form>
+    </section>
+  </main>
+
+  <!-- FOOTER -->
+  <footer>
+    <div class="footer-inner">
+      &copy; 2025 SpellRightPro. All rights reserved. 
+      <a href="index.html">Home</a>
+    </div>
+  </footer>
+
+  <!-- JS -->
+  <script src="https://www.gstatic.com/firebasejs/10.4.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.4.0/firebase-auth-compat.js"></script>
   <script type="module" src="js/main-freemium-bee.js"></script>
   <script type="module" src="js/common.js"></script>
 </body>
