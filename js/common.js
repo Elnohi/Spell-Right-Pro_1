@@ -1,8 +1,6 @@
-// ========== INITIALIZATION ==========
-let firebaseInitialized = false;
-
+// Initialize Firebase
 export function initializeFirebase() {
-  if (!firebaseInitialized && !firebase.apps.length) {
+  if (!firebase.apps.length) {
     firebase.initializeApp({
       apiKey: "YOUR_API_KEY",
       authDomain: "YOUR_AUTH_DOMAIN",
@@ -11,69 +9,54 @@ export function initializeFirebase() {
       messagingSenderId: "YOUR_SENDER_ID",
       appId: "YOUR_APP_ID"
     });
-    firebaseInitialized = true;
   }
   return firebase;
 }
 
-// ========== THEME TOGGLE ==========
+// Theme Toggle
 export function initThemeToggle() {
   const toggleBtn = document.getElementById('modeToggle');
   const icon = document.getElementById('modeIcon');
   
-  if (!toggleBtn || !icon) return;
-
-  const applyDarkMode = (darkMode) => {
-    document.body.classList.toggle('dark-mode', darkMode);
-    icon.className = darkMode ? 'fas fa-sun' : 'fas fa-moon';
-    localStorage.setItem('darkMode', darkMode ? 'on' : 'off');
+  const applyDarkMode = (isDark) => {
+    document.body.classList.toggle('dark-mode', isDark);
+    localStorage.setItem('darkMode', isDark ? 'on' : 'off');
+    icon.className = isDark ? 'fas fa-sun' : 'fas fa-moon';
   };
 
-  toggleBtn.addEventListener('click', () => {
-    const isDark = document.body.classList.contains('dark-mode');
-    applyDarkMode(!isDark);
+  toggleBtn?.addEventListener('click', () => {
+    applyDarkMode(!document.body.classList.contains('dark-mode'));
   });
 
-  // Initialize from localStorage or preference
-  const savedMode = localStorage.getItem('darkMode') === 'on';
-  const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-  applyDarkMode(savedMode || (!localStorage.getItem('darkMode') && prefersDark));
+  // Initialize from storage
+  applyDarkMode(localStorage.getItem('darkMode') === 'on');
 }
 
-// ========== NAVIGATION ==========
-export function initializeNavigation() {
+// Navigation Controls
+export function setupNavigation() {
   // Home button
   document.getElementById('homeBtn')?.addEventListener('click', () => {
-    window.location.href = '/index.html';
+    window.location.href = 'index.html';
   });
-  
+
   // Premium button
   document.getElementById('premiumBtn')?.addEventListener('click', () => {
-    window.location.href = '/premium.html';
+    window.location.href = 'premium.html';
+  });
+
+  // Ensure all links work
+  document.querySelectorAll('a').forEach(link => {
+    link.addEventListener('click', (e) => {
+      if (link.href.includes(window.location.hostname)) {
+        e.preventDefault();
+        window.location.href = link.href;
+      }
+    });
   });
 }
 
-// ========== SPEECH FUNCTIONS ==========
-export function speak(text, lang = 'en-US') {
-  return new Promise((resolve) => {
-    const utterance = new SpeechSynthesisUtterance(text);
-    utterance.lang = lang;
-    window.speechSynthesis.speak(utterance);
-    utterance.onend = resolve;
-  });
-}
-
-// ========== UTILITIES ==========
-export function showNotification(message, type = 'info') {
-  const notification = document.createElement('div');
-  notification.className = `notification ${type}`;
-  notification.textContent = message;
-  document.body.appendChild(notification);
-  
-  setTimeout(() => {
-    notification.remove();
-  }, 3000);
-}
-
-// Initialize when imported
-initializeNavigation();
+// Initialize when loaded
+document.addEventListener('DOMContentLoaded', () => {
+  initThemeToggle();
+  setupNavigation();
+});
