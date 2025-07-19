@@ -1,4 +1,4 @@
-// config.js - Shared configuration
+// Shared configuration constants
 export const firebaseConfig = {
   apiKey: "AIzaSyCZ-rAPnRgVjSRFOFvbiQlowE6A3RVvwWo",
   authDomain: "spellrightpro-firebase.firebaseapp.com",
@@ -9,13 +9,25 @@ export const firebaseConfig = {
   measurementId: "G-H09MF13297"
 };
 
+export const examTypes = {
+  OET: 'oet',
+  SPELLING_BEE: 'spellingbee',
+  CUSTOM: 'custom'
+};
+
 export const defaultWords = {
-  OET: [
+  [examTypes.OET]: [
     "Scalp", "Eczema", "Osteoarthritis", "Atrial fibrillation", "Fatigue",
     "Constipation", "Bruising", "Lying down", "Autism", "Insomnia"
   ],
-  SPELLING_BEE: [
+  [examTypes.SPELLING_BEE]: [
     "articulate", "pharaoh", "onomatopoeia", "surveillance",
     "metamorphosis", "onomastics", "entrepreneur", "mnemonic"
   ]
 };
+
+export const accentOptions = [
+  { value: 'en-US', label: 'American English' },
+  { value: 'en-GB', label: 'British English' },
+  { value: 'en-AU', label: 'Australian English' }
+];
