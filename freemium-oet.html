@@ -3,75 +3,52 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>SpellRightPro | OET Trainer (Freemium)</title>
-  <link rel="stylesheet" href="css/styles.css" />
-  <link rel="icon" type="image/png" href="assets/logo.png" />
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <title>SpellRightPro (OET - Freemium)</title>
+  <link rel="stylesheet" href="css/styles.css">
+  <!-- FontAwesome for icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
 </head>
 <body>
-  <!-- HEADER -->
-  <header class="header">
-    <div class="header-left">
-      <img src="assets/logo.png" alt="Logo" class="logo" />
-      <span class="app-title">SpellRightPro <span class="subtitle">(OET - Freemium)</span></span>
+  <header class="header-bar">
+    <div class="logo-area">
+      <img src="assets/logo.png" class="logo-img" alt="Logo">
+      <span class="app-title">SpellRightPro</span>
+      <span class="subtitle">(OET - Freemium)</span>
     </div>
-    <div class="header-right">
-      <a href="premium.html" class="btn btn-premium"><i class="fa fa-star"></i> Premium</a>
-      <button id="modeToggle" class="btn btn-circle" aria-label="Dark Mode">
-        <i id="modeIcon" class="fa fa-moon"></i>
-      </button>
-    </div>
+    <form class="auth-bar" onsubmit="return false;">
+      <input type="email" id="userEmail" placeholder="Email">
+      <input type="password" id="userPassword" placeholder="Password">
+      <button type="button" class="login" id="loginBtn">Login</button>
+      <button type="button" class="signup" id="signupBtn">Sign Up</button>
+      <button type="button" class="logout" id="logoutBtn">Logout</button>
+      <span id="loginStatus" class="auth-status not-logged">Not logged in</span>
+      <input type="hidden" id="formHiddenEmail" />
+    </form>
   </header>
-
-  <!-- LOGIN AREA -->
-  <div class="auth-row">
-    <input id="userEmail" type="email" placeholder="Email" autocomplete="username" />
-    <input id="userPassword" type="password" placeholder="Password" autocomplete="current-password" />
-    <button id="loginBtn" class="btn btn-sm">Login</button>
-    <button id="signupBtn" class="btn btn-sm btn-outline">Sign Up</button>
-    <button id="logoutBtn" class="btn btn-sm btn-danger">Logout</button>
-    <span id="loginStatus" class="login-status"></span>
-    <input type="hidden" id="formHiddenEmail" name="email" />
-  </div>
-
-  <!-- MAIN CARD -->
   <main>
-    <section class="card main-card">
-      <h2 class="centered"><i class="fa-solid fa-user-nurse"></i> OET Trainer (Freemium)</h2>
-      <div class="form-row">
-        <label for="accentSelect">Accent:</label>
+    <div class="main-card">
+      <div class="field-row">
+        <span class="field-label">Accent:</span>
         <select id="accentSelect">
           <option value="en-US">American</option>
           <option value="en-GB">British</option>
         </select>
       </div>
-      <button id="startTest" class="btn btn-success big">
-        <i class="fa fa-play"></i> Start OET Practice
-      </button>
+      <div class="button-row">
+        <button id="startPractice" class="start-practice"><i class="fas fa-play"></i> Start OET Practice</button>
+        <button class="add-custom" id="goPremiumBtn" onclick="window.location.href='premium.html'"><i class="fa-solid fa-star"></i> Premium</button>
+      </div>
       <div id="trainer"></div>
       <div id="scoreDisplay"></div>
-    </section>
-
-    <!-- FEEDBACK CARD -->
-    <section class="card feedback-card">
-      <h3><i class="fa-regular fa-comment-dots"></i> Feedback</h3>
-      <form name="feedback" method="POST" data-netlify="true">
-        <textarea name="message" id="feedback" rows="2" placeholder="Your feedback..."></textarea>
-        <button id="submitBtn" type="submit" class="btn btn-primary"><i class="fa fa-paper-plane"></i> Send Comment</button>
-      </form>
-    </section>
-  </main>
-
-  <!-- FOOTER -->
-  <footer>
-    <div class="footer-inner">
-      &copy; 2025 SpellRightPro. All rights reserved. 
-      <a href="index.html">Home</a>
     </div>
-  </footer>
-
-  <!-- JS -->
+    <div class="feedback-card">
+      <div class="feedback-title"><i class="fa-regular fa-comment-dots"></i> Feedback</div>
+      <form method="POST" data-netlify="true" name="feedback">
+        <textarea name="feedback" id="feedbackInput" placeholder="Write your feedback..."></textarea>
+        <button type="submit" class="feedback-btn" id="submitBtn"><i class="fas fa-paper-plane"></i> Send Comment</button>
+      </form>
+    </div>
+  </main>
   <script src="https://www.gstatic.com/firebasejs/10.4.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.4.0/firebase-auth-compat.js"></script>
   <script type="module" src="js/main-freemium-oet.js"></script>
