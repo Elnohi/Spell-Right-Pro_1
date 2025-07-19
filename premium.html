@@ -1,75 +1,85 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>SpellRightPro – Premium</title>
-  <link rel="stylesheet" href="css/styles.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Premium | SpellRightPro</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
-  <!-- Add to all HTML files in head section -->
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<link rel="apple-touch-icon" href="assets/icons/icon-192x192.png">
+  <link rel="stylesheet" href="css/styles.css">
+  <link rel="manifest" href="/manifest.json">
+  <meta name="theme-color" content="#6a11cb">
+  <!-- Apple PWA Tags -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="SpellRightPro">
+  <link rel="apple-touch-icon" href="/assets/icons/icon-192x192.png">
+  <link rel="icon" href="/assets/favicon.ico">
 </head>
 <body>
-  <header class="header-bar">
+  <header class="header-bar premium-header">
     <div class="logo-area">
-      <img src="assets/logo.png" class="logo-img" alt="Logo">
+      <img src="../assets/logo.png" class="logo-img" alt="Logo">
       <span class="app-title">SpellRightPro</span>
-      <span class="subtitle">Premium Spelling & OET Trainer</span>
+      <span class="subtitle">Premium</span>
     </div>
-    <form class="auth-bar" onsubmit="return false;">
-      <input type="email" id="userEmail" placeholder="Email">
-      <input type="password" id="userPassword" placeholder="Password">
-      <button type="button" class="login" id="loginBtn">Login</button>
-      <button type="button" class="signup" id="signupBtn">Sign Up</button>
-      <button type="button" class="logout" id="logoutBtn">Logout</button>
-      <span id="loginStatus" class="auth-status not-logged">Not logged in</span>
-      <input type="hidden" id="formHiddenEmail" />
-    </form>
+    <button id="modeToggle" class="btn btn-dark mode-toggle">
+      <i id="modeIcon" class="fas fa-moon"></i>
+    </button>
+    <button id="homeBtn" class="btn btn-outline-light">
+      <i class="fas fa-home"></i> Home
+    </button>
   </header>
+
   <main>
-    <div class="main-card">
+    <div class="main-card premium-card">
       <div class="field-row">
         <span class="field-label">Exam Type:</span>
-        <select id="examSelect">
+        <select id="examSelect" class="form-control">
           <option value="">Select</option>
           <option value="oet">OET</option>
           <option value="spellingbee">Spelling Bee</option>
           <option value="custom">Custom</option>
         </select>
         <span class="field-label" style="margin-left:2em;">Accent:</span>
-        <select id="accentSelect">
+        <select id="accentSelect" class="form-control">
           <option value="en-US">American</option>
           <option value="en-GB">British</option>
+          <option value="en-AU">Australian</option>
+          <option value="en-CA">Canadian</option>
         </select>
+        <div class="flag-container">
+          <img id="accentFlag" src="../assets/flags/us.png" alt="Flag" width="30">
+        </div>
       </div>
+
       <div class="field-row">
         <span class="field-label">Upload Word File:</span>
-        <input type="file" id="fileUpload" accept=".txt,.docx,.pdf" />
+        <input type="file" id="fileUpload" class="form-control-file" accept=".txt,.docx,.pdf">
       </div>
+
       <div class="field-row">
         <span class="field-label">Custom Words:</span>
-        <textarea id="customWords" placeholder="Enter custom words here..."></textarea>
-        <button class="add-custom" id="addCustomWords" style="height:44px;margin-left:1rem;"><i class="fa-solid fa-plus"></i> Add Custom Words</button>
+        <textarea id="customWords" class="form-control" 
+                 placeholder="Enter custom words here..."></textarea>
+        <button id="addCustomWords" class="btn btn-info" style="height:44px;margin-left:1rem;">
+          <i class="fa-solid fa-plus"></i> Add Custom Words
+        </button>
       </div>
+
       <div class="button-row">
-        <button id="startButton" class="start-practice"><i class="fas fa-play"></i> Start Practice</button>
+        <button id="startButton" class="btn btn-premium start-practice">
+          <i class="fas fa-play"></i> Start Practice
+        </button>
       </div>
-      <div id="trainer"></div>
-      <div id="scoreDisplay"></div>
-    </div>
-    <div class="feedback-card">
-      <div class="feedback-title"><i class="fa-regular fa-comment-dots"></i> Feedback</div>
-      <form method="POST" data-netlify="true" name="feedback">
-        <textarea name="feedback" id="feedbackInput" placeholder="Write your feedback..."></textarea>
-        <button type="submit" class="feedback-btn" id="submitBtn"><i class="fas fa-paper-plane"></i> Send Comment</button>
-      </form>
+
+      <div id="trainer" class="trainer-container"></div>
+      <div id="scoreDisplay" class="score-container"></div>
     </div>
   </main>
+
   <script src="https://www.gstatic.com/firebasejs/10.4.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.4.0/firebase-auth-compat.js"></script>
-  <script type="module" src="js/main-premium.js"></script>
-  <script type="module" src="js/common.js"></script>
+  <script type="module" src="../js/main-premium.js"></script>
+  <script type="module" src="../js/common.js"></script>
 </body>
 </html>
