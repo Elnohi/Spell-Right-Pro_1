@@ -1,72 +1,84 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>OET Trainer | SpellRightPro</title>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
-  <link rel="stylesheet" href="css/styles.css">
-  <link rel="manifest" href="/manifest.json">
-  <meta name="theme-color" content="#007bff">
-  <!-- Apple PWA Tags -->
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="apple-mobile-web-app-title" content="SpellRightPro">
-  <link rel="apple-touch-icon" href="/assets/icons/icon-192x192.png">
-  <link rel="icon" href="/assets/favicon.ico">
+  <!-- Same head content as index.html -->
 </head>
 <body>
   <header class="header-bar">
     <div class="logo-area">
-      <img src="../assets/logo.png" class="logo-img" alt="Logo">
+      <img src="assets/logo.png" class="logo-img" alt="Logo">
       <span class="app-title">SpellRightPro</span>
-      <span class="subtitle">(OET - Freemium)</span>
+      <span class="subtitle">Medical Terminology</span>
     </div>
-    <button id="modeToggle" class="btn btn-dark mode-toggle">
-      <i id="modeIcon" class="fas fa-moon"></i>
-    </button>
-    <button id="homeBtn" class="btn btn-outline-secondary">
-      <i class="fas fa-home"></i> Home
-    </button>
+    <div class="header-controls">
+      <button id="modeToggle" class="nav-btn" title="Toggle Dark Mode">
+        <i id="modeIcon" class="fas fa-moon"></i>
+      </button>
+      <button id="homeBtn" class="nav-btn" title="Home">
+        <i class="fas fa-home"></i>
+      </button>
+    </div>
   </header>
 
   <main>
     <div class="main-card">
-      <div class="mode-selection">
-        <button id="practiceModeBtn" class="btn btn-primary active-mode">
-          <i class="fas fa-graduation-cap"></i> Practice Mode
+      <div class="mode-toggle">
+        <button id="practiceModeBtn" class="mode-btn active-mode">
+          <i class="fas fa-graduation-cap"></i> Practice
         </button>
-        <button id="testModeBtn" class="btn btn-outline-primary">
-          <i class="fas fa-clock"></i> Test Mode (24 words)
+        <button id="testModeBtn" class="mode-btn">
+          <i class="fas fa-clock"></i> Test
         </button>
       </div>
 
-      <div class="field-row">
-        <span class="field-label">Accent:</span>
-        <select id="accentSelect" class="form-control">
-          <option value="en-US">American</option>
-          <option value="en-GB">British</option>
-          <option value="en-AU">Australian</option>
-        </select>
-        <div class="flag-container">
-          <img id="accentFlag" src="../assets/flags/us.png" alt="Flag" width="30">
+      <div class="training-controls">
+        <div class="accent-selector">
+          <select id="accentSelect" class="form-control">
+            <option value="en-US">American</option>
+            <option value="en-GB">British</option>
+            <option value="en-AU">Australian</option>
+          </select>
+          <img id="accentFlag" src="assets/flags/us.png" alt="Flag" width="30">
         </div>
-      </div>
 
-      <div class="button-row">
-        <button id="startOET" class="btn btn-success start-practice">
+        <button id="startSession" class="btn btn-primary">
           <i class="fas fa-play"></i> Start Session
         </button>
       </div>
 
-      <div id="trainer" class="trainer-container"></div>
+      <div id="trainer" class="trainer-container">
+        <!-- Will be populated by JavaScript -->
+      </div>
+
+      <div class="word-navigation">
+        <button id="prevWord" class="nav-icon" disabled>
+          <i class="fas fa-arrow-left"></i>
+        </button>
+        <span class="word-counter">
+          <span id="currentWordPos">0</span>/<span id="totalWords">0</span>
+        </span>
+        <button id="nextWord" class="nav-icon" disabled>
+          <i class="fas fa-arrow-right"></i>
+        </button>
+      </div>
+
       <div id="scoreDisplay" class="score-container"></div>
+
+      <div class="feedback-card">
+        <div class="feedback-title">
+          <i class="far fa-comment-dots"></i> Feedback
+        </div>
+        <form id="feedbackForm">
+          <textarea id="feedbackInput" placeholder="Your feedback helps us improve..." required></textarea>
+          <button type="submit" class="btn btn-primary">
+            <i class="fas fa-paper-plane"></i> Submit
+          </button>
+        </form>
+      </div>
     </div>
   </main>
 
-  <script src="https://www.gstatic.com/firebasejs/10.4.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.4.0/firebase-auth-compat.js"></script>
-  <script type="module" src="../js/main-freemium-oet.js"></script>
-  <script type="module" src="../js/common.js"></script>
+  <script src="js/common.js"></script>
+  <script src="js/main-freemium-oet.js"></script>
 </body>
 </html>
