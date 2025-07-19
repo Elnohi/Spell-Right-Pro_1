@@ -1,7 +1,17 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <!-- Same head content as index.html -->
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Medical Terminology | SpellRightPro</title>
+  <link rel="stylesheet" href="css/styles.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+  <link rel="manifest" href="/manifest.json">
+  <meta name="theme-color" content="#007bff">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <link rel="apple-touch-icon" href="assets/icons/icon-192x192.png">
+  <link rel="icon" href="assets/favicon.ico">
 </head>
 <body>
   <header class="header-bar">
@@ -32,37 +42,31 @@
       </div>
 
       <div class="training-controls">
-        <div class="accent-selector">
-          <select id="accentSelect" class="form-control">
-            <option value="en-US">American</option>
-            <option value="en-GB">British</option>
-            <option value="en-AU">Australian</option>
-          </select>
-          <img id="accentFlag" src="assets/flags/us.png" alt="Flag" width="30">
-        </div>
-
+        <select id="accentSelect" class="form-control">
+          <option value="en-US">American</option>
+          <option value="en-GB">British</option>
+          <option value="en-AU">Australian</option>
+        </select>
         <button id="startSession" class="btn btn-primary">
           <i class="fas fa-play"></i> Start Session
         </button>
       </div>
 
       <div id="trainer" class="trainer-container">
-        <!-- Will be populated by JavaScript -->
+        <!-- Content loaded by JavaScript -->
       </div>
 
       <div class="word-navigation">
-        <button id="prevWord" class="nav-icon" disabled>
+        <button id="prevWord" class="nav-btn" disabled>
           <i class="fas fa-arrow-left"></i>
         </button>
         <span class="word-counter">
           <span id="currentWordPos">0</span>/<span id="totalWords">0</span>
         </span>
-        <button id="nextWord" class="nav-icon" disabled>
+        <button id="nextWord" class="nav-btn" disabled>
           <i class="fas fa-arrow-right"></i>
         </button>
       </div>
-
-      <div id="scoreDisplay" class="score-container"></div>
 
       <div class="feedback-card">
         <div class="feedback-title">
@@ -78,7 +82,7 @@
     </div>
   </main>
 
-  <script src="js/common.js"></script>
-  <script src="js/main-freemium-oet.js"></script>
+  <script type="module" src="js/common.js"></script>
+  <script type="module" src="js/main-freemium-oet.js"></script>
 </body>
 </html>
