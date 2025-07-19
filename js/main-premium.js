@@ -1,154 +1,211 @@
-// main-premium.js (Enhanced with Analytics)
+import { 
+  initializeFirebase,
+  initThemeToggle,
+  initAuth,
+  addAuthListeners,
+  showNotification,
+  loadWordsFromFile,
+  setupFileUpload,
+  speak,
+  setupSpeechRecognition,
+  showScore
+} from './common.js';
+import { examTypes, defaultWords } from './config.js';
 
+// Initialize Firebase
+const firebase = initializeFirebase();
+
+// Initialize UI
+const auth = initAuth(firebase, "loginStatus", "formHiddenEmail");
+addAuthListeners(auth, "loginBtn", "signupBtn", "logoutBtn", "userEmail", "userPassword");
+initThemeToggle("modeToggle", "modeIcon");
+
+// Practice Session State
 let words = [];
 let currentIndex = 0;
 let correctCount = 0;
 let incorrectWords = [];
-let mode = "";
+let currentMode = "";
 
+// DOM Elements
 const examSelect = document.getElementById("examSelect");
 const accentSelect = document.getElementById("accentSelect");
 const fileUpload = document.getElementById("fileUpload");
+const customWordsTextarea = document.getElementById("customWords");
+const addCustomBtn = document.getElementById("addCustomWords");
 const startButton = document.getElementById("startButton");
-const nextButton = document.getElementById("nextButton");
-const speakButton = document.getElementById("speakButton");
-const summaryDiv = document.getElementById("summary");
+const trainerDiv = document.getElementById("trainer");
+const scoreDiv = document.getElementById("scoreDisplay");
 
-// Display selected file name
-fileUpload.addEventListener("change", (e) => {
-  const file = e.target.files[0];
-  const reader = new FileReader();
-  if (file) {
-    alert(`📄 File selected: ${file.name}`);
-    reader.onload = function (e) {
-      words = e.target.result.split(/\r?\n/).map(w => w.trim()).filter(w => w);
-      alert("✅ Custom words loaded. Choose 'Custom' to begin.");
-    };
-    reader.readAsText(file);
-  }
+// Setup event listeners
+setupFileUpload("fileUpload", (loadedWords) => {
+  words = loadedWords;
+  showNotification(`Loaded ${words.length} words`, "success");
 });
 
-startButton.addEventListener("click", () => {
-  const exam = examSelect.value;
-  if (!exam) return alert("Please select an exam type.");
-  mode = exam;
-
-  if (typeof gtag === 'function') {
-    gtag('event', 'start_exam', { exam });
-  }
-
-  if (exam === "OET") {
-    fetch("js/oet_word_list.js")
-      .then(res => res.text())
-      .then(data => {
-        words = data.split(/\r?\n/).filter(w => w.trim());
-        startSession();
-      })
-      .catch(err => alert("❌ Failed to load OET words."));
-  } else if (exam === "SpellingBee") {
-    words = ["articulate", "pharaoh", "onomatopoeia", "surveillance"];
-    startSession();
-  } else if (exam === "Custom") {
-    if (words.length === 0) {
-      alert("⚠️ Please upload a custom word list.");
-      return;
+if (addCustomBtn && customWordsTextarea) {
+  addCustomBtn.addEventListener("click", () => {
+    const customWords = customWordsTextarea.value.trim().split(/\n+/).filter(w => w.trim());
+    if (customWords.length > 0) {
+      words = customWords;
+      showNotification(`Added ${words.length} custom words`, "success");
+    } else {
+      showNotification("Please enter some words first", "error");
     }
-    startSession();
+  });
+}
+
+startButton.addEventListener("click", async () => {
+  const exam = examSelect.value;
+  if (!exam) {
+    showNotification("Please select an exam type", "error");
+    return;
   }
-});
 
-nextButton.addEventListener("click", () => {
-  currentIndex++;
-  if (currentIndex < words.length) {
-    speakWord(words[currentIndex]);
-    if (mode === "SpellingBee") listenSpelling(words[currentIndex]);
-  } else {
-    showSummary();
-  }
-});
-
-speakButton.addEventListener("click", () => {
-  if (words[currentIndex]) speakWord(words[currentIndex]);
-});
-
-function startSession() {
+  currentMode = exam;
   currentIndex = 0;
   correctCount = 0;
   incorrectWords = [];
-  speakWord(words[0]);
-  if (mode === "SpellingBee") listenSpelling(words[0]);
-}
+  trainerDiv.innerHTML = "";
+  scoreDiv.innerHTML = "";
 
-function speakWord(word) {
-  const utterance = new SpeechSynthesisUtterance(word);
-  utterance.lang = accentSelect.value;
-  utterance.rate = 0.9;
-  speechSynthesis.cancel();
-  speechSynthesis.speak(utterance);
-}
+  try {
+    if (exam === examTypes.OET) {
+      // In a real app, you might fetch from a server
+      words = [...defaultWords[examTypes.OET]];
+      startSession();
+    } else if (exam === examTypes.SPELLING_BEE) {
+      words = [...defaultWords[examTypes.SPELLING_BEE]];
+      startSession();
+    } else if (exam === examTypes.CUSTOM) {
+      if (words.length === 0) {
+        showNotification("Please upload or add custom words first", "error");
+        return;
+      }
+      startSession();
+    }
+  } catch (error) {
+    showNotification("Failed to start session", "error");
+    console.error(error);
+  }
+});
 
-function listenSpelling(correctWord) {
-  if (!window.SpeechRecognition && !window.webkitSpeechRecognition) {
-    alert("⚠️ Speech recognition not supported in this browser.");
+function startSession() {
+  if (words.length === 0) {
+    showNotification("No words available for practice", "error");
     return;
   }
-  const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
-  recognition.lang = accentSelect.value;
-  recognition.interimResults = false;
-  recognition.maxAlternatives = 1;
-  recognition.start();
 
-  recognition.onresult = (event) => {
-    const spoken = event.results[0][0].transcript.toLowerCase().replace(/\s+/g, "");
-    const correct = correctWord.toLowerCase().replace(/\s+/g, "");
-
-    if (spoken === correct) {
-      correctCount++;
-      alert("✅ Correct!");
-    } else {
-      incorrectWords.push({ word: correctWord, heard: spoken });
-      alert(`❌ Incorrect. You said: ${spoken}`);
-    }
-
-    if (typeof gtag === 'function') {
-      gtag('event', 'word_checked', {
-        word: correctWord,
-        correct: spoken === correct,
-        heard: spoken
-      });
-    }
-  };
-
-  recognition.onerror = (e) => {
-    console.error("Speech recognition error:", e);
-    alert("❌ Speech recognition error occurred.");
-  };
+  presentWord();
 }
 
-function showSummary() {
-  const percent = Math.round((correctCount / words.length) * 100);
-
-  if (typeof gtag === 'function') {
-    gtag('event', 'session_complete', {
-      exam: mode,
-      score: percent,
-      totalWords: words.length,
-      correctCount
-    });
-  }
-
-  summaryDiv.innerHTML = `
+async function presentWord() {
+  trainerDiv.innerHTML = `
     <div class="word-box">
-      <h3>Premium Session Summary</h3>
-      <p><strong>Total:</strong> ${words.length}</p>
-      <p><strong>Correct:</strong> ${correctCount}</p>
-      <p><strong>Score:</strong> ${percent}%</p>
-      ${
-        incorrectWords.length
-          ? `<h4>Incorrect Words</h4><ul>${incorrectWords.map(w => `<li><strong>${w.word}</strong> – You said: <em>${w.heard}</em></li>`).join('')}</ul>`
-          : `<p>🎉 No mistakes. Excellent work!</p>`
-      }
-      <button onclick="location.reload()" class="btn btn-info">🔄 Start New Session</button>
+      <h3>Word ${currentIndex + 1} of ${words.length}</h3>
+      <div class="progress-container">
+        <div class="progress-bar" style="width:${(currentIndex/words.length)*100}%"></div>
+      </div>
+      <button id="speakButton" class="btn btn-info">
+        <i class="fas fa-volume-up"></i> Speak Word
+      </button>
+      ${currentMode === examTypes.SPELLING_BEE ? `
+        <p>Spell the word you hear:</p>
+        <button id="startListen" class="btn btn-warning">
+          <i class="fas fa-microphone"></i> Start Spelling
+        </button>
+      ` : `
+        <input type="text" id="userInput" placeholder="Type what you heard..." autofocus>
+        <button id="checkButton" class="btn btn-success">Check</button>
+      `}
+      <div id="status" role="alert" aria-live="polite"></div>
     </div>
   `;
+
+  try {
+    await speak(words[currentIndex], accentSelect.value);
+    setupWordHandlers();
+  } catch (error) {
+    showNotification("Couldn't speak the word", "error");
+    console.error(error);
+  }
+}
+
+function setupWordHandlers() {
+  document.getElementById("speakButton").onclick = () => 
+    speak(words[currentIndex], accentSelect.value);
+
+  if (currentMode === examTypes.SPELLING_BEE) {
+    document.getElementById("startListen").onclick = startListening;
+  } else {
+    document.getElementById("checkButton").onclick = checkTypedAnswer;
+    document.getElementById("userInput").onkeypress = (e) => {
+      if (e.key === "Enter") checkTypedAnswer();
+    };
+  }
+}
+
+function checkTypedAnswer() {
+  const input = document.getElementById("userInput").value.trim().toLowerCase();
+  const correct = words[currentIndex].toLowerCase();
+  const status = document.getElementById("status");
+
+  if (input === correct) {
+    correctCount++;
+    status.textContent = "✅ Correct!";
+    status.className = "status correct";
+  } else {
+    incorrectWords.push({ word: words[currentIndex], typed: input });
+    status.textContent = `❌ Incorrect. Correct: ${words[currentIndex]}`;
+    status.className = "status incorrect";
+  }
+
+  moveToNextWord();
+}
+
+function startListening() {
+  try {
+    const recognition = setupSpeechRecognition(
+      accentSelect.value,
+      (transcript) => handleSpellingResult(transcript),
+      (error) => {
+        showNotification(`Recognition error: ${error}`, "error");
+        console.error("Recognition error:", error);
+      }
+    );
+    recognition.start();
+    document.getElementById("status").textContent = "Listening...";
+  } catch (error) {
+    showNotification(error.message, "error");
+    console.error(error);
+  }
+}
+
+function handleSpellingResult(transcript) {
+  const spoken = transcript.toUpperCase().replace(/[^A-Z]/g, "");
+  const expected = words[currentIndex].toUpperCase().replace(/[^A-Z]/g, "");
+  const status = document.getElementById("status");
+
+  if (spoken === expected) {
+    correctCount++;
+    status.innerHTML = "✅ <strong>Correct!</strong>";
+    status.className = "status correct";
+  } else {
+    incorrectWords.push({ word: words[currentIndex], heard: spoken });
+    status.innerHTML = `❌ <strong>Incorrect.</strong> You spelled: <em>${spoken.split("").join(" ")}</em>`;
+    status.className = "status incorrect";
+  }
+
+  moveToNextWord();
+}
+
+function moveToNextWord() {
+  setTimeout(() => {
+    currentIndex++;
+    if (currentIndex < words.length) {
+      presentWord();
+    } else {
+      showScore(scoreDiv, correctCount, words.length, incorrectWords);
+    }
+  }, 1500);
 }
