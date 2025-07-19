@@ -3,76 +3,70 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Medical Terminology | SpellRightPro</title>
-  <link rel="stylesheet" href="css/styles.css">
+  <title>OET Trainer | SpellRightPro</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+  <link rel="stylesheet" href="css/styles.css">
+  <link rel="manifest" href="/manifest.json">
+  <meta name="theme-color" content="#007bff">
+  <!-- Apple PWA Tags -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="SpellRightPro">
+  <link rel="apple-touch-icon" href="/assets/icons/icon-192x192.png">
+  <link rel="icon" href="/assets/favicon.ico">
 </head>
 <body>
   <header class="header-bar">
     <div class="logo-area">
-      <img src="assets/logo.png" class="logo-img" alt="Logo">
-      <div>
-        <div class="app-title">SpellRightPro</div>
-        <div class="subtitle">Medical Terminology</div>
-      </div>
+      <img src="../assets/logo.png" class="logo-img" alt="Logo">
+      <span class="app-title">SpellRightPro</span>
+      <span class="subtitle">(OET - Freemium)</span>
     </div>
-    <div class="flex items-center gap-4">
-      <button id="modeToggle" class="btn btn-outline">
-        <i id="modeIcon" class="fas fa-moon"></i>
-      </button>
-      <button id="homeBtn" class="btn btn-outline">
-        <i class="fas fa-home"></i> Home
-      </button>
-    </div>
+    <button id="modeToggle" class="btn btn-dark mode-toggle">
+      <i id="modeIcon" class="fas fa-moon"></i>
+    </button>
+    <button id="homeBtn" class="btn btn-outline-secondary">
+      <i class="fas fa-home"></i> Home
+    </button>
   </header>
 
   <main>
     <div class="main-card">
-      <div class="mb-4">
-        <select id="accentSelect" class="form-control">
-          <option value="en-US">American English</option>
-          <option value="en-GB">British English</option>
-        </select>
+      <div class="mode-selection">
+        <button id="practiceModeBtn" class="btn btn-primary active-mode">
+          <i class="fas fa-graduation-cap"></i> Practice Mode
+        </button>
+        <button id="testModeBtn" class="btn btn-outline-primary">
+          <i class="fas fa-clock"></i> Test Mode (24 words)
+        </button>
       </div>
 
-      <div class="word-box">
-        <div class="flex justify-between items-center mb-4">
-          <div class="word-counter">1/10</div>
-          <div class="flex gap-4">
-            <button class="btn btn-outline">
-              <i class="fas fa-flag"></i>
-            </button>
-            <button class="btn btn-outline">
-              <i class="fas fa-volume-up"></i>
-            </button>
-          </div>
-        </div>
-        
-        <h3 class="text-center mb-4">Cardiovascular</h3>
-        
-        <input type="text" class="form-control mb-4" placeholder="Type what you heard...">
-        
-        <div class="word-navigation">
-          <button class="btn btn-outline">
-            <i class="fas fa-arrow-left"></i> Previous
-          </button>
-          <button class="btn btn-primary">
-            Check Answer
-          </button>
-          <button class="btn btn-outline">
-            Next <i class="fas fa-arrow-right"></i>
-          </button>
+      <div class="field-row">
+        <span class="field-label">Accent:</span>
+        <select id="accentSelect" class="form-control">
+          <option value="en-US">American</option>
+          <option value="en-GB">British</option>
+          <option value="en-AU">Australian</option>
+        </select>
+        <div class="flag-container">
+          <img id="accentFlag" src="../assets/flags/us.png" alt="Flag" width="30">
         </div>
       </div>
+
+      <div class="button-row">
+        <button id="startOET" class="btn btn-success start-practice">
+          <i class="fas fa-play"></i> Start Session
+        </button>
+      </div>
+
+      <div id="trainer" class="trainer-container"></div>
+      <div id="scoreDisplay" class="score-container"></div>
     </div>
   </main>
 
-  <script src="js/common.js"></script>
-  <script>
-    // Initialize functionality
-    document.addEventListener('DOMContentLoaded', () => {
-      // Your implementation here
-    });
-  </script>
+  <script src="https://www.gstatic.com/firebasejs/10.4.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.4.0/firebase-auth-compat.js"></script>
+  <script type="module" src="../js/main-freemium-oet.js"></script>
+  <script type="module" src="../js/common.js"></script>
 </body>
 </html>
