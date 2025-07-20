@@ -39,13 +39,21 @@ const scoreDiv = document.getElementById("scoreDisplay");
 
 // Setup event listeners
 setupFileUpload("fileUpload", (loadedWords) => {
-  words = loadedWords;
+  // Parse words from loaded file: split by newline, trim, filter empty
+  words = loadedWords
+    .join('\n')
+    .split(/\r?\n/)
+    .map(w => w.trim())
+    .filter(w => w.length > 0);
   showNotification(`Loaded ${words.length} words`, "success");
 });
 
 if (addCustomBtn && customWordsTextarea) {
   addCustomBtn.addEventListener("click", () => {
-    const customWords = customWordsTextarea.value.trim().split(/\n+/).filter(w => w.trim());
+    const customWords = customWordsTextarea.value
+      .split(/\r?\n/)
+      .map(w => w.trim())
+      .filter(w => w.length > 0);
     if (customWords.length > 0) {
       words = customWords;
       showNotification(`Added ${words.length} custom words`, "success");
@@ -71,7 +79,6 @@ startButton.addEventListener("click", async () => {
 
   try {
     if (exam === examTypes.OET) {
-      // In a real app, you might fetch from a server
       words = [...defaultWords[examTypes.OET]];
       startSession();
     } else if (exam === examTypes.SPELLING_BEE) {
@@ -91,7 +98,7 @@ startButton.addEventListener("click", async () => {
 });
 
 function startSession() {
-  if (words.length === 0) {
+  if (!words || words.length === 0) {
     showNotification("No words available for practice", "error");
     return;
   }
@@ -163,6 +170,15 @@ function checkTypedAnswer() {
   moveToNextWord();
 }
 
+function moveToNextWord() {
+  currentIndex++;
+  if (currentIndex < words.length) {
+    setTimeout(presentWord, 900);
+  } else {
+    showScore(correctCount, words.length, incorrectWords);
+  }
+}
+
 function startListening() {
   try {
     const recognition = setupSpeechRecognition(
@@ -191,21 +207,9 @@ function handleSpellingResult(transcript) {
     status.innerHTML = "✅ <strong>Correct!</strong>";
     status.className = "status correct";
   } else {
-    incorrectWords.push({ word: words[currentIndex], heard: spoken });
-    status.innerHTML = `❌ <strong>Incorrect.</strong> You spelled: <em>${spoken.split("").join(" ")}</em>`;
+    incorrectWords.push({ word: words[currentIndex], spoken });
+    status.innerHTML = `❌ <strong>Incorrect.</strong> Correct: ${words[currentIndex]}`;
     status.className = "status incorrect";
   }
-
   moveToNextWord();
-}
-
-function moveToNextWord() {
-  setTimeout(() => {
-    currentIndex++;
-    if (currentIndex < words.length) {
-      presentWord();
-    } else {
-      showScore(scoreDiv, correctCount, words.length, incorrectWords);
-    }
-  }, 1500);
 }
