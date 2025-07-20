@@ -1,9 +1,9 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Premium | SpellRightPro</title>
+  <title>SpellRightPro Premium</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
   <link rel="stylesheet" href="css/styles.css">
   <link rel="manifest" href="/manifest.json">
@@ -12,13 +12,88 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="SpellRightPro">
-  <link rel="apple-touch-icon" href="/assets/icons/icon-192x192.png">
-  <link rel="icon" href="/assets/favicon.ico">
+  <link rel="apple-touch-icon" href="assets/icons/icon-192x192.png">
+  <link rel="icon" href="assets/favicon.ico">
+  <style>
+    /* Extra polish for premium look */
+    .premium-badge {
+      background: linear-gradient(90deg, #9d4edd 0%, #6a11cb 100%);
+      color: #fff;
+      border-radius: 2rem;
+      padding: 0.35em 1.5em;
+      font-weight: bold;
+      font-size: 1.2em;
+      box-shadow: 0 2px 10px #6a11cb22;
+      margin-bottom: 1em;
+      display: inline-block;
+      letter-spacing: 1px;
+    }
+    .feature-row {
+      display: flex; flex-wrap: wrap; gap: 2em;
+      margin-bottom: 1.5em;
+    }
+    .feature-box {
+      background: #f7f4ff;
+      border-left: 5px solid #6a11cb;
+      border-radius: 8px;
+      padding: 1em 1.5em;
+      min-width: 210px;
+      flex: 1;
+      margin-bottom: 0.5em;
+    }
+    @media (max-width: 750px) {
+      .feature-row { flex-direction: column; gap: 0.8em;}
+      .main-card.premium-card { padding: 1em;}
+    }
+    .user-bar {
+      position: absolute;
+      right: 2em;
+      top: 1em;
+      display: flex;
+      align-items: center;
+      gap: 0.7em;
+    }
+    .user-avatar {
+      width: 38px; height: 38px; border-radius: 50%; background: #eee;
+      display: inline-block;
+    }
+    .user-name {
+      font-weight: bold; color: #fff; letter-spacing: 0.5px;
+    }
+    .logout-btn {
+      background: #fff;
+      color: #6a11cb;
+      border: none;
+      border-radius: 5px;
+      padding: 0.4em 1em;
+      margin-left: 0.8em;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .logout-btn:hover { background: #f3ecff; }
+    .section-title {
+      font-size: 1.2em;
+      font-weight: 600;
+      margin-top: 1.2em;
+      margin-bottom: 0.6em;
+      color: #6a11cb;
+      letter-spacing: 0.5px;
+    }
+    .divider {
+      border: none;
+      border-bottom: 1.5px solid #ede2ff;
+      margin: 1.6em 0 1em 0;
+    }
+    .premium-card {
+      max-width: 850px;
+    }
+  </style>
 </head>
 <body>
-  <header class="header-bar premium-header">
+  <header class="header-bar premium-header" style="position:relative;">
     <div class="logo-area">
-      <img src="../assets/logo.png" class="logo-img" alt="Logo">
+      <img src="assets/logo.png" class="logo-img" alt="Logo" />
       <span class="app-title">SpellRightPro</span>
       <span class="subtitle">Premium</span>
     </div>
@@ -28,64 +103,83 @@
     <button id="homeBtn" class="btn btn-outline-light">
       <i class="fas fa-home"></i> Home
     </button>
+    <div class="user-bar">
+      <span class="user-avatar"><i class="fas fa-user"></i></span>
+      <span class="user-name" id="userName">User</span>
+      <button class="logout-btn" id="logoutBtn" style="display:none;">
+        <i class="fas fa-sign-out-alt"></i> Logout
+      </button>
+    </div>
   </header>
-
   <main>
     <div class="main-card premium-card">
-      <div class="field-row">
-        <span class="field-label">Exam Type:</span>
-        <select id="examSelect" class="form-control">
-          <option value="">Select</option>
-          <option value="oet">OET</option>
-          <option value="spellingbee">Spelling Bee</option>
-          <option value="custom">Custom</option>
-        </select>
-        <span class="field-label" style="margin-left:2em;">Accent:</span>
-        <select id="accentSelect" class="form-control">
-          <option value="en-US">American</option>
-          <option value="en-GB">British</option>
-          <option value="en-AU">Australian</option>
-          <option value="en-CA">Canadian</option>
-        </select>
-        <div class="flag-container">
-          <img id="accentFlag" src="../assets/flags/us.png" alt="Flag" width="30">
+      <span class="premium-badge"><i class="fas fa-gem"></i> Premium Access</span>
+      <div style="margin-bottom:0.7em;">Unlock all features for total spelling mastery.</div>
+      <div class="feature-row">
+        <div class="feature-box"><i class="fas fa-file-upload"></i> <b>Word File Upload</b></div>
+        <div class="feature-box"><i class="fas fa-user-edit"></i> <b>Custom Word Lists</b></div>
+        <div class="feature-box"><i class="fas fa-spell-check"></i> <b>Spelling Bee & OET</b></div>
+        <div class="feature-box"><i class="fas fa-language"></i> <b>Multiple Accents</b></div>
+        <div class="feature-box"><i class="fas fa-analytics"></i> <b>Progress Analytics</b></div>
+      </div>
+      <hr class="divider">
+
+      <div class="section-title"><i class="fas fa-cogs"></i> Start Your Premium Practice</div>
+      <div class="field-row" style="gap:2em;">
+        <div style="min-width:220px;">
+          <span class="field-label">Exam Type:</span>
+          <select id="examSelect" class="form-control" style="width: 160px;">
+            <option value="">Select</option>
+            <option value="oet">OET</option>
+            <option value="spellingbee">Spelling Bee</option>
+            <option value="custom">Custom</option>
+          </select>
+        </div>
+        <div style="min-width:220px;">
+          <span class="field-label">Accent:</span>
+          <select id="accentSelect" class="form-control" style="width: 160px;">
+            <option value="en-US">American</option>
+            <option value="en-GB">British</option>
+            <option value="en-AU">Australian</option>
+            <option value="en-CA">Canadian</option>
+          </select>
+          <div class="flag-container" style="margin-top:0.4em;">
+            <img id="accentFlag" src="assets/flags/us.png" alt="Flag" width="30">
+          </div>
         </div>
       </div>
 
-      <div class="field-row">
-        <span class="field-label">Upload Word File:</span>
-        <input type="file" id="fileUpload" class="form-control-file" accept=".txt,.docx,.pdf">
+      <div class="field-row" style="gap:2em;">
+        <div>
+          <span class="field-label">Upload Word File:</span>
+          <input type="file" id="fileUpload" class="form-control-file" accept=".txt,.docx,.pdf" style="margin-top: 0.5em;">
+        </div>
+        <div>
+          <span class="field-label">Custom Words:</span>
+          <textarea id="customWords" class="form-control" rows="2" style="width:210px; margin-top: 0.5em;" placeholder="Enter custom words here..."></textarea>
+          <button id="addCustomWords" class="btn btn-info" style="height:38px;margin-left:0;margin-top:0.4em;">
+            <i class="fa-solid fa-plus"></i> Add Custom Words
+          </button>
+        </div>
       </div>
 
-      <div class="field-row">
-        <span class="field-label">Custom Words:</span>
-        <textarea id="customWords" class="form-control" 
-                 placeholder="Enter custom words here..."></textarea>
-        <button id="addCustomWords" class="btn btn-info" style="height:44px;margin-left:1rem;">
-          <i class="fa-solid fa-plus"></i> Add Custom Words
-        </button>
-      </div>
-
-      <div class="button-row">
-        <button id="startButton" class="btn btn-premium start-practice">
+      <div class="button-row" style="margin-top:1em;">
+        <button id="startButton" class="btn btn-premium start-practice" style="padding: 0.6em 2.5em;">
           <i class="fas fa-play"></i> Start Practice
         </button>
       </div>
 
+      <hr class="divider">
+      <div class="section-title"><i class="fas fa-bolt"></i> Trainer</div>
       <div id="trainer" class="trainer-container"></div>
-        <!-- Existing content -->
-  <button id="flagWordBtn" class="btn btn-flag" title="Flag this word for later">
-    <i class="far fa-flag"></i> Flag Word
-  </button>
-</div>
       <div id="scoreDisplay" class="score-container"></div>
+      <div id="premiumSummary" style="margin-top:2em;"></div>
     </div>
   </main>
-
-  <script type="module" src="js/main-premium.js"></script>
+  <script src="js/config.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.4.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.4.0/firebase-auth-compat.js"></script>
-  <script type="module" src="../js/main-premium.js"></script>
-  <script type="module" src="../js/common.js"></script>
+  <script type="module" src="js/main-premium.js"></script>
+  <script type="module" src="js/common.js"></script>
 </body>
 </html>
