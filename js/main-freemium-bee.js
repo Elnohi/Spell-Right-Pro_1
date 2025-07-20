@@ -1,121 +1,79 @@
-import { 
-  initializeFirebase,
-  initThemeToggle,
-  initAuth,
-  addAuthListeners,
-  showNotification,
-  loadWordsFromFile,
-  setupFileUpload,
-  speak,
-  setupSpeechRecognition,
-  showScore
-} from './common.js';
-import { defaultWords, examTypes } from './config.js';
+import { initFlagButton, showFlaggedWords } from './common.js';
 
-// Initialize Firebase
-const firebase = initializeFirebase();
-
-// Initialize UI
-const auth = initAuth(firebase, "loginStatus", "formHiddenEmail");
-addAuthListeners(auth, "loginBtn", "signupBtn", "logoutBtn", "userEmail", "userPassword");
-initThemeToggle("modeToggle", "modeIcon");
-
-// Practice Session State
-let words = [];
+let currentWord = '';
+let wordList = [];
 let currentIndex = 0;
-let correctCount = 0;
-let incorrectWords = [];
+let score = 0;
 
-// DOM Elements
-const accentSelect = document.getElementById("accentSelect");
-const startButton = document.getElementById("startTest");
-const trainerDiv = document.getElementById("trainer");
-const scoreDiv = document.getElementById("scoreDisplay");
-const wordInput = document.getElementById("wordInput");
+function displayWord(word) {
+  currentWord = word;
+  document.querySelector('.current-word').textContent = word;
+  document.getElementById('spellingInput').value = '';
+  document.querySelector('.feedback').textContent = '';
+  document.getElementById('spellingInput').focus();
+  initFlagButton(word);
+}
 
-// Start Test
-startButton.addEventListener("click", async () => {
-  // Use custom words if provided, otherwise default words
-  if (wordInput && wordInput.value.trim()) {
-    words = wordInput.value.trim().split(/\n+/).map(w => w.trim()).filter(w => w);
+function checkSpelling() {
+  const input = document.getElementById('spellingInput').value.trim();
+  const feedback = document.querySelector('.feedback');
+  
+  if (input.toLowerCase() === currentWord.toLowerCase()) {
+    feedback.textContent = 'Correct!';
+    feedback.style.color = 'green';
+    score++;
   } else {
-    words = [...defaultWords[examTypes.SPELLING_BEE]];
+    feedback.textContent = `Incorrect. The correct spelling is: ${currentWord}`;
+    feedback.style.color = 'red';
   }
 
-  if (words.length === 0) {
-    showNotification("Please enter at least one word to begin", "error");
-    return;
+  document.getElementById('scoreDisplay').textContent = `Score: ${score}/${wordList.length}`;
+  
+  // Move to next word or end session
+  currentIndex++;
+  if (currentIndex < wordList.length) {
+    setTimeout(() => displayWord(wordList[currentIndex]), 1500);
+  } else {
+    setTimeout(endSession, 1500);
   }
+}
 
+function startSession(words) {
+  wordList = [...words];
   currentIndex = 0;
-  correctCount = 0;
-  incorrectWords = [];
-  trainerDiv.innerHTML = "<p>🎤 Listening...</p>";
-  scoreDiv.innerHTML = "";
+  score = 0;
+  document.getElementById('scoreDisplay').textContent = '';
+  document.querySelector('.flagged-section')?.remove();
+  displayWord(wordList[0]);
+  
+  document.getElementById('spellingInput').onkeypress = (e) => {
+    if (e.key === 'Enter') checkSpelling();
+  };
+}
 
-  try {
-    await speakWord(words[currentIndex]);
-    setTimeout(() => listenAndCheck(words[currentIndex]), 1000);
-  } catch (error) {
-    showNotification("Failed to start test", "error");
-    console.error(error);
-  }
+function endSession() {
+  document.getElementById('scoreDisplay').innerHTML = `
+    <h3>Test Complete!</h3>
+    <p>Your score: ${score}/${wordList.length}</p>
+  `;
+  showFlaggedWords();
+  
+  // Setup practice flagged words button
+  document.getElementById('practiceFlaggedBtn')?.addEventListener('click', () => {
+    const flagged = JSON.parse(localStorage.getItem('flaggedWords')) || [];
+    if (flagged.length > 0) {
+      startSession(flagged);
+    }
+  });
+}
+
+// Event Listeners
+document.getElementById('startTest').addEventListener('click', () => {
+  const customWords = document.getElementById('wordInput').value;
+  const words = customWords.split('\n').filter(w => w.trim());
+  startSession(words.length ? words : ['sample', 'words']);
 });
 
-async function speakWord(word) {
-  try {
-    await speak(word, accentSelect.value, 0.85);
-  } catch (error) {
-    console.error("Speech error:", error);
-    throw new Error("Couldn't speak the word");
-  }
-}
-
-function listenAndCheck(correctWord) {
-  try {
-    const recognition = setupSpeechRecognition(
-      accentSelect.value,
-      (transcript) => handleRecognitionResult(transcript, correctWord),
-      (error) => {
-        showNotification(`Recognition error: ${error}`, "error");
-        console.error("Recognition error:", error);
-      }
-    );
-    recognition.start();
-  } catch (error) {
-    showNotification(error.message, "error");
-    console.error(error);
-  }
-}
-
-function handleRecognitionResult(transcript, correctWord) {
-  const spoken = transcript.toUpperCase().replace(/[^A-Z]/g, "");
-  const expected = correctWord.toUpperCase().replace(/[^A-Z]/g, "");
-
-  const box = document.createElement("div");
-  box.className = "word-box";
-  
-  if (spoken === expected) {
-    correctCount++;
-    box.innerHTML = `✅ <strong>Correct!</strong> You spelled: ${spoken.split("").join(" ")}`;
-  } else {
-    incorrectWords.push({ word: correctWord, heard: spoken });
-    box.innerHTML = `❌ <strong>Incorrect.</strong> You spelled: <em>${spoken.split("").join(" ")}</em><br>
-                    Correct spelling was: <strong>${expected.split("").join(" ")}</strong>`;
-  }
-
-  trainerDiv.innerHTML = "";
-  trainerDiv.appendChild(box);
-
-  currentIndex++;
-  if (currentIndex < words.length) {
-    setTimeout(() => {
-      trainerDiv.innerHTML = "<p>🎤 Listening...</p>";
-      speakWord(words[currentIndex])
-        .then(() => setTimeout(() => listenAndCheck(words[currentIndex]), 1000))
-        .catch(console.error);
-    }, 2200);
-  } else {
-    showScore(scoreDiv, correctCount, words.length, incorrectWords);
-  }
-}
+document.getElementById('useSampleBtn').addEventListener('click', () => {
+  startSession(['apple', 'banana', 'cherry', 'dolphin', 'elephant']);
+});
