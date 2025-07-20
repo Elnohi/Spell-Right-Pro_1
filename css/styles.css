@@ -500,3 +500,19 @@ p {
   h1 { font-size: 2rem; }
   h2 { font-size: 1.75rem; }
 }
+
+.btn-flag {
+  background-color: transparent;
+  color: #ffc107;
+  border: 1px solid #ffc107;
+}
+
+.btn-flag.active {
+  background-color: #ffc107;
+  color: white;
+}
+
+.flagged-word {
+  background-color: #fff8e1;
+  border-left: 3px solid #ffc107;
+}
