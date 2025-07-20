@@ -1,3 +1,14 @@
+document.getElementById('accentSelect').addEventListener('change', function() {
+  const flagImg = document.getElementById('accentFlag');
+  const flags = {
+    'en-US': 'us.png',
+    'en-GB': 'gb.png',
+    'en-AU': 'au.png',
+    'en-CA': 'ca.png'
+  };
+  flagImg.src = `assets/flags/${flags[this.value]}`;
+});
+
 // Initialize Firebase
 export function initializeFirebase() {
   if (!firebase.apps.length) {
