@@ -1,4 +1,5 @@
-document.getElementById('accentSelect').addEventListener('change', function() {
+// Accent selection with flags
+document.getElementById('accentSelect')?.addEventListener('change', function() {
   const flagImg = document.getElementById('accentFlag');
   const flags = {
     'en-US': 'us.png',
@@ -27,50 +28,64 @@ export function initializeFirebase() {
 // Flagging system
 let flaggedWords = JSON.parse(localStorage.getItem('flaggedWords')) || [];
 
-function toggleFlagWord(currentWord) {
+export function toggleFlagWord(currentWord) {
   const flagBtn = document.getElementById('flagWordBtn');
   const wordIndex = flaggedWords.indexOf(currentWord);
   
   if (wordIndex === -1) {
-    // Add to flagged words
     flaggedWords.push(currentWord);
     flagBtn.classList.add('active');
     flagBtn.innerHTML = '<i class="fas fa-flag"></i> Flagged';
-    // Add visual indicator to word display
-    document.querySelector('.current-word').classList.add('flagged-word');
+    document.querySelector('.current-word')?.classList.add('flagged-word');
   } else {
-    // Remove from flagged words
     flaggedWords.splice(wordIndex, 1);
     flagBtn.classList.remove('active');
     flagBtn.innerHTML = '<i class="far fa-flag"></i> Flag Word';
-    // Remove visual indicator
-    document.querySelector('.current-word').classList.remove('flagged-word');
+    document.querySelector('.current-word')?.classList.remove('flagged-word');
   }
   
   localStorage.setItem('flaggedWords', JSON.stringify(flaggedWords));
 }
 
-// Initialize flag button
-function initFlagButton(currentWord) {
+export function initFlagButton(currentWord) {
   const flagBtn = document.getElementById('flagWordBtn');
+  if (!flagBtn) return;
+  
   flagBtn.onclick = () => toggleFlagWord(currentWord);
   
-  // Set initial state
   if (flaggedWords.includes(currentWord)) {
     flagBtn.classList.add('active');
     flagBtn.innerHTML = '<i class="fas fa-flag"></i> Flagged';
-    document.querySelector('.current-word').classList.add('flagged-word');
+    document.querySelector('.current-word')?.classList.add('flagged-word');
   } else {
     flagBtn.classList.remove('active');
     flagBtn.innerHTML = '<i class="far fa-flag"></i> Flag Word';
-    document.querySelector('.current-word').classList.remove('flagged-word');
+    document.querySelector('.current-word')?.classList.remove('flagged-word');
   }
 }
 
-// Add to your word display function
-function displayWord(word) {
-  // ... existing display code ...
-  initFlagButton(word);
+export function showFlaggedWords() {
+  const flagged = JSON.parse(localStorage.getItem('flaggedWords')) || [];
+  const scoreDisplay = document.getElementById('scoreDisplay');
+  
+  if (flagged.length > 0 && scoreDisplay) {
+    const flaggedSection = document.createElement('div');
+    flaggedSection.className = 'flagged-section';
+    flaggedSection.innerHTML = `
+      <h3>Flagged Words for Review</h3>
+      <ul class="flagged-words-list">
+        ${flagged.map(word => `<li>${word}</li>`).join('')}
+      </ul>
+      <button id="practiceFlaggedBtn" class="btn btn-warning">
+        <i class="fas fa-redo"></i> Practice Flagged Words
+      </button>
+    `;
+    scoreDisplay.appendChild(flaggedSection);
+    
+    document.getElementById('practiceFlaggedBtn')?.addEventListener('click', () => {
+      startPracticeSession(flagged);
+    });
+  }
 }
 
 // Theme Toggle
@@ -88,30 +103,17 @@ export function initThemeToggle() {
     applyDarkMode(!document.body.classList.contains('dark-mode'));
   });
 
-  // Initialize from storage
   applyDarkMode(localStorage.getItem('darkMode') === 'on');
 }
 
 // Navigation Controls
 export function setupNavigation() {
-  // Home button
   document.getElementById('homeBtn')?.addEventListener('click', () => {
     window.location.href = 'index.html';
   });
 
-  // Premium button
   document.getElementById('premiumBtn')?.addEventListener('click', () => {
     window.location.href = 'premium.html';
-  });
-
-  // Ensure all links work
-  document.querySelectorAll('a').forEach(link => {
-    link.addEventListener('click', (e) => {
-      if (link.href.includes(window.location.hostname)) {
-        e.preventDefault();
-        window.location.href = link.href;
-      }
-    });
   });
 }
 
