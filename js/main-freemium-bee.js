@@ -5,6 +5,13 @@ let wordList = [];
 let currentIndex = 0;
 let score = 0;
 
+// Helper: Clean & split custom word input (one per line)
+function getWordsFromInput() {
+  const customWords = document.getElementById('wordInput').value;
+  // Split by newlines, trim, filter out empty lines
+  return customWords.split(/\r?\n/).map(w => w.trim()).filter(w => w.length > 0);
+}
+
 function displayWord(word) {
   currentWord = word;
   document.querySelector('.current-word').textContent = word;
@@ -12,6 +19,13 @@ function displayWord(word) {
   document.querySelector('.feedback').textContent = '';
   document.getElementById('spellingInput').focus();
   initFlagButton(word);
+  // Speak the word when it appears
+  if ('speechSynthesis' in window) {
+    let utter = new window.SpeechSynthesisUtterance(word);
+    let accent = document.getElementById('accentSelect').value;
+    utter.lang = accent || 'en-US';
+    window.speechSynthesis.speak(utter);
+  }
 }
 
 function checkSpelling() {
@@ -69,8 +83,7 @@ function endSession() {
 
 // Event Listeners
 document.getElementById('startTest').addEventListener('click', () => {
-  const customWords = document.getElementById('wordInput').value;
-  const words = customWords.split('\n').filter(w => w.trim());
+  const words = getWordsFromInput();
   startSession(words.length ? words : ['sample', 'words']);
 });
 
