@@ -24,6 +24,55 @@ export function initializeFirebase() {
   return firebase;
 }
 
+// Flagging system
+let flaggedWords = JSON.parse(localStorage.getItem('flaggedWords')) || [];
+
+function toggleFlagWord(currentWord) {
+  const flagBtn = document.getElementById('flagWordBtn');
+  const wordIndex = flaggedWords.indexOf(currentWord);
+  
+  if (wordIndex === -1) {
+    // Add to flagged words
+    flaggedWords.push(currentWord);
+    flagBtn.classList.add('active');
+    flagBtn.innerHTML = '<i class="fas fa-flag"></i> Flagged';
+    // Add visual indicator to word display
+    document.querySelector('.current-word').classList.add('flagged-word');
+  } else {
+    // Remove from flagged words
+    flaggedWords.splice(wordIndex, 1);
+    flagBtn.classList.remove('active');
+    flagBtn.innerHTML = '<i class="far fa-flag"></i> Flag Word';
+    // Remove visual indicator
+    document.querySelector('.current-word').classList.remove('flagged-word');
+  }
+  
+  localStorage.setItem('flaggedWords', JSON.stringify(flaggedWords));
+}
+
+// Initialize flag button
+function initFlagButton(currentWord) {
+  const flagBtn = document.getElementById('flagWordBtn');
+  flagBtn.onclick = () => toggleFlagWord(currentWord);
+  
+  // Set initial state
+  if (flaggedWords.includes(currentWord)) {
+    flagBtn.classList.add('active');
+    flagBtn.innerHTML = '<i class="fas fa-flag"></i> Flagged';
+    document.querySelector('.current-word').classList.add('flagged-word');
+  } else {
+    flagBtn.classList.remove('active');
+    flagBtn.innerHTML = '<i class="far fa-flag"></i> Flag Word';
+    document.querySelector('.current-word').classList.remove('flagged-word');
+  }
+}
+
+// Add to your word display function
+function displayWord(word) {
+  // ... existing display code ...
+  initFlagButton(word);
+}
+
 // Theme Toggle
 export function initThemeToggle() {
   const toggleBtn = document.getElementById('modeToggle');
