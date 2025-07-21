@@ -1,4 +1,4 @@
-import { oetWords } from '../js/oet_word_list.js';
+import { oetWords } from './oet_word_list.js';
 
 let words = [];
 let currentIndex = 0;
@@ -9,8 +9,9 @@ let score = 0;
 const trainerDiv = document.getElementById('trainer');
 const scoreDiv = document.getElementById('scoreDisplay');
 const accentSelect = document.getElementById('accentSelect');
+const accentFlag = document.getElementById('accentFlag');
 
-// Mode selection
+// --- Mode selection handlers ---
 document.getElementById('practiceModeBtn').onclick = () => setMode(false);
 document.getElementById('testModeBtn').onclick = () => setMode(true);
 
@@ -20,15 +21,26 @@ function setMode(testMode) {
   document.getElementById('testModeBtn').classList.toggle('active-mode', testMode);
 }
 
-// Start session
+// --- Accent/flag logic ---
+accentSelect.onchange = function() {
+  const map = { "en-US": "us", "en-GB": "gb", "en-AU": "au" };
+  accentFlag.src = `assets/flags/${map[accentSelect.value] || "us"}.png`;
+};
+
+// --- Start session ---
 document.getElementById('startOET').onclick = () => {
   words = isTestMode ? getRandomWords(oetWords, 24) : [...oetWords];
+  if (!words.length) {
+    alert("No OET words found!");
+    return;
+  }
   currentIndex = 0;
   score = 0;
   scoreDiv.innerHTML = '';
   showWord();
 };
 
+// --- Trainer logic ---
 function showWord() {
   const word = words[currentIndex];
   trainerDiv.innerHTML = `
@@ -53,6 +65,7 @@ function showWord() {
   document.getElementById('flagBtn').onclick = () => toggleFlag(word);
 }
 
+// --- Speech synthesis ---
 function speakWord(word) {
   if (!window.speechSynthesis) return;
   const utter = new SpeechSynthesisUtterance(word);
@@ -60,6 +73,7 @@ function speakWord(word) {
   window.speechSynthesis.speak(utter);
 }
 
+// --- Check logic & feedback ---
 function checkWord(word) {
   const input = document.getElementById('userInput').value.trim();
   const feedbackDiv = document.getElementById('feedback');
@@ -86,6 +100,7 @@ function checkWord(word) {
   }, 1100);
 }
 
+// --- Flag logic ---
 function toggleFlag(word) {
   const idx = flaggedWords.indexOf(word);
   if (idx === -1) flaggedWords.push(word);
@@ -94,6 +109,7 @@ function toggleFlag(word) {
   showWord();
 }
 
+// --- End session & flagged words practice ---
 function endSession() {
   trainerDiv.innerHTML = "";
   scoreDiv.innerHTML = `<h3>Session Complete!</h3>
@@ -110,6 +126,7 @@ function endSession() {
   }
 }
 
+// --- Helper: random words for test mode ---
 function getRandomWords(list, count) {
   return [...list].sort(() => Math.random() - 0.5).slice(0, count);
 }
