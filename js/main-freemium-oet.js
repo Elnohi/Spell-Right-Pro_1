@@ -1,118 +1,115 @@
-import { 
-  initializeFirebase, 
-  initThemeToggle, 
-  speak, 
-  showNotification 
-} from './common.js';
+import { oetWords } from '../js/oet_word_list.js';
 
-// Initialize Firebase
-const firebase = initializeFirebase();
-
-// DOM Elements
-const accentSelect = document.getElementById('accentSelect');
-const startSessionBtn = document.getElementById('startSession');
-const trainerDiv = document.getElementById('trainer');
-const prevWordBtn = document.getElementById('prevWord');
-const nextWordBtn = document.getElementById('nextWord');
-const currentWordPos = document.getElementById('currentWordPos');
-const totalWords = document.getElementById('totalWords');
-const practiceModeBtn = document.getElementById('practiceModeBtn');
-const testModeBtn = document.getElementById('testModeBtn');
-
-// State
 let words = [];
 let currentIndex = 0;
 let isTestMode = false;
+let flaggedWords = JSON.parse(localStorage.getItem('flaggedWordsOET')) || [];
+let score = 0;
 
-// Initialize
-initThemeToggle();
+const trainerDiv = document.getElementById('trainer');
+const scoreDiv = document.getElementById('scoreDisplay');
+const accentSelect = document.getElementById('accentSelect');
 
-// Event Listeners
-startSessionBtn.addEventListener('click', startSession);
-prevWordBtn.addEventListener('click', showPreviousWord);
-nextWordBtn.addEventListener('click', showNextWord);
-practiceModeBtn.addEventListener('click', () => setMode(false));
-testModeBtn.addEventListener('click', () => setMode(true));
+// Mode selection
+document.getElementById('practiceModeBtn').onclick = () => setMode(false);
+document.getElementById('testModeBtn').onclick = () => setMode(true);
 
-// Functions
 function setMode(testMode) {
   isTestMode = testMode;
-  practiceModeBtn.classList.toggle('active-mode', !testMode);
-  testModeBtn.classList.toggle('active-mode', testMode);
+  document.getElementById('practiceModeBtn').classList.toggle('active-mode', !testMode);
+  document.getElementById('testModeBtn').classList.toggle('active-mode', testMode);
 }
 
-function startSession() {
-  words = isTestMode ? getRandomWords(fullWordList, 24) : fullWordList;
+// Start session
+document.getElementById('startOET').onclick = () => {
+  words = isTestMode ? getRandomWords(oetWords, 24) : [...oetWords];
   currentIndex = 0;
-  updateWordCounter();
-  presentWord();
-}
+  score = 0;
+  scoreDiv.innerHTML = '';
+  showWord();
+};
 
-function presentWord() {
+function showWord() {
+  const word = words[currentIndex];
   trainerDiv.innerHTML = `
     <div class="word-box">
-      <h3>${words[currentIndex]}</h3>
-      <button id="speakBtn" class="btn btn-primary">
-        <i class="fas fa-volume-up"></i> Repeat
-      </button>
-      <input type="text" id="userInput" placeholder="Type what you heard...">
+      <h3>Word ${currentIndex + 1} / ${words.length}</h3>
+      <button id="speakBtn" class="btn btn-primary"><i class="fas fa-volume-up"></i> Speak</button>
+      <input type="text" id="userInput" class="form-control" placeholder="Type what you heard..." autofocus>
       <button id="checkBtn" class="btn btn-success">Check</button>
-      <div id="feedback"></div>
+      <button id="prevBtn" class="btn btn-outline-primary" ${currentIndex === 0 ? "disabled" : ""}>Previous</button>
+      <button id="nextBtn" class="btn btn-outline-primary" ${currentIndex === words.length-1 ? "disabled" : ""}>Next</button>
+      <button id="flagBtn" class="btn btn-flag ${flaggedWords.includes(word) ? "active" : ""}">
+        <i class="${flaggedWords.includes(word) ? "fas" : "far"} fa-flag"></i> ${flaggedWords.includes(word) ? "Flagged" : "Flag Word"}
+      </button>
+      <div id="feedback" style="margin-top:1em;"></div>
     </div>
   `;
-
-  document.getElementById('speakBtn').addEventListener('click', () => speakWord());
-  document.getElementById('checkBtn').addEventListener('click', checkAnswer);
-  
-  speakWord();
+  document.getElementById('speakBtn').onclick = () => speakWord(word);
+  document.getElementById('checkBtn').onclick = () => checkWord(word);
+  document.getElementById('userInput').onkeypress = (e) => { if (e.key === "Enter") checkWord(word); };
+  document.getElementById('nextBtn').onclick = () => { if (currentIndex < words.length-1) { currentIndex++; showWord(); }};
+  document.getElementById('prevBtn').onclick = () => { if (currentIndex > 0) { currentIndex--; showWord(); }};
+  document.getElementById('flagBtn').onclick = () => toggleFlag(word);
 }
 
-function speakWord() {
-  speak(words[currentIndex], accentSelect.value);
+function speakWord(word) {
+  if (!window.speechSynthesis) return;
+  const utter = new SpeechSynthesisUtterance(word);
+  utter.lang = accentSelect.value || 'en-US';
+  window.speechSynthesis.speak(utter);
 }
 
-function checkAnswer() {
-  const userInput = document.getElementById('userInput').value;
+function checkWord(word) {
+  const input = document.getElementById('userInput').value.trim();
   const feedbackDiv = document.getElementById('feedback');
-  
-  if (userInput.toLowerCase() === words[currentIndex].toLowerCase()) {
-    feedbackDiv.textContent = "Correct!";
-    feedbackDiv.className = "correct";
-  } else {
-    feedbackDiv.textContent = `Incorrect. The word was: ${words[currentIndex]}`;
-    feedbackDiv.className = "incorrect";
+  if (!input) {
+    feedbackDiv.textContent = "Please enter your answer!";
+    feedbackDiv.style.color = "#dc3545";
+    return;
   }
-  
-  nextWordBtn.disabled = false;
+  if (input.toLowerCase() === word.toLowerCase()) {
+    feedbackDiv.textContent = "Correct!";
+    feedbackDiv.style.color = "#28a745";
+    score++;
+  } else {
+    feedbackDiv.textContent = `Incorrect. The word was: ${word}`;
+    feedbackDiv.style.color = "#dc3545";
+  }
+  setTimeout(() => {
+    if (currentIndex < words.length-1) {
+      currentIndex++;
+      showWord();
+    } else {
+      endSession();
+    }
+  }, 1100);
 }
 
-function showNextWord() {
-  currentIndex++;
-  updateWordCounter();
-  presentWord();
-  prevWordBtn.disabled = currentIndex === 0;
+function toggleFlag(word) {
+  const idx = flaggedWords.indexOf(word);
+  if (idx === -1) flaggedWords.push(word);
+  else flaggedWords.splice(idx, 1);
+  localStorage.setItem('flaggedWordsOET', JSON.stringify(flaggedWords));
+  showWord();
 }
 
-function showPreviousWord() {
-  currentIndex--;
-  updateWordCounter();
-  presentWord();
-  nextWordBtn.disabled = false;
+function endSession() {
+  trainerDiv.innerHTML = "";
+  scoreDiv.innerHTML = `<h3>Session Complete!</h3>
+    <p>Your score: ${score}/${words.length}</p>
+    ${flaggedWords.length ? `<button id="practiceFlaggedBtn" class="btn btn-info">Practice Flagged Words (${flaggedWords.length})</button>` : ""}
+  `;
+  if (flaggedWords.length) {
+    document.getElementById('practiceFlaggedBtn').onclick = () => {
+      words = [...flaggedWords];
+      currentIndex = 0; score = 0;
+      showWord();
+      scoreDiv.innerHTML = '';
+    };
+  }
 }
 
-function updateWordCounter() {
-  currentWordPos.textContent = currentIndex + 1;
-  totalWords.textContent = words.length;
-  prevWordBtn.disabled = currentIndex === 0;
-  nextWordBtn.disabled = currentIndex === words.length - 1;
+function getRandomWords(list, count) {
+  return [...list].sort(() => Math.random() - 0.5).slice(0, count);
 }
-
-function getRandomWords(wordList, count) {
-  return [...wordList].sort(() => 0.5 - Math.random()).slice(0, count);
-}
-
-// Word list (would normally import from external file)
-const fullWordList = [
-  "Articulate", "Pharaoh", "Onomatopoeia", "Surveillance",
-  "Metamorphosis", "Onomastics", "Entrepreneur", "Mnemonic"
-];
