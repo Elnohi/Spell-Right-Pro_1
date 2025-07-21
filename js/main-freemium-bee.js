@@ -3,6 +3,7 @@ let currentIndex = 0;
 let flaggedWords = JSON.parse(localStorage.getItem('flaggedWordsBee')) || [];
 let score = 0;
 let accent = 'en-US';
+let wrongWords = [];
 
 // Accent flag logic
 const flagMap = { "en-US": "us", "en-GB": "gb", "en-AU": "au" };
@@ -12,7 +13,7 @@ document.getElementById('accentSelect').onchange = e => {
   accentFlag.src = `assets/flags/${flagMap[accent] || "us"}.png`;
 };
 
-// Custom word add logic
+// Add custom words
 document.getElementById('addCustomBtn').onclick = () => {
   const customWords = document.getElementById('wordInput').value
     .split(/\r?\n/)
@@ -23,14 +24,14 @@ document.getElementById('addCustomBtn').onclick = () => {
     return;
   }
   wordList = [...customWords];
-  document.getElementById('customInputArea').style.display = "none";
+  document.getElementById('wordInput').value = ''; // Clear words, textarea stays
   document.getElementById('scoreDisplay').innerHTML = `<p>Custom words added. Ready to start!</p>`;
 };
 
 // Use sample words
 document.getElementById('useSampleBtn').onclick = () => {
   wordList = ["banana", "elephant", "amazing", "computer", "zebra"];
-  document.getElementById('customInputArea').style.display = "none";
+  document.getElementById('wordInput').value = ''; // Clear words, textarea stays
   document.getElementById('scoreDisplay').innerHTML = `<p>Sample words loaded. Ready to start!</p>`;
 };
 
@@ -42,7 +43,10 @@ document.getElementById('startBee').onclick = () => {
   }
   currentIndex = 0;
   score = 0;
+  wrongWords = [];
   document.getElementById('scoreDisplay').innerHTML = '';
+  document.getElementById('customInputArea').style.opacity = "0.6";
+  document.getElementById('customInputArea').style.pointerEvents = "none";
   startAutoBee();
 };
 
@@ -104,6 +108,7 @@ function spellByMic(word) {
     } else {
       feedbackDiv.textContent = `Incorrect. The word is: ${word}`;
       feedbackDiv.style.color = "#dc3545";
+      wrongWords.push(word);
     }
     setTimeout(() => {
       currentIndex++;
@@ -113,6 +118,7 @@ function spellByMic(word) {
   recognition.onerror = event => {
     feedbackDiv.textContent = "Mic error or no speech detected.";
     feedbackDiv.style.color = "#dc3545";
+    wrongWords.push(word);
     setTimeout(() => {
       currentIndex++;
       nextBeeWord();
@@ -131,16 +137,29 @@ function toggleFlag(word) {
 
 function endSession() {
   document.getElementById('trainer').innerHTML = "";
+  const percent = Math.round((score / wordList.length) * 100);
+  let wrongList = "";
+  if (wrongWords.length > 0) {
+    wrongList = `<div style="margin-top:1em;"><b>Wrong Words:</b><ul style="margin:0 0 0 1.5em;">${wrongWords.map(w => `<li>${w}</li>`).join('')}</ul></div>`;
+  }
   document.getElementById('scoreDisplay').innerHTML = `<h3>Test Complete!</h3>
-    <p>Your score: ${score}/${wordList.length}</p>
-    ${flaggedWords.length ? `<button id="practiceFlaggedBtn" class="btn btn-info">Practice Flagged Words (${flaggedWords.length})</button>` : ""}
+    <p>Your score: <b>${score}</b> / ${wordList.length} (<b>${percent}%</b>)</p>
+    ${wrongList}
+    ${flaggedWords.length ? `<button id="practiceFlaggedBtn" class="btn btn-info" style="margin-top:1em;">Practice Flagged Words (${flaggedWords.length})</button>` : ""}
   `;
   if (flaggedWords.length) {
     document.getElementById('practiceFlaggedBtn').onclick = () => {
       wordList = [...flaggedWords];
-      currentIndex = 0; score = 0;
-      startAutoBee();
+      currentIndex = 0; score = 0; wrongWords = [];
+      document.getElementById('customInputArea').style.opacity = "0.6";
+      document.getElementById('customInputArea').style.pointerEvents = "none";
       document.getElementById('scoreDisplay').innerHTML = '';
+      startAutoBee();
     };
   }
+  // Restore input area for new session after finishing
+  setTimeout(() => {
+    document.getElementById('customInputArea').style.opacity = "";
+    document.getElementById('customInputArea').style.pointerEvents = "";
+  }, 1000);
 }
