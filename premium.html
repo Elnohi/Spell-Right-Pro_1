@@ -8,14 +8,12 @@
   <link rel="stylesheet" href="css/styles.css">
   <link rel="manifest" href="/manifest.json">
   <meta name="theme-color" content="#6a11cb">
-  <!-- Apple PWA Tags -->
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="SpellRightPro">
   <link rel="apple-touch-icon" href="assets/icons/icon-192x192.png">
   <link rel="icon" href="assets/favicon.ico">
   <style>
-    /* Extra polish for premium look */
     .premium-badge {
       background: linear-gradient(90deg, #9d4edd 0%, #6a11cb 100%);
       color: #fff;
@@ -28,50 +26,9 @@
       display: inline-block;
       letter-spacing: 1px;
     }
-    .feature-row {
-      display: flex; flex-wrap: wrap; gap: 2em;
-      margin-bottom: 1.5em;
+    .main-card.premium-card {
+      max-width: 850px;
     }
-    .feature-box {
-      background: #f7f4ff;
-      border-left: 5px solid #6a11cb;
-      border-radius: 8px;
-      padding: 1em 1.5em;
-      min-width: 210px;
-      flex: 1;
-      margin-bottom: 0.5em;
-    }
-    @media (max-width: 750px) {
-      .feature-row { flex-direction: column; gap: 0.8em;}
-      .main-card.premium-card { padding: 1em;}
-    }
-    .user-bar {
-      position: absolute;
-      right: 2em;
-      top: 1em;
-      display: flex;
-      align-items: center;
-      gap: 0.7em;
-    }
-    .user-avatar {
-      width: 38px; height: 38px; border-radius: 50%; background: #eee;
-      display: inline-block;
-    }
-    .user-name {
-      font-weight: bold; color: #fff; letter-spacing: 0.5px;
-    }
-    .logout-btn {
-      background: #fff;
-      color: #6a11cb;
-      border: none;
-      border-radius: 5px;
-      padding: 0.4em 1em;
-      margin-left: 0.8em;
-      font-weight: 500;
-      cursor: pointer;
-      transition: background 0.2s;
-    }
-    .logout-btn:hover { background: #f3ecff; }
     .section-title {
       font-size: 1.2em;
       font-weight: 600;
@@ -84,9 +41,6 @@
       border: none;
       border-bottom: 1.5px solid #ede2ff;
       margin: 1.6em 0 1em 0;
-    }
-    .premium-card {
-      max-width: 850px;
     }
   </style>
 </head>
@@ -103,25 +57,11 @@
     <button id="homeBtn" class="btn btn-outline-light">
       <i class="fas fa-home"></i> Home
     </button>
-    <div class="user-bar">
-      <span class="user-avatar"><i class="fas fa-user"></i></span>
-      <span class="user-name" id="userName">User</span>
-      <button class="logout-btn" id="logoutBtn" style="display:none;">
-        <i class="fas fa-sign-out-alt"></i> Logout
-      </button>
-    </div>
   </header>
   <main>
     <div class="main-card premium-card">
       <span class="premium-badge"><i class="fas fa-gem"></i> Premium Access</span>
       <div style="margin-bottom:0.7em;">Unlock all features for total spelling mastery.</div>
-      <div class="feature-row">
-        <div class="feature-box"><i class="fas fa-file-upload"></i> <b>Word File Upload</b></div>
-        <div class="feature-box"><i class="fas fa-user-edit"></i> <b>Custom Word Lists</b></div>
-        <div class="feature-box"><i class="fas fa-spell-check"></i> <b>Spelling Bee & OET</b></div>
-        <div class="feature-box"><i class="fas fa-language"></i> <b>Multiple Accents</b></div>
-        <div class="feature-box"><i class="fas fa-analytics"></i> <b>Progress Analytics</b></div>
-      </div>
       <hr class="divider">
 
       <div class="section-title"><i class="fas fa-cogs"></i> Start Your Premium Practice</div>
@@ -173,7 +113,6 @@
       <div class="section-title"><i class="fas fa-bolt"></i> Trainer</div>
       <div id="trainer" class="trainer-container"></div>
       <div id="scoreDisplay" class="score-container"></div>
-      <div id="premiumSummary" style="margin-top:2em;"></div>
     </div>
   </main>
   <script src="js/config.js"></script>
