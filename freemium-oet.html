@@ -8,17 +8,16 @@
   <link rel="stylesheet" href="css/styles.css">
   <link rel="manifest" href="/manifest.json">
   <meta name="theme-color" content="#007bff">
-  <!-- Apple PWA Tags -->
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="SpellRightPro">
-  <link rel="apple-touch-icon" href="/assets/icons/icon-192x192.png">
-  <link rel="icon" href="/assets/favicon.ico">
+  <link rel="apple-touch-icon" href="assets/icons/icon-192x192.png">
+  <link rel="icon" href="assets/favicon.ico">
 </head>
 <body>
   <header class="header-bar">
     <div class="logo-area">
-      <img src="../assets/logo.png" class="logo-img" alt="Logo">
+      <img src="assets/logo.png" class="logo-img" alt="Logo">
       <span class="app-title">SpellRightPro</span>
       <span class="subtitle">(OET - Freemium)</span>
     </div>
@@ -29,10 +28,9 @@
       <i class="fas fa-home"></i> Home
     </button>
   </header>
-
   <main>
     <div class="main-card">
-      <div class="mode-selection">
+      <div class="mode-selection" style="margin-bottom:1em;">
         <button id="practiceModeBtn" class="btn btn-primary active-mode">
           <i class="fas fa-graduation-cap"></i> Practice Mode
         </button>
@@ -40,38 +38,27 @@
           <i class="fas fa-clock"></i> Test Mode (24 words)
         </button>
       </div>
-
       <div class="field-row">
         <span class="field-label">Accent:</span>
-        <select id="accentSelect" class="form-control">
+        <select id="accentSelect" class="form-control" style="width:120px;">
           <option value="en-US">American</option>
           <option value="en-GB">British</option>
           <option value="en-AU">Australian</option>
         </select>
         <div class="flag-container">
-          <img id="accentFlag" src="../assets/flags/us.png" alt="Flag" width="30">
+          <img id="accentFlag" src="assets/flags/us.png" alt="Flag" width="30">
         </div>
       </div>
-
       <div class="button-row">
         <button id="startOET" class="btn btn-success start-practice">
           <i class="fas fa-play"></i> Start Session
         </button>
       </div>
-
-      <div id="trainer" class="trainer-container"></div>
-        <!-- Existing content -->
-  <button id="flagWordBtn" class="btn btn-flag" title="Flag this word for later">
-    <i class="far fa-flag"></i> Flag Word
-  </button>
-</div>
+      <div id="trainer" class="trainer-container" style="margin-top:1.5em;"></div>
       <div id="scoreDisplay" class="score-container"></div>
     </div>
   </main>
-
   <script src="js/config.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.4.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.4.0/firebase-auth-compat.js"></script>
   <script type="module" src="js/main-freemium-oet.js"></script>
   <script type="module" src="js/common.js"></script>
 </body>
