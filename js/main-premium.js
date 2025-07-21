@@ -1,215 +1,192 @@
-import { 
-  initializeFirebase,
-  initThemeToggle,
-  initAuth,
-  addAuthListeners,
-  showNotification,
-  loadWordsFromFile,
-  setupFileUpload,
-  speak,
-  setupSpeechRecognition,
-  showScore
-} from './common.js';
-import { examTypes, defaultWords } from './config.js';
+import { oetWords } from './oet_word_list.js';
 
-// Initialize Firebase
-const firebase = initializeFirebase();
-
-// Initialize UI
-const auth = initAuth(firebase, "loginStatus", "formHiddenEmail");
-addAuthListeners(auth, "loginBtn", "signupBtn", "logoutBtn", "userEmail", "userPassword");
-initThemeToggle("modeToggle", "modeIcon");
-
-// Practice Session State
 let words = [];
 let currentIndex = 0;
-let correctCount = 0;
-let incorrectWords = [];
-let currentMode = "";
+let mode = "";
+let flaggedWords = JSON.parse(localStorage.getItem('flaggedWordsPremium')) || [];
+let score = 0;
+let accent = 'en-US';
 
-// DOM Elements
-const examSelect = document.getElementById("examSelect");
-const accentSelect = document.getElementById("accentSelect");
-const fileUpload = document.getElementById("fileUpload");
-const customWordsTextarea = document.getElementById("customWords");
-const addCustomBtn = document.getElementById("addCustomWords");
-const startButton = document.getElementById("startButton");
-const trainerDiv = document.getElementById("trainer");
-const scoreDiv = document.getElementById("scoreDisplay");
+const trainerDiv = document.getElementById('trainer');
+const scoreDiv = document.getElementById('scoreDisplay');
+const accentSelect = document.getElementById('accentSelect');
+const examSelect = document.getElementById('examSelect');
+const fileUpload = document.getElementById('fileUpload');
+const customWordsTextarea = document.getElementById('customWords');
+const addCustomBtn = document.getElementById('addCustomWords');
+const startButton = document.getElementById('startButton');
 
-// Setup event listeners
-setupFileUpload("fileUpload", (loadedWords) => {
-  // Parse words from loaded file: split by newline, trim, filter empty
-  words = loadedWords
-    .join('\n')
+// Accent select/flag
+accentSelect.onchange = e => {
+  accent = e.target.value;
+  document.getElementById('accentFlag').src = `assets/flags/${accent.slice(-2).toLowerCase()}.png`;
+};
+
+// Add custom words
+addCustomBtn.onclick = () => {
+  const customWords = customWordsTextarea.value
     .split(/\r?\n/)
     .map(w => w.trim())
     .filter(w => w.length > 0);
-  showNotification(`Loaded ${words.length} words`, "success");
-});
+  if (customWords.length > 0) {
+    words = customWords;
+    alert(`Added ${words.length} custom words!`);
+  } else {
+    alert("Please enter words first.");
+  }
+};
 
-if (addCustomBtn && customWordsTextarea) {
-  addCustomBtn.addEventListener("click", () => {
-    const customWords = customWordsTextarea.value
-      .split(/\r?\n/)
-      .map(w => w.trim())
-      .filter(w => w.length > 0);
-    if (customWords.length > 0) {
-      words = customWords;
-      showNotification(`Added ${words.length} custom words`, "success");
-    } else {
-      showNotification("Please enter some words first", "error");
-    }
-  });
-}
+// Upload file
+fileUpload.onchange = async e => {
+  const file = e.target.files[0];
+  if (!file) return;
+  const text = await file.text();
+  words = text.split(/\r?\n/).map(w => w.trim()).filter(w => w.length > 0);
+  alert(`Loaded ${words.length} words from file!`);
+};
 
-startButton.addEventListener("click", async () => {
-  const exam = examSelect.value;
-  if (!exam) {
-    showNotification("Please select an exam type", "error");
+// Start session
+startButton.onclick = () => {
+  mode = examSelect.value;
+  if (!mode) { alert("Please select an exam type!"); return; }
+  if (mode === 'oet') words = [...oetWords];
+  if (mode === 'spellingbee' && (!words || words.length === 0)) {
+    // Sample words
+    words = ["banana", "elephant", "amazing", "computer", "zebra"];
+  }
+  if (mode === 'custom' && (!words || words.length === 0)) {
+    alert("Please upload or add custom words first!");
     return;
   }
-
-  currentMode = exam;
   currentIndex = 0;
-  correctCount = 0;
-  incorrectWords = [];
-  trainerDiv.innerHTML = "";
-  scoreDiv.innerHTML = "";
+  score = 0;
+  scoreDiv.innerHTML = '';
+  showWord();
+};
 
-  try {
-    if (exam === examTypes.OET) {
-      words = [...defaultWords[examTypes.OET]];
-      startSession();
-    } else if (exam === examTypes.SPELLING_BEE) {
-      words = [...defaultWords[examTypes.SPELLING_BEE]];
-      startSession();
-    } else if (exam === examTypes.CUSTOM) {
-      if (words.length === 0) {
-        showNotification("Please upload or add custom words first", "error");
-        return;
-      }
-      startSession();
-    }
-  } catch (error) {
-    showNotification("Failed to start session", "error");
-    console.error(error);
-  }
-});
-
-function startSession() {
-  if (!words || words.length === 0) {
-    showNotification("No words available for practice", "error");
-    return;
-  }
-
-  presentWord();
-}
-
-async function presentWord() {
+function showWord() {
+  const word = words[currentIndex];
   trainerDiv.innerHTML = `
     <div class="word-box">
-      <h3>Word ${currentIndex + 1} of ${words.length}</h3>
-      <div class="progress-container">
-        <div class="progress-bar" style="width:${(currentIndex/words.length)*100}%"></div>
-      </div>
-      <button id="speakButton" class="btn btn-info">
-        <i class="fas fa-volume-up"></i> Speak Word
+      <h3>Word ${currentIndex + 1} / ${words.length}</h3>
+      <button id="speakBtn" class="btn btn-primary"><i class="fas fa-volume-up"></i> Speak</button>
+      ${mode === 'spellingbee'
+        ? `<button id="micBtn" class="btn btn-warning"><i class="fas fa-microphone"></i> Spell (Mic)</button>`
+        : `<input type="text" id="userInput" class="form-control" placeholder="Type what you heard..." autofocus>
+           <button id="checkBtn" class="btn btn-success">Check</button>`
+      }
+      <button id="prevBtn" class="btn btn-outline-primary" ${currentIndex === 0 ? "disabled" : ""}>Previous</button>
+      <button id="nextBtn" class="btn btn-outline-primary" ${currentIndex === words.length-1 ? "disabled" : ""}>Next</button>
+      <button id="flagBtn" class="btn btn-flag ${flaggedWords.includes(word) ? "active" : ""}">
+        <i class="${flaggedWords.includes(word) ? "fas" : "far"} fa-flag"></i> ${flaggedWords.includes(word) ? "Flagged" : "Flag Word"}
       </button>
-      ${currentMode === examTypes.SPELLING_BEE ? `
-        <p>Spell the word you hear:</p>
-        <button id="startListen" class="btn btn-warning">
-          <i class="fas fa-microphone"></i> Start Spelling
-        </button>
-      ` : `
-        <input type="text" id="userInput" placeholder="Type what you heard..." autofocus>
-        <button id="checkButton" class="btn btn-success">Check</button>
-      `}
-      <div id="status" role="alert" aria-live="polite"></div>
+      <div id="feedback" style="margin-top:1em;"></div>
     </div>
   `;
-
-  try {
-    await speak(words[currentIndex], accentSelect.value);
-    setupWordHandlers();
-  } catch (error) {
-    showNotification("Couldn't speak the word", "error");
-    console.error(error);
+  document.getElementById('speakBtn').onclick = () => speakWord(word);
+  if (mode === 'spellingbee') document.getElementById('micBtn').onclick = () => spellByMic(word);
+  if (mode !== 'spellingbee') {
+    document.getElementById('checkBtn').onclick = () => checkWord(word);
+    document.getElementById('userInput').onkeypress = (e) => { if (e.key === "Enter") checkWord(word); };
   }
+  document.getElementById('nextBtn').onclick = () => { if (currentIndex < words.length-1) { currentIndex++; showWord(); }};
+  document.getElementById('prevBtn').onclick = () => { if (currentIndex > 0) { currentIndex--; showWord(); }};
+  document.getElementById('flagBtn').onclick = () => toggleFlag(word);
 }
 
-function setupWordHandlers() {
-  document.getElementById("speakButton").onclick = () => 
-    speak(words[currentIndex], accentSelect.value);
+function speakWord(word) {
+  if (!window.speechSynthesis) return;
+  const utter = new SpeechSynthesisUtterance(word);
+  utter.lang = accent || 'en-US';
+  window.speechSynthesis.speak(utter);
+}
 
-  if (currentMode === examTypes.SPELLING_BEE) {
-    document.getElementById("startListen").onclick = startListening;
+function spellByMic(word) {
+  let feedbackDiv = document.getElementById('feedback');
+  feedbackDiv.textContent = "Listening... Spell the word letter by letter.";
+  if (!('webkitSpeechRecognition' in window || 'SpeechRecognition' in window)) {
+    feedbackDiv.textContent = "Sorry, speech recognition is not supported on this browser.";
+    return;
+  }
+  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+  const recognition = new SpeechRecognition();
+  recognition.lang = accent || 'en-US';
+  recognition.interimResults = false;
+  recognition.maxAlternatives = 1;
+  recognition.onresult = event => {
+    let transcript = event.results[0][0].transcript;
+    let userSpelling = transcript.replace(/[^a-zA-Z]/g, '').toLowerCase();
+    let correctSpelling = word.replace(/[^a-zA-Z]/g, '').toLowerCase();
+    if (userSpelling === correctSpelling) {
+      feedbackDiv.textContent = "Correct!";
+      feedbackDiv.style.color = "#28a745";
+      score++;
+    } else {
+      feedbackDiv.textContent = `Incorrect. The word is: ${word}`;
+      feedbackDiv.style.color = "#dc3545";
+    }
+    setTimeout(() => {
+      if (currentIndex < words.length-1) {
+        currentIndex++;
+        showWord();
+      } else {
+        endSession();
+      }
+    }, 1200);
+  };
+  recognition.onerror = event => {
+    feedbackDiv.textContent = "Mic error or no speech detected.";
+    feedbackDiv.style.color = "#dc3545";
+  };
+  recognition.start();
+}
+
+function checkWord(word) {
+  const input = document.getElementById('userInput').value.trim();
+  const feedbackDiv = document.getElementById('feedback');
+  if (!input) {
+    feedbackDiv.textContent = "Please enter your answer!";
+    feedbackDiv.style.color = "#dc3545";
+    return;
+  }
+  if (input.toLowerCase() === word.toLowerCase()) {
+    feedbackDiv.textContent = "Correct!";
+    feedbackDiv.style.color = "#28a745";
+    score++;
   } else {
-    document.getElementById("checkButton").onclick = checkTypedAnswer;
-    document.getElementById("userInput").onkeypress = (e) => {
-      if (e.key === "Enter") checkTypedAnswer();
+    feedbackDiv.textContent = `Incorrect. The word was: ${word}`;
+    feedbackDiv.style.color = "#dc3545";
+  }
+  setTimeout(() => {
+    if (currentIndex < words.length-1) {
+      currentIndex++;
+      showWord();
+    } else {
+      endSession();
+    }
+  }, 1100);
+}
+
+function toggleFlag(word) {
+  const idx = flaggedWords.indexOf(word);
+  if (idx === -1) flaggedWords.push(word);
+  else flaggedWords.splice(idx, 1);
+  localStorage.setItem('flaggedWordsPremium', JSON.stringify(flaggedWords));
+  showWord();
+}
+
+function endSession() {
+  trainerDiv.innerHTML = "";
+  scoreDiv.innerHTML = `<h3>Session Complete!</h3>
+    <p>Your score: ${score}/${words.length}</p>
+    ${flaggedWords.length ? `<button id="practiceFlaggedBtn" class="btn btn-info">Practice Flagged Words (${flaggedWords.length})</button>` : ""}
+  `;
+  if (flaggedWords.length) {
+    document.getElementById('practiceFlaggedBtn').onclick = () => {
+      words = [...flaggedWords];
+      currentIndex = 0; score = 0;
+      showWord();
+      scoreDiv.innerHTML = '';
     };
   }
-}
-
-function checkTypedAnswer() {
-  const input = document.getElementById("userInput").value.trim().toLowerCase();
-  const correct = words[currentIndex].toLowerCase();
-  const status = document.getElementById("status");
-
-  if (input === correct) {
-    correctCount++;
-    status.textContent = "✅ Correct!";
-    status.className = "status correct";
-  } else {
-    incorrectWords.push({ word: words[currentIndex], typed: input });
-    status.textContent = `❌ Incorrect. Correct: ${words[currentIndex]}`;
-    status.className = "status incorrect";
-  }
-
-  moveToNextWord();
-}
-
-function moveToNextWord() {
-  currentIndex++;
-  if (currentIndex < words.length) {
-    setTimeout(presentWord, 900);
-  } else {
-    showScore(correctCount, words.length, incorrectWords);
-  }
-}
-
-function startListening() {
-  try {
-    const recognition = setupSpeechRecognition(
-      accentSelect.value,
-      (transcript) => handleSpellingResult(transcript),
-      (error) => {
-        showNotification(`Recognition error: ${error}`, "error");
-        console.error("Recognition error:", error);
-      }
-    );
-    recognition.start();
-    document.getElementById("status").textContent = "Listening...";
-  } catch (error) {
-    showNotification(error.message, "error");
-    console.error(error);
-  }
-}
-
-function handleSpellingResult(transcript) {
-  const spoken = transcript.toUpperCase().replace(/[^A-Z]/g, "");
-  const expected = words[currentIndex].toUpperCase().replace(/[^A-Z]/g, "");
-  const status = document.getElementById("status");
-
-  if (spoken === expected) {
-    correctCount++;
-    status.innerHTML = "✅ <strong>Correct!</strong>";
-    status.className = "status correct";
-  } else {
-    incorrectWords.push({ word: words[currentIndex], spoken });
-    status.innerHTML = `❌ <strong>Incorrect.</strong> Correct: ${words[currentIndex]}`;
-    status.className = "status incorrect";
-  }
-  moveToNextWord();
 }
