@@ -1,24 +1,23 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Spelling Bee | SpellRightPro</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
   <link rel="stylesheet" href="css/styles.css">
   <link rel="manifest" href="/manifest.json">
-  <meta name="theme-color" content="#007bff">
-  <!-- Apple PWA Tags -->
+  <meta name="theme-color" content="#ffc107">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="SpellRightPro">
-  <link rel="apple-touch-icon" href="/assets/icons/icon-192x192.png">
-  <link rel="icon" href="/assets/favicon.ico">
+  <link rel="apple-touch-icon" href="assets/icons/icon-192x192.png">
+  <link rel="icon" href="assets/favicon.ico">
 </head>
 <body>
   <header class="header-bar">
     <div class="logo-area">
-      <img src="../assets/logo.png" class="logo-img" alt="Logo">
+      <img src="assets/logo.png" class="logo-img" alt="Logo">
       <span class="app-title">SpellRightPro</span>
       <span class="subtitle">(Spelling Bee - Freemium)</span>
     </div>
@@ -28,54 +27,36 @@
     <button id="homeBtn" class="btn btn-outline-secondary">
       <i class="fas fa-home"></i> Home
     </button>
-    <button id="premiumBtn" class="btn btn-premium">
-      <i class="fas fa-crown"></i> Go Premium
-    </button>
   </header>
-
   <main>
     <div class="main-card">
       <div class="field-row">
         <span class="field-label">Accent:</span>
-        <select id="accentSelect" class="form-control">
+        <select id="accentSelect" class="form-control" style="width:120px;">
           <option value="en-US">American</option>
           <option value="en-GB">British</option>
           <option value="en-AU">Australian</option>
-          <option value="en-CA">Canadian</option>
         </select>
         <div class="flag-container">
-          <img id="accentFlag" src="../assets/flags/us.png" alt="Flag" width="30">
+          <img id="accentFlag" src="assets/flags/us.png" alt="Flag" width="30">
         </div>
       </div>
-
       <div class="field-row">
         <span class="field-label">Custom Words:</span>
-        <textarea id="wordInput" class="form-control" 
-                 placeholder="Enter one word per line..."></textarea>
-      </div>
-
-      <div class="button-row">
-        <button id="startTest" class="btn btn-success start-test">
-          <i class="fas fa-play"></i> Start Test
-        </button>
-        <button id="useSampleBtn" class="btn btn-info">
+        <textarea id="wordInput" class="form-control" rows="2" placeholder="Enter one word per line..."></textarea>
+        <button id="useSampleBtn" class="btn btn-info" style="margin-left:1em;">
           <i class="fas fa-lightbulb"></i> Use Sample Words
         </button>
       </div>
-
-      <!-- Trainer output area -->
-      <div>
-        <span class="current-word" style="display:none;"></span>
-        <input id="spellingInput" type="text" autocomplete="off" placeholder="Type the word..." />
-        <div class="feedback"></div>
+      <div class="button-row">
+        <button id="startBee" class="btn btn-success start-test">
+          <i class="fas fa-play"></i> Start Spelling Bee
+        </button>
       </div>
+      <div id="trainer" class="trainer-container" style="margin-top:1.5em;"></div>
       <div id="scoreDisplay" class="score-container"></div>
     </div>
   </main>
-
-  <script src="js/config.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.4.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.4.0/firebase-auth-compat.js"></script>
   <script type="module" src="js/main-freemium-bee.js"></script>
   <script type="module" src="js/common.js"></script>
 </body>
