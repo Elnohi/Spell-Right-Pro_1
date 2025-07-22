@@ -1,5 +1,12 @@
 import { oetWords } from './oet_word_list.js';
 
+// SVG flag map for en-US, en-GB, en-AU
+const flagSVGs = {
+  "en-US": `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 60 40"><rect fill="#b22234" width="60" height="40"/><g fill="#fff"><rect y="4" width="60" height="4"/><rect y="12" width="60" height="4"/><rect y="20" width="60" height="4"/><rect y="28" width="60" height="4"/><rect y="36" width="60" height="4"/></g><rect width="24" height="16" fill="#3c3b6e"/><g fill="#fff"><g id="s18"><g id="s9"><polygon points="2.5,2.1 3.0,3.5 4.3,3.5 3.2,4.3 3.7,5.7 2.5,4.8 1.3,5.7 1.8,4.3 0.7,3.5 2.0,3.5"/></g><use href="#s9" x="6"/><use href="#s9" x="12"/><use href="#s9" x="18"/><use href="#s9" y="4"/><use href="#s9" x="6" y="4"/><use href="#s9" x="12" y="4"/><use href="#s9" x="18" y="4"/><use href="#s9" y="8"/><use href="#s9" x="6" y="8"/><use href="#s9" x="12" y="8"/><use href="#s9" x="18" y="8"/><use href="#s9" y="12"/><use href="#s9" x="6" y="12"/><use href="#s9" x="12" y="12"/><use href="#s9" x="18" y="12"/></g><use href="#s18" y="2"/></g></svg>`,
+  "en-GB": `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 60 40"><rect fill="#00247d" width="60" height="40"/><path stroke="#fff" stroke-width="6" d="M0,0 L60,40 M60,0 L0,40"/><path stroke="#cf142b" stroke-width="4" d="M0,0 L60,40 M60,0 L0,40"/><rect x="25" width="10" height="40" fill="#fff"/><rect y="15" width="60" height="10" fill="#fff"/><rect x="27" width="6" height="40" fill="#cf142b"/><rect y="17" width="60" height="6" fill="#cf142b"/></svg>`,
+  "en-AU": `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 60 40"><rect fill="#00247d" width="60" height="40"/><polygon fill="#fff" points="6,6 8,12 2,9 10,9 4,12"/><polygon fill="#fff" points="54,10 56,12 58,10 56,14 54,10"/><polygon fill="#fff" points="50,32 53,34 55,32 53,36 50,32"/><polygon fill="#fff" points="36,28 39,29 40,26 38,32 36,28"/><polygon fill="#fff" points="47,20 49,22 51,20 49,24 47,20"/><rect x="0" y="0" width="24" height="16" fill="#fff"/><rect x="2" y="0" width="20" height="16" fill="#00247d"/><path stroke="#fff" stroke-width="2" d="M2,0 L22,16 M22,0 L2,16"/><rect x="10" y="0" width="4" height="16" fill="#fff"/><rect x="0" y="6" width="24" height="4" fill="#fff"/><rect x="11" y="0" width="2" height="16" fill="#cf142b"/><rect x="0" y="7" width="24" height="2" fill="#cf142b"/></svg>`
+};
+
 // Utility: split by space, newline, tab, comma, semicolon
 function extractWords(str) {
   return str
@@ -19,7 +26,7 @@ let useCustomWords = false;
 const trainerDiv = document.getElementById('trainer');
 const scoreDiv = document.getElementById('scoreDisplay');
 const accentSelect = document.getElementById('accentSelect');
-const accentFlag = document.getElementById('accentFlag');
+const accentFlagSVG = document.getElementById('accentFlagSVG');
 const customWordsInput = document.getElementById('customWordsInput');
 const addCustomWordsBtn = document.getElementById('addCustomWordsBtn');
 const customWordFeedback = document.getElementById('customWordFeedback');
@@ -35,11 +42,13 @@ function setMode(testMode) {
   isTestMode = testMode;
 }
 
-// Accent flag logic
-accentSelect.onchange = function() {
-  const map = { "en-US": "us", "en-GB": "gb", "en-AU": "au" };
-  accentFlag.src = `assets/flags/${map[accentSelect.value] || "us"}.png`;
-};
+// Accent flag SVG logic
+function updateFlagSVG() {
+  const val = accentSelect.value;
+  accentFlagSVG.innerHTML = flagSVGs[val] || "";
+}
+accentSelect.onchange = updateFlagSVG;
+updateFlagSVG(); // initial
 
 // --- Custom words logic (only one list/day) ---
 addCustomWordsBtn.onclick = () => {
@@ -164,99 +173,3 @@ function showWord() {
       </button>
       <div id="feedback" style="margin-top:1em;"></div>
     </div>
-  `;
-  setTimeout(() => speakWord(word), 350);
-  setTimeout(() => {
-    const input = document.getElementById('userInput');
-    if (input) input.focus();
-  }, 700);
-
-  document.getElementById('checkBtn').onclick = () => checkWord(word);
-  document.getElementById('userInput').onkeypress = (e) => { if (e.key === "Enter") checkWord(word); };
-  document.getElementById('nextBtn').onclick = () => { if (currentIndex < words.length-1) { currentIndex++; showWord(); }};
-  document.getElementById('prevBtn').onclick = () => { if (currentIndex > 0) { currentIndex--; showWord(); }};
-  document.getElementById('flagBtn').onclick = () => toggleFlag(word);
-}
-
-// --- Speech synthesis ---
-function speakWord(word) {
-  if (!window.speechSynthesis) return;
-  const utter = new SpeechSynthesisUtterance(word);
-  utter.lang = accentSelect.value || 'en-US';
-  window.speechSynthesis.speak(utter);
-}
-
-// --- Check logic & feedback ---
-function checkWord(word) {
-  const inputElem = document.getElementById('userInput');
-  if (!inputElem) return;
-  const input = inputElem.value.trim();
-  userAnswers[currentIndex] = input;
-  const feedbackDiv = document.getElementById('feedback');
-  if (!input) {
-    feedbackDiv.textContent = "Please enter your answer!";
-    feedbackDiv.style.color = "#dc3545";
-    inputElem.focus();
-    return;
-  }
-  if (input.toLowerCase() === word.toLowerCase()) {
-    feedbackDiv.textContent = "Correct!";
-    feedbackDiv.style.color = "#28a745";
-    score++;
-  } else {
-    feedbackDiv.textContent = `Incorrect. The word was: ${word}`;
-    feedbackDiv.style.color = "#dc3545";
-  }
-  setTimeout(() => {
-    if (currentIndex < words.length-1) {
-      currentIndex++;
-      showWord();
-    } else {
-      endSession();
-    }
-  }, 1200);
-}
-
-// --- Flag logic ---
-function toggleFlag(word) {
-  const idx = flaggedWords.indexOf(word);
-  if (idx === -1) flaggedWords.push(word);
-  else flaggedWords.splice(idx, 1);
-  localStorage.setItem('flaggedWordsOET', JSON.stringify(flaggedWords));
-  showWord();
-}
-
-// --- End session & flagged words practice ---
-function endSession() {
-  trainerDiv.innerHTML = "";
-  const percent = Math.round((score / words.length) * 100);
-  let wrongWords = [];
-  words.forEach((word, idx) => {
-    if (userAnswers[idx] !== undefined && userAnswers[idx].toLowerCase() !== word.toLowerCase()) {
-      wrongWords.push(word);
-    }
-  });
-  let wrongList = "";
-  if (wrongWords.length > 0) {
-    wrongList = `<div style="margin-top:1em;"><b>Wrong Words:</b><ul style="margin:0 0 0 1.5em;">${wrongWords.map(w => `<li>${w}</li>`).join('')}</ul></div>`;
-  }
-  scoreDiv.innerHTML = `<h3>Session Complete!</h3>
-    <p>Your score: <b>${score}</b> / ${words.length} (<b>${percent}%</b>)</p>
-    ${wrongList}
-    ${flaggedWords.length ? `<button id="practiceFlaggedBtn" class="btn btn-info" style="margin-top:1em;">Practice Flagged Words (${flaggedWords.length})</button>` : ""}
-  `;
-  if (flaggedWords.length) {
-    document.getElementById('practiceFlaggedBtn').onclick = () => {
-      words = [...flaggedWords];
-      currentIndex = 0; score = 0;
-      userAnswers = [];
-      showWord();
-      scoreDiv.innerHTML = '';
-    };
-  }
-  useCustomWords = false;
-}
-
-function getRandomWords(list, count) {
-  return [...list].sort(() => Math.random() - 0.5).slice(0, count);
-}
