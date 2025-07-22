@@ -1,134 +1,47 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>SpellRightPro - OET (Freemium)</title>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
-  <link rel="stylesheet" href="css/styles.css">
-  <!-- PDF.js and Mammoth.js for file parsing -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.10.377/pdf.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.4.2/mammoth.browser.min.js"></script>
-  <style>
-    .mode-selection {
-      margin-bottom: 1em;
-      display: flex;
-      gap: 1em;
-      justify-content: center;
-    }
-    .exam-mode-btn {
-      display: flex;
-      align-items: center;
-      cursor: pointer;
-      border: 2px solid #b6d6fc;
-      border-radius: 1.5em;
-      padding: 0.6em 1.4em;
-      background: #f7fafd;
-      font-size: 1.09em;
-      font-weight: 500;
-      color: #1b2330;
-      transition: box-shadow 0.15s, border 0.15s, background 0.2s, color 0.18s;
-      user-select: none;
-    }
-    .exam-mode-btn input[type="radio"] {
-      display: none;
-    }
-    .exam-mode-btn input[type="radio"]:checked + span {
-      color: #fff !important;
-      background: #0076ff;
-      border-radius: 1em;
-      padding: 0.18em 1.2em;
-      font-weight: 700;
-      box-shadow: 0 0 0 2px #67b6ff88;
-    }
-    .exam-mode-btn span {
-      display: flex;
-      align-items: center;
-      gap: 0.5em;
-    }
-    .flag-svg {
-      width: 28px;
-      height: 20px;
-      display: inline-block;
-      vertical-align: middle;
-      margin-left: 0.5em;
-      border-radius: 3px;
-      box-shadow: 0 0 2px #bbb;
-      background: #fff;
-    }
-    @media (max-width: 600px) {
-      .mode-selection {
-        flex-direction: column;
-        gap: 0.5em;
-        align-items: stretch;
-      }
-      .exam-mode-btn {
-        width: 100%;
-        justify-content: center;
-      }
-    }
-  </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>SpellRightPro (OET - Freemium)</title>
+  <link rel="icon" href="assets/logo.png">
+  <link rel="stylesheet" href="css/styles.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
 </head>
 <body>
-  <header class="header-bar">
-    <div class="logo-area">
-      <img src="assets/logo.png" class="logo-img" alt="Logo">
-      <span class="app-title">SpellRightPro</span>
-      <span class="subtitle">(OET - Freemium)</span>
+  <nav class="navbar">
+    <div class="brand">
+      <img src="assets/logo.png" alt="Logo" />
+      <h1>SpellRightPro <span style="font-weight:400;font-size:0.8em;color:#fff9;">(OET - Freemium)</span></h1>
     </div>
-    <button id="modeToggle" class="btn btn-dark mode-toggle">
-      <i id="modeIcon" class="fas fa-moon"></i>
-    </button>
-    <button id="homeBtn" class="btn btn-outline-secondary">
-      <i class="fas fa-home"></i> Home
-    </button>
-  </header>
-  <main>
-    <div class="main-card">
-      <!-- Modern Practice/Test mode radio selection -->
-      <div class="mode-selection">
-        <label class="exam-mode-btn">
-          <input type="radio" name="examMode" id="practiceModeRadio" checked>
-          <span>
-            <i class="fas fa-graduation-cap"></i> Practice Mode
-          </span>
-        </label>
-        <label class="exam-mode-btn">
-          <input type="radio" name="examMode" id="testModeRadio">
-          <span>
-            <i class="fas fa-clock"></i> Test Mode (24 words)
-          </span>
-        </label>
-      </div>
-      <div class="field-row" style="margin-bottom:0.7em;">
-        <span class="field-label">Accent:</span>
-        <select id="accentSelect" class="form-control" style="width:120px;">
-          <option value="en-US">American</option>
-          <option value="en-GB">British</option>
-          <option value="en-AU">Australian</option>
-        </select>
-        <span id="accentFlagSVG" class="flag-svg"></span>
-      </div>
-      <!-- Custom words area -->
-      <div id="customWordArea" style="margin:1em 0;">
-        <span class="field-label">Custom Words:</span>
-        <textarea id="customWordsInput" class="form-control" rows="2" placeholder="Paste or type your words..."></textarea>
-        <input type="file" id="customWordsFile" accept=".txt,.pdf,.docx,.doc" style="margin-top:0.5em;">
-        <button id="addCustomWordsBtn" class="btn btn-info" style="margin-top:0.5em;">
-          <i class="fa-solid fa-plus"></i> Add Custom Words
-        </button>
-        <div id="customWordFeedback" style="color:#dc3545; margin-top:0.5em;"></div>
-      </div>
-      <div class="button-row">
-        <button id="startOET" class="btn btn-success start-practice">
-          <i class="fas fa-play"></i> Start Session
-        </button>
-      </div>
-      <div id="trainer" class="trainer-container" style="margin-top:1.5em;"></div>
-      <div id="scoreDisplay" class="score-container"></div>
+    <div class="nav-actions">
+      <a class="btn-home" href="index.html"><i class="fas fa-home"></i> Home</a>
     </div>
-  </main>
-  <script type="module" src="js/main-freemium-oet.js"></script>
-  <script type="module" src="js/common.js"></script>
+  </nav>
+  <div class="premium-card" style="max-width: 540px; margin: 2em auto;">
+    <div style="margin-bottom:1.2em;">
+      <button id="practice-mode-btn" class="btn btn-outline-primary selected">Practice Mode</button>
+      <button id="test-mode-btn" class="btn btn-outline-primary">Test Mode</button>
+    </div>
+    <div style="margin-bottom:0.7em;">
+      <label><b>Accent:</b></label>
+      <select id="accent-select">
+        <option value="en-US">American</option>
+        <option value="en-GB">British</option>
+      </select>
+      <span id="flag-svg" style="vertical-align:middle;"></span>
+    </div>
+    <div style="margin-bottom:0.7em;">
+      <label><b>Custom Words:</b></label>
+      <input id="custom-words" placeholder="Paste or type your words..." style="width:230px;">
+      <button id="add-custom-btn" class="btn btn-info">+ Add Custom Words</button>
+      <input type="file" id="file-input" accept=".txt"/>
+    </div>
+    <button id="start-btn" class="btn btn-success">Start Session</button>
+    <div id="trainer-area"></div>
+    <div id="summary-area"></div>
+  </div>
+  <script src="js/oet_word_list.js"></script>
+  <script src="js/main-freemium-oet.js"></script>
 </body>
 </html>
