@@ -24,14 +24,15 @@ const customWordsInput = document.getElementById('customWordsInput');
 const addCustomWordsBtn = document.getElementById('addCustomWordsBtn');
 const customWordFeedback = document.getElementById('customWordFeedback');
 const customWordsFile = document.getElementById('customWordsFile');
+const practiceRadio = document.getElementById('practiceModeRadio');
+const testRadio = document.getElementById('testModeRadio');
 
-document.getElementById('practiceModeBtn').onclick = () => setMode(false);
-document.getElementById('testModeBtn').onclick = () => setMode(true);
+// --- Modern Practice/Test mode logic ---
+practiceRadio.onchange = function() { setMode(false); };
+testRadio.onchange = function() { setMode(true); };
 
 function setMode(testMode) {
   isTestMode = testMode;
-  document.getElementById('practiceModeBtn').classList.toggle('active-mode', !testMode);
-  document.getElementById('testModeBtn').classList.toggle('active-mode', testMode);
 }
 
 // Accent flag logic
@@ -83,7 +84,6 @@ customWordsFile.onchange = async function(e) {
   } else if (
     file.name.endsWith(".pdf") || file.type === "application/pdf"
   ) {
-    // PDF
     const reader = new FileReader();
     reader.onload = async function() {
       const typedarray = new Uint8Array(reader.result);
@@ -100,7 +100,6 @@ customWordsFile.onchange = async function(e) {
   } else if (
     file.name.endsWith(".docx") || file.type === "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
   ) {
-    // DOCX
     const reader = new FileReader();
     reader.onload = async function() {
       const arrayBuffer = reader.result;
