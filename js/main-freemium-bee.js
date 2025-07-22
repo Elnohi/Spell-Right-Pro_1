@@ -9,6 +9,7 @@ const sampleWords = [
   "banana", "elephant", "computer", "umbrella", "giraffe"
 ];
 
+// Utility: split by space, newline, tab, comma, semicolon
 function extractWords(str) {
   return str
     .split(/[\s,;]+/)
@@ -40,6 +41,7 @@ function updateFlagSVG() {
 accentSelect.onchange = updateFlagSVG;
 updateFlagSVG();
 
+// --- Custom words logic (only one list/day) ---
 addCustomWordsBtn.onclick = () => {
   const today = new Date().toISOString().slice(0,10);
   const lastCustom = JSON.parse(localStorage.getItem('customWordsMetaBEE') || '{}');
@@ -64,6 +66,7 @@ addCustomWordsBtn.onclick = () => {
   setTimeout(() => customWordFeedback.textContent = "", 3000);
 };
 
+// --- Custom words file upload ---
 customWordsFile.onchange = async function(e) {
   const file = e.target.files[0];
   if (!file) return;
@@ -151,72 +154,81 @@ document.getElementById('startBee').onclick = () => {
   showWord();
 };
 
+// ---- SPELLING BEE FLOW: AUTOMATIC ----
 function showWord() {
+  if (currentIndex >= words.length) {
+    endSession();
+    return;
+  }
   const word = words[currentIndex];
   trainerDiv.innerHTML = `
     <div class="word-box">
       <h3>Word ${currentIndex + 1} / ${words.length}</h3>
-      <button id="speakBtn" class="btn btn-primary"><i class="fas fa-volume-up"></i> Hear Word</button>
-      <button id="spellBtn" class="btn btn-warning"><i class="fas fa-microphone"></i> Spell (Mic)</button>
-      <button id="prevBtn" class="btn btn-outline-primary" ${currentIndex === 0 ? "disabled" : ""}>Previous</button>
-      <button id="nextBtn" class="btn btn-outline-primary" ${currentIndex === words.length-1 ? "disabled" : ""}>Next</button>
+      <div id="word-status" style="margin-bottom:0.7em;"></div>
       <button id="flagBtn" class="btn btn-flag ${flaggedWords.includes(word) ? "active" : ""}">
         <i class="${flaggedWords.includes(word) ? "fas" : "far"} fa-flag"></i> ${flaggedWords.includes(word) ? "Flagged" : "Flag Word"}
       </button>
-      <div id="feedback" style="margin-top:1em;"></div>
     </div>
   `;
-  setTimeout(() => speakWord(word), 350);
-
-  document.getElementById('speakBtn').onclick = () => speakWord(word);
-  document.getElementById('spellBtn').onclick = () => startSpeechRecognition(word);
-  document.getElementById('nextBtn').onclick = () => { if (currentIndex < words.length-1) { currentIndex++; showWord(); }};
-  document.getElementById('prevBtn').onclick = () => { if (currentIndex > 0) { currentIndex--; showWord(); }};
   document.getElementById('flagBtn').onclick = () => toggleFlag(word);
+
+  setTimeout(() => {
+    speakWord(word, () => {
+      document.getElementById('word-status').textContent = "Listening for your spelling...";
+      startSpeechRecognition(word);
+    });
+  }, 500);
 }
 
-function speakWord(word) {
-  if (!window.speechSynthesis) return;
+function speakWord(word, callback) {
+  if (!window.speechSynthesis) return callback && callback();
   const utter = new SpeechSynthesisUtterance(word);
   utter.lang = accentSelect.value || 'en-US';
+  utter.onend = function() {
+    if (callback) callback();
+  };
   window.speechSynthesis.speak(utter);
 }
 
 function startSpeechRecognition(correctWord) {
-  const feedbackDiv = document.getElementById('feedback');
-  feedbackDiv.textContent = "Listening...";
-  feedbackDiv.style.color = "#007bff";
+  const statusDiv = document.getElementById('word-status');
   let SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
   if (!SpeechRecognition) {
-    feedbackDiv.textContent = "Speech recognition not supported.";
-    feedbackDiv.style.color = "#dc3545";
+    statusDiv.textContent = "Speech recognition not supported.";
+    statusDiv.style.color = "#dc3545";
     return;
   }
   let recognition = new SpeechRecognition();
   recognition.lang = accentSelect.value || 'en-US';
+  let timeout = setTimeout(() => {
+    recognition.abort();
+    statusDiv.textContent = "No response detected. Moving to next word.";
+    statusDiv.style.color = "#dc3545";
+    setTimeout(() => { currentIndex++; showWord(); }, 1200);
+  }, 6000); // 6 seconds to respond
+
   recognition.onresult = function(event) {
+    clearTimeout(timeout);
     let spoken = event.results[0][0].transcript.trim();
     userAnswers[currentIndex] = spoken;
     if (spoken.replace(/\s+/g, '').toLowerCase() === correctWord.replace(/\s+/g, '').toLowerCase()) {
-      feedbackDiv.textContent = "Correct!";
-      feedbackDiv.style.color = "#28a745";
+      statusDiv.textContent = "Correct!";
+      statusDiv.style.color = "#28a745";
       score++;
     } else {
-      feedbackDiv.textContent = `Incorrect. You said: "${spoken}"`;
-      feedbackDiv.style.color = "#dc3545";
+      statusDiv.textContent = `Incorrect. You said: "${spoken}"`;
+      statusDiv.style.color = "#dc3545";
     }
     setTimeout(() => {
-      if (currentIndex < words.length-1) {
-        currentIndex++;
-        showWord();
-      } else {
-        endSession();
-      }
-    }, 1500);
+      currentIndex++;
+      showWord();
+    }, 1200);
   };
   recognition.onerror = function() {
-    feedbackDiv.textContent = "Could not recognize. Try again!";
-    feedbackDiv.style.color = "#dc3545";
+    clearTimeout(timeout);
+    statusDiv.textContent = "Could not recognize. Moving to next word.";
+    statusDiv.style.color = "#dc3545";
+    setTimeout(() => { currentIndex++; showWord(); }, 1200);
   };
   recognition.start();
 }
