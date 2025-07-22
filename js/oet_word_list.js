@@ -1,3 +1,4 @@
+// js/oet_word_list.js
 window.oetWords = [
   "Building sites",
   "Blotches",
