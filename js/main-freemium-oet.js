@@ -1,15 +1,29 @@
 import { oetWords } from './oet_word_list.js';
 
+// Utility: split by space, newline, tab, comma, semicolon
+function extractWords(str) {
+  return str
+    .split(/[\s,;]+/)
+    .map(w => w.trim())
+    .filter(w => w.length > 0);
+}
+
 let words = [];
 let currentIndex = 0;
 let isTestMode = false;
 let flaggedWords = JSON.parse(localStorage.getItem('flaggedWordsOET')) || [];
 let score = 0;
+let userAnswers = [];
+let useCustomWords = false;
 
 const trainerDiv = document.getElementById('trainer');
 const scoreDiv = document.getElementById('scoreDisplay');
 const accentSelect = document.getElementById('accentSelect');
 const accentFlag = document.getElementById('accentFlag');
+const customWordsInput = document.getElementById('customWordsInput');
+const addCustomWordsBtn = document.getElementById('addCustomWordsBtn');
+const customWordFeedback = document.getElementById('customWordFeedback');
+const customWordsFile = document.getElementById('customWordsFile');
 
 document.getElementById('practiceModeBtn').onclick = () => setMode(false);
 document.getElementById('testModeBtn').onclick = () => setMode(true);
@@ -20,23 +34,123 @@ function setMode(testMode) {
   document.getElementById('testModeBtn').classList.toggle('active-mode', testMode);
 }
 
+// Accent flag logic
 accentSelect.onchange = function() {
   const map = { "en-US": "us", "en-GB": "gb", "en-AU": "au" };
   accentFlag.src = `assets/flags/${map[accentSelect.value] || "us"}.png`;
 };
 
+// --- Custom words logic (only one list/day) ---
+addCustomWordsBtn.onclick = () => {
+  const today = new Date().toISOString().slice(0,10);
+  const lastCustom = JSON.parse(localStorage.getItem('customWordsMetaOET') || '{}');
+  if (lastCustom.date === today) {
+    customWordFeedback.textContent = "You can only use one custom word list per day. Try again tomorrow!";
+    customWordFeedback.style.color = "#dc3545";
+    return;
+  }
+  const inputText = customWordsInput.value;
+  const inputWords = extractWords(inputText);
+  if (inputWords.length === 0) {
+    customWordFeedback.textContent = "Please enter at least one custom word.";
+    customWordFeedback.style.color = "#dc3545";
+    return;
+  }
+  words = [...inputWords];
+  useCustomWords = true;
+  localStorage.setItem('customWordsMetaOET', JSON.stringify({ date: today }));
+  customWordsInput.value = "";
+  customWordFeedback.style.color = "#28a745";
+  customWordFeedback.textContent = "Custom word list saved for today. Start your session!";
+  setTimeout(() => customWordFeedback.textContent = "", 3000);
+};
+
+// --- Custom words file upload ---
+customWordsFile.onchange = async function(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const today = new Date().toISOString().slice(0,10);
+  const lastCustom = JSON.parse(localStorage.getItem('customWordsMetaOET') || '{}');
+  if (lastCustom.date === today) {
+    customWordFeedback.textContent = "You can only use one custom word list per day. Try again tomorrow!";
+    customWordFeedback.style.color = "#dc3545";
+    return;
+  }
+  let text = "";
+  if (file.type === "text/plain") {
+    text = await file.text();
+    processCustomWords(text);
+  } else if (
+    file.name.endsWith(".pdf") || file.type === "application/pdf"
+  ) {
+    // PDF
+    const reader = new FileReader();
+    reader.onload = async function() {
+      const typedarray = new Uint8Array(reader.result);
+      const pdf = await pdfjsLib.getDocument({data: typedarray}).promise;
+      let fullText = "";
+      for (let i = 1; i <= pdf.numPages; i++) {
+        const page = await pdf.getPage(i);
+        const txt = await page.getTextContent();
+        fullText += txt.items.map(item => item.str).join(" ") + " ";
+      }
+      processCustomWords(fullText);
+    };
+    reader.readAsArrayBuffer(file);
+  } else if (
+    file.name.endsWith(".docx") || file.type === "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+  ) {
+    // DOCX
+    const reader = new FileReader();
+    reader.onload = async function() {
+      const arrayBuffer = reader.result;
+      const result = await mammoth.extractRawText({arrayBuffer});
+      processCustomWords(result.value);
+    };
+    reader.readAsArrayBuffer(file);
+  } else {
+    customWordFeedback.textContent = "Unsupported file type!";
+    customWordFeedback.style.color = "#dc3545";
+    return;
+  }
+};
+
+function processCustomWords(text) {
+  const today = new Date().toISOString().slice(0,10);
+  const wordsExtracted = extractWords(text);
+  if (wordsExtracted.length === 0) {
+    customWordFeedback.textContent = "No valid words found in the file.";
+    customWordFeedback.style.color = "#dc3545";
+    return;
+  }
+  words = [...wordsExtracted];
+  useCustomWords = true;
+  localStorage.setItem('customWordsMetaOET', JSON.stringify({ date: today }));
+  customWordFeedback.style.color = "#28a745";
+  customWordFeedback.textContent = "Custom word list saved from file for today. Start your session!";
+  setTimeout(() => customWordFeedback.textContent = "", 3000);
+}
+
+// --- Start session ---
 document.getElementById('startOET').onclick = () => {
-  words = isTestMode ? getRandomWords(oetWords, 24) : [...oetWords];
+  const today = new Date().toISOString().slice(0,10);
+  if (useCustomWords) {
+    // already set by input/file and one per day
+  } else {
+    words = isTestMode ? getRandomWords(oetWords, 24) : [...oetWords];
+  }
   if (!words.length) {
-    alert("No OET words found!");
+    alert("No words found!");
     return;
   }
   currentIndex = 0;
   score = 0;
+  userAnswers = [];
   scoreDiv.innerHTML = '';
   showWord();
 };
 
+// --- Trainer logic ---
 function showWord() {
   const word = words[currentIndex];
   trainerDiv.innerHTML = `
@@ -52,9 +166,7 @@ function showWord() {
       <div id="feedback" style="margin-top:1em;"></div>
     </div>
   `;
-  // Speak the word immediately
   setTimeout(() => speakWord(word), 350);
-  // Focus input when ready
   setTimeout(() => {
     const input = document.getElementById('userInput');
     if (input) input.focus();
@@ -67,6 +179,7 @@ function showWord() {
   document.getElementById('flagBtn').onclick = () => toggleFlag(word);
 }
 
+// --- Speech synthesis ---
 function speakWord(word) {
   if (!window.speechSynthesis) return;
   const utter = new SpeechSynthesisUtterance(word);
@@ -74,10 +187,12 @@ function speakWord(word) {
   window.speechSynthesis.speak(utter);
 }
 
+// --- Check logic & feedback ---
 function checkWord(word) {
   const inputElem = document.getElementById('userInput');
   if (!inputElem) return;
   const input = inputElem.value.trim();
+  userAnswers[currentIndex] = input;
   const feedbackDiv = document.getElementById('feedback');
   if (!input) {
     feedbackDiv.textContent = "Please enter your answer!";
@@ -93,7 +208,6 @@ function checkWord(word) {
     feedbackDiv.textContent = `Incorrect. The word was: ${word}`;
     feedbackDiv.style.color = "#dc3545";
   }
-  // After feedback, auto-advance after 1.2s
   setTimeout(() => {
     if (currentIndex < words.length-1) {
       currentIndex++;
@@ -104,6 +218,7 @@ function checkWord(word) {
   }, 1200);
 }
 
+// --- Flag logic ---
 function toggleFlag(word) {
   const idx = flaggedWords.indexOf(word);
   if (idx === -1) flaggedWords.push(word);
@@ -112,20 +227,35 @@ function toggleFlag(word) {
   showWord();
 }
 
+// --- End session & flagged words practice ---
 function endSession() {
   trainerDiv.innerHTML = "";
+  const percent = Math.round((score / words.length) * 100);
+  let wrongWords = [];
+  words.forEach((word, idx) => {
+    if (userAnswers[idx] !== undefined && userAnswers[idx].toLowerCase() !== word.toLowerCase()) {
+      wrongWords.push(word);
+    }
+  });
+  let wrongList = "";
+  if (wrongWords.length > 0) {
+    wrongList = `<div style="margin-top:1em;"><b>Wrong Words:</b><ul style="margin:0 0 0 1.5em;">${wrongWords.map(w => `<li>${w}</li>`).join('')}</ul></div>`;
+  }
   scoreDiv.innerHTML = `<h3>Session Complete!</h3>
-    <p>Your score: ${score}/${words.length}</p>
-    ${flaggedWords.length ? `<button id="practiceFlaggedBtn" class="btn btn-info">Practice Flagged Words (${flaggedWords.length})</button>` : ""}
+    <p>Your score: <b>${score}</b> / ${words.length} (<b>${percent}%</b>)</p>
+    ${wrongList}
+    ${flaggedWords.length ? `<button id="practiceFlaggedBtn" class="btn btn-info" style="margin-top:1em;">Practice Flagged Words (${flaggedWords.length})</button>` : ""}
   `;
   if (flaggedWords.length) {
     document.getElementById('practiceFlaggedBtn').onclick = () => {
       words = [...flaggedWords];
       currentIndex = 0; score = 0;
+      userAnswers = [];
       showWord();
       scoreDiv.innerHTML = '';
     };
   }
+  useCustomWords = false;
 }
 
 function getRandomWords(list, count) {
