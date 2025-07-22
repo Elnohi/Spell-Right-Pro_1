@@ -9,7 +9,6 @@ const sampleWords = [
   "banana", "elephant", "computer", "umbrella", "giraffe"
 ];
 
-// Utility: split by space, newline, tab, comma, semicolon
 function extractWords(str) {
   return str
     .split(/[\s,;]+/)
@@ -154,7 +153,7 @@ document.getElementById('startBee').onclick = () => {
   showWord();
 };
 
-// ---- SPELLING BEE FLOW: AUTOMATIC ----
+// ---- SPELLING BEE FLOW: AUTO, LETTER-BY-LETTER ----
 function showWord() {
   if (currentIndex >= words.length) {
     endSession();
@@ -174,8 +173,9 @@ function showWord() {
 
   setTimeout(() => {
     speakWord(word, () => {
-      document.getElementById('word-status').textContent = "Listening for your spelling...";
-      startSpeechRecognition(word);
+      document.getElementById('word-status').textContent =
+        "Spell the word, letter by letter (e.g. B A N A N A)...";
+      startLetterByLetterRecognition(word);
     });
   }, 500);
 }
@@ -190,7 +190,8 @@ function speakWord(word, callback) {
   window.speechSynthesis.speak(utter);
 }
 
-function startSpeechRecognition(correctWord) {
+// Letter-by-letter recognition
+function startLetterByLetterRecognition(correctWord) {
   const statusDiv = document.getElementById('word-status');
   let SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
   if (!SpeechRecognition) {
@@ -200,36 +201,44 @@ function startSpeechRecognition(correctWord) {
   }
   let recognition = new SpeechRecognition();
   recognition.lang = accentSelect.value || 'en-US';
+  recognition.interimResults = false;
+  recognition.maxAlternatives = 1;
+
   let timeout = setTimeout(() => {
     recognition.abort();
     statusDiv.textContent = "No response detected. Moving to next word.";
     statusDiv.style.color = "#dc3545";
     setTimeout(() => { currentIndex++; showWord(); }, 1200);
-  }, 6000); // 6 seconds to respond
+  }, 9000); // 9 seconds for spelling
 
   recognition.onresult = function(event) {
     clearTimeout(timeout);
-    let spoken = event.results[0][0].transcript.trim();
+    // Clean up: uppercase, remove spaces and non-letters (so B A N A N A -> BANANA)
+    let spokenRaw = event.results[0][0].transcript.trim();
+    let spoken = spokenRaw.toUpperCase().replace(/[^A-Z]/g, '');
+    let correct = correctWord.toUpperCase().replace(/[^A-Z]/g, '');
     userAnswers[currentIndex] = spoken;
-    if (spoken.replace(/\s+/g, '').toLowerCase() === correctWord.replace(/\s+/g, '').toLowerCase()) {
+    if (spoken === correct) {
       statusDiv.textContent = "Correct!";
       statusDiv.style.color = "#28a745";
       score++;
     } else {
-      statusDiv.textContent = `Incorrect. You said: "${spoken}"`;
+      statusDiv.textContent = `Incorrect. You spelled: "${spokenRaw}"`;
       statusDiv.style.color = "#dc3545";
     }
     setTimeout(() => {
       currentIndex++;
       showWord();
-    }, 1200);
+    }, 1500);
   };
+
   recognition.onerror = function() {
     clearTimeout(timeout);
     statusDiv.textContent = "Could not recognize. Moving to next word.";
     statusDiv.style.color = "#dc3545";
     setTimeout(() => { currentIndex++; showWord(); }, 1200);
   };
+
   recognition.start();
 }
 
