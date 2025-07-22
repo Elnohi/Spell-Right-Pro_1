@@ -1,4 +1,4 @@
-export const oetWords = [
+window.oetWords = [
   "Building sites",
   "Blotches",
   "Scalp",
