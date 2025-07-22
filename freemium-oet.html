@@ -6,6 +6,9 @@
   <title>SpellRightPro - OET (Freemium)</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
   <link rel="stylesheet" href="css/styles.css">
+  <!-- PDF.js and Mammoth.js for file parsing -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.10.377/pdf.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.4.2/mammoth.browser.min.js"></script>
 </head>
 <body>
   <header class="header-bar">
@@ -41,6 +44,16 @@
         <div class="flag-container" style="display:inline-block;margin-left:0.6em;vertical-align:middle;">
           <img id="accentFlag" src="assets/flags/us.png" alt="Flag" width="30" style="vertical-align:middle;">
         </div>
+      </div>
+      <!-- Custom words area -->
+      <div id="customWordArea" style="margin:1em 0;">
+        <span class="field-label">Custom Words:</span>
+        <textarea id="customWordsInput" class="form-control" rows="2" placeholder="Paste or type your words..."></textarea>
+        <input type="file" id="customWordsFile" accept=".txt,.pdf,.docx,.doc" style="margin-top:0.5em;">
+        <button id="addCustomWordsBtn" class="btn btn-info" style="margin-top:0.5em;">
+          <i class="fa-solid fa-plus"></i> Add Custom Words
+        </button>
+        <div id="customWordFeedback" style="color:#dc3545; margin-top:0.5em;"></div>
       </div>
       <div class="button-row">
         <button id="startOET" class="btn btn-success start-practice">
