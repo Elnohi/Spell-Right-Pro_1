@@ -1,21 +1,32 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
+  <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Spelling Bee | SpellRightPro</title>
+  <title>SpellRightPro - Spelling Bee (Freemium)</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
   <link rel="stylesheet" href="css/styles.css">
-  <link rel="manifest" href="/manifest.json">
-  <meta name="theme-color" content="#ffc107">
-  <link rel="icon" href="assets/favicon.ico">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.10.377/pdf.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.4.2/mammoth.browser.min.js"></script>
+  <style>
+    .flag-svg {
+      width: 28px;
+      height: 20px;
+      display: inline-block;
+      vertical-align: middle;
+      margin-left: 0.5em;
+      border-radius: 3px;
+      box-shadow: 0 0 2px #bbb;
+      background: #fff;
+    }
+  </style>
 </head>
 <body>
   <header class="header-bar">
     <div class="logo-area">
       <img src="assets/logo.png" class="logo-img" alt="Logo">
       <span class="app-title">SpellRightPro</span>
-      <span class="subtitle">(Spelling Bee - Freemium)</span>
+      <span class="subtitle">(Bee - Freemium)</span>
     </div>
     <button id="modeToggle" class="btn btn-dark mode-toggle">
       <i id="modeIcon" class="fas fa-moon"></i>
@@ -26,34 +37,34 @@
   </header>
   <main>
     <div class="main-card">
-      <div class="field-row">
+      <div class="field-row" style="margin-bottom:0.7em;">
         <span class="field-label">Accent:</span>
         <select id="accentSelect" class="form-control" style="width:120px;">
           <option value="en-US">American</option>
           <option value="en-GB">British</option>
           <option value="en-AU">Australian</option>
         </select>
-        <div class="flag-container" style="display:inline-block;margin-left:0.6em;vertical-align:middle;">
-          <img id="accentFlag" src="assets/flags/us.png" alt="Flag" width="30" style="vertical-align:middle;">
-        </div>
+        <span id="accentFlagSVG" class="flag-svg"></span>
       </div>
-      <div id="customInputArea" class="field-row">
+      <div id="customWordArea" style="margin:1em 0;">
         <span class="field-label">Custom Words:</span>
-        <textarea id="wordInput" class="form-control" rows="2" placeholder="Enter one word per line..."></textarea>
-        <button id="addCustomBtn" class="btn btn-info" style="margin-left:1em;">
-          <i class="fa-solid fa-plus"></i> Add Words
+        <textarea id="customWordsInput" class="form-control" rows="2" placeholder="Paste or type your words..."></textarea>
+        <input type="file" id="customWordsFile" accept=".txt,.pdf,.docx,.doc" style="margin-top:0.5em;">
+        <button id="addCustomWordsBtn" class="btn btn-info" style="margin-top:0.5em;">
+          <i class="fa-solid fa-plus"></i> Add Custom Words
         </button>
-        <button id="useSampleBtn" class="btn btn-secondary" style="margin-left:1em;">
-          <i class="fas fa-lightbulb"></i> Use Sample Words
+        <button id="useSampleWordsBtn" class="btn btn-secondary" style="margin-top:0.5em;">
+          <i class="fa-solid fa-lightbulb"></i> Use Sample Words
         </button>
+        <div id="customWordFeedback" style="color:#dc3545; margin-top:0.5em;"></div>
       </div>
-      <div class="button-row" style="margin-top:1em;">
-        <button id="startBee" class="btn btn-success start-test">
+      <div class="button-row">
+        <button id="startBee" class="btn btn-success">
           <i class="fas fa-play"></i> Start Spelling Bee
         </button>
       </div>
-      <div id="trainer" class="trainer-container" style="margin-top:1.5em;"></div>
-      <div id="scoreDisplay" class="score-container"></div>
+      <div id="trainer" style="margin-top:1.5em;"></div>
+      <div id="scoreDisplay"></div>
     </div>
   </main>
   <script type="module" src="js/main-freemium-bee.js"></script>
