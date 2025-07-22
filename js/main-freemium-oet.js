@@ -11,23 +11,20 @@ const scoreDiv = document.getElementById('scoreDisplay');
 const accentSelect = document.getElementById('accentSelect');
 const accentFlag = document.getElementById('accentFlag');
 
-// --- Mode selection handlers ---
 document.getElementById('practiceModeBtn').onclick = () => setMode(false);
 document.getElementById('testModeBtn').onclick = () => setMode(true);
 
 function setMode(testMode) {
   isTestMode = testMode;
-  document.getElementById('practiceModeBtn').classList.toggle('active-mode', !testMode);
-  document.getElementById('testModeBtn').classList.toggle('active-mode', testMode);
+  document.getElementById('practiceModeBtn').style.fontWeight = !testMode ? 'bold' : '';
+  document.getElementById('testModeBtn').style.fontWeight = testMode ? 'bold' : '';
 }
 
-// --- Accent/flag logic ---
 accentSelect.onchange = function() {
   const map = { "en-US": "us", "en-GB": "gb", "en-AU": "au" };
   accentFlag.src = `assets/flags/${map[accentSelect.value] || "us"}.png`;
 };
 
-// --- Start session ---
 document.getElementById('startOET').onclick = () => {
   words = isTestMode ? getRandomWords(oetWords, 24) : [...oetWords];
   if (!words.length) {
@@ -40,22 +37,19 @@ document.getElementById('startOET').onclick = () => {
   showWord();
 };
 
-// --- Trainer logic ---
 function showWord() {
   const word = words[currentIndex];
   trainerDiv.innerHTML = `
-    <div class="word-box">
-      <h3>Word ${currentIndex + 1} / ${words.length}</h3>
-      <button id="speakBtn" class="btn btn-primary"><i class="fas fa-volume-up"></i> Speak</button>
-      <input type="text" id="userInput" class="form-control" placeholder="Type what you heard..." autofocus>
-      <button id="checkBtn" class="btn btn-success">Check</button>
-      <button id="prevBtn" class="btn btn-outline-primary" ${currentIndex === 0 ? "disabled" : ""}>Previous</button>
-      <button id="nextBtn" class="btn btn-outline-primary" ${currentIndex === words.length-1 ? "disabled" : ""}>Next</button>
-      <button id="flagBtn" class="btn btn-flag ${flaggedWords.includes(word) ? "active" : ""}">
-        <i class="${flaggedWords.includes(word) ? "fas" : "far"} fa-flag"></i> ${flaggedWords.includes(word) ? "Flagged" : "Flag Word"}
-      </button>
-      <div id="feedback" style="margin-top:1em;"></div>
-    </div>
+    <h3>Word ${currentIndex + 1} / ${words.length}</h3>
+    <button id="speakBtn">🔊 Speak</button>
+    <input type="text" id="userInput" placeholder="Type what you heard..." autofocus>
+    <button id="checkBtn">Check</button>
+    <button id="prevBtn" ${currentIndex === 0 ? "disabled" : ""}>Previous</button>
+    <button id="nextBtn" ${currentIndex === words.length-1 ? "disabled" : ""}>Next</button>
+    <button id="flagBtn" style="color:${flaggedWords.includes(word) ? "orange" : "gray"};">
+      ${flaggedWords.includes(word) ? "🚩Flagged" : "Flag Word"}
+    </button>
+    <div id="feedback" style="margin-top:1em;"></div>
   `;
   document.getElementById('speakBtn').onclick = () => speakWord(word);
   document.getElementById('checkBtn').onclick = () => checkWord(word);
@@ -65,7 +59,6 @@ function showWord() {
   document.getElementById('flagBtn').onclick = () => toggleFlag(word);
 }
 
-// --- Speech synthesis ---
 function speakWord(word) {
   if (!window.speechSynthesis) return;
   const utter = new SpeechSynthesisUtterance(word);
@@ -73,22 +66,21 @@ function speakWord(word) {
   window.speechSynthesis.speak(utter);
 }
 
-// --- Check logic & feedback ---
 function checkWord(word) {
   const input = document.getElementById('userInput').value.trim();
   const feedbackDiv = document.getElementById('feedback');
   if (!input) {
     feedbackDiv.textContent = "Please enter your answer!";
-    feedbackDiv.style.color = "#dc3545";
+    feedbackDiv.style.color = "red";
     return;
   }
   if (input.toLowerCase() === word.toLowerCase()) {
     feedbackDiv.textContent = "Correct!";
-    feedbackDiv.style.color = "#28a745";
+    feedbackDiv.style.color = "green";
     score++;
   } else {
     feedbackDiv.textContent = `Incorrect. The word was: ${word}`;
-    feedbackDiv.style.color = "#dc3545";
+    feedbackDiv.style.color = "red";
   }
   setTimeout(() => {
     if (currentIndex < words.length-1) {
@@ -100,7 +92,6 @@ function checkWord(word) {
   }, 1100);
 }
 
-// --- Flag logic ---
 function toggleFlag(word) {
   const idx = flaggedWords.indexOf(word);
   if (idx === -1) flaggedWords.push(word);
@@ -109,12 +100,11 @@ function toggleFlag(word) {
   showWord();
 }
 
-// --- End session & flagged words practice ---
 function endSession() {
   trainerDiv.innerHTML = "";
   scoreDiv.innerHTML = `<h3>Session Complete!</h3>
     <p>Your score: ${score}/${words.length}</p>
-    ${flaggedWords.length ? `<button id="practiceFlaggedBtn" class="btn btn-info">Practice Flagged Words (${flaggedWords.length})</button>` : ""}
+    ${flaggedWords.length ? `<button id="practiceFlaggedBtn">Practice Flagged Words (${flaggedWords.length})</button>` : ""}
   `;
   if (flaggedWords.length) {
     document.getElementById('practiceFlaggedBtn').onclick = () => {
@@ -126,7 +116,6 @@ function endSession() {
   }
 }
 
-// --- Helper: random words for test mode ---
 function getRandomWords(list, count) {
   return [...list].sort(() => Math.random() - 0.5).slice(0, count);
 }
