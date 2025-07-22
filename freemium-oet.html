@@ -9,6 +9,59 @@
   <!-- PDF.js and Mammoth.js for file parsing -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.10.377/pdf.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.4.2/mammoth.browser.min.js"></script>
+  <style>
+    /* Practice/Test mode radio button styling */
+    .mode-selection {
+      margin-bottom: 1em;
+      display: flex;
+      gap: 1em;
+      justify-content: center;
+    }
+    .exam-mode-btn {
+      display: flex;
+      align-items: center;
+      cursor: pointer;
+      border: 2px solid #ddd;
+      border-radius: 1.5em;
+      padding: 0.6em 1.4em;
+      background: #f7f7fa;
+      font-size: 1.05em;
+      transition: box-shadow 0.15s, border 0.15s, background 0.2s;
+      user-select: none;
+    }
+    .exam-mode-btn input[type="radio"] {
+      display: none;
+    }
+    .exam-mode-btn input[type="radio"]:checked + span {
+      color: #fff;
+      background: #007bff;
+      border-radius: 1em;
+      padding: 0.2em 1em;
+    }
+    .exam-mode-btn input[type="radio"]:checked ~ span,
+    .exam-mode-btn:has(input[type="radio"]:checked) {
+      border-color: #007bff;
+      box-shadow: 0 0 0 2px #a6d4fa77;
+      background: #eaf6ff;
+    }
+    .exam-mode-btn span {
+      display: flex;
+      align-items: center;
+      gap: 0.5em;
+      font-weight: 500;
+    }
+    @media (max-width: 600px) {
+      .mode-selection {
+        flex-direction: column;
+        gap: 0.5em;
+        align-items: stretch;
+      }
+      .exam-mode-btn {
+        width: 100%;
+        justify-content: center;
+      }
+    }
+  </style>
 </head>
 <body>
   <header class="header-bar">
@@ -26,13 +79,20 @@
   </header>
   <main>
     <div class="main-card">
-      <div class="mode-selection" style="margin-bottom:1em;">
-        <button id="practiceModeBtn" class="btn btn-primary active-mode">
-          <i class="fas fa-graduation-cap"></i> Practice Mode
-        </button>
-        <button id="testModeBtn" class="btn btn-outline-primary">
-          <i class="fas fa-clock"></i> Test Mode (24 words)
-        </button>
+      <!-- Modern Practice/Test mode radio selection -->
+      <div class="mode-selection">
+        <label class="exam-mode-btn">
+          <input type="radio" name="examMode" id="practiceModeRadio" checked>
+          <span>
+            <i class="fas fa-graduation-cap"></i> Practice Mode
+          </span>
+        </label>
+        <label class="exam-mode-btn">
+          <input type="radio" name="examMode" id="testModeRadio">
+          <span>
+            <i class="fas fa-clock"></i> Test Mode (24 words)
+          </span>
+        </label>
       </div>
       <div class="field-row">
         <span class="field-label">Accent:</span>
