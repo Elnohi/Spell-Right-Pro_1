@@ -10,7 +10,6 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.10.377/pdf.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.4.2/mammoth.browser.min.js"></script>
   <style>
-    /* Practice/Test mode radio button styling */
     .mode-selection {
       margin-bottom: 1em;
       display: flex;
@@ -21,34 +20,41 @@
       display: flex;
       align-items: center;
       cursor: pointer;
-      border: 2px solid #ddd;
+      border: 2px solid #b6d6fc;
       border-radius: 1.5em;
       padding: 0.6em 1.4em;
-      background: #f7f7fa;
-      font-size: 1.05em;
-      transition: box-shadow 0.15s, border 0.15s, background 0.2s;
+      background: #f7fafd;
+      font-size: 1.09em;
+      font-weight: 500;
+      color: #1b2330;
+      transition: box-shadow 0.15s, border 0.15s, background 0.2s, color 0.18s;
       user-select: none;
     }
     .exam-mode-btn input[type="radio"] {
       display: none;
     }
     .exam-mode-btn input[type="radio"]:checked + span {
-      color: #fff;
-      background: #007bff;
+      color: #fff !important;
+      background: #0076ff;
       border-radius: 1em;
-      padding: 0.2em 1em;
-    }
-    .exam-mode-btn input[type="radio"]:checked ~ span,
-    .exam-mode-btn:has(input[type="radio"]:checked) {
-      border-color: #007bff;
-      box-shadow: 0 0 0 2px #a6d4fa77;
-      background: #eaf6ff;
+      padding: 0.18em 1.2em;
+      font-weight: 700;
+      box-shadow: 0 0 0 2px #67b6ff88;
     }
     .exam-mode-btn span {
       display: flex;
       align-items: center;
       gap: 0.5em;
-      font-weight: 500;
+    }
+    .flag-svg {
+      width: 28px;
+      height: 20px;
+      display: inline-block;
+      vertical-align: middle;
+      margin-left: 0.5em;
+      border-radius: 3px;
+      box-shadow: 0 0 2px #bbb;
+      background: #fff;
     }
     @media (max-width: 600px) {
       .mode-selection {
@@ -94,16 +100,14 @@
           </span>
         </label>
       </div>
-      <div class="field-row">
+      <div class="field-row" style="margin-bottom:0.7em;">
         <span class="field-label">Accent:</span>
         <select id="accentSelect" class="form-control" style="width:120px;">
           <option value="en-US">American</option>
           <option value="en-GB">British</option>
           <option value="en-AU">Australian</option>
         </select>
-        <div class="flag-container" style="display:inline-block;margin-left:0.6em;vertical-align:middle;">
-          <img id="accentFlag" src="assets/flags/us.png" alt="Flag" width="30" style="vertical-align:middle;">
-        </div>
+        <span id="accentFlagSVG" class="flag-svg"></span>
       </div>
       <!-- Custom words area -->
       <div id="customWordArea" style="margin:1em 0;">
