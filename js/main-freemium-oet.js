@@ -1,23 +1,28 @@
-// DOM Elements
-const accentPicker = document.querySelector('.accent-picker');
-const practiceBtn = document.getElementById('practice-mode-btn');
-const testBtn = document.getElementById('test-mode-btn');
-const customInput = document.getElementById('custom-words');
-const fileInput = document.getElementById('file-input');
-const addCustomBtn = document.getElementById('add-custom-btn');
-const startBtn = document.getElementById('start-btn');
-const trainerArea = document.getElementById('trainer-area');
-const summaryArea = document.getElementById('summary-area');
+// DOM Elements and State Variables
+const elements = {
+  practiceBtn: document.getElementById('practice-mode-btn'),
+  testBtn: document.getElementById('test-mode-btn'),
+  customInput: document.getElementById('custom-words'),
+  fileInput: document.getElementById('file-input'),
+  addCustomBtn: document.getElementById('add-custom-btn'),
+  startBtn: document.getElementById('start-btn'),
+  trainerArea: document.getElementById('trainer-area'),
+  summaryArea: document.getElementById('summary-area'),
+  accentPicker: document.querySelector('.accent-picker')
+};
 
-// State Variables
-let words = [];
-let currentIndex = 0;
-let score = 0;
-let sessionMode = "practice";
-let flaggedWords = JSON.parse(localStorage.getItem('flaggedWords')) || [];
-let userAnswers = [];
-let usedCustomListToday = false;
-let accent = "en-US";
+let state = {
+  words: [],
+  currentIndex: 0,
+  score: 0,
+  sessionMode: "practice",
+  flaggedWords: JSON.parse(localStorage.getItem('flaggedWords')) || [],
+  userAnswers: [],
+  usedCustomListToday: false,
+  accent: "en-US",
+  isAutoPlaying: false,
+  autoPlayTimeout: null
+};
 
 // Initialize
 document.addEventListener('DOMContentLoaded', () => {
@@ -28,62 +33,62 @@ document.addEventListener('DOMContentLoaded', () => {
 // Event Listeners
 function setupEventListeners() {
   // Mode Selection
-  practiceBtn.addEventListener('click', () => {
-    sessionMode = "practice";
-    practiceBtn.classList.add('active');
-    testBtn.classList.remove('active');
+  elements.practiceBtn.addEventListener('click', () => {
+    state.sessionMode = "practice";
+    elements.practiceBtn.classList.add('active');
+    elements.testBtn.classList.remove('active');
   });
 
-  testBtn.addEventListener('click', () => {
-    sessionMode = "test";
-    testBtn.classList.add('active');
-    practiceBtn.classList.remove('active');
+  elements.testBtn.addEventListener('click', () => {
+    state.sessionMode = "test";
+    elements.testBtn.classList.add('active');
+    elements.practiceBtn.classList.remove('active');
   });
 
   // Accent Selection
-  accentPicker.addEventListener('click', (e) => {
+  elements.accentPicker.addEventListener('click', (e) => {
     if (e.target.tagName === 'BUTTON') {
-      accentPicker.querySelectorAll('button').forEach(btn => btn.classList.remove('active'));
+      elements.accentPicker.querySelectorAll('button').forEach(btn => btn.classList.remove('active'));
       e.target.classList.add('active');
-      accent = e.target.dataset.accent;
+      state.accent = e.target.dataset.accent;
     }
   });
 
   // Custom Words
-  addCustomBtn.addEventListener('click', addCustomWords);
-  fileInput.addEventListener('change', handleFileUpload);
-  startBtn.addEventListener('click', startSession);
+  elements.addCustomBtn.addEventListener('click', addCustomWords);
+  elements.fileInput.addEventListener('change', handleFileUpload);
+  elements.startBtn.addEventListener('click', startSession);
 }
 
 // Core Functions
-function addCustomWords() {
-  if (usedCustomListToday) {
+async function addCustomWords() {
+  if (state.usedCustomListToday) {
     showAlert("You can only use one custom list per day in the freemium version.");
     return;
   }
 
-  const input = customInput.value.trim();
+  const input = elements.customInput.value.trim();
   if (!input) {
     showAlert("Please enter or paste words first!");
     return;
   }
 
-  words = [...new Set(input.split(/[\s,;]+/))]
+  state.words = [...new Set(input.split(/[\s,;]+/))]
     .map(w => w.trim())
     .filter(w => w);
 
-  if (words.length === 0) {
+  if (state.words.length === 0) {
     showAlert("No valid words found. Please check your input.");
     return;
   }
 
-  usedCustomListToday = true;
+  state.usedCustomListToday = true;
   saveSessionState();
-  showAlert(`Added ${words.length} words!`, 'success');
+  showAlert(`Added ${state.words.length} words!`, 'success');
 }
 
 async function handleFileUpload(e) {
-  if (usedCustomListToday) {
+  if (state.usedCustomListToday) {
     showAlert("You can only use one custom list per day in the freemium version.");
     return;
   }
@@ -91,77 +96,85 @@ async function handleFileUpload(e) {
   const file = e.target.files[0];
   if (!file) return;
 
-  // Validate file
-  if (file.size > 1_000_000) {
-    showAlert("File too large. Max 1MB allowed.");
-    return;
-  }
-
-  if (file.type !== "text/plain" && !file.name.endsWith('.txt')) {
-    showAlert("Only .txt files are supported.");
-    return;
-  }
-
   try {
-    const text = await file.text();
-    words = [...new Set(text.split(/[\s,;]+/))]
+    let text = "";
+    
+    // Handle different file types
+    if (file.type === "text/plain" || file.name.endsWith('.txt')) {
+      text = await file.text();
+    } else if (file.type === "application/pdf" || file.name.endsWith('.pdf')) {
+      // PDF.js would be needed here for full PDF support
+      showAlert("PDF content extraction requires premium version.", 'info');
+      return;
+    } else {
+      // Try to read as text anyway (works for .docx, .rtf, etc. to some extent)
+      text = await file.text();
+    }
+
+    state.words = [...new Set(text.split(/[\s,;]+/))]
       .map(w => w.trim())
       .filter(w => w);
 
-    if (words.length === 0) {
+    if (state.words.length === 0) {
       showAlert("No valid words found in the file.");
       return;
     }
 
-    usedCustomListToday = true;
+    state.usedCustomListToday = true;
     saveSessionState();
-    showAlert(`Loaded ${words.length} words from file!`, 'success');
+    showAlert(`Loaded ${state.words.length} words from file!`, 'success');
   } catch (error) {
-    showAlert("Error reading file. Please try again.");
+    showAlert("Error reading file. Please try a text file.", 'error');
     console.error(error);
   }
 }
 
 function startSession() {
-  if (!usedCustomListToday) {
+  if (!state.usedCustomListToday) {
     // Use default OET words if no custom list
-    words = window.oetWords.slice();
+    state.words = window.oetWords.slice();
   }
 
-  if (words.length === 0) {
+  if (state.words.length === 0) {
     showAlert("No words available. Please add words first.");
     return;
   }
 
-  // Reset session
-  currentIndex = 0;
-  score = 0;
-  userAnswers = [];
-  
+  // For test mode, select 24 random words
+  if (state.sessionMode === "test") {
+    state.words = getRandomWords(state.words, 24);
+  }
+
+  // Reset session state
+  state.currentIndex = 0;
+  state.score = 0;
+  state.userAnswers = [];
+  state.isAutoPlaying = true;
+
   // UI Updates
-  trainerArea.classList.remove('hidden');
-  summaryArea.classList.add('hidden');
-  startBtn.disabled = true;
-  
+  elements.trainerArea.classList.remove('hidden');
+  elements.summaryArea.classList.add('hidden');
+  elements.startBtn.disabled = true;
+
   showCurrentWord();
+  startAutoPlay();
+}
+
+function getRandomWords(wordList, count) {
+  const shuffled = [...wordList].sort(() => 0.5 - Math.random());
+  return shuffled.slice(0, Math.min(count, wordList.length));
 }
 
 function showCurrentWord() {
-  if (currentIndex >= words.length) {
+  if (state.currentIndex >= state.words.length) {
     endSession();
     return;
   }
 
-  const word = words[currentIndex];
-  trainerArea.innerHTML = `
-    <div class="word-progress">Word ${currentIndex + 1} of ${words.length}</div>
+  const word = state.words[state.currentIndex];
+  elements.trainerArea.innerHTML = `
+    <div class="word-progress">Word ${state.currentIndex + 1} of ${state.words.length}</div>
     <div class="word-display">${word}</div>
-    
-    <div class="button-group">
-      <button id="speak-btn" class="btn-primary">
-        <i class="fas fa-volume-up"></i> Speak
-      </button>
-    </div>
     
     <div class="input-group">
       <input type="text" id="user-input" class="form-control" 
@@ -172,10 +185,10 @@ function showCurrentWord() {
       <button id="check-btn" class="btn-primary">
         <i class="fas fa-check"></i> Check
       </button>
-      <button id="next-btn" class="btn-secondary">
-        <i class="fas fa-arrow-right"></i> Next
+      <button id="speak-btn" class="btn-secondary">
+        <i class="fas fa-volume-up"></i> Repeat
       </button>
-      <button id="flag-btn" class="btn-icon ${flaggedWords.includes(word) ? 'active' : ''}">
+      <button id="flag-btn" class="btn-icon ${state.flaggedWords.includes(word) ? 'active' : ''}">
         <i class="fas fa-star"></i>
       </button>
     </div>
@@ -183,14 +196,35 @@ function showCurrentWord() {
     <div id="feedback" class="feedback"></div>
   `;
 
-  // Set up event listeners for dynamic elements
-  document.getElementById('speak-btn').addEventListener('click', () => speakWord(word));
+  // Set up event listeners
   document.getElementById('check-btn').addEventListener('click', () => checkAnswer(word));
-  document.getElementById('next-btn').addEventListener('click', nextWord);
+  document.getElementById('speak-btn').addEventListener('click', () => speakWord(word));
   document.getElementById('flag-btn').addEventListener('click', () => toggleFlagWord(word));
   document.getElementById('user-input').addEventListener('keypress', (e) => {
     if (e.key === 'Enter') checkAnswer(word);
   });
+
+  // Focus input field
+  document.getElementById('user-input').focus();
+}
+
+function startAutoPlay() {
+  if (!state.isAutoPlaying) return;
+
+  const word = state.words[state.currentIndex];
+  speakWord(word);
+
+  // Set timeout for automatic progression (8 seconds per word)
+  state.autoPlayTimeout = setTimeout(() => {
+    if (state.currentIndex < state.words.length) {
+      const userInput = document.getElementById('user-input')?.value.trim() || "";
+      if (userInput) {
+        checkAnswer(word);
+      } else {
+        nextWord();
+      }
+    }
+  }, 8000);
 }
 
 function speakWord(word) {
@@ -199,16 +233,35 @@ function speakWord(word) {
     return;
   }
 
+  // Cancel any ongoing speech and timeouts
+  window.speechSynthesis.cancel();
+  if (state.autoPlayTimeout) {
+    clearTimeout(state.autoPlayTimeout);
+  }
+
   const utterance = new SpeechSynthesisUtterance(word);
-  utterance.lang = accent;
-  utterance.rate = 0.9; // Slightly slower for clarity
+  utterance.lang = state.accent;
+  utterance.rate = 0.9;
+  
+  utterance.onend = () => {
+    if (state.isAutoPlaying) {
+      // Reset timeout when speech ends
+      state.autoPlayTimeout = setTimeout(() => {
+        const userInput = document.getElementById('user-input')?.value.trim() || "";
+        if (userInput) {
+          checkAnswer(word);
+        } else {
+          nextWord();
+        }
+      }, 5000); // 5 seconds after speech ends
+    }
+  };
   
   utterance.onerror = (e) => {
     console.error("Speech error:", e);
     showAlert("Error pronouncing word. Try another browser.", 'error');
   };
   
-  window.speechSynthesis.cancel(); // Stop any current speech
   window.speechSynthesis.speak(utterance);
 }
 
@@ -219,54 +272,73 @@ function checkAnswer(correctWord) {
     return;
   }
 
-  userAnswers[currentIndex] = userInput;
+  state.userAnswers[state.currentIndex] = userInput;
   const feedback = document.getElementById('feedback');
   
   if (userInput.toLowerCase() === correctWord.toLowerCase()) {
     feedback.textContent = "✓ Correct!";
     feedback.className = "feedback correct";
-    score++;
+    state.score++;
   } else {
     feedback.textContent = `✗ Incorrect. The correct spelling is: ${correctWord}`;
     feedback.className = "feedback incorrect";
   }
 
-  if (sessionMode === "test") {
-    setTimeout(nextWord, 1500);
+  // Clear any existing timeout
+  if (state.autoPlayTimeout) {
+    clearTimeout(state.autoPlayTimeout);
   }
+
+  // Move to next word after delay
+  setTimeout(() => {
+    nextWord();
+  }, state.sessionMode === "practice" ? 2000 : 1000);
 }
 
 function nextWord() {
-  currentIndex++;
+  state.currentIndex++;
   saveSessionState();
-  showCurrentWord();
+  
+  if (state.isAutoPlaying) {
+    showCurrentWord();
+    if (state.currentIndex < state.words.length) {
+      startAutoPlay();
+    }
+  } else {
+    showCurrentWord();
+  }
 }
 
 function toggleFlagWord(word) {
-  const index = flaggedWords.indexOf(word);
+  const index = state.flaggedWords.indexOf(word);
   if (index === -1) {
-    flaggedWords.push(word);
+    state.flaggedWords.push(word);
     showAlert("Word flagged for practice", 'success');
   } else {
-    flaggedWords.splice(index, 1);
+    state.flaggedWords.splice(index, 1);
   }
   
-  localStorage.setItem('flaggedWords', JSON.stringify(flaggedWords));
-  showCurrentWord(); // Refresh to update flag icon
+  localStorage.setItem('flaggedWords', JSON.stringify(state.flaggedWords));
+  document.getElementById('flag-btn').classList.toggle('active', state.flaggedWords.includes(word));
 }
 
 function endSession() {
-  const percent = Math.round((score / words.length) * 100);
-  const wrongWords = words.filter((w, i) => 
-    (userAnswers[i] || "").toLowerCase() !== w.toLowerCase()
+  state.isAutoPlaying = false;
+  if (state.autoPlayTimeout) {
+    clearTimeout(state.autoPlayTimeout);
+  }
+
+  const percent = Math.round((state.score / state.words.length) * 100);
+  const wrongWords = state.words.filter((w, i) => 
+    (state.userAnswers[i] || "").toLowerCase() !== w.toLowerCase()
   );
 
-  summaryArea.innerHTML = `
+  elements.summaryArea.innerHTML = `
     <h2>Session Complete!</h2>
     <div class="summary-grid">
       <div class="score-card">
         <h3>Your Score</h3>
-        <div class="score-display">${score}/${words.length}</div>
+        <div class="score-display">${state.score}/${state.words.length}</div>
         <div class="score-percent">${percent}%</div>
       </div>
       
@@ -284,11 +356,14 @@ function endSession() {
     </button>
   `;
 
-  trainerArea.classList.add('hidden');
-  summaryArea.classList.remove('hidden');
-  startBtn.disabled = false;
+  elements.trainerArea.classList.add('hidden');
+  elements.summaryArea.classList.remove('hidden');
+  elements.startBtn.disabled = false;
   
-  document.getElementById('restart-btn').addEventListener('click', startSession);
+  document.getElementById('restart-btn').addEventListener('click', () => {
+    state.usedCustomListToday = false;
+    startSession();
+  });
 }
 
 // Helper Functions
@@ -309,11 +384,11 @@ function loadSavedSession() {
   if (savedSession) {
     const { words: savedWords, index, score: savedScore, flags } = JSON.parse(savedSession);
     if (confirm('Would you like to resume your previous session?')) {
-      words = savedWords;
-      currentIndex = index;
-      score = savedScore;
-      flaggedWords = flags;
-      usedCustomListToday = true;
+      state.words = savedWords;
+      state.currentIndex = index;
+      state.score = savedScore;
+      state.flaggedWords = flags;
+      state.usedCustomListToday = true;
       startSession();
     }
   }
@@ -321,21 +396,21 @@ function loadSavedSession() {
 
 function saveSessionState() {
   const sessionData = {
-    words,
-    index: currentIndex,
-    score,
-    flags: flaggedWords
+    words: state.words,
+    index: state.currentIndex,
+    score: state.score,
+    flags: state.flaggedWords
   };
   localStorage.setItem('spellRightSession', JSON.stringify(sessionData));
 }
 
-// Initialize dark mode toggle
+// Dark mode toggle
 document.getElementById('dark-mode-toggle').addEventListener('click', () => {
   document.body.classList.toggle('dark-mode');
   localStorage.setItem('darkMode', document.body.classList.contains('dark-mode'));
 });
 
-// Check for saved dark mode preference
+// Initialize dark mode
 if (localStorage.getItem('darkMode') === 'true') {
   document.body.classList.add('dark-mode');
 }
