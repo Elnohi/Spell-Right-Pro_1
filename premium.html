@@ -4,37 +4,27 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>SpellRightPro Premium</title>
-  <link rel="icon" href="assets/logo.png">
   <link rel="stylesheet" href="css/styles.css" />
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
-  <!-- Firebase -->
-  <script src="https://www.gstatic.com/firebasejs/10.4.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.4.0/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.4.0/firebase-firestore-compat.js"></script>
-  <script src="js/config.js"></script>
-  <script>
-    firebase.initializeApp(window.firebaseConfig);
-    const auth = firebase.auth();
-    const db = firebase.firestore();
-  </script>
-  <script src="js/oet_word_list.js"></script>
 </head>
 <body>
   <nav class="navbar">
     <div class="brand">
-      <img src="assets/logo.png" alt="Logo" />
-      <h1>SpellRightPro <span style="font-weight:400;font-size:0.8em;color:#fff9;">Premium</span></h1>
+      <img src="assets/logo.png" alt="SpellRightPro Logo" />
+      <span>SpellRightPro <span class="subtitle">Premium</span></span>
     </div>
     <div class="nav-actions">
-      <a class="btn-home" href="index.html"><i class="fas fa-home"></i> Home</a>
+      <button class="btn-home" onclick="window.location.href='index.html'">🏠 Home</button>
+      <button id="dark-mode-toggle" title="Toggle dark mode">🌙</button>
     </div>
   </nav>
-  <div class="premium-card" style="max-width:600px;margin:2em auto;">
-    <div id="auth-area"></div>
-    <div id="exam-ui"></div>
-    <div id="trainer-area"></div>
-    <div id="summary-area"></div>
-  </div>
+  <main>
+    <section class="premium-card">
+      <div id="auth-area"></div>
+      <div id="premium-app"></div>
+    </section>
+  </main>
+  <script src="js/config.js"></script>
+  <script src="js/oet_word_list.js"></script>
   <script src="js/main-premium.js"></script>
 </body>
 </html>
