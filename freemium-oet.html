@@ -4,43 +4,47 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>SpellRightPro (OET - Freemium)</title>
-  <link rel="icon" href="assets/logo.png">
   <link rel="stylesheet" href="css/styles.css" />
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
 </head>
 <body>
   <nav class="navbar">
     <div class="brand">
-      <img src="assets/logo.png" alt="Logo" />
-      <h1>SpellRightPro <span style="font-weight:400;font-size:0.8em;color:#fff9;">(OET - Freemium)</span></h1>
+      <img src="assets/logo.png" alt="SpellRightPro Logo" />
+      <span>SpellRightPro <span class="subtitle">(OET - Freemium)</span></span>
     </div>
     <div class="nav-actions">
-      <a class="btn-home" href="index.html"><i class="fas fa-home"></i> Home</a>
+      <button class="btn-home" onclick="window.location.href='index.html'">🏠 Home</button>
+      <button id="dark-mode-toggle" title="Toggle dark mode">🌙</button>
     </div>
   </nav>
-  <div class="premium-card" style="max-width: 540px; margin: 2em auto;">
-    <div style="margin-bottom:1.2em;">
-      <button id="practice-mode-btn" class="btn btn-outline-primary selected">Practice Mode</button>
-      <button id="test-mode-btn" class="btn btn-outline-primary">Test Mode</button>
-    </div>
-    <div style="margin-bottom:0.7em;">
-      <label><b>Accent:</b></label>
-      <select id="accent-select">
-        <option value="en-US">American</option>
-        <option value="en-GB">British</option>
-      </select>
-      <span id="flag-svg" style="vertical-align:middle;"></span>
-    </div>
-    <div style="margin-bottom:0.7em;">
-      <label><b>Custom Words:</b></label>
-      <input id="custom-words" placeholder="Paste or type your words..." style="width:230px;">
-      <button id="add-custom-btn" class="btn btn-info">+ Add Custom Words</button>
-      <input type="file" id="file-input" accept=".txt"/>
-    </div>
-    <button id="start-btn" class="btn btn-success">Start Session</button>
-    <div id="trainer-area"></div>
-    <div id="summary-area"></div>
-  </div>
+  <main>
+    <section class="oet-card">
+      <div style="font-size: 1.3rem; font-weight: bold; margin-bottom: 15px;">OET Spelling Trainer (Freemium)</div>
+      <div style="margin-bottom: 18px;">
+        <button id="practice-mode-btn" class="btn btn-outline-primary selected" onclick="selectMode('practice')">Practice Mode</button>
+        <button id="test-mode-btn" class="btn btn-outline-primary" onclick="selectMode('test')">Test Mode</button>
+      </div>
+      <div style="margin-bottom: 13px;">
+        <label for="accent-select">Accent:</label>
+        <select id="accent-select">
+          <option value="en-US">American</option>
+          <option value="en-GB">British</option>
+        </select>
+      </div>
+      <div>
+        <label for="custom-words">Custom Words:</label>
+        <textarea id="custom-words" placeholder="Paste or type your words..."></textarea>
+        <input type="file" id="file-input" />
+        <button class="btn btn-info" id="add-custom-btn">+ Add Custom Words</button>
+      </div>
+      <div>
+        <button id="start-btn" class="btn btn-success">Start Session</button>
+      </div>
+      <div id="trainer-area"></div>
+      <div id="feedback"></div>
+      <div id="summary-area"></div>
+    </section>
+  </main>
   <script src="js/oet_word_list.js"></script>
   <script src="js/main-freemium-oet.js"></script>
 </body>
