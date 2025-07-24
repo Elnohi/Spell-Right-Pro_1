@@ -18,7 +18,7 @@ const summaryArea = document.getElementById('summary-area');
 const appTitle = document.getElementById('app-title');
 
 // Enhanced word splitting pattern
-const WORD_SEPARATORS = /[\s,;\/\-â€“â€”|]+/;
+const WORD_SEPARATORS = /[\s,;\/\-–—|]+/;
 
 // Initialize dark mode toggle
 document.getElementById('dark-mode-toggle').addEventListener('click', () => {
@@ -293,7 +293,7 @@ function checkOETAnswer(correctWord) {
   const feedback = document.getElementById('feedback');
   
   if (userAnswer.toLowerCase() === correctWord.toLowerCase()) {
-    feedback.textContent = "âœ“ Correct!";
+    feedback.textContent = "✓ Correct!";
     feedback.className = "feedback correct";
     score++;
     document.getElementById('word-status').innerHTML = '<i class="fas fa-check-circle"></i>';
@@ -309,7 +309,7 @@ function checkOETAnswer(correctWord) {
       }
     }, 1000);
   } else {
-    feedback.textContent = `âœ— Incorrect. The correct spelling is: ${correctWord}`;
+    feedback.textContent = `✗ Incorrect. The correct spelling is: ${correctWord}`;
     feedback.className = "feedback incorrect";
     document.getElementById('word-status').innerHTML = '<i class="fas fa-times-circle"></i>';
   }
@@ -480,7 +480,7 @@ function processSpellingAttempt(attempt, correctWord) {
   );
   
   if (attempt === correctWord.toLowerCase()) {
-    micFeedback.textContent = "âœ“ Correct!";
+    micFeedback.textContent = "✓ Correct!";
     micFeedback.className = "feedback correct";
     document.getElementById('word-status').innerHTML = '<i class="fas fa-check-circle"></i>';
     score++;
@@ -496,7 +496,7 @@ function processSpellingAttempt(attempt, correctWord) {
       }
     }, 1500);
   } else {
-    micFeedback.textContent = `âœ— Incorrect. You spelled: ${attempt}. Correct: ${correctWord}`;
+    micFeedback.textContent = `✗ Incorrect. You spelled: ${attempt}. Correct: ${correctWord}`;
     micFeedback.className = "feedback incorrect";
     document.getElementById('word-status').innerHTML = '<i class="fas fa-times-circle"></i>';
   }
@@ -619,7 +619,7 @@ function checkCustomAnswer(correctWord) {
   const feedback = document.getElementById('feedback');
   
   if (userAnswer.toLowerCase() === correctWord.toLowerCase()) {
-    feedback.textContent = "âœ“ Correct!";
+    feedback.textContent = "✓ Correct!";
     feedback.className = "feedback correct";
     score++;
     document.getElementById('word-status').innerHTML = '<i class="fas fa-check-circle"></i>';
@@ -635,7 +635,7 @@ function checkCustomAnswer(correctWord) {
       }
     }, 1000);
   } else {
-    feedback.textContent = `âœ— Incorrect. The correct spelling is: ${correctWord}`;
+    feedback.textContent = `✗ Incorrect. The correct spelling is: ${correctWord}`;
     feedback.className = "feedback incorrect";
     document.getElementById('word-status').innerHTML = '<i class="fas fa-times-circle"></i>';
   }
