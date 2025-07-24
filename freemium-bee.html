@@ -4,44 +4,122 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>SpellRightPro (Bee - Freemium)</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <link rel="stylesheet" href="css/styles.css" />
+  <style>
+    /* Bee-specific additions */
+    .bee-card {
+      position: relative;
+    }
+    
+    #mic-status {
+      position: absolute;
+      top: 1rem;
+      right: 1rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.9rem;
+    }
+    
+    .mic-active {
+      color: var(--success);
+      animation: pulse 1.5s infinite;
+    }
+    
+    @keyframes pulse {
+      0% { opacity: 1; }
+      50% { opacity: 0.6; }
+      100% { opacity: 1; }
+    }
+    
+    #spelling-visual {
+      display: flex;
+      justify-content: center;
+      gap: 0.5rem;
+      margin: 1.5rem 0;
+      min-height: 2.5rem;
+    }
+    
+    .letter-tile {
+      width: 2rem;
+      height: 2.5rem;
+      border-bottom: 3px solid var(--primary);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-size: 1.5rem;
+      font-weight: bold;
+    }
+    
+    #bee-area {
+      min-height: 300px;
+    }
+  </style>
 </head>
 <body>
   <nav class="navbar">
     <div class="brand">
-      <img src="assets/logo.png" alt="SpellRightPro Logo" />
-      <span>SpellRightPro <span class="subtitle">(Bee - Freemium)</span></span>
+      <img src="assets/logo.png" alt="SpellRightPro Logo" class="logo"/>
+      <div>
+        <span>SpellRightPro</span>
+        <span class="subtitle">Spelling Bee</span>
+      </div>
     </div>
     <div class="nav-actions">
-      <button class="btn-home" onclick="window.location.href='index.html'">🏠 Home</button>
-      <button id="dark-mode-toggle" title="Toggle dark mode">🌙</button>
+      <button class="btn-home" onclick="window.location.href='index.html'">
+        <i class="fas fa-home"></i>
+      </button>
+      <button id="dark-mode-toggle" title="Toggle dark mode">
+        <i class="fas fa-moon"></i>
+      </button>
     </div>
   </nav>
-  <main>
-    <section class="bee-card">
-      <div style="font-size: 1.3rem; font-weight: bold; margin-bottom: 15px;">Spelling Bee Trainer (Freemium)</div>
-      <div style="margin-bottom: 13px;">
-        <label for="accent-select">Accent:</label>
-        <select id="accent-select">
-          <option value="en-US">American</option>
-          <option value="en-GB">British</option>
-        </select>
+
+  <main class="container">
+    <section class="training-card bee-card">
+      <h1 class="card-title">Spelling Bee Trainer</h1>
+      
+      <div id="mic-status" class="hidden">
+        <i class="fas fa-microphone mic-active"></i>
+        <span>Listening...</span>
       </div>
-      <div>
-        <label for="custom-words">Custom Words:</label>
-        <textarea id="custom-words" placeholder="Paste or type your words..."></textarea>
-        <input type="file" id="file-input" />
-        <button class="btn btn-info" id="add-custom-btn">+ Add Custom Words</button>
-        <button class="btn btn-outline-primary" id="use-sample-btn">💡 Use Sample Words</button>
+
+      <div class="accent-picker">
+        <button data-accent="en-US" class="active">
+          <span class="flag-icon">🇺🇸</span> US
+        </button>
+        <button data-accent="en-GB">
+          <span class="flag-icon">🇬🇧</span> UK
+        </button>
       </div>
-      <div>
-        <button id="start-btn" class="btn btn-success">Start Spelling Bee</button>
+
+      <div class="custom-words-section">
+        <label class="section-label">Custom Words</label>
+        <textarea id="custom-words" placeholder="Type or paste words (comma separated)"></textarea>
+        <div class="file-upload">
+          <label for="file-input" class="btn-upload">
+            <i class="fas fa-file-upload"></i> Upload Word List
+          </label>
+          <input type="file" id="file-input" accept=".txt,.pdf,.docx"/>
+        </div>
+        <button id="add-custom-btn" class="btn-primary">
+          <i class="fas fa-plus"></i> Add Words
+        </button>
       </div>
-      <div id="bee-area"></div>
-      <div id="mic-feedback"></div>
-      <div id="summary-area"></div>
+
+      <button id="start-btn" class="btn-start">
+        <i class="fas fa-play"></i> Start Session
+      </button>
+
+      <div id="bee-area" class="hidden">
+        <div id="spelling-visual"></div>
+      </div>
+
+      <div id="summary-area" class="summary-area hidden"></div>
     </section>
   </main>
+
   <script src="js/main-freemium-bee.js"></script>
 </body>
 </html>
