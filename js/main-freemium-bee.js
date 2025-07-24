@@ -22,6 +22,9 @@ document.addEventListener('DOMContentLoaded', () => {
   let isSessionActive = false;
   let currentWord = "";
 
+  // Enhanced word splitting pattern - accepts multiple separators
+  const WORD_SEPARATORS = /[\s,;\/\-–—|]+/;
+
   // Initialize
   setupEventListeners();
   initDarkMode();
@@ -101,24 +104,24 @@ document.addEventListener('DOMContentLoaded', () => {
       
       <div id="spelling-visual"></div>
       
+      <div id="auto-recording-info">
+        <i class="fas fa-info-circle"></i> Speak the spelling after the word is pronounced
+      </div>
+      
       <div class="button-group">
         <button id="prev-btn" class="btn-secondary" ${currentIndex === 0 ? 'disabled' : ''}>
           <i class="fas fa-arrow-left"></i> Previous
         </button>
         <button id="repeat-btn" class="btn-secondary">
-          <i class="fas fa-redo"></i> Repeat
+          <i class="fas fa-redo"></i> Repeat Word
         </button>
         <button id="next-btn" class="btn-secondary">
           <i class="fas fa-arrow-right"></i> Skip
         </button>
-        <button id="flag-btn" class="btn-icon ${flaggedWords.includes(currentWord) ? 'active' : ''}">
+        <button id="flag-btn" class="btn-icon ${flaggedWords.includes(currentWord) ? 'active' : ''}>
           <i class="fas fa-star"></i> Flag
         </button>
       </div>
-      
-      <button id="start-mic-btn" class="btn-primary">
-        <i class="fas fa-microphone"></i> Spell with Microphone
-      </button>
       
       <div id="mic-feedback" class="feedback"></div>
     `;
@@ -128,13 +131,6 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('next-btn').addEventListener('click', nextWord);
     document.getElementById('repeat-btn').addEventListener('click', () => speakWord(currentWord));
     document.getElementById('flag-btn').addEventListener('click', () => toggleFlagWord(currentWord));
-    document.getElementById('start-mic-btn').addEventListener('click', startVoiceRecognition);
-  }
-
-  function updateSpellingVisual(letters = []) {
-    spellingVisual.innerHTML = currentWord.split('').map((_, i) => `
-      <div class="letter-tile">${letters[i] || ''}</div>
-    `).join('');
   }
 
   function speakWord(word) {
@@ -143,9 +139,18 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
 
+    speechSynthesis.cancel();
     const utterance = new SpeechSynthesisUtterance(word);
     utterance.lang = accent;
-    utterance.rate = 0.8; // Slower for spelling
+    utterance.rate = 0.8;
+    
+    // Start voice recognition automatically after speech ends
+    utterance.onend = () => {
+      if (isSessionActive) {
+        startVoiceRecognition();
+      }
+    };
+    
     speechSynthesis.speak(utterance);
   }
 
@@ -155,61 +160,86 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
 
-    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-    recognition = new SpeechRecognition();
-    recognition.lang = accent;
-    recognition.interimResults = false;
-    recognition.maxAlternatives = 1;
-
     micStatus.classList.remove('hidden');
-    document.getElementById('start-mic-btn').disabled = true;
     updateSpellingVisual();
 
+    recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+    recognition.lang = accent;
+    recognition.interimResults = false;
+    recognition.maxAlternatives = 5; // Get more alternatives for better accuracy
+    recognition.continuous = false;
+
     recognition.onresult = (event) => {
-      const transcript = event.results[0][0].transcript.trim().toLowerCase();
-      processSpellingAttempt(transcript);
+      const results = event.results[0];
+      const bestMatch = findBestMatch(results);
+      processSpellingAttempt(bestMatch);
     };
 
     recognition.onerror = (event) => {
       micStatus.classList.add('hidden');
-      document.getElementById('start-mic-btn').disabled = false;
-      showAlert(`Recognition error: ${event.error}`, 'error');
+      if (event.error !== 'no-speech') { // Don't show alert for silent responses
+        showAlert(`Recognition error: ${event.error}`, 'error');
+      }
+      setTimeout(() => isSessionActive && startVoiceRecognition(), 1000);
     };
 
     recognition.onend = () => {
       micStatus.classList.add('hidden');
-      document.getElementById('start-mic-btn').disabled = false;
     };
 
     recognition.start();
   }
 
-  function processSpellingAttempt(transcript) {
-    const cleanedAttempt = transcript.replace(/[^a-z]/g, '');
-    const correctLetters = [];
-    
-    // Visual feedback
-    for (let i = 0; i < currentWord.length; i++) {
-      if (cleanedAttempt[i] === currentWord[i]) {
-        correctLetters.push(cleanedAttempt[i]);
-      } else {
-        correctLetters.push('');
-      }
+  // Find the best match among recognition alternatives
+  function findBestMatch(results) {
+    for (let i = 0; i < results.length; i++) {
+      const transcript = results[i].transcript.trim().toLowerCase();
+      const cleaned = transcript.replace(/[^a-z]/g, '');
+      if (cleaned.length > 0) return cleaned;
     }
-    
-    updateSpellingVisual(correctLetters);
-    userAttempts[currentIndex] = cleanedAttempt;
+    return '';
+  }
 
+  function processSpellingAttempt(attempt) {
+    if (!attempt) {
+      // No valid attempt detected, try again
+      setTimeout(() => isSessionActive && startVoiceRecognition(), 800);
+      return;
+    }
+
+    userAttempts[currentIndex] = attempt;
+    const isCorrect = attempt === currentWord.toLowerCase();
     const feedback = document.getElementById('mic-feedback');
-    if (cleanedAttempt === currentWord) {
+
+    // Update visual feedback
+    updateSpellingVisual(
+      currentWord.split('').map((letter, i) => ({
+        letter: attempt[i] || '',
+        correct: attempt[i]?.toLowerCase() === letter.toLowerCase()
+      }))
+    );
+
+    if (isCorrect) {
       feedback.textContent = "✓ Correct!";
       feedback.className = "feedback correct";
       score++;
       setTimeout(nextWord, 1500);
     } else {
-      feedback.textContent = "✗ Try again!";
+      feedback.textContent = "✗ Incorrect. Try again!";
       feedback.className = "feedback incorrect";
+      // Automatically retry recognition
+      setTimeout(() => isSessionActive && speakWord(currentWord), 1500);
     }
+  }
+
+  // Enhanced visual feedback with correct/incorrect letters
+  function updateSpellingVisual(letters = []) {
+    spellingVisual.innerHTML = currentWord.split('').map((letter, i) => {
+      const letterData = letters[i] || {};
+      const letterClass = letterData.correct ? 'correct' : 
+                        (letterData.letter ? 'incorrect' : '');
+      return `<div class="letter-tile ${letterClass}">${letterData.letter || ''}</div>`;
+    }).join('');
   }
 
   function nextWord() {
@@ -323,8 +353,9 @@ document.addEventListener('DOMContentLoaded', () => {
     showAlert(`Added ${words.length} words!`, 'success');
   }
 
+  // Enhanced word list processing
   function processWordList(text) {
-    words = [...new Set(text.split(/[\s,;]+/))]
+    words = [...new Set(text.split(WORD_SEPARATORS))]
       .map(w => w.trim())
       .filter(w => w && w.length > 1);
     
