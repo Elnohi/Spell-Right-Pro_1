@@ -227,8 +227,6 @@ document.addEventListener('DOMContentLoaded', () => {
     } else {
       feedback.textContent = "✗ Incorrect. Try again!";
       feedback.className = "feedback incorrect";
-      // Automatically retry recognition
-      setTimeout(() => isSessionActive && speakWord(currentWord), 1500);
     }
   }
 
