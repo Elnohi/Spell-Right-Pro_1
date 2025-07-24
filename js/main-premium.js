@@ -153,19 +153,8 @@ function renderExamUI() {
   document.getElementById('start-btn').onclick = () => {
     summaryArea.innerHTML = "";
     if (examType === "OET") {
-      words = window.oetWords.slice();
-      appTitle.textContent = "OET Spelling Practice";
       startOET();
     } else if (examType === "Bee") {
-      words = [
-        "accommodate", "belligerent", "conscientious", "disastrous", 
-        "embarrass", "foreign", "guarantee", "harass", 
-        "interrupt", "jealous", "knowledge", "liaison",
-        "millennium", "necessary", "occasionally", "possession",
-        "questionnaire", "rhythm", "separate", "tomorrow",
-        "unforeseen", "vacuum", "withhold", "yacht"
-      ];
-      appTitle.textContent = "Spelling Bee";
       startBee();
     } else if (examType === "Custom") {
       renderCustomInput();
@@ -205,7 +194,7 @@ function renderCustomInput() {
       processWordList(input);
       showAlert(`Added ${words.length} words!`, 'success');
       appTitle.textContent = "Custom Spelling Practice";
-      startOET();
+      startCustomPractice();
     } catch (error) {
       showAlert(error.message, 'error');
     }
@@ -220,6 +209,16 @@ function startOET() {
   userAnswers = [];
   trainerArea.innerHTML = "";
   summaryArea.innerHTML = "";
+
+  // In test mode, select random 24 words
+  if (sessionMode === "test") {
+    const shuffled = [...window.oetWords].sort(() => 0.5 - Math.random());
+    words = shuffled.slice(0, 24);
+  } else {
+    words = window.oetWords.slice();
+  }
+
+  appTitle.textContent = `OET Spelling ${sessionMode === "test" ? "Test" : "Practice"}`;
   showOETWord();
   speakCurrentWord();
 }
@@ -260,16 +259,27 @@ function showOETWord() {
     <div id="feedback" class="feedback" style="margin-top: 15px;"></div>
   `;
   
+  const userInput = document.getElementById('user-input');
+  userInput.focus();
+
   document.getElementById('repeat-btn').onclick = () => speakCurrentWord();
-  document.getElementById('user-input').oninput = (e) => {
+  document.getElementById('prev-btn').onclick = prevOETWord;
+  document.getElementById('next-btn').onclick = nextOETWord;
+  document.getElementById('flag-btn').onclick = () => toggleFlagWord(word);
+
+  // Handle Enter key and auto-check
+  userInput.onkeydown = (e) => {
+    if (e.key === 'Enter') {
+      checkOETAnswer(word);
+    }
+  };
+
+  // Auto-check when word is fully typed
+  userInput.oninput = (e) => {
     if (e.target.value.toLowerCase() === word.toLowerCase()) {
       checkOETAnswer(word);
     }
   };
-  document.getElementById('prev-btn').onclick = prevOETWord;
-  document.getElementById('next-btn').onclick = nextOETWord;
-  document.getElementById('flag-btn').onclick = () => toggleFlagWord(word);
-  document.getElementById('user-input').focus();
 }
 
 function speakCurrentWord() {
@@ -277,16 +287,18 @@ function speakCurrentWord() {
 }
 
 function checkOETAnswer(correctWord) {
-  const userInput = document.getElementById('user-input').value.trim();
-  userAnswers[currentIndex] = userInput;
+  const userInput = document.getElementById('user-input');
+  const userAnswer = userInput.value.trim();
+  userAnswers[currentIndex] = userAnswer;
   const feedback = document.getElementById('feedback');
   
-  if (userInput.toLowerCase() === correctWord.toLowerCase()) {
+  if (userAnswer.toLowerCase() === correctWord.toLowerCase()) {
     feedback.textContent = "✓ Correct!";
     feedback.className = "feedback correct";
     score++;
     document.getElementById('word-status').innerHTML = '<i class="fas fa-check-circle"></i>';
     
+    // Auto-proceed after short delay
     setTimeout(() => {
       if (currentIndex < words.length - 1) {
         currentIndex++;
@@ -339,6 +351,17 @@ function startBee() {
   userAttempts = [];
   trainerArea.innerHTML = "";
   summaryArea.innerHTML = "";
+  
+  words = [
+    "accommodate", "belligerent", "conscientious", "disastrous", 
+    "embarrass", "foreign", "guarantee", "harass", 
+    "interrupt", "jealous", "knowledge", "liaison",
+    "millennium", "necessary", "occasionally", "possession",
+    "questionnaire", "rhythm", "separate", "tomorrow",
+    "unforeseen", "vacuum", "withhold", "yacht"
+  ];
+  
+  appTitle.textContent = "Spelling Bee";
   showBeeWord();
   speakCurrentBeeWord();
 }
@@ -361,7 +384,7 @@ function showBeeWord() {
     </div>
     
     <div class="auto-recording-info">
-      <i class="fas fa-info-circle"></i> Speak the spelling now
+      <i class="fas fa-info-circle"></i> Speak the spelling after hearing the word
     </div>
     
     <div id="spelling-visual" style="margin: 15px 0;"></div>
@@ -386,8 +409,8 @@ function showBeeWord() {
   document.getElementById('prev-btn').onclick = prevBeeWord;
   document.getElementById('next-btn').onclick = nextBeeWord;
   document.getElementById('flag-btn').onclick = () => toggleBeeFlagWord(word);
-  
-  // Auto-start listening
+
+  // Auto-start listening after short delay
   setTimeout(() => {
     listenForSpelling(word);
   }, 500);
@@ -461,7 +484,17 @@ function processSpellingAttempt(attempt, correctWord) {
     micFeedback.className = "feedback correct";
     document.getElementById('word-status').innerHTML = '<i class="fas fa-check-circle"></i>';
     score++;
-    setTimeout(nextBeeWord, 1500);
+    
+    // Auto-proceed to next word
+    setTimeout(() => {
+      if (currentIndex < words.length - 1) {
+        currentIndex++;
+        showBeeWord();
+        speakCurrentBeeWord();
+      } else {
+        showBeeSummary();
+      }
+    }, 1500);
   } else {
     micFeedback.textContent = `✗ Incorrect. You spelled: ${attempt}. Correct: ${correctWord}`;
     micFeedback.className = "feedback incorrect";
@@ -506,6 +539,124 @@ function toggleBeeFlagWord(word) {
     flaggedWords.splice(idx, 1);
   }
   showBeeWord();
+}
+
+// Custom Words Practice
+function startCustomPractice() {
+  currentIndex = 0;
+  score = 0;
+  flaggedWords = [];
+  userAnswers = [];
+  trainerArea.innerHTML = "";
+  summaryArea.innerHTML = "";
+  showCustomWord();
+  speakCurrentWord();
+}
+
+function showCustomWord() {
+  if (currentIndex >= words.length) {
+    showSummary();
+    return;
+  }
+  
+  const word = words[currentIndex];
+  trainerArea.innerHTML = `
+    <div class="word-progress">Word ${currentIndex + 1} of ${words.length}</div>
+    
+    <div class="word-audio-feedback">
+      <button id="repeat-btn" class="btn btn-icon" title="Repeat word">
+        <i class="fas fa-redo"></i>
+      </button>
+      <span id="word-status"></span>
+    </div>
+    
+    <input type="text" id="user-input" class="form-control" style="margin-top: 15px;" 
+           placeholder="Type what you heard..." autofocus>
+    
+    <div class="button-group">
+      <button id="prev-btn" class="btn btn-secondary" ${currentIndex === 0 ? "disabled" : ""}>
+        <i class="fas fa-arrow-left"></i> Previous
+      </button>
+      <button id="flag-btn" class="btn btn-flag ${flaggedWords.includes(word) ? "active" : ""}">
+        <i class="${flaggedWords.includes(word) ? "fas" : "far"} fa-flag"></i> 
+        ${flaggedWords.includes(word) ? "Flagged" : "Flag Word"}
+      </button>
+      <button id="next-btn" class="btn btn-secondary" ${currentIndex === words.length-1 ? "disabled" : ""}>
+        <i class="fas fa-arrow-right"></i> Next
+      </button>
+    </div>
+    
+    <div id="feedback" class="feedback" style="margin-top: 15px;"></div>
+  `;
+  
+  const userInput = document.getElementById('user-input');
+  userInput.focus();
+
+  document.getElementById('repeat-btn').onclick = () => speakCurrentWord();
+  document.getElementById('prev-btn').onclick = prevCustomWord;
+  document.getElementById('next-btn').onclick = nextCustomWord;
+  document.getElementById('flag-btn').onclick = () => toggleFlagWord(word);
+
+  // Handle Enter key and auto-check
+  userInput.onkeydown = (e) => {
+    if (e.key === 'Enter') {
+      checkCustomAnswer(word);
+    }
+  };
+
+  // Auto-check when word is fully typed
+  userInput.oninput = (e) => {
+    if (e.target.value.toLowerCase() === word.toLowerCase()) {
+      checkCustomAnswer(word);
+    }
+  };
+}
+
+function checkCustomAnswer(correctWord) {
+  const userInput = document.getElementById('user-input');
+  const userAnswer = userInput.value.trim();
+  userAnswers[currentIndex] = userAnswer;
+  const feedback = document.getElementById('feedback');
+  
+  if (userAnswer.toLowerCase() === correctWord.toLowerCase()) {
+    feedback.textContent = "✓ Correct!";
+    feedback.className = "feedback correct";
+    score++;
+    document.getElementById('word-status').innerHTML = '<i class="fas fa-check-circle"></i>';
+    
+    // Auto-proceed after short delay
+    setTimeout(() => {
+      if (currentIndex < words.length - 1) {
+        currentIndex++;
+        showCustomWord();
+        speakCurrentWord();
+      } else {
+        showSummary();
+      }
+    }, 1000);
+  } else {
+    feedback.textContent = `✗ Incorrect. The correct spelling is: ${correctWord}`;
+    feedback.className = "feedback incorrect";
+    document.getElementById('word-status').innerHTML = '<i class="fas fa-times-circle"></i>';
+  }
+}
+
+function nextCustomWord() {
+  if (currentIndex < words.length - 1) {
+    currentIndex++;
+    showCustomWord();
+    speakCurrentWord();
+  } else {
+    showSummary();
+  }
+}
+
+function prevCustomWord() {
+  if (currentIndex > 0) {
+    currentIndex--;
+    showCustomWord();
+    speakCurrentWord();
+  }
 }
 
 // Summary Functions
@@ -560,8 +711,12 @@ function showSummary() {
   `;
   
   document.getElementById('restart-btn').onclick = () => {
-    if (examType === "OET" || examType === "Custom") startOET();
-    else startBee();
+    if (examType === "OET" || examType === "Custom") {
+      if (examType === "OET") startOET();
+      else startCustomPractice();
+    } else {
+      startBee();
+    }
   };
   
   document.getElementById('new-list-btn').onclick = () => {
