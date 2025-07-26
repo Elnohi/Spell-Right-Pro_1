@@ -210,7 +210,6 @@ function startOET() {
   trainerArea.innerHTML = "";
   summaryArea.innerHTML = "";
 
-  // In test mode, select random 24 words
   if (sessionMode === "test") {
     const shuffled = [...window.oetWords].sort(() => 0.5 - Math.random());
     words = shuffled.slice(0, 24);
@@ -267,14 +266,12 @@ function showOETWord() {
   document.getElementById('next-btn').onclick = nextOETWord;
   document.getElementById('flag-btn').onclick = () => toggleFlagWord(word);
 
-  // Handle Enter key and auto-check
   userInput.onkeydown = (e) => {
     if (e.key === 'Enter') {
       checkOETAnswer(word);
     }
   };
 
-  // Auto-check when word is fully typed
   userInput.oninput = (e) => {
     if (e.target.value.toLowerCase() === word.toLowerCase()) {
       checkOETAnswer(word);
@@ -297,30 +294,22 @@ function checkOETAnswer(correctWord) {
     feedback.className = "feedback correct";
     score++;
     document.getElementById('word-status').innerHTML = '<i class="fas fa-check-circle"></i>';
-    
-    // Auto-proceed after short delay
-    setTimeout(() => {
-      if (currentIndex < words.length - 1) {
-        currentIndex++;
-        showOETWord();
-        speakCurrentWord();
-    setTimeout(() => {
-      currentIndex++;
-      showNextOETWord();
-  setTimeout(() => {
-    currentIndex++;
-    showNextOETWord();
-  }, 1600);
-}, 1600);
-} else {
-        showSummary();
-      }
-    }, 1000);
   } else {
     feedback.textContent = `✗ Incorrect. The correct spelling is: ${correctWord}`;
     feedback.className = "feedback incorrect";
     document.getElementById('word-status').innerHTML = '<i class="fas fa-times-circle"></i>';
   }
+
+  // Auto-proceed after delay
+  setTimeout(() => {
+    if (currentIndex < words.length - 1) {
+      currentIndex++;
+      showOETWord();
+      speakCurrentWord();
+    } else {
+      showSummary();
+    }
+  }, 1500);
 }
 
 function nextOETWord() {
@@ -418,7 +407,6 @@ function showBeeWord() {
   document.getElementById('next-btn').onclick = nextBeeWord;
   document.getElementById('flag-btn').onclick = () => toggleBeeFlagWord(word);
 
-  // Auto-start listening after short delay
   setTimeout(() => {
     listenForSpelling(word);
   }, 500);
@@ -479,7 +467,6 @@ function processSpellingAttempt(attempt, correctWord) {
   
   userAttempts[currentIndex] = attempt;
   
-  // Update visual feedback
   updateSpellingVisual(
     correctWord.split('').map((letter, i) => ({
       letter: attempt[i] || '',
@@ -492,22 +479,21 @@ function processSpellingAttempt(attempt, correctWord) {
     micFeedback.className = "feedback correct";
     document.getElementById('word-status').innerHTML = '<i class="fas fa-check-circle"></i>';
     score++;
-    
-    // Auto-proceed to next word
-    setTimeout(() => {
-      if (currentIndex < words.length - 1) {
-        currentIndex++;
-        showBeeWord();
-        speakCurrentBeeWord();
-      } else {
-        showBeeSummary();
-      }
-    }, 1500);
   } else {
     micFeedback.textContent = `✗ Incorrect. You spelled: ${attempt}. Correct: ${correctWord}`;
     micFeedback.className = "feedback incorrect";
     document.getElementById('word-status').innerHTML = '<i class="fas fa-times-circle"></i>';
   }
+
+  setTimeout(() => {
+    if (currentIndex < words.length - 1) {
+      currentIndex++;
+      showBeeWord();
+      speakCurrentBeeWord();
+    } else {
+      showBeeSummary();
+    }
+  }, 1500);
 }
 
 function updateSpellingVisual(letters = []) {
@@ -605,14 +591,12 @@ function showCustomWord() {
   document.getElementById('next-btn').onclick = nextCustomWord;
   document.getElementById('flag-btn').onclick = () => toggleFlagWord(word);
 
-  // Handle Enter key and auto-check
   userInput.onkeydown = (e) => {
     if (e.key === 'Enter') {
       checkCustomAnswer(word);
     }
   };
 
-  // Auto-check when word is fully typed
   userInput.oninput = (e) => {
     if (e.target.value.toLowerCase() === word.toLowerCase()) {
       checkCustomAnswer(word);
@@ -631,30 +615,21 @@ function checkCustomAnswer(correctWord) {
     feedback.className = "feedback correct";
     score++;
     document.getElementById('word-status').innerHTML = '<i class="fas fa-check-circle"></i>';
-    
-    // Auto-proceed after short delay
-    setTimeout(() => {
-      if (currentIndex < words.length - 1) {
-        currentIndex++;
-        showCustomWord();
-        speakCurrentWord();
-    setTimeout(() => {
-      currentIndex++;
-      showNextCustomWord();
-  setTimeout(() => {
-    currentIndex++;
-    showNextCustomWord();
-  }, 1600);
-}, 1600);
-} else {
-        showSummary();
-      }
-    }, 1000);
   } else {
     feedback.textContent = `✗ Incorrect. The correct spelling is: ${correctWord}`;
     feedback.className = "feedback incorrect";
     document.getElementById('word-status').innerHTML = '<i class="fas fa-times-circle"></i>';
   }
+
+  setTimeout(() => {
+    if (currentIndex < words.length - 1) {
+      currentIndex++;
+      showCustomWord();
+      speakCurrentWord();
+    } else {
+      showSummary();
+    }
+  }, 1500);
 }
 
 function nextCustomWord() {
