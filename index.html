@@ -5,8 +5,79 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>SpellRightPro</title>
   <link rel="stylesheet" href="css/styles.css" />
+  <link rel="stylesheet" href="css/premium.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
   <style>
-    /* Landing-specific quick tweaks */
+    /* Modal styles */
+    .modal {
+      position: fixed;
+      z-index: 1000;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0,0,0,0.5);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      visibility: hidden;
+      transition: all 0.3s ease;
+    }
+    
+    .modal.active {
+      opacity: 1;
+      visibility: visible;
+    }
+    
+    .modal-content {
+      background: var(--light);
+      padding: 2rem;
+      border-radius: var(--radius-lg);
+      max-width: 500px;
+      width: 90%;
+      box-shadow: var(--shadow-md);
+      position: relative;
+    }
+    
+    .close-modal {
+      position: absolute;
+      top: 1rem;
+      right: 1rem;
+      font-size: 1.5rem;
+      cursor: pointer;
+      color: var(--gray);
+    }
+    
+    .form-group {
+      margin-bottom: 1.25rem;
+    }
+    
+    .form-group label {
+      display: block;
+      margin-bottom: 0.5rem;
+      font-weight: 500;
+      color: var(--dark);
+    }
+    
+    .form-group input,
+    .form-group textarea {
+      width: 100%;
+      padding: 0.75rem 1rem;
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+      background: var(--light);
+      color: var(--dark);
+      font-size: 1rem;
+    }
+    
+    .form-submit-btn {
+      width: 100%;
+      padding: 0.75rem;
+      margin-top: 1rem;
+    }
+    
+    /* Landing-specific styles */
     .landing-container {
       max-width: 670px;
       margin: 48px auto 0 auto;
@@ -98,7 +169,9 @@
       <span>SpellRightPro</span>
     </div>
     <div class="nav-actions">
-      <!-- You can add a "Contact" or social link here if desired -->
+      <button id="dark-mode-toggle" class="btn-icon">
+        <i class="fas fa-moon"></i>
+      </button>
     </div>
   </nav>
 
@@ -145,9 +218,87 @@
         <a href="premium.html" style="background: #4418c0;">Premium Edition</a>
       </div>
       <div style="margin-top:24px; font-size: 0.99rem; color: #aaa;">
-        &copy; 2025 SpellRightPro &middot; <a href="mailto:support@spellrightpro.org" style="color:#098cfb;">Contact Us</a>
+        &copy; 2025 SpellRightPro &middot; 
+        <a href="#" id="contact-link" style="color:#098cfb;">Contact Us</a>
       </div>
     </div>
   </main>
+
+  <!-- Contact Modal -->
+  <div id="contact-modal" class="modal">
+    <div class="modal-content">
+      <span class="close-modal">&times;</span>
+      <h2>Contact Us</h2>
+      <form name="contact" method="POST" data-netlify="true" netlify-honeypot="bot-field">
+        <input type="hidden" name="form-name" value="contact">
+        <p class="hidden">
+          <label>Don't fill this out if you're human: <input name="bot-field"/></label>
+        </p>
+        <div class="form-group">
+          <label for="name">Your Name:</label>
+          <input type="text" id="name" name="name" required>
+        </div>
+        <div class="form-group">
+          <label for="email">Email:</label>
+          <input type="email" id="email" name="email" required>
+        </div>
+        <div class="form-group">
+          <label for="message">Message:</label>
+          <textarea id="message" name="message" rows="5" required></textarea>
+        </div>
+        <button type="submit" class="btn btn-primary form-submit-btn">
+          <i class="fas fa-paper-plane"></i> Send Message
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    // Modal functionality
+    document.addEventListener('DOMContentLoaded', function() {
+      const modal = document.getElementById('contact-modal');
+      const contactLink = document.getElementById('contact-link');
+      const closeBtn = document.querySelector('.close-modal');
+      
+      // Open modal
+      contactLink.addEventListener('click', function(e) {
+        e.preventDefault();
+        modal.classList.add('active');
+      });
+      
+      // Close modal
+      closeBtn.addEventListener('click', function() {
+        modal.classList.remove('active');
+      });
+      
+      // Close when clicking outside
+      window.addEventListener('click', function(e) {
+        if (e.target === modal) {
+          modal.classList.remove('active');
+        }
+      });
+      
+      // Dark mode toggle
+      const darkModeToggle = document.getElementById('dark-mode-toggle');
+      darkModeToggle.addEventListener('click', function() {
+        document.body.classList.toggle('dark-mode');
+        localStorage.setItem('darkMode', document.body.classList.contains('dark-mode'));
+        updateDarkModeIcon();
+      });
+      
+      function updateDarkModeIcon() {
+        const icon = darkModeToggle.querySelector('i');
+        icon.className = document.body.classList.contains('dark-mode') 
+          ? 'fas fa-sun' 
+          : 'fas fa-moon';
+      }
+      
+      // Check for saved preference
+      if (localStorage.getItem('darkMode') === 'true') {
+        document.body.classList.add('dark-mode');
+      }
+      updateDarkModeIcon();
+    });
+  </script>
 </body>
 </html>
