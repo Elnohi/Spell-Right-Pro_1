@@ -5,13 +5,13 @@ import { getAnalytics } from 'firebase/analytics';
 import { getFirestore } from 'firebase/firestore';
 
 const firebaseConfig = {
-  apiKey: "YOUR_API_KEY",
-  authDomain: "YOUR_AUTH_DOMAIN",
-  projectId: "YOUR_PROJECT_ID",
-  storageBucket: "YOUR_STORAGE_BUCKET",
-  messagingSenderId: "YOUR_SENDER_ID",
-  appId: "YOUR_APP_ID",
-  measurementId: "YOUR_MEASUREMENT_ID"
+  apiKey: "AIzaSyCZ-rAPnRgVjSRFOFvbiQlowE6A3RVvwWo",
+  authDomain: "spellrightpro-firebase.firebaseapp.com",
+  projectId: "spellrightpro-firebase",
+  storageBucket: "spellrightpro-firebase.firebasestorage.app",
+  messagingSenderId: "798456641137",
+  appId: "1:798456641137:web:5c6d79db5bf49d04928dd0",
+  measurementId: "G-H09MF13297"
 };
 
 // Initialize Firebase
