@@ -1,18 +1,23 @@
-// Initialize Firebase
+// firebase-config.js
+import { initializeApp } from 'firebase/app';
+import { getAuth } from 'firebase/auth';
+import { getAnalytics } from 'firebase/analytics';
+import { getFirestore } from 'firebase/firestore';
+
 const firebaseConfig = {
-  apiKey: "AIzaSyCZ-rAPnRgVjSRFOFvbiQlowE6A3RVvwWo",
-  authDomain: "spellrightpro-firebase.firebaseapp.com",
-  projectId: "spellrightpro-firebase",
-  storageBucket: "spellrightpro-firebase.appspot.com",
-  messagingSenderId: "798456641137",
-  appId: "1:798456641137:web:5c6d79db5bf49d04928dd0",
-  measurementId: "G-H09MF13297" // This enables Analytics automatically
+  apiKey: "YOUR_API_KEY",
+  authDomain: "YOUR_AUTH_DOMAIN",
+  projectId: "YOUR_PROJECT_ID",
+  storageBucket: "YOUR_STORAGE_BUCKET",
+  messagingSenderId: "YOUR_SENDER_ID",
+  appId: "YOUR_APP_ID",
+  measurementId: "YOUR_MEASUREMENT_ID"
 };
 
-const app = firebase.initializeApp(firebaseConfig);
-const analytics = firebase.analytics(); // Get analytics instance
+// Initialize Firebase
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const analytics = getAnalytics(app);
+const db = getFirestore(app);
 
-// Enable debug mode during development
-if (window.location.hostname === "localhost") {
-  analytics.setAnalyticsCollectionEnabled(true);
-}
+export { auth, analytics, db };
