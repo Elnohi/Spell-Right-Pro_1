@@ -1,4 +1,7 @@
 // Main Premium App
+import { auth } from './firebase-config.js';
+import { trackEvent, trackError } from './analytics.js';
+
 let currentUser = null;
 let examType = "OET";
 let accent = "en-US";
@@ -45,13 +48,7 @@ if (localStorage.getItem('darkMode') === 'true') {
   document.body.classList.add('dark-mode');
 }
 updateDarkModeIcon();
-
-// Enhanced Analytics Helper
-function trackEvent(eventName, eventData = {}) {
-  if (!window.firebase) {
-    console.log('Analytics Event:', eventName, eventData);
-    return;
-  }
+}
 
   try {
     const event = {
@@ -91,25 +88,6 @@ function trackEvent(eventName, eventData = {}) {
   } catch (e) {
     console.error('Tracking error:', e);
   }
-}
-
-function trackSessionStart(wordCount) {
-  trackEvent('session_start', {
-    word_count: wordCount,
-    word_list: words.slice(0, 10), // Only send first 10 words for privacy
-    session_id: generateSessionId()
-  });
-}
-
-function trackWordAttempt(word, isCorrect, userAnswer) {
-  trackEvent('word_attempt', {
-    word_length: word.length,
-    is_correct: isCorrect,
-    user_answer_length: userAnswer.length,
-    word_index: currentIndex,
-    current_score: score,
-    attempt_duration: calculateAttemptDuration()
-  });
 }
 
 function trackSessionEnd() {
@@ -225,14 +203,15 @@ function renderAuth() {
 
 auth.onAuthStateChanged(user => {
   currentUser = user;
+  renderAuth();
+  
   if (user) {
     trackEvent('user_authenticated', {
       provider: user.providerData[0]?.providerId || 'email',
-      email: user.email,
-      account_age_days: Math.floor((new Date() - new Date(user.metadata.creationTime)) / (1000 * 60 * 60 * 24))
+      email: user.email ? user.email.substring(0, 3) + '...' : 'no-email',
+      accountAge: Math.floor((new Date() - new Date(user.metadata.creationTime)) / (1000 * 60 * 60 * 24))
     });
   }
-  renderAuth();
 });
 
 // Main App UI
