@@ -1,66 +1,69 @@
-// analytics.js
+// analytics.js - Enhanced Version
 import { analytics } from './firebase-config.js';
 
-const startTime = Date.now();
-let sessionWords = [];
-let performanceMetrics = {
-  timePerWord: [],
-  retriesPerWord: []
-};
+const sessionStart = Date.now();
+const sessionEvents = [];
 
 export function trackEvent(eventName, params = {}) {
+  const eventData = {
+    ...params,
+    timestamp: new Date().toISOString(),
+    sessionDuration: Math.round((Date.now() - sessionStart) / 1000),
+    darkMode: document.body.classList.contains('dark-mode'),
+    userAgent: navigator.userAgent.substring(0, 100)
+  };
+
+  // Store event locally for debugging
+  sessionEvents.push({ eventName, ...eventData });
+  
   try {
     if (!analytics) {
-      console.warn('Analytics not available:', eventName, params);
+      console.warn('Firebase Analytics not available', eventName, eventData);
       return;
     }
-
-    const enhancedParams = {
-      ...params,
-      sessionDuration: Math.round((Date.now() - startTime) / 1000),
-      darkMode: document.body.classList.contains('dark-mode'),
-      userAgent: navigator.userAgent.substring(0, 50) // Truncate long UA strings
-    };
-
-    // Send to Firebase Analytics
-    analytics.logEvent(eventName, enhancedParams);
     
-    // Local tracking logic
-    if (eventName === 'word_answered') {
-      sessionWords.push(params.word);
-      if (params.status === 'incorrect') {
-        performanceMetrics.retriesPerWord.push({
-          word: params.word,
-          attempts: params.attempts || 1
-        });
-      }
+    // Send to Firebase
+    analytics.logEvent(eventName, eventData);
+    
+    // Special handling for session events
+    if (eventName === 'session_end') {
+      logSessionSummary(eventData);
     }
-
-    if (eventName === 'session_completed') {
-      const duration = enhancedParams.sessionDuration;
-      const wordCount = sessionWords.length;
-      
-      analytics.logEvent('session_summary', {
-        duration,
-        wordCount,
-        accuracy: wordCount > 0 ? Math.round((params.correctAnswers / wordCount) * 100) : 0,
-        flaggedWords: params.flaggedWords || 0
-      });
-
-      // Reset session tracking
-      sessionWords = [];
-      performanceMetrics = { timePerWord: [], retriesPerWord: [] };
-    }
-
+    
   } catch (error) {
-    console.error('Analytics error:', error);
+    console.error('Analytics tracking failed:', error);
+    // Fallback to console logging
+    console.log('Analytics Event (fallback):', eventName, eventData);
   }
 }
 
 export function trackError(error, context = {}) {
-  trackEvent('error_occurred', {
-    error: error.message.substring(0, 100),
-    stack: error.stack ? error.stack.substring(0, 200) : '',
-    ...context
-  });
+  const errorData = {
+    ...context,
+    name: error.name,
+    message: error.message.substring(0, 200),
+    stack: error.stack ? error.stack.substring(0, 300) : 'none'
+  };
+  
+  trackEvent('error_occurred', errorData);
+}
+
+function logSessionSummary(sessionData) {
+  const wordEvents = sessionEvents.filter(e => 
+    e.eventName === 'word_attempt'
+  );
+  
+  const summary = {
+    totalWords: wordEvents.length,
+    correctAnswers: wordEvents.filter(e => e.status === 'correct').length,
+    duration: sessionData.sessionDuration,
+    flaggedWords: sessionData.flaggedWords || 0
+  };
+  
+  if (analytics) {
+    analytics.logEvent('session_summary', summary);
+  }
+  
+  // Clear session data
+  sessionEvents.length = 0;
 }
