@@ -572,4 +572,36 @@ textarea {
   .summary-actions {
     flex-direction: column;
   }
+
+  /* ======================
+   Mobile Responsiveness
+   ====================== */
+@media (max-width: 768px) {
+  /* Global mobile adjustments */
+  .container {
+    padding: 0 15px;
+  }
+
+  /* Pricing grid (if used on multiple pages) */
+  .pricing-grid {
+    flex-direction: column;
+    align-items: center;
+    gap: 15px;
+  }
+
+  .pricing-card {
+    width: 100%;
+    max-width: none;
+    padding: 20px;
+  }
+
+  /* Navbar adjustments */
+  .navbar {
+    flex-direction: column;
+    padding: 10px 0;
+  }
+
+  .nav-actions {
+    margin-top: 10px;
+  }
 }
