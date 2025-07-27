@@ -22,9 +22,13 @@ const WORD_SEPARATORS = /[\s,;\/\-–—|]+/;
 
 // Initialize dark mode toggle
 document.getElementById('dark-mode-toggle').addEventListener('click', () => {
-  document.body.classList.toggle('dark-mode');
-  localStorage.setItem('darkMode', document.body.classList.contains('dark-mode'));
+  const isDarkMode = document.body.classList.toggle('dark-mode');
+  localStorage.setItem('darkMode', isDarkMode);
   updateDarkModeIcon();
+  trackEvent('ui_preference_change', {
+    preference: 'dark_mode',
+    value: isDarkMode ? 'enabled' : 'disabled'
+  });
 });
 
 function updateDarkModeIcon() {
@@ -42,44 +46,69 @@ if (localStorage.getItem('darkMode') === 'true') {
 }
 updateDarkModeIcon();
 
-// Analytics Helper
+// Enhanced Analytics Helper
 function trackEvent(eventName, eventData = {}) {
-  if (!currentUser) return;
-  
-  const event = {
-    timestamp: new Date().toISOString(),
-    userId: currentUser.uid,
-    event: eventName,
-    data: {
-      examType,
-      accent,
-      sessionMode,
-      ...eventData
+  if (!window.firebase) {
+    console.log('Analytics Event:', eventName, eventData);
+    return;
+  }
+
+  try {
+    const event = {
+      timestamp: new Date().toISOString(),
+      userId: currentUser ? currentUser.uid.substring(0, 8) + '...' : 'anonymous',
+      event: eventName,
+      data: {
+        examType,
+        accent,
+        sessionMode,
+        ...eventData
+      }
+    };
+    
+    // Send to Firebase Analytics
+    if (firebase.analytics) {
+      firebase.analytics().logEvent(eventName, {
+        ...eventData,
+        exam_type: examType,
+        accent: accent,
+        session_mode: sessionMode
+      });
     }
-  };
-  
-  // Log to console for debugging
-  console.log('Analytics Event:', event);
-  
-  // In a real implementation, you would send this to your analytics service
-  // For example:
-  // db.collection('analytics').add(event).catch(console.error);
+    
+    // Also log to console for debugging
+    console.log('Analytics Event:', event);
+    
+    // Send to Firestore for detailed analysis
+    if (firebase.firestore && currentUser) {
+      firebase.firestore().collection('user_events').add({
+        userId: currentUser.uid,
+        eventName,
+        ...eventData,
+        timestamp: firebase.firestore.FieldValue.serverTimestamp()
+      }).catch(e => console.error('Firestore error:', e));
+    }
+  } catch (e) {
+    console.error('Tracking error:', e);
+  }
 }
 
 function trackSessionStart(wordCount) {
   trackEvent('session_start', {
     word_count: wordCount,
-    word_list: words
+    word_list: words.slice(0, 10), // Only send first 10 words for privacy
+    session_id: generateSessionId()
   });
 }
 
 function trackWordAttempt(word, isCorrect, userAnswer) {
   trackEvent('word_attempt', {
-    word,
+    word_length: word.length,
     is_correct: isCorrect,
-    user_answer: userAnswer,
+    user_answer_length: userAnswer.length,
     word_index: currentIndex,
-    current_score: score
+    current_score: score,
+    attempt_duration: calculateAttemptDuration()
   });
 }
 
@@ -87,15 +116,49 @@ function trackSessionEnd() {
   trackEvent('session_end', {
     final_score: score,
     total_words: words.length,
-    flagged_words: flaggedWords
+    accuracy_percentage: Math.round((score / words.length) * 100),
+    flagged_words_count: flaggedWords.length,
+    session_duration: calculateSessionDuration()
   });
 }
 
 function trackFlagWord(word, isFlagged) {
-  trackEvent('flag_word', {
-    word,
-    is_flagged: isFlagged
+  trackEvent('word_flagged', {
+    word_length: word.length,
+    is_flagged: isFlagged,
+    total_flagged: flaggedWords.length
   });
+}
+
+function trackFeatureUsage(feature, details = {}) {
+  trackEvent('feature_usage', {
+    feature,
+    ...details
+  });
+}
+
+// Helper functions for tracking
+let sessionStartTime;
+let wordStartTime;
+
+function generateSessionId() {
+  return 'sess_' + Math.random().toString(36).substring(2, 9) + Date.now().toString(36);
+}
+
+function startSessionTimer() {
+  sessionStartTime = new Date();
+}
+
+function startWordTimer() {
+  wordStartTime = new Date();
+}
+
+function calculateSessionDuration() {
+  return sessionStartTime ? Math.round((new Date() - sessionStartTime) / 1000) : 0;
+}
+
+function calculateAttemptDuration() {
+  return wordStartTime ? Math.round((new Date() - wordStartTime) / 1000) : 0;
 }
 
 // Authentication
@@ -109,7 +172,10 @@ function renderAuth() {
         </button>
       </div>
     `;
-    document.getElementById('logout-btn').onclick = () => auth.signOut();
+    document.getElementById('logout-btn').onclick = () => {
+      trackEvent('user_logout');
+      auth.signOut();
+    };
     premiumApp.classList.remove('hidden');
     renderExamUI();
   } else {
@@ -126,16 +192,32 @@ function renderAuth() {
       </div>
     `;
     document.getElementById('login-btn').onclick = () => {
-      auth.signInWithEmailAndPassword(
-        document.getElementById('email').value,
-        document.getElementById('password').value
-      ).catch(e => showAlert(e.message, 'error'));
+      const email = document.getElementById('email').value;
+      trackEvent('login_attempt', { method: 'email' });
+      auth.signInWithEmailAndPassword(email, document.getElementById('password').value)
+        .then(() => trackEvent('login_success', { method: 'email' }))
+        .catch(e => {
+          trackEvent('login_failed', { 
+            method: 'email',
+            error: e.code,
+            message: e.message.substring(0, 100)
+          });
+          showAlert(e.message, 'error');
+        });
     };
     document.getElementById('signup-btn').onclick = () => {
-      auth.createUserWithEmailAndPassword(
-        document.getElementById('email').value,
-        document.getElementById('password').value
-      ).catch(e => showAlert(e.message, 'error'));
+      const email = document.getElementById('email').value;
+      trackEvent('signup_attempt', { method: 'email' });
+      auth.createUserWithEmailAndPassword(email, document.getElementById('password').value)
+        .then(() => trackEvent('signup_success', { method: 'email' }))
+        .catch(e => {
+          trackEvent('signup_failed', { 
+            method: 'email',
+            error: e.code,
+            message: e.message.substring(0, 100)
+          });
+          showAlert(e.message, 'error');
+        });
     };
     premiumApp.classList.add('hidden');
   }
@@ -143,11 +225,19 @@ function renderAuth() {
 
 auth.onAuthStateChanged(user => {
   currentUser = user;
+  if (user) {
+    trackEvent('user_authenticated', {
+      provider: user.providerData[0]?.providerId || 'email',
+      email: user.email,
+      account_age_days: Math.floor((new Date() - new Date(user.metadata.creationTime)) / (1000 * 60 * 60 * 24))
+    });
+  }
   renderAuth();
 });
 
 // Main App UI
 function renderExamUI() {
+  trackFeatureUsage('exam_ui_view');
   examUI.innerHTML = `
     <div class="mode-selector">
       <button id="practice-mode-btn" class="mode-btn selected">
@@ -186,11 +276,13 @@ function renderExamUI() {
 
   document.getElementById('exam-type').onchange = e => {
     examType = e.target.value;
+    trackFeatureUsage('exam_type_change', { exam_type: examType });
     renderExamUI();
   };
   
   document.getElementById('accent-select').onchange = e => {
     accent = e.target.value;
+    trackFeatureUsage('accent_change', { accent });
     updateFlag();
   };
   
@@ -198,15 +290,18 @@ function renderExamUI() {
     sessionMode = "practice";
     document.getElementById('practice-mode-btn').classList.add("selected");
     document.getElementById('test-mode-btn').classList.remove("selected");
+    trackFeatureUsage('session_mode_change', { mode: 'practice' });
   };
   
   document.getElementById('test-mode-btn').onclick = () => {
     sessionMode = "test";
     document.getElementById('test-mode-btn').classList.add("selected");
     document.getElementById('practice-mode-btn').classList.remove("selected");
+    trackFeatureUsage('session_mode_change', { mode: 'test' });
   };
   
   document.getElementById('start-btn').onclick = () => {
+    trackFeatureUsage('session_start_click', { exam_type: examType, mode: sessionMode });
     summaryArea.innerHTML = "";
     if (examType === "OET") {
       startOET();
