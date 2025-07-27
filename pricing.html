@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>SpellRightPro - Pricing</title>
+  <!-- Reuse your existing CSS/JS links -->
+  <style>
+    /* Pricing-specific styles */
+    .pricing-hero {
+      text-align: center;
+      padding: 40px 0;
+    }
+    .toggle-container {
+      margin: 20px auto;
+      display: flex;
+      justify-content: center;
+    }
+    .toggle-btn {
+      padding: 10px 20px;
+      background: var(--light-gray);
+      border: none;
+      cursor: pointer;
+    }
+    .toggle-btn.active {
+      background: var(--primary);
+      color: white;
+    }
+  </style>
+</head>
+<body>
+  <nav><!-- Reuse your navbar --></nav>
+
+  <main class="pricing-container">
+    <div class="pricing-hero">
+      <h1>Choose Your Plan</h1>
+      <div class="toggle-container">
+        <button class="toggle-btn active" data-plan="monthly">Monthly</button>
+        <button class="toggle-btn" data-plan="annual">Annual (Save 20%)</button>
+      </div>
+    </div>
+
+    <div class="pricing-grid">
+      <!-- Free Tier -->
+      <div class="pricing-card">
+        <h3>Free</h3>
+        <div class="price">$0<small>/forever</small></div>
+        <ul>
+          <li>✓ Basic OET/Bee practice</li>
+          <li>✓ Limited word lists</li>
+          <li>✗ With ads</li>
+          <li>✗ No progress tracking</li>
+        </ul>
+        <a href="freemium-oet.html" class="btn btn-outline">Start Free</a>
+      </div>
+
+      <!-- Premium Tier -->
+      <div class="pricing-card featured">
+        <div class="badge">Most Popular</div>
+        <h3>Premium</h3>
+        <div class="price monthly-price">$9<small>/month</small></div>
+        <div class="price annual-price hidden">$7<small>/month ($84 billed annually)</small></div>
+        <ul>
+          <li>✓ All exam modes unlocked</li>
+          <li>✓ Unlimited custom lists</li>
+          <li>✓ Ad-free experience</li>
+          <li>✓ Detailed progress tracking</li>
+        </ul>
+        <a href="#payment" class="btn btn-primary">Get Premium</a>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    // Plan toggling
+    document.querySelectorAll('.toggle-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.toggle-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        
+        if(btn.dataset.plan === 'annual') {
+          document.querySelector('.monthly-price').classList.add('hidden');
+          document.querySelector('.annual-price').classList.remove('hidden');
+        } else {
+          document.querySelector('.annual-price').classList.add('hidden');
+          document.querySelector('.monthly-price').classList.remove('hidden');
+        }
+      });
+    });
+  </script>
+</body>
+</html>
