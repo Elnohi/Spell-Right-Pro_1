@@ -89,12 +89,12 @@ function renderAuth() {
       
       trackEvent('auth_attempt', { type: 'login' });
       auth.signInWithEmailAndPassword(email, password)
-        .then(() => trackEvent('auth_success', { type: 'login' }))
-        .catch(e => {
-          trackError(e, { context: 'login' });
-          showAlert(e.message, 'error');
-        });
-    };
+  .then(() => trackEvent('login_success'))
+  .catch(error => {
+    trackError(error, { context: 'email_login' });
+    showAlert(error.message);
+        }); 
+    }; 
     
     document.getElementById('signup-btn').onclick = () => {
       const email = document.getElementById('email').value;
@@ -221,8 +221,12 @@ function startOET() {
   userAnswers = [];
   trainerArea.innerHTML = "";
   summaryArea.innerHTML = "";
-  sessionStartTime = new Date();
-
+  sessionStartTime = Date.now();
+  trackEvent('session_start', {
+    examType,
+    mode: sessionMode,
+    wordCount: words.length
+  });
   words = sessionMode === "test" 
     ? [...window.oetWords].sort(() => 0.5 - Math.random()).slice(0, 24)
     : window.oetWords.slice();
@@ -283,14 +287,14 @@ function checkOETAnswer(correctWord) {
   const userInput = document.getElementById('user-input');
   const userAnswer = userInput.value.trim();
   userAnswers[currentIndex] = userAnswer;
-  const isCorrect = userAnswer.toLowerCase() === correctWord.toLowerCase();
+  const isCorrect = userAnswer === correctWord;
   
-  trackEvent('word_attempt', {
+    trackEvent('word_attempt', {
     word: correctWord,
     status: isCorrect ? 'correct' : 'incorrect',
     attempt: userAnswer,
     position: currentIndex,
-    session_progress: (currentIndex / words.length * 100).toFixed(1) + '%'
+    duration: Date.now() - wordStartTime
   });
 
   if (isCorrect) {
