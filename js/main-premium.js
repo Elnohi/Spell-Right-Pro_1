@@ -42,6 +42,62 @@ if (localStorage.getItem('darkMode') === 'true') {
 }
 updateDarkModeIcon();
 
+// Analytics Helper
+function trackEvent(eventName, eventData = {}) {
+  if (!currentUser) return;
+  
+  const event = {
+    timestamp: new Date().toISOString(),
+    userId: currentUser.uid,
+    event: eventName,
+    data: {
+      examType,
+      accent,
+      sessionMode,
+      ...eventData
+    }
+  };
+  
+  // Log to console for debugging
+  console.log('Analytics Event:', event);
+  
+  // In a real implementation, you would send this to your analytics service
+  // For example:
+  // db.collection('analytics').add(event).catch(console.error);
+}
+
+function trackSessionStart(wordCount) {
+  trackEvent('session_start', {
+    word_count: wordCount,
+    word_list: words
+  });
+}
+
+function trackWordAttempt(word, isCorrect, userAnswer) {
+  trackEvent('word_attempt', {
+    word,
+    is_correct: isCorrect,
+    user_answer: userAnswer,
+    word_index: currentIndex,
+    current_score: score
+  });
+}
+
+function trackSessionEnd() {
+  trackEvent('session_end', {
+    final_score: score,
+    total_words: words.length,
+    flagged_words: flaggedWords
+  });
+}
+
+function trackFlagWord(word, isFlagged) {
+  trackEvent('flag_word', {
+    word,
+    is_flagged: isFlagged
+  });
+}
+
 // Authentication
 function renderAuth() {
   if (currentUser) {
@@ -218,12 +274,14 @@ function startOET() {
   }
 
   appTitle.textContent = `OET Spelling ${sessionMode === "test" ? "Test" : "Practice"}`;
+  trackSessionStart(words.length);
   showOETWord();
   speakCurrentWord();
 }
 
 function showOETWord() {
   if (currentIndex >= words.length) {
+    trackSessionEnd();
     showSummary();
     return;
   }
@@ -289,7 +347,10 @@ function checkOETAnswer(correctWord) {
   userAnswers[currentIndex] = userAnswer;
   const feedback = document.getElementById('feedback');
   
-  if (userAnswer.toLowerCase() === correctWord.toLowerCase()) {
+  const isCorrect = userAnswer.toLowerCase() === correctWord.toLowerCase();
+  trackWordAttempt(correctWord, isCorrect, userAnswer);
+  
+  if (isCorrect) {
     feedback.textContent = "✓ Correct!";
     feedback.className = "feedback correct";
     score++;
@@ -300,13 +361,13 @@ function checkOETAnswer(correctWord) {
     document.getElementById('word-status').innerHTML = '<i class="fas fa-times-circle"></i>';
   }
 
-  // Auto-proceed after delay
   setTimeout(() => {
     if (currentIndex < words.length - 1) {
       currentIndex++;
       showOETWord();
       speakCurrentWord();
     } else {
+      trackSessionEnd();
       showSummary();
     }
   }, 1500);
@@ -318,6 +379,7 @@ function nextOETWord() {
     showOETWord();
     speakCurrentWord();
   } else {
+    trackSessionEnd();
     showSummary();
   }
 }
@@ -332,11 +394,15 @@ function prevOETWord() {
 
 function toggleFlagWord(word) {
   const idx = flaggedWords.indexOf(word);
-  if (idx === -1) {
+  const isFlagged = idx === -1;
+  
+  if (isFlagged) {
     flaggedWords.push(word);
   } else {
     flaggedWords.splice(idx, 1);
   }
+  
+  trackFlagWord(word, isFlagged);
   showOETWord();
 }
 
@@ -359,12 +425,14 @@ function startBee() {
   ];
   
   appTitle.textContent = "Spelling Bee";
+  trackSessionStart(words.length);
   showBeeWord();
   speakCurrentBeeWord();
 }
 
 function showBeeWord() {
   if (currentIndex >= words.length) {
+    trackSessionEnd();
     showBeeSummary();
     return;
   }
@@ -467,6 +535,9 @@ function processSpellingAttempt(attempt, correctWord) {
   
   userAttempts[currentIndex] = attempt;
   
+  const isCorrect = attempt === correctWord.toLowerCase();
+  trackWordAttempt(correctWord, isCorrect, attempt);
+  
   updateSpellingVisual(
     correctWord.split('').map((letter, i) => ({
       letter: attempt[i] || '',
@@ -474,7 +545,7 @@ function processSpellingAttempt(attempt, correctWord) {
     }))
   );
   
-  if (attempt === correctWord.toLowerCase()) {
+  if (isCorrect) {
     micFeedback.textContent = "✓ Correct!";
     micFeedback.className = "feedback correct";
     document.getElementById('word-status').innerHTML = '<i class="fas fa-check-circle"></i>';
@@ -491,6 +562,7 @@ function processSpellingAttempt(attempt, correctWord) {
       showBeeWord();
       speakCurrentBeeWord();
     } else {
+      trackSessionEnd();
       showBeeSummary();
     }
   }, 1500);
@@ -513,6 +585,7 @@ function nextBeeWord() {
     showBeeWord();
     speakCurrentBeeWord();
   } else {
+    trackSessionEnd();
     showBeeSummary();
   }
 }
@@ -527,11 +600,15 @@ function prevBeeWord() {
 
 function toggleBeeFlagWord(word) {
   const idx = flaggedWords.indexOf(word);
-  if (idx === -1) {
+  const isFlagged = idx === -1;
+  
+  if (isFlagged) {
     flaggedWords.push(word);
   } else {
     flaggedWords.splice(idx, 1);
   }
+  
+  trackFlagWord(word, isFlagged);
   showBeeWord();
 }
 
@@ -543,12 +620,14 @@ function startCustomPractice() {
   userAnswers = [];
   trainerArea.innerHTML = "";
   summaryArea.innerHTML = "";
+  trackSessionStart(words.length);
   showCustomWord();
   speakCurrentWord();
 }
 
 function showCustomWord() {
   if (currentIndex >= words.length) {
+    trackSessionEnd();
     showSummary();
     return;
   }
@@ -610,7 +689,10 @@ function checkCustomAnswer(correctWord) {
   userAnswers[currentIndex] = userAnswer;
   const feedback = document.getElementById('feedback');
   
-  if (userAnswer.toLowerCase() === correctWord.toLowerCase()) {
+  const isCorrect = userAnswer.toLowerCase() === correctWord.toLowerCase();
+  trackWordAttempt(correctWord, isCorrect, userAnswer);
+  
+  if (isCorrect) {
     feedback.textContent = "✓ Correct!";
     feedback.className = "feedback correct";
     score++;
@@ -627,6 +709,7 @@ function checkCustomAnswer(correctWord) {
       showCustomWord();
       speakCurrentWord();
     } else {
+      trackSessionEnd();
       showSummary();
     }
   }, 1500);
@@ -638,6 +721,7 @@ function nextCustomWord() {
     showCustomWord();
     speakCurrentWord();
   } else {
+    trackSessionEnd();
     showSummary();
   }
 }
