@@ -501,4 +501,31 @@ textarea.form-control {
   #feedback.visible {
     bottom: calc(60px + env(safe-area-inset-bottom));
   }
+
+  /* ======================
+   Premium Mobile Styles
+   ====================== */
+@media (max-width: 768px) {
+  /* Pricing page specific */
+  .pricing-hero h1 {
+    font-size: 1.8rem;
+  }
+
+  .toggle-container {
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  /* Premium feature cards */
+  .feature-box {
+    min-width: 100%;
+    margin-bottom: 15px;
+  }
+
+  /* Payment buttons */
+  #checkout-btn, .paypal-button-container {
+    width: 100%;
+    padding: 12px;
+  }
 }
+  
