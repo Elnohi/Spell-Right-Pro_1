@@ -41,7 +41,7 @@
 </head>
 <body>
   <!-- Top Ad (Only shows for non-logged-in users) -->
-  <div class="ad-container">
+  <div class="ad-container" data-ad-slot="top_banner" data-ad-format="display">
     <ins class="adsbygoogle"
          style="display:block"
          data-ad-client="ca-pub-7632930282249669"
@@ -56,11 +56,11 @@
   <div class="container">
     <nav class="navbar">
       <div class="brand">
-        <img src="assets/logo.png" alt="SpellRightPro Logo">
+        <img src="assets/logo.png" alt="SpellRightPro Logo" onclick="trackEvent('brand_click')">
         <span>SpellRightPro <span class="subtitle">Premium</span></span>
       </div>
       <div class="nav-actions">
-        <button class="btn btn-secondary" onclick="window.location.href='index.html'">
+        <button class="btn btn-secondary" onclick="trackNavClick('home')">
           <i class="fas fa-home"></i> Home
         </button>
         <button id="dark-mode-toggle" class="btn btn-icon" title="Toggle dark mode">
@@ -85,7 +85,7 @@
   </div>
 
   <!-- Bottom Ad (Only shows for non-logged-in users) -->
-  <div class="ad-container">
+  <div class="ad-container" data-ad-slot="bottom_banner" data-ad-format="display">
     <ins class="adsbygoogle"
          style="display:block"
          data-ad-client="ca-pub-7632930282249669"
@@ -97,22 +97,96 @@
     </script>
   </div>
 
+  <!-- Firebase SDKs -->
   <script src="https://www.gstatic.com/firebasejs/10.4.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.4.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.4.0/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.4.0/firebase-analytics-compat.js"></script>
+  
+  <!-- Your Config -->
   <script src="js/config.js"></script>
-  <script src="js/oet_word_list.js"></script>
-  <script src="js/main-premium.js"></script>
-
+  
+  <!-- Tracking Implementation -->
   <script>
-    // Enhanced auth state handler for ad visibility
+    // Initialize Firebase
+    const firebaseApp = firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    const db = firebase.firestore();
+    
+    // Initialize Analytics
+    let analytics;
+    try {
+      analytics = firebase.analytics();
+      console.log("Firebase Analytics initialized");
+    } catch (e) {
+      console.warn("Firebase Analytics initialization failed", e);
+    }
+
+    // Current user reference
+    let currentUser = null;
+    const trackedDepths = new Set();
+    let pageStartTime = new Date();
+
+    // Core Tracking Function
+    function trackEvent(eventName, params = {}) {
+      // Add automatic parameters
+      const eventParams = {
+        ...params,
+        page_title: document.title,
+        page_path: window.location.pathname,
+        screen_width: window.innerWidth,
+        premium_status: localStorage.getItem('premiumUser') === 'true' ? 'active' : 'inactive',
+        timestamp: new Date().toISOString()
+      };
+
+      // Send to Firebase Analytics if available
+      if (analytics) {
+        try {
+          analytics.logEvent(eventName, eventParams);
+        } catch (e) {
+          console.error("Analytics event failed:", e);
+        }
+      }
+      
+      // Also log to console for debugging
+      console.log("[TRACKING]", eventName, eventParams);
+      
+      // Optional: Send to your backend
+      // sendToBackend(eventName, eventParams);
+    }
+
+    // Navigation tracking
+    function trackNavClick(destination) {
+      trackEvent('navigation_click', {
+        destination: destination,
+        element: 'button'
+      });
+      window.location.href = destination === 'home' ? 'index.html' : destination;
+    }
+
+    // Auth State Tracking
     auth.onAuthStateChanged(user => {
       currentUser = user;
       if (user) {
         document.body.classList.add('logged-in');
         localStorage.setItem('premiumUser', 'true');
         
-        // Force ad refresh if they were visible
+        trackEvent('auth_state_change', {
+          type: 'login',
+          method: user.providerId || 'email',
+          user_id_hash: hashUserId(user.uid) // Privacy-friendly hashing
+        });
+
+        // Set user properties for analytics
+        if (analytics) {
+          analytics.setUserId(hashUserId(user.uid));
+          analytics.setUserProperties({
+            premium_status: 'active',
+            account_created: user.metadata.creationTime
+          });
+        }
+
+        // Refresh ads if they were visible
         if(window.adsbygoogle) {
           window.adsbygoogle = window.adsbygoogle || [];
           window.adsbygoogle.push({});
@@ -120,16 +194,190 @@
       } else {
         document.body.classList.remove('logged-in');
         localStorage.removeItem('premiumUser');
+        
+        trackEvent('auth_state_change', {
+          type: 'logout'
+        });
       }
       renderAuth();
     });
 
-    // Check for premium status on load
-    document.addEventListener('DOMContentLoaded', () => {
-      if(localStorage.getItem('premiumUser') === 'true') {
-        document.body.classList.add('logged-in');
-      }
+    // Dark Mode Tracking
+    document.getElementById('dark-mode-toggle').addEventListener('click', function() {
+      const isDarkMode = document.body.classList.toggle('dark-mode');
+      trackEvent('ui_preference_change', {
+        preference: 'dark_mode',
+        value: isDarkMode ? 'enabled' : 'disabled'
+      });
+      
+      // Update icon
+      this.innerHTML = `<i class="fas ${isDarkMode ? 'fa-sun' : 'fa-moon'}"></i>`;
+      
+      // Save preference
+      localStorage.setItem('darkMode', isDarkMode ? 'enabled' : 'disabled');
     });
+
+    // Initialize dark mode from localStorage
+    if (localStorage.getItem('darkMode') === 'enabled') {
+      document.body.classList.add('dark-mode');
+      document.getElementById('dark-mode-toggle').innerHTML = '<i class="fas fa-sun"></i>';
+    }
+
+    // Ad Impression Tracking
+    function trackAdImpression(adElement) {
+      const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            const visibility = Math.round(entry.intersectionRatio * 100);
+            trackEvent('ad_impression', {
+              ad_slot: adElement.dataset.adSlot,
+              ad_format: adElement.dataset.adFormat,
+              visibility: `${visibility}%`,
+              viewport_size: `${window.innerWidth}x${window.innerHeight}`
+            });
+            observer.unobserve(adElement);
+          }
+        });
+      }, { threshold: 0.1 });
+      
+      observer.observe(adElement);
+    }
+
+    // Scroll Depth Tracking
+    function setupScrollTracking() {
+      window.addEventListener('scroll', function() {
+        const scrollDepth = Math.round(
+          (window.scrollY / (document.body.scrollHeight - window.innerHeight)) * 100
+        );
+        
+        [25, 50, 75, 100].forEach(threshold => {
+          if (scrollDepth >= threshold && !trackedDepths.has(threshold)) {
+            trackEvent('scroll_depth', {
+              depth: `${threshold}%`,
+              scroll_position: window.scrollY,
+              content_height: document.body.scrollHeight
+            });
+            trackedDepths.add(threshold);
+          }
+        });
+      });
+    }
+
+    // Time Spent Tracking
+    function setupTimeTracking() {
+      window.addEventListener('beforeunload', () => {
+        const timeSpent = Math.round((new Date() - pageStartTime) / 1000);
+        trackEvent('time_spent', {
+          seconds: timeSpent,
+          scroll_depth: Math.max(...Array.from(trackedDepths)) || 0,
+          interactions: window.interactionCount || 0
+        });
+      });
+    }
+
+    // Helper function for user ID hashing
+    function hashUserId(userId) {
+      // Simple hashing for demonstration - replace with a real hash function
+      let hash = 0;
+      for (let i = 0; i < userId.length; i++) {
+        const char = userId.charCodeAt(i);
+        hash = ((hash << 5) - hash) + char;
+        hash = hash & hash; // Convert to 32bit integer
+      }
+      return 'user_' + Math.abs(hash).toString(16).substring(0, 8);
+    }
+
+    // Initialize all tracking
+    document.addEventListener('DOMContentLoaded', function() {
+      // Initial page view
+      trackEvent('page_view', {
+        screen_name: 'premium_page',
+        referrer: document.referrer || 'direct'
+      });
+
+      // Setup tracking
+      setupScrollTracking();
+      setupTimeTracking();
+      
+      // Track all ads
+      document.querySelectorAll('.ad-container').forEach(trackAdImpression);
+      
+      // Track premium status
+      if (localStorage.getItem('premiumUser') === 'true') {
+        trackEvent('premium_status', { status: 'active' });
+      }
+
+      // Count interactions
+      window.interactionCount = 0;
+      document.addEventListener('click', () => {
+        window.interactionCount = (window.interactionCount || 0) + 1;
+      }, { passive: true });
+    });
+
+    // Render auth UI (simplified)
+    function renderAuth() {
+      const authArea = document.getElementById('auth-area');
+      if (!authArea) return;
+      
+      if (currentUser) {
+        authArea.innerHTML = `
+          <div class="auth-welcome">
+            <h3>Welcome, ${currentUser.email || 'User'}!</h3>
+            <button class="btn btn-primary" onclick="trackEvent('premium_feature_click', {feature: 'trainer'}); showTrainer()">
+              Start Training
+            </button>
+            <button class="btn btn-secondary" onclick="auth.signOut()">
+              Sign Out
+            </button>
+          </div>
+        `;
+        document.getElementById('premium-app').classList.remove('hidden');
+      } else {
+        authArea.innerHTML = `
+          <div class="auth-options">
+            <h3>Access Premium Features</h3>
+            <button class="btn btn-primary" onclick="trackEvent('auth_attempt', {method: 'google'}); auth.signInWithGoogle()">
+              <i class="fab fa-google"></i> Sign In with Google
+            </button>
+            <button class="btn btn-secondary" onclick="trackEvent('auth_attempt', {method: 'email'}); showEmailAuth()">
+              <i class="fas fa-envelope"></i> Sign In with Email
+            </button>
+          </div>
+        `;
+        document.getElementById('premium-app').classList.add('hidden');
+      }
+    }
+
+    // Placeholder functions for your implementation
+    function showTrainer() {
+      // Your trainer implementation
+      document.getElementById('trainer-area').innerHTML = `
+        <div class="feature-container">
+          <h3>Premium Trainer</h3>
+          <button class="btn btn-primary" onclick="trackEvent('premium_feature_usage', {feature: 'oet_practice', mode: 'test'}); startOETPractice()">
+            Start OET Practice
+          </button>
+        </div>
+      `;
+    }
+
+    function startOETPractice() {
+      // Your OET practice implementation
+      trackEvent('premium_feature_start', {
+        feature: 'oet_practice',
+        word_count: oetWordList.length
+      });
+      alert('OET Practice Started!');
+    }
+
+    function showEmailAuth() {
+      // Your email auth implementation
+      alert('Email auth would appear here');
+    }
   </script>
+
+  <!-- Your other scripts -->
+  <script src="js/oet_word_list.js"></script>
+  <script src="js/main-premium.js"></script>
 </body>
 </html>
