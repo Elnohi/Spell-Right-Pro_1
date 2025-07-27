@@ -6,6 +6,36 @@
   <title>SpellRightPro (OET - Freemium)</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <link rel="stylesheet" href="css/styles.css" />
+  <!-- Google AdSense -->
+  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7632930282249669"
+     crossorigin="anonymous"></script>
+  <style>
+    /* Ad Container Styles (Non-intrusive) */
+    .ad-container {
+      margin: 1.5rem auto;
+      padding: 0;
+      text-align: center;
+      max-width: 728px;
+      overflow: hidden;
+    }
+    .ad-container.header-ad {
+      margin-bottom: 0.5rem;
+    }
+    .ad-container.footer-ad {
+      margin-top: 1.5rem;
+    }
+    @media (max-width: 768px) {
+      .ad-container {
+        margin: 1rem auto;
+        max-width: 320px;
+      }
+    }
+    
+    /* Ensure trainer area remains completely clean */
+    #trainer-area {
+      ad-display: none !important;
+    }
+  </style>
 </head>
 <body>
   <nav class="navbar">
@@ -25,6 +55,19 @@
       </button>
     </div>
   </nav>
+
+  <!-- Header Ad (Outside main practice flow) -->
+  <div class="ad-container header-ad">
+    <ins class="adsbygoogle"
+         style="display:block"
+         data-ad-client="ca-pub-7632930282249669"
+         data-ad-slot="YOUR_OET_HEADER_SLOT"
+         data-ad-format="auto"
+         data-full-width-responsive="true"></ins>
+    <script>
+         (adsbygoogle = window.adsbygoogle || []).push({});
+    </script>
+  </div>
 
   <main class="container">
     <section class="training-card">
@@ -66,6 +109,7 @@
         <i class="fas fa-play"></i> Start Session
       </button>
 
+      <!-- Protected Practice Area (No Ads) -->
       <div id="trainer-area" class="trainer-area hidden">
         <!-- Dynamically populated by JS -->
       </div>
@@ -73,6 +117,19 @@
       <div id="summary-area" class="summary-area hidden"></div>
     </section>
   </main>
+
+  <!-- Footer Ad (Outside main practice flow) -->
+  <div class="ad-container footer-ad">
+    <ins class="adsbygoogle"
+         style="display:block"
+         data-ad-client="ca-pub-7632930282249669"
+         data-ad-slot="YOUR_OET_FOOTER_SLOT"
+         data-ad-format="auto"
+         data-full-width-responsive="true"></ins>
+    <script>
+         (adsbygoogle = window.adsbygoogle || []).push({});
+    </script>
+  </div>
 
   <script src="js/oet_word_list.js"></script>
   <script src="js/main-freemium-oet.js"></script>
