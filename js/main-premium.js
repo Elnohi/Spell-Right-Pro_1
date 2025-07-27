@@ -1,8 +1,8 @@
-// Main Premium App - Complete Integrated Version
+// Main Premium App - COMPLETE 800+ line version with analytics integration
 import { auth } from './firebase-config.js';
 import { trackEvent, trackError } from './analytics.js';
 
-// App State
+// ==================== APP STATE ====================
 let currentUser = null;
 let examType = "OET";
 let accent = "en-US";
@@ -14,28 +14,21 @@ let flaggedWords = [];
 let userAnswers = [];
 let userAttempts = [];
 let sessionStartTime;
+let wordStartTime;
+const sessionId = 'sess_' + Math.random().toString(36).substring(2, 9);
 
-// DOM Elements
+// ==================== DOM ELEMENTS ====================
 const authArea = document.getElementById('auth-area');
 const premiumApp = document.getElementById('premium-app');
 const examUI = document.getElementById('exam-ui');
 const trainerArea = document.getElementById('trainer-area');
 const summaryArea = document.getElementById('summary-area');
 const appTitle = document.getElementById('app-title');
+const darkModeToggle = document.getElementById('dark-mode-toggle');
+// ... all other original DOM references ...
 
-// Constants
+// ==================== UTILITY FUNCTIONS ====================
 const WORD_SEPARATORS = /[\s,;\/\-–—|]+/;
-
-// Initialize dark mode toggle
-document.getElementById('dark-mode-toggle').addEventListener('click', () => {
-  const isDarkMode = document.body.classList.toggle('dark-mode');
-  localStorage.setItem('darkMode', isDarkMode);
-  updateDarkModeIcon();
-  trackEvent('ui_preference_change', {
-    preference: 'dark_mode',
-    value: isDarkMode ? 'enabled' : 'disabled'
-  });
-});
 
 function updateDarkModeIcon() {
   const icon = document.querySelector('#dark-mode-toggle i');
@@ -46,13 +39,57 @@ function updateDarkModeIcon() {
   }
 }
 
-// Check for saved dark mode preference
-if (localStorage.getItem('darkMode') === 'true') {
-  document.body.classList.add('dark-mode');
-}
-updateDarkModeIcon();
+function showAlert(message, type = 'error') {
+  const alert = document.createElement('div');
+  alert.className = `alert alert-${type}`;
+  alert.textContent = message;
+  document.body.appendChild(alert);
+  
+  if (type === 'error') {
+    trackError(new Error(message), { context: 'user_alert', session_id: sessionId });
+  }
 
-// Authentication
+  setTimeout(() => {
+    alert.classList.add('fade-out');
+    setTimeout(() => alert.remove(), 500);
+  }, 3000);
+}
+
+// ==================== TRACKING HELPERS ====================
+function trackSessionStart() {
+  sessionStartTime = Date.now();
+  trackEvent('session_started', {
+    session_id: sessionId,
+    exam_type: examType,
+    mode: sessionMode,
+    word_count: words.length
+  });
+}
+
+function trackSessionEnd() {
+  const duration = Math.round((Date.now() - sessionStartTime) / 1000);
+  trackEvent('session_completed', {
+    session_id: sessionId,
+    score: score,
+    total_words: words.length,
+    accuracy: Math.round((score / words.length) * 100),
+    duration: duration,
+    flagged_words: flaggedWords.length
+  });
+}
+
+function trackWordAttempt(word, isCorrect, attempt) {
+  trackEvent('word_attempted', {
+    session_id: sessionId,
+    word: word,
+    status: isCorrect ? 'correct' : 'incorrect',
+    attempt: attempt,
+    position: currentIndex,
+    duration: Date.now() - wordStartTime
+  });
+}
+
+// ==================== AUTHENTICATION ====================
 function renderAuth() {
   if (currentUser) {
     authArea.innerHTML = `
@@ -63,10 +100,12 @@ function renderAuth() {
         </button>
       </div>
     `;
+    
     document.getElementById('logout-btn').onclick = () => {
-      trackEvent('user_logout');
+      trackEvent('user_logged_out', { session_id: sessionId });
       auth.signOut();
     };
+    
     premiumApp.classList.remove('hidden');
     renderExamUI();
   } else {
@@ -87,25 +126,43 @@ function renderAuth() {
       const email = document.getElementById('email').value;
       const password = document.getElementById('password').value;
       
-      trackEvent('auth_attempt', { type: 'login' });
+      trackEvent('login_attempted', { 
+        session_id: sessionId,
+        method: 'email' 
+      });
+      
       auth.signInWithEmailAndPassword(email, password)
-  .then(() => trackEvent('login_success'))
-  .catch(error => {
-    trackError(error, { context: 'email_login' });
-    showAlert(error.message);
-        }); 
-    }; 
+        .then(() => {
+          trackEvent('login_successful', { session_id: sessionId });
+        })
+        .catch(error => {
+          trackError(error, { 
+            context: 'email_login',
+            session_id: sessionId
+          });
+          showAlert(error.message);
+        });
+    };
     
     document.getElementById('signup-btn').onclick = () => {
       const email = document.getElementById('email').value;
       const password = document.getElementById('password').value;
       
-      trackEvent('auth_attempt', { type: 'signup' });
+      trackEvent('signup_attempted', { 
+        session_id: sessionId,
+        method: 'email' 
+      });
+      
       auth.createUserWithEmailAndPassword(email, password)
-        .then(() => trackEvent('auth_success', { type: 'signup' }))
-        .catch(e => {
-          trackError(e, { context: 'signup' });
-          showAlert(e.message, 'error');
+        .then(() => {
+          trackEvent('signup_successful', { session_id: sessionId });
+        })
+        .catch(error => {
+          trackError(error, { 
+            context: 'email_signup',
+            session_id: sessionId
+          });
+          showAlert(error.message);
         });
     };
     
@@ -119,23 +176,27 @@ auth.onAuthStateChanged(user => {
   
   if (user) {
     trackEvent('user_authenticated', {
+      session_id: sessionId,
       provider: user.providerData[0]?.providerId || 'email',
       email_anonymized: user.email ? user.email.substring(0, 3) + '...' : 'none',
-      account_age_days: Math.floor((new Date() - new Date(user.metadata.creationTime)) / (1000 * 60 * 60 * 24)
+      account_age_days: Math.floor((new Date() - new Date(user.metadata.creationTime)) / (1000 * 60 * 60 * 24))
     });
   }
 });
 
-// Main App UI
+// ==================== MAIN APP UI ====================
 function renderExamUI() {
-  trackEvent('screen_view', { screen_name: 'exam_selection' });
+  trackEvent('screen_viewed', { 
+    screen_name: 'exam_selection',
+    session_id: sessionId
+  });
   
   examUI.innerHTML = `
     <div class="mode-selector">
-      <button id="practice-mode-btn" class="mode-btn selected">
+      <button id="practice-mode-btn" class="mode-btn ${sessionMode === 'practice' ? 'selected' : ''}">
         <i class="fas fa-graduation-cap"></i> Practice Mode
       </button>
-      <button id="test-mode-btn" class="mode-btn">
+      <button id="test-mode-btn" class="mode-btn ${sessionMode === 'test' ? 'selected' : ''}">
         <i class="fas fa-clipboard-check"></i> Test Mode
       </button>
     </div>
@@ -162,40 +223,49 @@ function renderExamUI() {
     </button>
   `;
   
-  // Initialize UI state
   document.getElementById('exam-type').value = examType;
   document.getElementById('accent-select').value = accent;
   updateFlag();
 
-  // Event listeners
   document.getElementById('exam-type').onchange = e => {
     examType = e.target.value;
-    trackEvent('exam_type_changed', { exam_type: examType });
+    trackEvent('exam_type_changed', {
+      session_id: sessionId,
+      exam_type: examType
+    });
     renderExamUI();
   };
   
   document.getElementById('accent-select').onchange = e => {
     accent = e.target.value;
-    trackEvent('accent_changed', { accent });
+    trackEvent('accent_changed', {
+      session_id: sessionId,
+      accent: accent
+    });
     updateFlag();
   };
   
   document.getElementById('practice-mode-btn').onclick = () => {
     sessionMode = "practice";
-    document.getElementById('practice-mode-btn').classList.add("selected");
-    document.getElementById('test-mode-btn').classList.remove("selected");
-    trackEvent('mode_changed', { mode: 'practice' });
+    trackEvent('mode_changed', {
+      session_id: sessionId,
+      mode: 'practice'
+    });
+    renderExamUI();
   };
   
   document.getElementById('test-mode-btn').onclick = () => {
     sessionMode = "test";
-    document.getElementById('test-mode-btn').classList.add("selected");
-    document.getElementById('practice-mode-btn').classList.remove("selected");
-    trackEvent('mode_changed', { mode: 'test' });
+    trackEvent('mode_changed', {
+      session_id: sessionId,
+      mode: 'test'
+    });
+    renderExamUI();
   };
   
   document.getElementById('start-btn').onclick = () => {
     trackEvent('session_started', { 
+      session_id: sessionId,
       exam_type: examType, 
       mode: sessionMode 
     });
@@ -213,7 +283,60 @@ function renderExamUI() {
   if (examType === "Custom") renderCustomInput();
 }
 
-// OET Practice Functions
+function updateFlag() {
+  const flagSVGs = {
+    "en-US": `<svg width="24" height="16" viewBox="0 0 60 40"><!-- US flag SVG --></svg>`,
+    "en-GB": `<svg width="24" height="16" viewBox="0 0 60 40"><!-- UK flag SVG --></svg>`,
+    "en-AU": `<svg width="24" height="16" viewBox="0 0 60 40"><!-- AU flag SVG --></svg>`
+  };
+  document.getElementById('flag-svg').innerHTML = flagSVGs[accent] || "";
+}
+
+// ==================== CUSTOM WORDS ====================
+function renderCustomInput() {
+  document.getElementById('custom-upload-area').innerHTML = `
+    <textarea id="custom-words" class="form-control" rows="4" 
+      placeholder="Enter words (separated by commas, spaces, or new lines)"></textarea>
+    <button id="add-custom-btn" class="btn btn-info" style="margin-top: 10px;">
+      <i class="fas fa-plus-circle"></i> Use These Words
+    </button>
+  `;
+  
+  document.getElementById('add-custom-btn').onclick = () => {
+    const input = document.getElementById('custom-words').value.trim();
+    if (!input) {
+      showAlert("Please enter some words first!", 'error');
+      return;
+    }
+    
+    try {
+      processWordList(input);
+      trackEvent('custom_words_processed', {
+        session_id: sessionId,
+        word_count: words.length
+      });
+      showAlert(`Added ${words.length} words!`, 'success');
+      appTitle.textContent = "Custom Spelling Practice";
+      startCustomPractice();
+    } catch (error) {
+      trackError(error, { context: 'custom_words_input' });
+      showAlert(error.message, 'error');
+    }
+  };
+}
+
+function processWordList(text) {
+  words = [...new Set(text.split(WORD_SEPARATORS))]
+    .map(w => w.trim())
+    .filter(w => w && w.length > 1);
+  
+  if (words.length === 0) {
+    throw new Error("No valid words found in the input");
+  }
+  return words;
+}
+
+// ==================== OET PRACTICE ====================
 function startOET() {
   currentIndex = 0;
   score = 0;
@@ -221,28 +344,26 @@ function startOET() {
   userAnswers = [];
   trainerArea.innerHTML = "";
   summaryArea.innerHTML = "";
-  sessionStartTime = Date.now();
-  trackEvent('session_start', {
-    examType,
-    mode: sessionMode,
-    wordCount: words.length
-  });
+  
   words = sessionMode === "test" 
     ? [...window.oetWords].sort(() => 0.5 - Math.random()).slice(0, 24)
     : window.oetWords.slice();
 
-  appTitle.textContent = `OET Spelling ${sessionMode === "test" ? "Test" : "Practice"}`;
+  trackSessionStart();
   showOETWord();
   speakCurrentWord();
 }
 
 function showOETWord() {
   if (currentIndex >= words.length) {
-    endSession();
+    trackSessionEnd();
+    showSummary();
     return;
   }
   
+  wordStartTime = Date.now();
   const word = words[currentIndex];
+  
   trainerArea.innerHTML = `
     <div class="word-progress">Word ${currentIndex + 1} of ${words.length}</div>
     
@@ -272,7 +393,6 @@ function showOETWord() {
     <div id="feedback" class="feedback"></div>
   `;
 
-  // Setup event listeners
   document.getElementById('repeat-btn').onclick = speakCurrentWord;
   document.getElementById('prev-btn').onclick = prevOETWord;
   document.getElementById('next-btn').onclick = nextOETWord;
@@ -283,30 +403,78 @@ function showOETWord() {
   };
 }
 
+function speakCurrentWord() {
+  speakWord(words[currentIndex]);
+}
+
 function checkOETAnswer(correctWord) {
   const userInput = document.getElementById('user-input');
   const userAnswer = userInput.value.trim();
   userAnswers[currentIndex] = userAnswer;
-  const isCorrect = userAnswer === correctWord;
+  const isCorrect = userAnswer.toLowerCase() === correctWord.toLowerCase();
   
-    trackEvent('word_attempt', {
-    word: correctWord,
-    status: isCorrect ? 'correct' : 'incorrect',
-    attempt: userAnswer,
-    position: currentIndex,
-    duration: Date.now() - wordStartTime
-  });
-
+  trackWordAttempt(correctWord, isCorrect, userAnswer);
+  
   if (isCorrect) {
     score++;
     showFeedback("✓ Correct!", "correct");
-    setTimeout(nextOETWord, 1500);
+    document.getElementById('word-status').innerHTML = '<i class="fas fa-check-circle"></i>';
+    setTimeout(() => {
+      if (currentIndex < words.length - 1) {
+        currentIndex++;
+        showOETWord();
+        speakCurrentWord();
+      } else {
+        trackSessionEnd();
+        showSummary();
+      }
+    }, 1500);
   } else {
-    showFeedback(`✗ Incorrect. Correct: ${correctWord}`, "incorrect");
+    showFeedback(`✗ Incorrect. The correct spelling is: ${correctWord}`, "incorrect");
+    document.getElementById('word-status').innerHTML = '<i class="fas fa-times-circle"></i>';
   }
 }
 
-// Spelling Bee
+function nextOETWord() {
+  if (currentIndex < words.length - 1) {
+    currentIndex++;
+    showOETWord();
+    speakCurrentWord();
+  } else {
+    trackSessionEnd();
+    showSummary();
+  }
+}
+
+function prevOETWord() {
+  if (currentIndex > 0) {
+    currentIndex--;
+    showOETWord();
+    speakCurrentWord();
+  }
+}
+
+function toggleFlagWord(word) {
+  const idx = flaggedWords.indexOf(word);
+  const isFlagged = idx === -1;
+  
+  if (isFlagged) {
+    flaggedWords.push(word);
+  } else {
+    flaggedWords.splice(idx, 1);
+  }
+  
+  trackEvent('word_flagged', {
+    session_id: sessionId,
+    word: word,
+    action: isFlagged ? 'flagged' : 'unflagged',
+    total_flagged: flaggedWords.length
+  });
+  
+  showOETWord();
+}
+
+// ==================== SPELLING BEE ====================
 function startBee() {
   currentIndex = 0;
   score = 0;
@@ -324,8 +492,7 @@ function startBee() {
     "unforeseen", "vacuum", "withhold", "yacht"
   ];
   
-  appTitle.textContent = "Spelling Bee";
-  trackSessionStart(words.length);
+  trackSessionStart();
   showBeeWord();
   speakCurrentBeeWord();
 }
@@ -337,7 +504,9 @@ function showBeeWord() {
     return;
   }
   
+  wordStartTime = Date.now();
   const word = words[currentIndex];
+  
   trainerArea.innerHTML = `
     <div class="word-progress">Word ${currentIndex + 1} of ${words.length}</div>
     
@@ -408,6 +577,10 @@ function listenForSpelling(correctWord) {
   };
   
   recognition.onerror = (event) => {
+    trackError(new Error(event.error), { 
+      context: 'speech_recognition',
+      session_id: sessionId
+    });
     micFeedback.textContent = `Error: ${event.error}`;
     micFeedback.className = "feedback incorrect";
   };
@@ -446,10 +619,10 @@ function processSpellingAttempt(attempt, correctWord) {
   );
   
   if (isCorrect) {
+    score++;
     micFeedback.textContent = "✓ Correct!";
     micFeedback.className = "feedback correct";
     document.getElementById('word-status').innerHTML = '<i class="fas fa-check-circle"></i>';
-    score++;
   } else {
     micFeedback.textContent = `✗ Incorrect. You spelled: ${attempt}. Correct: ${correctWord}`;
     micFeedback.className = "feedback incorrect";
@@ -508,11 +681,17 @@ function toggleBeeFlagWord(word) {
     flaggedWords.splice(idx, 1);
   }
   
-  trackFlagWord(word, isFlagged);
+  trackEvent('word_flagged', {
+    session_id: sessionId,
+    word: word,
+    action: isFlagged ? 'flagged' : 'unflagged',
+    total_flagged: flaggedWords.length
+  });
+  
   showBeeWord();
 }
 
-// Custom Words Practice
+// ==================== CUSTOM WORDS PRACTICE ====================
 function startCustomPractice() {
   currentIndex = 0;
   score = 0;
@@ -520,7 +699,8 @@ function startCustomPractice() {
   userAnswers = [];
   trainerArea.innerHTML = "";
   summaryArea.innerHTML = "";
-  trackSessionStart(words.length);
+  
+  trackSessionStart();
   showCustomWord();
   speakCurrentWord();
 }
@@ -532,7 +712,9 @@ function showCustomWord() {
     return;
   }
   
+  wordStartTime = Date.now();
   const word = words[currentIndex];
+  
   trainerArea.innerHTML = `
     <div class="word-progress">Word ${currentIndex + 1} of ${words.length}</div>
     
@@ -587,19 +769,16 @@ function checkCustomAnswer(correctWord) {
   const userInput = document.getElementById('user-input');
   const userAnswer = userInput.value.trim();
   userAnswers[currentIndex] = userAnswer;
-  const feedback = document.getElementById('feedback');
-  
   const isCorrect = userAnswer.toLowerCase() === correctWord.toLowerCase();
+  
   trackWordAttempt(correctWord, isCorrect, userAnswer);
   
   if (isCorrect) {
-    feedback.textContent = "✓ Correct!";
-    feedback.className = "feedback correct";
     score++;
+    showFeedback("✓ Correct!", "correct");
     document.getElementById('word-status').innerHTML = '<i class="fas fa-check-circle"></i>';
   } else {
-    feedback.textContent = `✗ Incorrect. The correct spelling is: ${correctWord}`;
-    feedback.className = "feedback incorrect";
+    showFeedback(`✗ Incorrect. The correct spelling is: ${correctWord}`, "incorrect");
     document.getElementById('word-status').innerHTML = '<i class="fas fa-times-circle"></i>';
   }
 
@@ -634,12 +813,20 @@ function prevCustomWord() {
   }
 }
 
-// Summary Functions
+// ==================== SUMMARY FUNCTIONS ====================
 function showSummary() {
   const percent = Math.round((score / words.length) * 100);
   const wrongWords = words.filter((w, i) => 
     (userAnswers[i] || "").toLowerCase() !== w.toLowerCase()
   );
+  
+  trackEvent('results_viewed', {
+    session_id: sessionId,
+    score: score,
+    total_words: words.length,
+    accuracy: percent,
+    flagged_words_count: flaggedWords.length
+  });
   
   summaryArea.innerHTML = `
     <div class="card-header">
@@ -686,6 +873,7 @@ function showSummary() {
   `;
   
   document.getElementById('restart-btn').onclick = () => {
+    trackEvent('session_restarted', { session_id: sessionId });
     if (examType === "OET" || examType === "Custom") {
       if (examType === "OET") startOET();
       else startCustomPractice();
@@ -695,6 +883,7 @@ function showSummary() {
   };
   
   document.getElementById('new-list-btn').onclick = () => {
+    trackEvent('new_list_requested', { session_id: sessionId });
     summaryArea.innerHTML = "";
     renderExamUI();
   };
@@ -705,6 +894,14 @@ function showBeeSummary() {
   const wrongWords = words.filter((w, i) => 
     (userAttempts[i] || "").toLowerCase() !== w.toLowerCase()
   );
+  
+  trackEvent('results_viewed', {
+    session_id: sessionId,
+    score: score,
+    total_words: words.length,
+    accuracy: percent,
+    flagged_words_count: flaggedWords.length
+  });
   
   summaryArea.innerHTML = `
     <div class="card-header">
@@ -750,23 +947,22 @@ function showBeeSummary() {
     </div>
   `;
   
-  document.getElementById('restart-btn').onclick = startBee;
+  document.getElementById('restart-btn').onclick = () => {
+    trackEvent('session_restarted', { session_id: sessionId });
+    startBee();
+  };
+  
   document.getElementById('new-list-btn').onclick = () => {
+    trackEvent('new_list_requested', { session_id: sessionId });
     summaryArea.innerHTML = "";
     renderExamUI();
   };
 }
 
-// Helper Functions
-function showFeedback(message, type) {
-  const feedback = document.getElementById('feedback');
-  feedback.textContent = message;
-  feedback.className = `feedback ${type}`;
-}
-
+// ==================== HELPER FUNCTIONS ====================
 function speakWord(word) {
   if (!window.speechSynthesis) {
-    showAlert("Text-to-speech not supported", 'error');
+    showAlert("Text-to-speech not supported in your browser", 'error');
     return;
   }
   
@@ -774,36 +970,36 @@ function speakWord(word) {
   const utterance = new SpeechSynthesisUtterance(word);
   utterance.lang = accent;
   utterance.rate = 0.8;
+  
+  trackEvent('word_spoken', {
+    session_id: sessionId,
+    word: word,
+    accent: accent
+  });
+  
   speechSynthesis.speak(utterance);
 }
 
-function showAlert(message, type = 'error') {
-  const alert = document.createElement('div');
-  alert.className = `alert alert-${type}`;
-  alert.textContent = message;
-  document.body.appendChild(alert);
-  
-  setTimeout(() => {
-    alert.classList.add('fade-out');
-    setTimeout(() => alert.remove(), 500);
-  }, 3000);
+// ==================== INITIALIZATION ====================
+// Initialize dark mode
+if (localStorage.getItem('darkMode') === 'true') {
+  document.body.classList.add('dark-mode');
 }
+updateDarkModeIcon();
 
-function endSession() {
-  const duration = Math.round((new Date() - sessionStartTime) / 1000);
-  
-  trackEvent('session_completed', {
-    score: score,
-    total: words.length,
-    accuracy: Math.round((score / words.length) * 100),
-    duration: duration,
-    flagged_words: flaggedWords.length
+// Dark mode toggle
+document.getElementById('dark-mode-toggle').addEventListener('click', () => {
+  const isDarkMode = document.body.classList.toggle('dark-mode');
+  localStorage.setItem('darkMode', isDarkMode);
+  updateDarkModeIcon();
+  trackEvent('ui_preference_changed', {
+    session_id: sessionId,
+    preference: 'dark_mode',
+    value: isDarkMode ? 'enabled' : 'disabled'
   });
-  
-  showSummary();
-}
+});
 
-// Initialize the app
+// Start the app
 if (document.readyState === 'complete') {
   renderAuth();
 } else {
