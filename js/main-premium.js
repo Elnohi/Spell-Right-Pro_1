@@ -1,4 +1,4 @@
-// main-premium.js — Fixed Full Version (Standalone, No Imports)
+// main-premium.js — Fixed Full Version with Auto-Advance Fixes
 
 // ==================== SPEECH SYNTHESIS ====================
 let voicesReady = false;
@@ -293,7 +293,7 @@ function processWordList(text) {
   return words;
 }
 
-// ==================== OET PRACTICE (FIXED VERSION) ====================
+// ==================== OET PRACTICE (FIXED AUTO-ADVANCE) ====================
 function startOET() {
   currentIndex = 0;
   score = 0;
@@ -314,7 +314,7 @@ function startOET() {
   });
 
   showOETWord();
-  setTimeout(() => speakCurrentWord(), 300); // Added slight delay for voice loading
+  setTimeout(() => speakCurrentWord(), 300);
 }
 
 function showOETWord() {
@@ -422,14 +422,18 @@ function checkOETAnswer(correctWord) {
     userInput.classList.remove('correct-input');
   }
 
+  // Auto-advance after delay (regardless of correct/incorrect)
   setTimeout(() => {
-    if (currentIndex < words.length - 1) {
-      currentIndex++;
-      showOETWord();
-      speakCurrentWord();
-    } else {
-      showSummary();
-    }
+    trainerArea.classList.add('word-transition');
+    setTimeout(() => {
+      if (currentIndex < words.length - 1) {
+        currentIndex++;
+        showOETWord();
+        speakCurrentWord();
+      } else {
+        showSummary();
+      }
+    }, 300);
   }, 1500);
 }
 
@@ -456,7 +460,7 @@ function toggleFlagWord(word) {
   showOETWord();
 }
 
-// ==================== CUSTOM PRACTICE (FIXED VERSION) ====================
+// ==================== CUSTOM PRACTICE (FIXED AUTO-ADVANCE) ====================
 function startCustomPractice() {
   currentIndex = 0;
   score = 0;
@@ -541,31 +545,36 @@ function showCustomWord() {
 }
 
 function checkCustomAnswer(correctWord) {
-  const input = document.getElementById('user-input').value.trim();
-  userAnswers[currentIndex] = input;
-  const isCorrect = input.toLowerCase() === correctWord.toLowerCase();
+  const input = document.getElementById('user-input');
+  const userAnswer = input.value.trim();
+  userAnswers[currentIndex] = userAnswer;
+  const isCorrect = userAnswer.toLowerCase() === correctWord.toLowerCase();
 
   if (isCorrect) {
     score++;
     showFeedback("✓ Correct!", "correct");
     document.getElementById('word-status').innerHTML = '<i class="fas fa-check-circle" style="color:var(--success)"></i>';
-    document.getElementById('user-input').classList.add('correct-input');
-    document.getElementById('user-input').classList.remove('incorrect-input');
+    input.classList.add('correct-input');
+    input.classList.remove('incorrect-input');
   } else {
     showFeedback(`✗ Incorrect. Correct: ${correctWord}`, "incorrect");
     document.getElementById('word-status').innerHTML = '<i class="fas fa-times-circle" style="color:var(--danger)"></i>';
-    document.getElementById('user-input').classList.add('incorrect-input');
-    document.getElementById('user-input').classList.remove('correct-input');
+    input.classList.add('incorrect-input');
+    input.classList.remove('correct-input');
   }
 
+  // Auto-advance after delay (regardless of correct/incorrect)
   setTimeout(() => {
-    if (currentIndex < words.length - 1) {
-      currentIndex++;
-      showCustomWord();
-      speakCurrentWord();
-    } else {
-      showSummary();
-    }
+    trainerArea.classList.add('word-transition');
+    setTimeout(() => {
+      if (currentIndex < words.length - 1) {
+        currentIndex++;
+        showCustomWord();
+        speakCurrentWord();
+      } else {
+        showSummary();
+      }
+    }, 300);
   }, 1500);
 }
 
