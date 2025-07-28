@@ -21,7 +21,6 @@ window.addEventListener('error', (e) => {
 });
 
 // ==================== SPEECH SYNTHESIS ====================
-let voicesReady = false;
 
 function loadVoices() {
   const voices = window.speechSynthesis.getVoices();
