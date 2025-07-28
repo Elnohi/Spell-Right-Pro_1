@@ -1,30 +1,46 @@
 // main-premium.js — Fixed Full Version (Standalone, No Imports)
 
 // ==================== SPEECH SYNTHESIS ====================
+let voicesReady = false;
+
+function loadVoices() {
+  const voices = window.speechSynthesis.getVoices();
+  if (voices.length > 0) {
+    voicesReady = true;
+    window.speechSynthesis.onvoiceschanged = null;
+  }
+}
+
+window.speechSynthesis.onvoiceschanged = loadVoices;
+loadVoices();
+
 function speakWord(word, rate = 1.0) {
-    if ('speechSynthesis' in window) {
-        // Cancel any ongoing speech
-        window.speechSynthesis.cancel();
-        
-        const utterance = new SpeechSynthesisUtterance(word);
-        utterance.rate = rate;
-        utterance.lang = accent; // Use the selected accent
-        utterance.volume = 1.0;
-        
-        // Find a voice that matches our accent
-        const voices = window.speechSynthesis.getVoices();
-        const preferredVoice = voices.find(v => v.lang === accent) || 
-                              voices.find(v => v.lang.startsWith(accent.split('-')[0]));
-        
-        if (preferredVoice) {
-            utterance.voice = preferredVoice;
-        }
-        
-        window.speechSynthesis.speak(utterance);
-    } else {
-        console.error('Speech synthesis not supported');
-        showAlert('Text-to-speech not supported in your browser', 'error');
+  if (!voicesReady) {
+    setTimeout(() => speakWord(word, rate), 300);
+    return;
+  }
+
+  if ('speechSynthesis' in window) {
+    window.speechSynthesis.cancel();
+    
+    const utterance = new SpeechSynthesisUtterance(word);
+    utterance.rate = rate;
+    utterance.lang = accent;
+    utterance.volume = 1.0;
+    
+    const voices = window.speechSynthesis.getVoices();
+    const preferredVoice = voices.find(v => v.lang === accent) || 
+                          voices.find(v => v.lang.startsWith(accent.split('-')[0]));
+    
+    if (preferredVoice) {
+      utterance.voice = preferredVoice;
     }
+    
+    window.speechSynthesis.speak(utterance);
+  } else {
+    console.error('Speech synthesis not supported');
+    showAlert('Text-to-speech not supported in your browser', 'error');
+  }
 }
 
 // ==================== GLOBAL STATE ====================
@@ -60,14 +76,17 @@ function updateDarkModeIcon() {
       : 'fas fa-moon';
   }
 }
+
 if (localStorage.getItem('darkMode') === 'true' || localStorage.getItem('darkMode') === 'enabled') {
   document.body.classList.add('dark-mode');
 }
+
 darkModeToggle.addEventListener('click', () => {
   const isDark = document.body.classList.toggle('dark-mode');
   localStorage.setItem('darkMode', isDark ? 'enabled' : 'disabled');
   updateDarkModeIcon();
 });
+
 updateDarkModeIcon();
 
 // ==================== ALERT SYSTEM ====================
@@ -274,7 +293,7 @@ function processWordList(text) {
   return words;
 }
 
-// ==================== OET PRACTICE ====================
+// ==================== OET PRACTICE (FIXED VERSION) ====================
 function startOET() {
   currentIndex = 0;
   score = 0;
@@ -295,7 +314,7 @@ function startOET() {
   });
 
   showOETWord();
-  speakCurrentWord();
+  setTimeout(() => speakCurrentWord(), 300); // Added slight delay for voice loading
 }
 
 function showOETWord() {
@@ -322,7 +341,13 @@ function showOETWord() {
       </button>
       <span id="word-status"></span>
     </div>
-    <input type="text" id="user-input" class="form-control" placeholder="Type what you heard..." autofocus>
+    <div class="input-wrapper">
+      <input type="text" id="user-input" class="form-control ${userAnswers[currentIndex] ? 
+        (userAnswers[currentIndex].toLowerCase() === word.toLowerCase() ? 'correct-input' : 'incorrect-input') : ''}" 
+        placeholder="Type what you heard..." autofocus
+        value="${userAnswers[currentIndex] || ''}">
+      <span id="real-time-feedback" class="real-time-feedback"></span>
+    </div>
     <div class="button-group">
       <button id="prev-btn" class="btn btn-secondary" ${currentIndex === 0 ? "disabled" : ""}>
         <i class="fas fa-arrow-left"></i> Previous
@@ -337,19 +362,45 @@ function showOETWord() {
     </div>
     <div id="feedback" class="feedback"></div>`;
 
+  const input = document.getElementById('user-input');
+  const feedback = document.getElementById('real-time-feedback');
+
+  input.addEventListener('input', (e) => {
+    const currentInput = e.target.value.toLowerCase();
+    const correctWord = word.toLowerCase();
+    
+    if (currentInput === correctWord) {
+      feedback.innerHTML = '<i class="fas fa-check correct-feedback"></i>';
+      setTimeout(() => checkOETAnswer(word), 300);
+    } else if (correctWord.startsWith(currentInput)) {
+      feedback.innerHTML = '<i class="fas fa-thumbs-up correct-feedback"></i>';
+    } else {
+      feedback.innerHTML = '<i class="fas fa-times incorrect-feedback"></i>';
+    }
+  });
+
   document.getElementById('repeat-btn').onclick = speakCurrentWord;
   document.getElementById('prev-btn').onclick = prevOETWord;
   document.getElementById('next-btn').onclick = nextOETWord;
   document.getElementById('flag-btn').onclick = () => toggleFlagWord(word);
 
-  const input = document.getElementById('user-input');
-  input.onkeydown = e => {
-    if (e.key === 'Enter') checkOETAnswer(word);
-  };
+  input.focus();
+  input.select();
 }
 
 function speakCurrentWord() {
+  const statusElement = document.getElementById('word-status');
+  if (statusElement) {
+    statusElement.innerHTML = '<i class="fas fa-volume-up speech-loading"></i>';
+  }
+  
   speakWord(words[currentIndex]);
+  
+  setTimeout(() => {
+    if (statusElement) {
+      statusElement.innerHTML = '';
+    }
+  }, 500);
 }
 
 function checkOETAnswer(correctWord) {
@@ -361,20 +412,25 @@ function checkOETAnswer(correctWord) {
   if (isCorrect) {
     score++;
     showFeedback("✓ Correct!", "correct");
-    document.getElementById('word-status').innerHTML = '<i class="fas fa-check-circle"></i>';
-    setTimeout(() => {
-      if (currentIndex < words.length - 1) {
-        currentIndex++;
-        showOETWord();
-        speakCurrentWord();
-      } else {
-        showSummary();
-      }
-    }, 1500);
+    document.getElementById('word-status').innerHTML = '<i class="fas fa-check-circle" style="color:var(--success)"></i>';
+    userInput.classList.add('correct-input');
+    userInput.classList.remove('incorrect-input');
   } else {
     showFeedback(`✗ Incorrect. Correct: ${correctWord}`, "incorrect");
-    document.getElementById('word-status').innerHTML = '<i class="fas fa-times-circle"></i>';
+    document.getElementById('word-status').innerHTML = '<i class="fas fa-times-circle" style="color:var(--danger)"></i>';
+    userInput.classList.add('incorrect-input');
+    userInput.classList.remove('correct-input');
   }
+
+  setTimeout(() => {
+    if (currentIndex < words.length - 1) {
+      currentIndex++;
+      showOETWord();
+      speakCurrentWord();
+    } else {
+      showSummary();
+    }
+  }, 1500);
 }
 
 function nextOETWord() {
@@ -400,7 +456,7 @@ function toggleFlagWord(word) {
   showOETWord();
 }
 
-// ==================== CUSTOM PRACTICE ====================
+// ==================== CUSTOM PRACTICE (FIXED VERSION) ====================
 function startCustomPractice() {
   currentIndex = 0;
   score = 0;
@@ -417,7 +473,7 @@ function startCustomPractice() {
   });
 
   showCustomWord();
-  speakCurrentWord();
+  setTimeout(() => speakCurrentWord(), 300);
 }
 
 function showCustomWord() {
@@ -437,7 +493,13 @@ function showCustomWord() {
       </button>
       <span id="word-status"></span>
     </div>
-    <input type="text" id="user-input" class="form-control" placeholder="Type what you heard..." autofocus>
+    <div class="input-wrapper">
+      <input type="text" id="user-input" class="form-control ${userAnswers[currentIndex] ? 
+        (userAnswers[currentIndex].toLowerCase() === word.toLowerCase() ? 'correct-input' : 'incorrect-input') : ''}" 
+        placeholder="Type what you heard..." autofocus
+        value="${userAnswers[currentIndex] || ''}">
+      <span id="real-time-feedback" class="real-time-feedback"></span>
+    </div>
     <div class="button-group">
       <button id="prev-btn" class="btn btn-secondary" ${currentIndex === 0 ? "disabled" : ""}>
         <i class="fas fa-arrow-left"></i> Previous
@@ -453,19 +515,29 @@ function showCustomWord() {
     <div id="feedback" class="feedback"></div>`;
 
   const input = document.getElementById('user-input');
-  input.onkeydown = e => {
-    if (e.key === 'Enter') checkCustomAnswer(word);
-  };
-  input.oninput = e => {
-    if (e.target.value.toLowerCase() === word.toLowerCase()) {
-      checkCustomAnswer(word);
+  const feedback = document.getElementById('real-time-feedback');
+
+  input.addEventListener('input', (e) => {
+    const currentInput = e.target.value.toLowerCase();
+    const correctWord = word.toLowerCase();
+    
+    if (currentInput === correctWord) {
+      feedback.innerHTML = '<i class="fas fa-check correct-feedback"></i>';
+      setTimeout(() => checkCustomAnswer(word), 300);
+    } else if (correctWord.startsWith(currentInput)) {
+      feedback.innerHTML = '<i class="fas fa-thumbs-up correct-feedback"></i>';
+    } else {
+      feedback.innerHTML = '<i class="fas fa-times incorrect-feedback"></i>';
     }
-  };
+  });
 
   document.getElementById('repeat-btn').onclick = speakCurrentWord;
   document.getElementById('prev-btn').onclick = prevCustomWord;
   document.getElementById('next-btn').onclick = nextCustomWord;
   document.getElementById('flag-btn').onclick = () => toggleFlagWord(word);
+
+  input.focus();
+  input.select();
 }
 
 function checkCustomAnswer(correctWord) {
@@ -476,10 +548,14 @@ function checkCustomAnswer(correctWord) {
   if (isCorrect) {
     score++;
     showFeedback("✓ Correct!", "correct");
-    document.getElementById('word-status').innerHTML = '<i class="fas fa-check-circle"></i>';
+    document.getElementById('word-status').innerHTML = '<i class="fas fa-check-circle" style="color:var(--success)"></i>';
+    document.getElementById('user-input').classList.add('correct-input');
+    document.getElementById('user-input').classList.remove('incorrect-input');
   } else {
     showFeedback(`✗ Incorrect. Correct: ${correctWord}`, "incorrect");
-    document.getElementById('word-status').innerHTML = '<i class="fas fa-times-circle"></i>';
+    document.getElementById('word-status').innerHTML = '<i class="fas fa-times-circle" style="color:var(--danger)"></i>';
+    document.getElementById('user-input').classList.add('incorrect-input');
+    document.getElementById('user-input').classList.remove('correct-input');
   }
 
   setTimeout(() => {
@@ -509,14 +585,7 @@ function prevCustomWord() {
   }
 }
 
-function showFeedback(message, type = 'correct') {
-  const feedback = document.getElementById('feedback');
-  if (!feedback) return;
-  feedback.textContent = message;
-  feedback.className = `feedback ${type}`;
-}
-
-// ==================== SPELLING BEE ====================
+// ==================== SPELLING BEE (UNCHANGED) ====================
 function startBee() {
   currentIndex = 0;
   score = 0;
@@ -591,7 +660,18 @@ function showBeeWord() {
 }
 
 function speakCurrentBeeWord() {
+  const statusElement = document.getElementById('word-status');
+  if (statusElement) {
+    statusElement.innerHTML = '<i class="fas fa-volume-up speech-loading"></i>';
+  }
+  
   speakWord(words[currentIndex]);
+  
+  setTimeout(() => {
+    if (statusElement) {
+      statusElement.innerHTML = '';
+    }
+  }, 500);
 }
 
 function listenForSpelling(correctWord) {
@@ -773,4 +853,11 @@ function showBeeSummary() {
     summaryArea.innerHTML = "";
     renderExamUI();
   };
+}
+
+function showFeedback(message, type = 'correct') {
+  const feedback = document.getElementById('feedback');
+  if (!feedback) return;
+  feedback.textContent = message;
+  feedback.className = `feedback ${type}`;
 }
