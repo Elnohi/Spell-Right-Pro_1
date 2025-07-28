@@ -71,6 +71,15 @@ function renderAuth() {
           <i class="fas fa-sign-out-alt"></i> Logout
         </button>
       </div>`;
+    <div class="ad-container">
+  <ins class="adsbygoogle"
+       style="display:block"
+       data-ad-client="ca-pub-YOUR_PUBLISHER_ID"
+       data-ad-slot="YOUR_AD_SLOT"
+       data-ad-format="auto"
+       data-full-width-responsive="true"></ins>
+  <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
+</div>
     document.getElementById('logout-btn').onclick = () => {
       trackEvent('user_logged_out', { session_id: sessionId });
       auth.signOut();
@@ -214,33 +223,7 @@ function trackEvent(name, data = {}) {
 
 function trackError(error, context = {}) {
   trackEvent("error_occurred", {
-    ...context,
-    message: error.message,
-    stack: error.stack || "no stack"
-  });
-}
-
-// ==================== AUTH RENDERING ====================
-function renderAuth() {
-  if (auth.currentUser) {
-    currentUser = auth.currentUser;
-    authArea.innerHTML = `
-      <div style="text-align:right;">
-        <span>Welcome, ${currentUser.email}</span>
-        <button id="logout-btn" class="btn btn-secondary btn-sm">
-          <i class="fas fa-sign-out-alt"></i> Logout
-        </button>
-      </div>`;
-    document.getElementById('logout-btn').onclick = () => {
-      trackEvent('user_logged_out', { session_id: sessionId });
-      auth.signOut();
-    };
-    premiumApp.classList.remove('hidden');
-    renderExamUI();
-  } else {
-    currentUser = null;
-    authArea.innerHTML = `
-      <div class="auth-form">
+        <div style="text-align:right;">
         <input id="email" type="email" placeholder="Email" class="form-control">
         <input id="password" type="password" placeholder="Password" class="form-control">
         <button id="login-btn" class="btn btn-primary"><i class="fas fa-sign-in-alt"></i> Login</button>
@@ -444,44 +427,7 @@ function showOETWord() {
       <input type="text" id="user-input" class="form-control ${userAnswers[currentIndex] ? 
         (userAnswers[currentIndex].toLowerCase() === word.toLowerCase() ? 'correct-input' : 'incorrect-input') : ''}" 
         placeholder="Type what you heard..." autofocus
-        value="${userAnswers[currentIndex] || ''}">
-      <span id="real-time-feedback" class="real-time-feedback"></span>
-    </div>
-    <div class="button-group">
-      <button id="prev-btn" class="btn btn-secondary" ${currentIndex === 0 ? "disabled" : ""}>
-        <i class="fas fa-arrow-left"></i> Previous
-      </button>
-      <button id="flag-btn" class="btn btn-flag ${flaggedWords.includes(word) ? "active" : ""}">
-        <i class="${flaggedWords.includes(word) ? "fas" : "far"} fa-flag"></i> 
-        ${flaggedWords.includes(word) ? "Flagged" : "Flag Word"}
-      </button>
-      <button id="next-btn" class="btn btn-secondary" ${currentIndex === words.length-1 ? "disabled" : ""}>
-        <i class="fas fa-arrow-right"></i> Next
-      </button>
-    </div>
-    <div id="feedback" class="feedback"></div>`;
-
-  const input = document.getElementById('user-input');
-  const feedback = document.getElementById('real-time-feedback');
-
-  input.addEventListener('input', (e) => {
-    const currentInput = e.target.value.toLowerCase();
-    const correctWord = word.toLowerCase();
-    
-    if (currentInput === correctWord) {
-      feedback.innerHTML = '<i class="fas fa-check correct-feedback"></i>';
-      setTimeout(() => checkOETAnswer(word), 300);
-    } else if (correctWord.startsWith(currentInput)) {
-      feedback.innerHTML = '<i class="fas fa-thumbs-up correct-feedback"></i>';
-    } else {
-      feedback.innerHTML = '<i class="fas fa-times incorrect-feedback"></i>';
-    }
-  });
-
-  document.getElementById('repeat-btn').onclick = speakCurrentWord;
-  document.getElementById('prev-btn').onclick = prevOETWord;
-  document.getElementById('next-btn').onclick = nextOETWord;
-  document.getElementById('flag-btn').onclick = () => toggleFlagWord(word);
+        document.getElementById('flag-btn').onclick = () => toggleFlagWord(word);
 
   input.focus();
   input.select();
