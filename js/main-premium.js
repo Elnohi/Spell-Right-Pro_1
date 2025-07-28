@@ -1,5 +1,32 @@
 // main-premium.js — Fixed Full Version (Standalone, No Imports)
 
+// ==================== SPEECH SYNTHESIS ====================
+function speakWord(word, rate = 1.0) {
+    if ('speechSynthesis' in window) {
+        // Cancel any ongoing speech
+        window.speechSynthesis.cancel();
+        
+        const utterance = new SpeechSynthesisUtterance(word);
+        utterance.rate = rate;
+        utterance.lang = accent; // Use the selected accent
+        utterance.volume = 1.0;
+        
+        // Find a voice that matches our accent
+        const voices = window.speechSynthesis.getVoices();
+        const preferredVoice = voices.find(v => v.lang === accent) || 
+                              voices.find(v => v.lang.startsWith(accent.split('-')[0]));
+        
+        if (preferredVoice) {
+            utterance.voice = preferredVoice;
+        }
+        
+        window.speechSynthesis.speak(utterance);
+    } else {
+        console.error('Speech synthesis not supported');
+        showAlert('Text-to-speech not supported in your browser', 'error');
+    }
+}
+
 // ==================== GLOBAL STATE ====================
 let currentUser = null;
 let examType = "OET";
