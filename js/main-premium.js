@@ -21,6 +21,7 @@ window.addEventListener('error', (e) => {
 });
 
 // ==================== SPEECH SYNTHESIS ====================
+let voicesReady = false;
 
 function loadVoices() {
   const voices = window.speechSynthesis.getVoices();
@@ -32,35 +33,6 @@ function loadVoices() {
 
 window.speechSynthesis.onvoiceschanged = loadVoices;
 loadVoices();
-
-function speakWord(word, rate = 1.0) {
-  if (!voicesReady) {
-    setTimeout(() => speakWord(word, rate), 300);
-    return;
-  }
-
-  if ('speechSynthesis' in window) {
-    window.speechSynthesis.cancel();
-    
-    const utterance = new SpeechSynthesisUtterance(word);
-    utterance.rate = rate;
-    utterance.lang = accent;
-    utterance.volume = 1.0;
-    
-    const voices = window.speechSynthesis.getVoices();
-    const preferredVoice = voices.find(v => v.lang === accent) || 
-                          voices.find(v => v.lang.startsWith(accent.split('-')[0]));
-    
-    if (preferredVoice) {
-      utterance.voice = preferredVoice;
-    }
-    
-    window.speechSynthesis.speak(utterance);
-  } else {
-    console.error('Speech synthesis not supported');
-    showAlert('Text-to-speech not supported in your browser', 'error');
-  }
-}
 
 // ==================== GLOBAL STATE ====================
 let currentUser = null;
@@ -85,60 +57,6 @@ const trainerArea = document.getElementById('trainer-area');
 const summaryArea = document.getElementById('summary-area');
 const appTitle = document.getElementById('app-title');
 const darkModeToggle = document.getElementById('dark-mode-toggle');
-
-// ==================== DARK MODE ====================
-function updateDarkModeIcon() {
-  const icon = document.querySelector('#dark-mode-toggle i');
-  if (icon) {
-    icon.className = document.body.classList.contains('dark-mode') 
-      ? 'fas fa-sun' 
-      : 'fas fa-moon';
-  }
-}
-
-if (localStorage.getItem('darkMode') === 'true' || localStorage.getItem('darkMode') === 'enabled') {
-  document.body.classList.add('dark-mode');
-}
-
-darkModeToggle.addEventListener('click', () => {
-  const isDark = document.body.classList.toggle('dark-mode');
-  localStorage.setItem('darkMode', isDark ? 'enabled' : 'disabled');
-  updateDarkModeIcon();
-});
-
-updateDarkModeIcon();
-
-// ==================== ALERT SYSTEM ====================
-function showAlert(message, type = 'error') {
-  const alert = document.createElement('div');
-  alert.className = `alert alert-${type}`;
-  alert.textContent = message;
-  document.body.appendChild(alert);
-  setTimeout(() => {
-    alert.classList.add('fade-out');
-    setTimeout(() => alert.remove(), 500);
-  }, 3000);
-}
-
-// ==================== TRACKING HELPERS ====================
-function trackEvent(name, data = {}) {
-  if (typeof analytics !== "undefined") {
-    try {
-      analytics.logEvent(name, data);
-    } catch (e) {
-      console.warn("Analytics event failed", name, data);
-    }
-  }
-  console.log(`[TRACK] ${name}`, data);
-}
-
-function trackError(error, context = {}) {
-  trackEvent("error_occurred", {
-    ...context,
-    message: error.message,
-    stack: error.stack || "no stack"
-  });
-}
 
 // ==================== AUTH RENDERING ====================
 function renderAuth() {
@@ -177,42 +95,12 @@ function renderAuth() {
   }
 }
 
-function loginHandler() {
-  const email = document.getElementById('email').value;
-  const pass = document.getElementById('password').value;
-  auth.signInWithEmailAndPassword(email, pass)
-    .then(() => trackEvent('login_successful', { session_id: sessionId }))
-    .catch(e => {
-      showAlert(e.message);
-      trackError(e, { context: 'login' });
-    });
-}
-
-function signupHandler() {
-  const email = document.getElementById('email').value;
-  const pass = document.getElementById('password').value;
-  auth.createUserWithEmailAndPassword(email, pass)
-    .then(() => trackEvent('signup_successful', { session_id: sessionId }))
-    .catch(e => {
-      showAlert(e.message);
-      trackError(e, { context: 'signup' });
-    });
-}
-
+// Initialize auth and ads
 auth.onAuthStateChanged(user => {
   currentUser = user;
   renderAuth();
+  if (!user) loadAdsIfNeeded();
 });
-
-// Initialize ads when page loads
-document.addEventListener('DOMContentLoaded', () => {
-  if (!auth.currentUser) {
-    loadAdsIfNeeded();
-  }
-});
-
-// ==================== SPEECH SYNTHESIS ====================
-let voicesReady = false;
 
 function loadVoices() {
   const voices = window.speechSynthesis.getVoices();
