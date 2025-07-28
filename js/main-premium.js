@@ -1,17 +1,15 @@
 // main-premium.js — Fixed Full Version with Auto-Advance Fixes and AdSense Integration
 
 // ==================== ADVERTISEMENT INTEGRATION ====================
-let adsLoaded = false; // Track if ads have been loaded
+let adsLoaded = false;
 
 function loadAdsIfNeeded() {
-  // Only load ads if user is not logged in and ads aren't already loaded
   if (!auth.currentUser && !adsLoaded) {
     (adsbygoogle = window.adsbygoogle || []).push({});
     adsLoaded = true;
   }
 }
 
-// Error handling for AdSense
 window.addEventListener('error', (e) => {
   if (e.message.includes('adsbygoogle')) {
     console.error('AdSense failed to load:', e.message);
@@ -22,94 +20,6 @@ window.addEventListener('error', (e) => {
 
 // ==================== SPEECH SYNTHESIS ====================
 let voicesReady = false;
-
-function loadVoices() {
-  const voices = window.speechSynthesis.getVoices();
-  if (voices.length > 0) {
-    voicesReady = true;
-    window.speechSynthesis.onvoiceschanged = null;
-  }
-}
-
-window.speechSynthesis.onvoiceschanged = loadVoices;
-loadVoices();
-
-// ==================== GLOBAL STATE ====================
-let currentUser = null;
-let examType = "OET";
-let accent = "en-US";
-let words = [];
-let currentIndex = 0;
-let sessionMode = "practice";
-let score = 0;
-let flaggedWords = [];
-let userAnswers = [];
-let userAttempts = [];
-let sessionStartTime;
-let wordStartTime;
-const sessionId = 'sess_' + Math.random().toString(36).substring(2, 9);
-
-// ==================== DOM REFERENCES ====================
-const authArea = document.getElementById('auth-area');
-const premiumApp = document.getElementById('premium-app');
-const examUI = document.getElementById('exam-ui');
-const trainerArea = document.getElementById('trainer-area');
-const summaryArea = document.getElementById('summary-area');
-const appTitle = document.getElementById('app-title');
-const darkModeToggle = document.getElementById('dark-mode-toggle');
-
-// ==================== AUTH RENDERING ====================
-function renderAuth() {
-  if (auth.currentUser) {
-    // User is logged in (premium) - hide ads
-    document.body.classList.add('logged-in');
-    currentUser = auth.currentUser;
-    authArea.innerHTML = `
-      <div style="text-align:right;">
-        <span>Welcome, ${currentUser.email}</span>
-        <button id="logout-btn" class="btn btn-secondary btn-sm">
-          <i class="fas fa-sign-out-alt"></i> Logout
-        </button>
-      </div>`;
-    <div class="ad-container">
-  <ins class="adsbygoogle"
-       style="display:block"
-       data-ad-client="ca-pub-YOUR_PUBLISHER_ID"
-       data-ad-slot="YOUR_AD_SLOT"
-       data-ad-format="auto"
-       data-full-width-responsive="true"></ins>
-  <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
-</div>
-    document.getElementById('logout-btn').onclick = () => {
-      trackEvent('user_logged_out', { session_id: sessionId });
-      auth.signOut();
-    };
-    premiumApp.classList.remove('hidden');
-    renderExamUI();
-  } else {
-    // User is logged out - show ads
-    document.body.classList.remove('logged-in');
-    currentUser = null;
-    authArea.innerHTML = `
-      <div class="auth-form">
-        <input id="email" type="email" placeholder="Email" class="form-control">
-        <input id="password" type="password" placeholder="Password" class="form-control">
-        <button id="login-btn" class="btn btn-primary"><i class="fas fa-sign-in-alt"></i> Login</button>
-        <button id="signup-btn" class="btn btn-outline"><i class="fas fa-user-plus"></i> Sign up</button>
-      </div>`;
-    document.getElementById('login-btn').onclick = loginHandler;
-    document.getElementById('signup-btn').onclick = signupHandler;
-    premiumApp.classList.add('hidden');
-    loadAdsIfNeeded(); // Load ads when logged out
-  }
-}
-
-// Initialize auth and ads
-auth.onAuthStateChanged(user => {
-  currentUser = user;
-  renderAuth();
-  if (!user) loadAdsIfNeeded();
-});
 
 function loadVoices() {
   const voices = window.speechSynthesis.getVoices();
@@ -223,7 +133,35 @@ function trackEvent(name, data = {}) {
 
 function trackError(error, context = {}) {
   trackEvent("error_occurred", {
-        <div style="text-align:right;">
+    ...context,
+    message: error.message,
+    stack: error.stack || "no stack"
+  });
+}
+
+// ==================== AUTH RENDERING ====================
+function renderAuth() {
+  if (auth.currentUser) {
+    document.body.classList.add('logged-in');
+    currentUser = auth.currentUser;
+    authArea.innerHTML = `
+      <div style="text-align:right;">
+        <span>Welcome, ${currentUser.email}</span>
+        <button id="logout-btn" class="btn btn-secondary btn-sm">
+          <i class="fas fa-sign-out-alt"></i> Logout
+        </button>
+      </div>`;
+    document.getElementById('logout-btn').onclick = () => {
+      trackEvent('user_logged_out', { session_id: sessionId });
+      auth.signOut();
+    };
+    premiumApp.classList.remove('hidden');
+    renderExamUI();
+  } else {
+    document.body.classList.remove('logged-in');
+    currentUser = null;
+    authArea.innerHTML = `
+      <div class="auth-form">
         <input id="email" type="email" placeholder="Email" class="form-control">
         <input id="password" type="password" placeholder="Password" class="form-control">
         <button id="login-btn" class="btn btn-primary"><i class="fas fa-sign-in-alt"></i> Login</button>
@@ -232,6 +170,7 @@ function trackError(error, context = {}) {
     document.getElementById('login-btn').onclick = loginHandler;
     document.getElementById('signup-btn').onclick = signupHandler;
     premiumApp.classList.add('hidden');
+    loadAdsIfNeeded();
   }
 }
 
@@ -260,6 +199,7 @@ function signupHandler() {
 auth.onAuthStateChanged(user => {
   currentUser = user;
   renderAuth();
+  if (!user) loadAdsIfNeeded();
 });
 
 // ==================== EXAM UI ====================
