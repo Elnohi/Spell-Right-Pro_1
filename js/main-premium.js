@@ -388,7 +388,13 @@ function showOETWord() {
 
   input.focus();
   input.select();
-}
+
+  input.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') {
+    e.preventDefault(); // prevent accidental form submission
+    checkOETAnswer(word);
+  }
+});
 
 function speakCurrentWord() {
   const statusElement = document.getElementById('word-status');
