@@ -509,8 +509,8 @@ function showCustomWord() {
       <span id="word-status"></span>
     </div>
     <div class="input-wrapper">
-      <input type="text" id="user-input" class="form-control ${userAnswers[currentIndex] ?
-    (userAnswers[currentIndex].toLowerCase() === word.toLowerCase() ? 'correct-input' : 'incorrect-input') : ''}"
+      <input type="text" id="user-input" class="form-control ${userAnswers[currentIndex] ? 
+        (userAnswers[currentIndex].toLowerCase() === word.toLowerCase() ? 'correct-input' : 'incorrect-input') : ''}" 
         placeholder="Type what you heard..." autofocus
         value="${userAnswers[currentIndex] || ''}">
       <span id="real-time-feedback" class="real-time-feedback"></span>
@@ -523,7 +523,7 @@ function showCustomWord() {
         <i class="${flaggedWords.includes(word) ? "fas" : "far"} fa-flag"></i> 
         ${flaggedWords.includes(word) ? "Flagged" : "Flag Word"}
       </button>
-      <button id="next-btn" class="btn btn-secondary" ${currentIndex === words.length - 1 ? "disabled" : ""}>
+      <button id="next-btn" class="btn btn-secondary" ${currentIndex === words.length-1 ? "disabled" : ""}>
         <i class="fas fa-arrow-right"></i> Next
       </button>
     </div>
@@ -532,17 +532,25 @@ function showCustomWord() {
   const input = document.getElementById('user-input');
   const feedback = document.getElementById('real-time-feedback');
 
+  // --- Live feedback on typing ---
   input.addEventListener('input', (e) => {
     const currentInput = e.target.value.toLowerCase();
     const correctWord = word.toLowerCase();
 
     if (currentInput === correctWord) {
       feedback.innerHTML = '<i class="fas fa-check correct-feedback"></i>';
-      setTimeout(() => checkCustomAnswer(word), 250);
     } else if (correctWord.startsWith(currentInput)) {
       feedback.innerHTML = '<i class="fas fa-thumbs-up correct-feedback"></i>';
     } else {
       feedback.innerHTML = '<i class="fas fa-times incorrect-feedback"></i>';
+    }
+  });
+
+  // --- Enter key triggers checkCustomAnswer with retry ---
+  input.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      checkCustomAnswer(word);
     }
   });
 
