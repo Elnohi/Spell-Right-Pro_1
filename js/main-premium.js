@@ -362,10 +362,38 @@ function showOETWord() {
       <span id="word-status"></span>
     </div>
     <div class="input-wrapper">
-      <input type="text" id="user-input" class="form-control ${userAnswers[currentIndex] ? 
-        (userAnswers[currentIndex].toLowerCase() === word.toLowerCase() ? 'correct-input' : 'incorrect-input') : ''}" 
-        placeholder="Type what you heard..." autofocus
-        document.getElementById('flag-btn').onclick = () => toggleFlagWord(word);
+      trainerArea.innerHTML = `
+  <div class="word-progress">Word ${currentIndex + 1} of ${words.length}</div>
+  <div class="word-audio-feedback">
+    <button id="repeat-btn" class="btn btn-icon" title="Repeat word">
+      <i class="fas fa-redo"></i>
+    </button>
+    <span id="word-status"></span>
+  </div>
+  <div class="input-wrapper">
+    <input type="text" id="user-input" class="form-control ${userAnswers[currentIndex] ? 
+      (userAnswers[currentIndex].toLowerCase() === word.toLowerCase() ? 'correct-input' : 'incorrect-input') : ''}" 
+      placeholder="Type what you heard..." autofocus>
+  </div>
+  <div class="button-group">
+    <button id="prev-btn" class="btn btn-secondary" ${currentIndex === 0 ? "disabled" : ""}>
+      <i class="fas fa-arrow-left"></i> Previous
+    </button>
+    <button id="flag-btn" class="btn btn-flag ${flaggedWords.includes(word) ? "active" : ""}">
+      <i class="${flaggedWords.includes(word) ? "fas" : "far"} fa-flag"></i> 
+      ${flaggedWords.includes(word) ? "Flagged" : "Flag Word"}
+    </button>
+    <button id="next-btn" class="btn btn-secondary" ${currentIndex === words.length-1 ? "disabled" : ""}>
+      <i class="fas fa-arrow-right"></i> Next
+    </button>
+  </div>
+  <div id="feedback" class="feedback"></div>`;
+
+const input = document.getElementById('user-input');
+document.getElementById('repeat-btn').onclick = speakCurrentWord;
+document.getElementById('prev-btn').onclick = prevOETWord;
+document.getElementById('next-btn').onclick = nextOETWord;
+document.getElementById('flag-btn').onclick = () => toggleFlagWord(word);
 
   input.focus();
   input.select();
