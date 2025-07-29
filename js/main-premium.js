@@ -40,20 +40,18 @@ function speakWord(word, rate = 1.0) {
 
   if ('speechSynthesis' in window) {
     window.speechSynthesis.cancel();
-    
     const utterance = new SpeechSynthesisUtterance(word);
     utterance.rate = rate;
     utterance.lang = accent;
     utterance.volume = 1.0;
-    
+
     const voices = window.speechSynthesis.getVoices();
     const preferredVoice = voices.find(v => v.lang === accent) || 
                           voices.find(v => v.lang.startsWith(accent.split('-')[0]));
-    
     if (preferredVoice) {
       utterance.voice = preferredVoice;
     }
-    
+
     window.speechSynthesis.speak(utterance);
   } else {
     console.error('Speech synthesis not supported');
