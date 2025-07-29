@@ -19,7 +19,7 @@ window.addEventListener('error', (e) => {
 });
 
 // ==================== SPEECH SYNTHESIS ====================
-let voicesReady = true;
+let voicesReady = false;
 
 function loadVoices() {
   const voices = window.speechSynthesis.getVoices();
