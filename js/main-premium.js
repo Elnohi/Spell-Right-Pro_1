@@ -645,7 +645,8 @@ function startBee() {
 
 function showBeeWord() {
   if (currentIndex >= words.length) {
-    showBeeSummary();
+    storeSessionData('Bee');  // Log session in Firebase
+    showBeeSummary();         // Show results/summary
     return;
   }
 
@@ -672,7 +673,7 @@ function showBeeWord() {
         <i class="${flaggedWords.includes(word) ? "fas" : "far"} fa-flag"></i> 
         ${flaggedWords.includes(word) ? "Flagged" : "Flag Word"}
       </button>
-      <button id="next-btn" class="btn btn-secondary" ${currentIndex === words.length - 1 ? "disabled" : ""}>
+      <button id="next-btn" class="btn btn-secondary" ${currentIndex === words.length-1 ? "disabled" : ""}>
         <i class="fas fa-arrow-right"></i> Skip
       </button>
     </div>
@@ -688,62 +689,7 @@ function showBeeWord() {
   }, 500);
 }
 
-function speakCurrentBeeWord() {
-  const statusElement = document.getElementById('word-status');
-  if (statusElement) {
-    statusElement.innerHTML = '<i class="fas fa-volume-up speech-loading"></i>';
-  }
-
-  speakWord(words[currentIndex]);
-
-  setTimeout(() => {
-    if (statusElement) {
-      statusElement.innerHTML = '';
-    }
-  }, 500);
-}
-
-function listenForSpelling(correctWord) {
-  const micFeedback = document.getElementById('mic-feedback');
-  micFeedback.textContent = "Listening... Please spell the word.";
-  micFeedback.className = "feedback";
-
-  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-  if (!SpeechRecognition) {
-    micFeedback.textContent = "Speech recognition not supported.";
-    micFeedback.className = "feedback incorrect";
-    return;
-  }
-
-  const recognition = new SpeechRecognition();
-  recognition.lang = accent;
-  recognition.interimResults = false;
-  recognition.maxAlternatives = 5;
-
-  recognition.onresult = (event) => {
-    const results = event.results[0];
-    const bestMatch = findBestMatch(results);
-    processSpellingAttempt(bestMatch, correctWord);
-  };
-
-  recognition.onerror = (event) => {
-    trackError(new Error(event.error), { context: 'speech_recognition', session_id: sessionId });
-    micFeedback.textContent = `Error: ${event.error}`;
-    micFeedback.className = "feedback incorrect";
-  };
-
-  recognition.start();
-}
-
-function findBestMatch(results) {
-  for (let i = 0; i < results.length; i++) {
-    const transcript = results[i].transcript.trim().toLowerCase();
-    const cleaned = transcript.replace(/[^a-z]/g, '');
-    if (cleaned.length > 0) return cleaned;
-  }
-  return '';
-}
-
+// When a spelling attempt is processed, always check for last word and call summary
 function processSpellingAttempt(attempt, correctWord) {
   const micFeedback = document.getElementById('mic-feedback');
   if (!attempt) {
@@ -779,6 +725,7 @@ function processSpellingAttempt(attempt, correctWord) {
       showBeeWord();
       speakCurrentBeeWord();
     } else {
+      storeSessionData('Bee');
       showBeeSummary();
     }
   }, 1200);
