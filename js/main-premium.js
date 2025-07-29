@@ -19,7 +19,7 @@ window.addEventListener('error', (e) => {
 });
 
 // ==================== SPEECH SYNTHESIS ====================
-let voicesReady = false;
+let voicesReady = true;
 
 function loadVoices() {
   const voices = window.speechSynthesis.getVoices();
@@ -80,7 +80,6 @@ auth.onAuthStateChanged(user => {
 });
 
 // ==================== SPEECH SYNTHESIS ====================
-let voicesReady = false;
 function loadVoices() {
   const v = window.speechSynthesis.getVoices();
   if (v.length) { voicesReady = true; window.speechSynthesis.onvoiceschanged = null; }
