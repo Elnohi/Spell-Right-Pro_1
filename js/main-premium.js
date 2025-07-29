@@ -645,7 +645,8 @@ function startBee() {
 
 function showBeeWord() {
   if (currentIndex >= words.length) {
-    showBeeSummary();
+    storeSessionData('Bee');  // Log session in Firebase
+    showBeeSummary();         // Show results/summary
     return;
   }
 
@@ -672,7 +673,7 @@ function showBeeWord() {
         <i class="${flaggedWords.includes(word) ? "fas" : "far"} fa-flag"></i> 
         ${flaggedWords.includes(word) ? "Flagged" : "Flag Word"}
       </button>
-      <button id="next-btn" class="btn btn-secondary" ${currentIndex === words.length - 1 ? "disabled" : ""}>
+      <button id="next-btn" class="btn btn-secondary" ${currentIndex === words.length-1 ? "disabled" : ""}>
         <i class="fas fa-arrow-right"></i> Skip
       </button>
     </div>
@@ -744,6 +745,7 @@ function findBestMatch(results) {
   return '';
 }
 
+// When a spelling attempt is processed, always check for last word and call summary
 function processSpellingAttempt(attempt, correctWord) {
   const micFeedback = document.getElementById('mic-feedback');
   if (!attempt) {
@@ -779,6 +781,7 @@ function processSpellingAttempt(attempt, correctWord) {
       showBeeWord();
       speakCurrentBeeWord();
     } else {
+      storeSessionData('Bee');
       showBeeSummary();
     }
   }, 1200);
