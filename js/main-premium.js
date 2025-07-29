@@ -877,4 +877,6 @@ function showFeedback(message, type = 'correct') {
   if (!feedback) return;
   feedback.textContent = message;
   feedback.className = `feedback ${type}`;
+  };
 }
+  
