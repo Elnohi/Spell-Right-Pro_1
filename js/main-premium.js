@@ -807,38 +807,29 @@ function toggleBeeFlagWord(word) {
 
 // ==================== SUMMARY DISPLAY ====================
 function showSummary() {
-  const percent = Math.round((score / words.length) * 100);
-  const wrongWords = words.filter((w, i) => (userAnswers[i] || "").toLowerCase() !== w.toLowerCase());
-
-  summaryArea.innerHTML = `
-    <div class="card-header"><h3>Session Results</h3>
-    <div class="score-display">${score}/${words.length} (${percent}%)</div></div>
-    <div class="results-grid">
-      <div class="results-card correct">
-        <h3><i class="fas fa-check-circle"></i> Correct</h3>
-        <div class="score-number">${score}</div>
-        <div class="word-list">${words.filter((w, i) => (userAnswers[i] || "").toLowerCase() === w.toLowerCase()).map(w => `<div class="word-item">${w}</div>`).join('')}</div>
-      </div>
-      <div class="results-card incorrect">
-        <h3><i class="fas fa-times-circle"></i> Needs Practice</h3>
-        <div class="score-number">${wrongWords.length}</div>
-        <div class="word-list">${wrongWords.map(w => `<div class="word-item">${w}</div>`).join('')}</div>
-      </div>
+  const duration = Math.round((Date.now() - sessionStartTime) / 1000);
+  const accuracy = Math.round((score / words.length) * 100);
+  
+  const summaryHTML = `
+    <div class="summary-card">
+      <h3>Session Summary</h3>
+      <p><strong>Mode:</strong> ${examType.toUpperCase()}</p>
+      <p><strong>Words Attempted:</strong> ${words.length}</p>
+      <p><strong>Score:</strong> ${score}</p>
+      <p><strong>Accuracy:</strong> ${accuracy}%</p>
+      <p><strong>Duration:</strong> ${duration} seconds</p>
+      ${flaggedWords.length > 0 ? `
+        <div class="flagged-section">
+          <h4>Flagged Words (${flaggedWords.length}):</h4>
+          <ul>${flaggedWords.map(w => `<li>${w}</li>`).join('')}</ul>
+        </div>` : '<p>No flagged words.</p>'}
+      <button class="btn btn-primary" onclick="restartSession()">Restart</button>
     </div>
-    <div class="summary-actions">
-      <button id="restart-btn" class="btn btn-primary"><i class="fas fa-redo"></i> Restart</button>
-      <button id="new-list-btn" class="btn btn-secondary"><i class="fas fa-sync-alt"></i> New List</button>
-    </div>`;
+  `;
 
-  document.getElementById('restart-btn').onclick = () => {
-    if (examType === "OET") startOET();
-    else if (examType === "Custom") startCustomPractice();
-    else startBee();
-  };
-  document.getElementById('new-list-btn').onclick = () => {
-    summaryArea.innerHTML = "";
-    renderExamUI();
-  };
+  summaryArea.innerHTML = summaryHTML;
+  trainerArea.innerHTML = '';
+  examUI.innerHTML = '';
 }
 
 function showBeeSummary() {
