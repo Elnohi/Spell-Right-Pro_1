@@ -956,9 +956,9 @@ function checkCustomAnswer(correctWord) {
   if (isCorrect) {
     score++;
     showFeedback("✓ Correct!", "correct");
-   document.getElementById('word-status').innerHTML = '<i class="fas fa-check-circle" style="color:var(--success)"></i>';
-    userInput.classList.add('correct-input');
-    userInput.classList.remove('incorrect-input');
+    document.getElementById('word-status').innerHTML = '<i class="fas fa-check-circle" style="color:var(--success)"></i>';
+    input.classList.add('correct-input');
+    input.classList.remove('incorrect-input');
     retryCount = 0;
     setTimeout(() => {
       trainerArea.classList.add('word-transition');
