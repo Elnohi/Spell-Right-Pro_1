@@ -1090,5 +1090,3 @@ function restartSession() {
   summaryArea.innerHTML = "";
   trainerArea.innerHTML = "";
 }
-
-
