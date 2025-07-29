@@ -108,7 +108,7 @@ updateDarkModeIcon();
 // ==================== ALERT SYSTEM ====================
 function showAlert(message, type = 'error') {
   const alert = document.createElement('div');
-  alert.className = `alert alert-${type}`;
+  alert.className = 'alert alert-success';
   alert.textContent = message;
   document.body.appendChild(alert);
   setTimeout(() => {
