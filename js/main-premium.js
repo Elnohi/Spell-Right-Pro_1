@@ -401,7 +401,7 @@ function checkOETAnswer(correctWord) {
     userInput.classList.add('correct-input');
     userInput.classList.remove('incorrect-input');
   } else {
-    showFeedback(`✗ Incorrect. Correct: ${correctWord}`, "incorrect");
+    showFeedback(`\u2717 Incorrect. Correct: ${correctWord}`, "incorrect");
     document.getElementById('word-status').innerHTML = '<i class="fas fa-times-circle" style="color:var(--danger)"></i>';
     userInput.classList.add('incorrect-input');
     userInput.classList.remove('correct-input');
