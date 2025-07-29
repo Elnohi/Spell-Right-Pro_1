@@ -74,131 +74,190 @@ let sessionStartTime;
 let wordStartTime;
 const sessionId = 'sess_' + Math.random().toString(36).substring(2, 9);
 
-// ==================== DOM REFERENCES ====================
-const authArea = document.getElementById('auth-area');
-const premiumApp = document.getElementById('premium-app');
-const examUI = document.getElementById('exam-ui');
-const trainerArea = document.getElementById('trainer-area');
-const summaryArea = document.getElementById('summary-area');
-const appTitle = document.getElementById('app-title');
-const darkModeToggle = document.getElementById('dark-mode-toggle');
-
-// ==================== DARK MODE ====================
-function updateDarkModeIcon() {
-  const icon = document.querySelector('#dark-mode-toggle i');
-  if (icon) {
-    icon.className = document.body.classList.contains('dark-mode') 
-      ? 'fas fa-sun' 
-      : 'fas fa-moon';
-  }
-}
-
-if (localStorage.getItem('darkMode') === 'true' || localStorage.getItem('darkMode') === 'enabled') {
-  document.body.classList.add('dark-mode');
-}
-
-darkModeToggle.addEventListener('click', () => {
-  const isDark = document.body.classList.toggle('dark-mode');
-  localStorage.setItem('darkMode', isDark ? 'enabled' : 'disabled');
-  updateDarkModeIcon();
-});
-
-updateDarkModeIcon();
-
-// ==================== ALERT SYSTEM ====================
-function showAlert(message, type = 'error') {
-  const alert = document.createElement('div');
-  alert.className = `alert alert-${type}`;
-  alert.textContent = message;
-  document.body.appendChild(alert);
-  setTimeout(() => {
-    alert.classList.add('fade-out');
-    setTimeout(() => alert.remove(), 500);
-  }, 3000);
-}
-
-// ==================== TRACKING HELPERS ====================
-function trackEvent(name, data = {}) {
-  if (typeof analytics !== "undefined") {
-    try {
-      analytics.logEvent(name, data);
-    } catch (e) {
-      console.warn("Analytics event failed", name, data);
-    }
-  }
-  console.log(`[TRACK] ${name}`, data);
-}
-
-function trackError(error, context = {}) {
-  trackEvent("error_occurred", {
-    ...context,
-    message: error.message,
-    stack: error.stack || "no stack"
-  });
-}
-
-// ==================== AUTH RENDERING ====================
-function renderAuth() {
-  if (auth.currentUser) {
-    document.body.classList.add('logged-in');
-    currentUser = auth.currentUser;
-    authArea.innerHTML = `
-      <div style="text-align:right;">
-        <span>Welcome, ${currentUser.email}</span>
-        <button id="logout-btn" class="btn btn-secondary btn-sm">
-          <i class="fas fa-sign-out-alt"></i> Logout
-        </button>
-      </div>`;
-    document.getElementById('logout-btn').onclick = () => {
-      trackEvent('user_logged_out', { session_id: sessionId });
-      auth.signOut();
-    };
-    premiumApp.classList.remove('hidden');
-    renderExamUI();
-  } else {
-    document.body.classList.remove('logged-in');
-    currentUser = null;
-    authArea.innerHTML = `
-      <div class="auth-form">
-        <input id="email" type="email" placeholder="Email" class="form-control">
-        <input id="password" type="password" placeholder="Password" class="form-control">
-        <button id="login-btn" class="btn btn-primary"><i class="fas fa-sign-in-alt"></i> Login</button>
-        <button id="signup-btn" class="btn btn-outline"><i class="fas fa-user-plus"></i> Sign up</button>
-      </div>`;
-    document.getElementById('login-btn').onclick = loginHandler;
-    document.getElementById('signup-btn').onclick = signupHandler;
-    premiumApp.classList.add('hidden');
-    loadAdsIfNeeded();
-  }
-}
-
-function loginHandler() {
-  const email = document.getElementById('email').value;
-  const pass = document.getElementById('password').value;
-  auth.signInWithEmailAndPassword(email, pass)
-    .then(() => trackEvent('login_successful', { session_id: sessionId }))
-    .catch(e => {
-      showAlert(e.message);
-      trackError(e, { context: 'login' });
-    });
-}
-
-function signupHandler() {
-  const email = document.getElementById('email').value;
-  const pass = document.getElementById('password').value;
-  auth.createUserWithEmailAndPassword(email, pass)
-    .then(() => trackEvent('signup_successful', { session_id: sessionId }))
-    .catch(e => {
-      showAlert(e.message);
-      trackError(e, { context: 'signup' });
-    });
-}
-
+// ==================== FIREBASE AUTH STATE ====================
 auth.onAuthStateChanged(user => {
   currentUser = user;
-  renderAuth();
-  if (!user) loadAdsIfNeeded();
 });
+
+// ==================== SPEECH SYNTHESIS ====================
+let voicesReady = false;
+function loadVoices() {
+  const v = window.speechSynthesis.getVoices();
+  if (v.length) { voicesReady = true; window.speechSynthesis.onvoiceschanged = null; }
+}
+window.speechSynthesis.onvoiceschanged = loadVoices;
+loadVoices();
+function speakWord(word) {
+  if (!voicesReady) return setTimeout(() => speakWord(word), 200);
+  const utter = new SpeechSynthesisUtterance(word);
+  utter.lang = accent;
+  utter.rate = 0.95;
+  speechSynthesis.cancel();
+  speechSynthesis.speak(utter);
+}
+
+// ==================== UTILS ====================
+function toggleFlag() {
+  const w = words[currentIndex];
+  const idx = flaggedWords.indexOf(w);
+  if (idx === -1) flaggedWords.push(w);
+  else flaggedWords.splice(idx, 1);
+}
+
+function restartSession() {
+  if (examType === "OET") startOET();
+  else if (examType === "Bee") startBee();
+  else startCustomPractice();
+}
+
+// ==================== OET MODE ====================
+function startOET() {
+  currentIndex = 0; score = 0; flaggedWords = []; userAnswers = [];
+  words = window.oetWords?.slice() || [];
+  if (!words.length) { alert("No OET words loaded."); return; }
+  sessionStartTime = Date.now();
+  showOETWord();
+}
+
+function showOETWord() {
+  if (currentIndex >= words.length) return showSummary();
+  const w = words[currentIndex];
+  document.getElementById('trainer-area').innerHTML = `
+    <h3>Word ${currentIndex+1} of ${words.length}</h3>
+    <input id="user-input" placeholder="Type what you heard" autofocus />
+    <button id="submit-btn">Submit</button>
+    <button id="flag-btn">${flaggedWords.includes(w)? 'Unflag':'Flag'}</button>
+  `;
+  document.getElementById('submit-btn').onclick = checkOETAnswer;
+  document.getElementById('flag-btn').onclick = toggleFlag;
+  setTimeout(() => speakWord(w), 200);
+}
+
+function checkOETAnswer() {
+  const input = document.getElementById('user-input').value.trim();
+  userAnswers[currentIndex] = input;
+  if (input.toLowerCase() === words[currentIndex].toLowerCase()) score++;
+  currentIndex++;
+  if (currentIndex < words.length) showOETWord(); else showSummary();
+}
+
+// ==================== BEE MODE ====================
+function startBee() {
+  currentIndex = 0; score = 0; flaggedWords = []; userAttempts = [];
+  words = ["accommodate","belligerent","conscientious","disastrous",
+            "embarrass","foreign","guarantee","harass",
+            "interrupt","jealous","knowledge","liaison",
+            "millennium","necessary","occasionally","possession",
+            "questionnaire","rhythm","separate","tomorrow",
+            "unforeseen","vacuum","withhold","yacht"];
+  showBeeWord();
+}
+
+function showBeeWord() {
+  if (currentIndex >= words.length) return showSummary();
+  const w = words[currentIndex];
+  document.getElementById('trainer-area').innerHTML = `
+    <h3>Spelling Bee: Spell the word</h3>
+    <button id="listen-btn">🔊 Hear Word</button>
+    <button id="flag-btn">${flaggedWords.includes(w)? 'Unflag':'Flag'}</button>
+  `;
+  document.getElementById('listen-btn').onclick = () => speakWord(w) || listenBee(w);
+  document.getElementById('flag-btn').onclick = toggleFlag;
+  speakWord(w);
+}
+
+function listenBee(correctWord) {
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SR) { alert("Speech recognition not supported"); return; }
+  const r = new SR(); r.lang = accent;
+  r.onresult = e => {
+    const attempt = e.results[0][0].transcript.replace(/\s+/g, '').toLowerCase();
+    userAttempts[currentIndex] = attempt;
+    if (attempt === correctWord.toLowerCase()) score++;
+    currentIndex++;
+    showBeeWord();
+  };
+  r.start();
+}
+
+// ==================== CUSTOM MODE ====================
+function startCustomPractice() {
+  currentIndex = 0; score = 0; flaggedWords = []; userAnswers = [];
+  // words should be set by renderCustomInput
+  showCustomWord();
+}
+
+function showCustomWord() {
+  if (currentIndex >= words.length) return showSummary();
+  const w = words[currentIndex];
+  document.getElementById('trainer-area').innerHTML = `
+    <h3>Word ${currentIndex+1} of ${words.length}</h3>
+    <input id="custom-input" placeholder="Type what you heard" autofocus />
+    <button id="submit-btn">Submit</button>
+    <button id="flag-btn">${flaggedWords.includes(w)? 'Unflag':'Flag'}</button>
+  `;
+  document.getElementById('submit-btn').onclick = checkCustomAnswer;
+  document.getElementById('flag-btn').onclick = toggleFlag;
+  setTimeout(() => speakWord(w), 200);
+}
+
+function checkCustomAnswer() {
+  const input = document.getElementById('custom-input').value.trim();
+  userAnswers[currentIndex] = input;
+  if (input.toLowerCase() === words[currentIndex].toLowerCase()) score++;
+  currentIndex++;
+  if (currentIndex < words.length) showCustomWord(); else showSummary();
+}
+
+// ==================== SUMMARY & RETRY ====================
+function showSummary() {
+  const total = words.length;
+  const accuracy = Math.round(score/total*100);
+  const incorrectList = words.filter((w,i)=>(userAnswers[i]||userAttempts[i]||"").toLowerCase()!==w.toLowerCase());
+  document.getElementById('summary-area').innerHTML = `
+    <h2>Session Summary</h2>
+    <p>Mode: ${examType}</p>
+    <p>Score: ${score}/${total} (${accuracy}%)</p>
+    <h3>Flagged Words (${flaggedWords.length})</h3>
+    <ul>${flaggedWords.map(w=>`<li>${w}</li>`).join('')}</ul>
+    <h3>Incorrect Words (${incorrectList.length})</h3>
+    <ul>${incorrectList.map(w=>`<li>${w}</li>`).join('')}</ul>
+    <button onclick="restartSession()">Restart Full Session</button>
+    ${incorrectList.length?'<button onclick="retryIncorrect()">Retry Incorrect</button>':''}
+  `;
+  document.getElementById('trainer-area').innerHTML = '';
+  saveSessionToFirebase();
+}
+
+function retryIncorrect() {
+  const incorrectList = words.filter((w,i)=>(userAnswers[i]||userAttempts[i]||"").toLowerCase()!==w.toLowerCase());
+  words = incorrectList;
+  currentIndex = 0; score = 0; flaggedWords=[]; userAnswers=[]; userAttempts=[];
+  document.getElementById('summary-area').innerHTML = '';
+  if (examType==="OET") showOETWord();
+  else if(examType==="Bee") showBeeWord();
+  else showCustomWord();
+}
+
+// ==================== FIREBASE LOGGING ====================
+function saveSessionToFirebase() {
+  if (!currentUser || !firebase?.firestore) return;
+  const db = firebase.firestore();
+  db.collection('sessions').add({
+    userId: currentUser.uid,
+    examType,
+    mode: sessionMode,
+    totalWords: words.length,
+    score,
+    accuracy: Math.round(score/words.length*100),
+    flaggedWords,
+    userAnswers,
+    userAttempts,
+    timestamp: new Date()
+  })
+  .then(()=>console.log('Session saved'))
+  .catch(e=>console.error('Firebase error', e));
+}
 
 // ==================== EXAM UI ====================
 function renderExamUI() {
