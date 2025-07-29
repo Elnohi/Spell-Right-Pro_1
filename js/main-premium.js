@@ -884,7 +884,7 @@ function resetRetry() {
   retryCount = 0;
 }
 
-// ==================== OET PRACTICE (WITH RETRY AND FIREBASE LOGGING) ====================
+// ==================== OET PRACTICE (WITH RETRY, MARKING, AND AUTO-ADVANCE) ====================
 function checkOETAnswer(correctWord) {
   const userInput = document.getElementById('user-input');
   const userAnswer = userInput.value.trim();
@@ -913,17 +913,21 @@ function checkOETAnswer(correctWord) {
     }, 900);
   } else {
     retryCount++;
-    showFeedback(`✗ Incorrect${retryCount < MAX_ATTEMPTS ? ". Try again!" : `. Correct: ${correctWord}`}`, "incorrect");
-    document.getElementById('word-status').innerHTML = '<i class="fas fa-times-circle" style="color:var(--danger)"></i>';
-    userInput.classList.add('incorrect-input');
-    userInput.classList.remove('correct-input');
     if (retryCount < MAX_ATTEMPTS) {
+      showFeedback("✗ Incorrect. Try again!", "incorrect");
+      document.getElementById('word-status').innerHTML = '<i class="fas fa-times-circle" style="color:var(--danger)"></i>';
+      userInput.classList.add('incorrect-input');
+      userInput.classList.remove('correct-input');
       setTimeout(() => {
         userInput.value = "";
         userInput.focus();
         userInput.select();
-      }, 700);
+      }, 400);
     } else {
+      showFeedback(`✗ Incorrect. Correct: ${correctWord}`, "incorrect");
+      document.getElementById('word-status').innerHTML = '<i class="fas fa-times-circle" style="color:var(--danger)"></i>';
+      userInput.classList.add('incorrect-input');
+      userInput.classList.remove('correct-input');
       retryCount = 0;
       setTimeout(() => {
         trainerArea.classList.add('word-transition');
@@ -937,12 +941,12 @@ function checkOETAnswer(correctWord) {
             showSummary();
           }
         }, 300);
-      }, 1000);
+      }, 1100);
     }
   }
 }
 
-// ==================== CUSTOM PRACTICE (WITH RETRY AND FIREBASE LOGGING) ====================
+// ==================== CUSTOM PRACTICE (WITH RETRY, MARKING, AND AUTO-ADVANCE) ====================
 function checkCustomAnswer(correctWord) {
   const input = document.getElementById('user-input');
   const userAnswer = input.value.trim();
@@ -971,17 +975,21 @@ function checkCustomAnswer(correctWord) {
     }, 900);
   } else {
     retryCount++;
-    showFeedback(`✗ Incorrect${retryCount < MAX_ATTEMPTS ? ". Try again!" : `. Correct: ${correctWord}`}`, "incorrect");
-    document.getElementById('word-status').innerHTML = '<i class="fas fa-times-circle" style="color:var(--danger)"></i>';
-    input.classList.add('incorrect-input');
-    input.classList.remove('correct-input');
     if (retryCount < MAX_ATTEMPTS) {
+      showFeedback("✗ Incorrect. Try again!", "incorrect");
+      document.getElementById('word-status').innerHTML = '<i class="fas fa-times-circle" style="color:var(--danger)"></i>';
+      input.classList.add('incorrect-input');
+      input.classList.remove('correct-input');
       setTimeout(() => {
         input.value = "";
         input.focus();
         input.select();
-      }, 700);
+      }, 400);
     } else {
+      showFeedback(`✗ Incorrect. Correct: ${correctWord}`, "incorrect");
+      document.getElementById('word-status').innerHTML = '<i class="fas fa-times-circle" style="color:var(--danger)"></i>';
+      input.classList.add('incorrect-input');
+      input.classList.remove('correct-input');
       retryCount = 0;
       setTimeout(() => {
         trainerArea.classList.add('word-transition');
@@ -995,7 +1003,7 @@ function checkCustomAnswer(correctWord) {
             showSummary();
           }
         }, 300);
-      }, 1000);
+      }, 1100);
     }
   }
 }
