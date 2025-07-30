@@ -1,3 +1,5 @@
+// main-freemium-oet.js — OET Freemium Version, Restrict Custom List to One Per Day
+
 document.addEventListener('DOMContentLoaded', () => {
   // DOM Elements
   const accentPicker = document.querySelector('.accent-picker');
@@ -5,40 +7,26 @@ document.addEventListener('DOMContentLoaded', () => {
   const fileInput = document.getElementById('file-input');
   const addCustomBtn = document.getElementById('add-custom-btn');
   const startBtn = document.getElementById('start-btn');
-  const beeArea = document.getElementById('bee-area');
-  const spellingVisual = document.getElementById('spelling-visual');
+  const oetArea = document.getElementById('oet-area');
   const summaryArea = document.getElementById('summary-area');
-  const micStatus = document.getElementById('mic-status');
 
   // State Variables
   let words = [];
   let currentIndex = 0;
   let score = 0;
-  let flaggedWords = JSON.parse(localStorage.getItem('flaggedWords')) || [];
-  let userAttempts = [];
+  let flaggedWords = JSON.parse(localStorage.getItem('flaggedWordsOET')) || [];
+  let userAnswers = [];
   let usedCustomListToday = false;
+  let accent = "en-GB"; // Default to British
+
   const todayKey = new Date().toISOString().split('T')[0];
-  const savedDate = localStorage.getItem('customListDate');
+  const savedDate = localStorage.getItem('customListDateOET');
   if (savedDate === todayKey) {
     usedCustomListToday = true;
   } else {
-    localStorage.setItem('customListDate', todayKey);
+    localStorage.setItem('customListDateOET', todayKey);
     usedCustomListToday = false;
   }
-
-  let accent = "en-US";
-  let recognition;
-  let isSessionActive = false;
-  let currentWord = "";
-
-  function customListAllowedToday() {
-  const today = new Date().toISOString().slice(0, 10); // e.g., "2025-07-29"
-  return localStorage.getItem('customListDate') !== today;
-}
-function setCustomListUsedToday() {
-  const today = new Date().toISOString().slice(0, 10);
-  localStorage.setItem('customListDate', today);
-}
 
   // Enhanced word splitting pattern - accepts multiple separators
   const WORD_SEPARATORS = /[\s,;\/\-–—|]+/;
@@ -46,6 +34,7 @@ function setCustomListUsedToday() {
   // Initialize
   setupEventListeners();
   initDarkMode();
+  lockCustomControlsIfNeeded();
 
   // Event Listeners
   function setupEventListeners() {
@@ -58,13 +47,37 @@ function setCustomListUsedToday() {
       }
     });
 
-    // Word Source Controls
     addCustomBtn.addEventListener('click', addCustomWords);
     fileInput.addEventListener('change', handleFileUpload);
     startBtn.addEventListener('click', toggleSession);
   }
 
-  // Core Session Functions
+  // Lock controls and show message if custom list was used
+  function lockCustomControlsIfNeeded() {
+    if (usedCustomListToday) {
+      customInput.disabled = true;
+      fileInput.disabled = true;
+      addCustomBtn.disabled = true;
+      if (!document.getElementById('custom-limit-msg')) {
+        const msg = document.createElement('div');
+        msg.id = 'custom-limit-msg';
+        msg.className = 'limit-msg';
+        msg.innerHTML = 'You can only use or upload <b>one custom list per day</b> in the freemium version.<br>Upgrade to premium for unlimited lists.';
+        customInput.parentElement.appendChild(msg);
+      }
+    }
+  }
+
+  // Mark today as used after successful add/upload
+  function setCustomListUsedToday() {
+    const today = new Date().toISOString().slice(0, 10);
+    localStorage.setItem('customListDateOET', today);
+    usedCustomListToday = true;
+  }
+
+  // Session Controls
+  let isSessionActive = false;
+
   function toggleSession() {
     if (isSessionActive) {
       endSession();
@@ -74,29 +87,26 @@ function setCustomListUsedToday() {
   }
 
   function startSession() {
-    if (!usedCustomListToday) {
-      // Default words for Spelling Bee
+    if (!usedCustomListToday || words.length === 0) {
+      // Default OET word list
       words = [
-        "accommodate", "belligerent", "conscientious", "disastrous", 
-        "embarrass", "foreign", "guarantee", "harass", 
-        "interrupt", "jealous", "knowledge", "liaison",
-        "millennium", "necessary", "occasionally", "possession",
-        "questionnaire", "rhythm", "separate", "tomorrow",
-        "unforeseen", "vacuum", "withhold", "yacht"
+        "patient", "surgery", "diagnosis", "treatment", "symptom",
+        "prescription", "allergy", "infection", "recovery", "procedure",
+        "blood", "pressure", "heart", "medical", "history",
+        "consultation", "referral", "pain", "therapy", "doctor",
+        "appointment", "vaccine", "chronic", "acute"
       ];
     }
-
     currentIndex = 0;
     score = 0;
-    userAttempts = [];
+    userAnswers = [];
     isSessionActive = true;
-
     updateUIForActiveSession();
-    playCurrentWord();
+    showCurrentWord();
   }
 
   function updateUIForActiveSession() {
-    beeArea.classList.remove('hidden');
+    oetArea.classList.remove('hidden');
     summaryArea.classList.add('hidden');
     startBtn.innerHTML = '<i class="fas fa-stop"></i> End Session';
     customInput.disabled = true;
@@ -104,51 +114,53 @@ function setCustomListUsedToday() {
     addCustomBtn.disabled = true;
   }
 
-  function playCurrentWord() {
+  function showCurrentWord() {
     if (currentIndex >= words.length) {
       endSession();
       return;
     }
-
-    currentWord = words[currentIndex];
-    renderWordInterface();
-    speakWord(currentWord);
-  }
-
-  function renderWordInterface() {
-    spellingVisual.innerHTML = '';
-    beeArea.innerHTML = `
+    const word = words[currentIndex];
+    oetArea.innerHTML = `
       <div class="word-progress">Word ${currentIndex + 1} of ${words.length}</div>
-      
-      <div id="spelling-visual"></div>
-      
-      <div id="auto-recording-info">
-        <i class="fas fa-info-circle"></i> Speak the spelling after the word is pronounced
+      <div class="word-audio-feedback">
+        <button id="repeat-btn" class="btn btn-icon" title="Repeat word">
+          <i class="fas fa-redo"></i>
+        </button>
       </div>
-      
+      <div class="input-wrapper">
+        <input type="text" id="user-input" class="form-control" placeholder="Type what you heard..." autofocus>
+      </div>
       <div class="button-group">
-        <button id="prev-btn" class="btn-secondary" ${currentIndex === 0 ? 'disabled' : ''}>
+        <button id="prev-btn" class="btn btn-secondary" ${currentIndex === 0 ? "disabled" : ""}>
           <i class="fas fa-arrow-left"></i> Previous
         </button>
-        <button id="repeat-btn" class="btn-secondary">
-          <i class="fas fa-redo"></i> Repeat Word
+        <button id="flag-btn" class="btn btn-flag ${flaggedWords.includes(word) ? "active" : ""}">
+          <i class="${flaggedWords.includes(word) ? "fas" : "far"} fa-flag"></i> 
+          ${flaggedWords.includes(word) ? "Flagged" : "Flag Word"}
         </button>
-        <button id="next-btn" class="btn-secondary">
-          <i class="fas fa-arrow-right"></i> Skip
-        </button>
-        <button id="flag-btn" class="btn-icon ${flaggedWords.includes(currentWord) ? 'active' : ''}>
-          <i class="fas fa-star"></i> Flag
+        <button id="next-btn" class="btn btn-secondary" ${currentIndex === words.length - 1 ? "disabled" : ""}>
+          <i class="fas fa-arrow-right"></i> Next
         </button>
       </div>
-      
-      <div id="mic-feedback" class="feedback"></div>
+      <div id="feedback" class="feedback"></div>
     `;
 
-    // Set up event listeners
-    document.getElementById('prev-btn').addEventListener('click', prevWord);
-    document.getElementById('next-btn').addEventListener('click', nextWord);
-    document.getElementById('repeat-btn').addEventListener('click', () => speakWord(currentWord));
-    document.getElementById('flag-btn').addEventListener('click', () => toggleFlagWord(currentWord));
+    document.getElementById('repeat-btn').onclick = () => speakWord(word);
+    document.getElementById('prev-btn').onclick = prevWord;
+    document.getElementById('next-btn').onclick = nextWord;
+    document.getElementById('flag-btn').onclick = () => toggleFlagWord(word);
+
+    const input = document.getElementById('user-input');
+    input.focus();
+    input.select();
+    speakWord(word);
+
+    input.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        checkAnswer(word);
+      }
+    });
   }
 
   function speakWord(word) {
@@ -156,151 +168,79 @@ function setCustomListUsedToday() {
       showAlert("Text-to-speech not supported in your browser.", 'error');
       return;
     }
-
     speechSynthesis.cancel();
     const utterance = new SpeechSynthesisUtterance(word);
     utterance.lang = accent;
-    utterance.rate = 0.8;
-    
-    // Start voice recognition automatically after speech ends
-    utterance.onend = () => {
-      if (isSessionActive) {
-        startVoiceRecognition();
-      }
-    };
-    
+    utterance.rate = 0.9;
     speechSynthesis.speak(utterance);
   }
 
-  function startVoiceRecognition() {
-    if (!('webkitSpeechRecognition' in window || 'SpeechRecognition' in window)) {
-      showAlert("Speech recognition not supported in this browser.", 'error');
-      return;
-    }
+  function checkAnswer(correctWord) {
+    const userInput = document.getElementById('user-input');
+    const userAnswer = userInput.value.trim();
+    userAnswers[currentIndex] = userAnswer;
+    const isCorrect = userAnswer.toLowerCase() === correctWord.toLowerCase();
 
-    micStatus.classList.remove('hidden');
-    updateSpellingVisual();
-
-    recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
-    recognition.lang = accent;
-    recognition.interimResults = false;
-    recognition.maxAlternatives = 5; // Get more alternatives for better accuracy
-    recognition.continuous = false;
-
-    recognition.onresult = (event) => {
-      const results = event.results[0];
-      const bestMatch = findBestMatch(results);
-      processSpellingAttempt(bestMatch);
-    };
-
-    recognition.onerror = (event) => {
-      micStatus.classList.add('hidden');
-      if (event.error !== 'no-speech') { // Don't show alert for silent responses
-        showAlert(`Recognition error: ${event.error}`, 'error');
-      }
-      setTimeout(() => isSessionActive && startVoiceRecognition(), 1000);
-    };
-
-    recognition.onend = () => {
-      micStatus.classList.add('hidden');
-    };
-
-    recognition.start();
-  }
-
-  // Find the best match among recognition alternatives
-  function findBestMatch(results) {
-    for (let i = 0; i < results.length; i++) {
-      const transcript = results[i].transcript.trim().toLowerCase();
-      const cleaned = transcript.replace(/[^a-z]/g, '');
-      if (cleaned.length > 0) return cleaned;
-    }
-    return '';
-  }
-
-  function processSpellingAttempt(attempt) {
-    if (!attempt) {
-      // No valid attempt detected, try again
-      setTimeout(() => isSessionActive && startVoiceRecognition(), 800);
-      return;
-    }
-
-    userAttempts[currentIndex] = attempt;
-    const isCorrect = attempt === currentWord.toLowerCase();
-    const feedback = document.getElementById('mic-feedback');
-
-    // Update visual feedback
-    updateSpellingVisual(
-      currentWord.split('').map((letter, i) => ({
-        letter: attempt[i] || '',
-        correct: attempt[i]?.toLowerCase() === letter.toLowerCase()
-      }))
-    );
-
+    const feedback = document.getElementById('feedback');
     if (isCorrect) {
+      score++;
       feedback.textContent = "✓ Correct!";
       feedback.className = "feedback correct";
-      score++;
-      setTimeout(nextWord, 1500);
     } else {
-      feedback.textContent = "✗ Incorrect. Try again!";
+      feedback.textContent = `✗ Incorrect. Correct: ${correctWord}`;
       feedback.className = "feedback incorrect";
     }
-  }
 
-  // Enhanced visual feedback with correct/incorrect letters
-  function updateSpellingVisual(letters = []) {
-    spellingVisual.innerHTML = currentWord.split('').map((letter, i) => {
-      const letterData = letters[i] || {};
-      const letterClass = letterData.correct ? 'correct' : 
-                        (letterData.letter ? 'incorrect' : '');
-      return `<div class="letter-tile ${letterClass}">${letterData.letter || ''}</div>`;
-    }).join('');
+    setTimeout(() => {
+      if (currentIndex < words.length - 1) {
+        currentIndex++;
+        showCurrentWord();
+      } else {
+        endSession();
+      }
+    }, 1200);
   }
 
   function nextWord() {
     if (currentIndex < words.length - 1) {
       currentIndex++;
-      playCurrentWord();
-    } else {
-      endSession();
+      showCurrentWord();
     }
   }
 
   function prevWord() {
     if (currentIndex > 0) {
       currentIndex--;
-      playCurrentWord();
+      showCurrentWord();
     }
   }
 
   function endSession() {
     isSessionActive = false;
-    if (recognition) recognition.stop();
+    renderSummary();
+    oetArea.classList.add('hidden');
+    summaryArea.classList.remove('hidden');
+    startBtn.innerHTML = '<i class="fas fa-play"></i> Start Session';
+    lockCustomControlsIfNeeded();
+  }
 
-    // Calculate results
+  function renderSummary() {
     const percent = Math.round((score / words.length) * 100);
-    const wrongWords = words.filter((w, i) => 
-      (userAttempts[i] || "").toLowerCase() !== w.toLowerCase()
-    );
-
-    // Render summary
+    const wrongWords = words.filter((w, i) => (userAnswers[i] || "").toLowerCase() !== w.toLowerCase());
     summaryArea.innerHTML = `
       <div class="summary-header">
-        <h2>Spelling Bee Results</h2>
+        <h2>OET Results</h2>
         <div class="score-display">${score}/${words.length} (${percent}%)</div>
       </div>
-      
       <div class="results-grid">
         <div class="results-card correct">
           <h3><i class="fas fa-check-circle"></i> Correct</h3>
           <div class="score-number">${score}</div>
           <div class="word-list">
-            ${words.filter((w, i) => (userAttempts[i] || "").toLowerCase() === w.toLowerCase())
+            ${words.filter((w, i) => (userAnswers[i] || "").toLowerCase() === w.toLowerCase())
               .map(w => `<div class="word-item">${w}</div>`).join('')}
           </div>
         </div>
-        
         <div class="results-card incorrect">
           <h3><i class="fas fa-times-circle"></i> Needs Practice</h3>
           <div class="score-number">${wrongWords.length}</div>
@@ -309,7 +249,6 @@ function setCustomListUsedToday() {
           </div>
         </div>
       </div>
-      
       <div class="summary-actions">
         <button id="restart-btn" class="btn-primary">
           <i class="fas fa-redo"></i> Restart Session
@@ -320,37 +259,28 @@ function setCustomListUsedToday() {
       </div>
     `;
 
-    // Update UI
-    beeArea.classList.add('hidden');
-    summaryArea.classList.remove('hidden');
-    startBtn.innerHTML = '<i class="fas fa-play"></i> Start Session';
-    customInput.disabled = false;
-    fileInput.disabled = false;
-    addCustomBtn.disabled = false;
-    
-    // Set up summary event listeners
     document.getElementById('restart-btn').addEventListener('click', startSession);
     document.getElementById('new-list-btn').addEventListener('click', resetWordList);
   }
 
-  // Word List Management
   function resetWordList() {
     words = [];
-    usedCustomListToday = false;
     customInput.value = '';
     fileInput.value = '';
     summaryArea.classList.add('hidden');
-    showAlert("Word list cleared. Add new words or use default list.", 'info');
+    showAlert("Word list cleared. You can't add another custom list until tomorrow.", 'info');
+    lockCustomControlsIfNeeded();
   }
 
   // File Handling
   async function handleFileUpload(e) {
     const file = e.target.files[0];
     if (!file) return;
-
     try {
       const text = await readFileAsText(file);
       processWordList(text);
+      setCustomListUsedToday();
+      lockCustomControlsIfNeeded();
       showAlert(`Loaded ${words.length} words from file!`, 'success');
     } catch (error) {
       showAlert("Error processing file. Please try a text file.", 'error');
@@ -368,32 +298,29 @@ function setCustomListUsedToday() {
       showAlert("Please enter or paste words first!", 'error');
       return;
     }
-
     processWordList(input);
+    setCustomListUsedToday();
+    lockCustomControlsIfNeeded();
     showAlert(`Added ${words.length} words!`, 'success');
   }
 
-  // Enhanced word list processing
   function processWordList(text) {
     words = [...new Set(text.split(WORD_SEPARATORS))]
       .map(w => w.trim())
       .filter(w => w && w.length > 1);
-    
+
     if (words.length === 0) {
       throw new Error("No valid words found");
     }
-    
     usedCustomListToday = true;
   }
 
-  // Helper Functions
   function readFileAsText(file) {
     return new Promise((resolve, reject) => {
       if (file.size > 2 * 1024 * 1024) {
         reject(new Error("File too large. Max 2MB allowed."));
         return;
       }
-
       const reader = new FileReader();
       reader.onload = e => resolve(e.target.result);
       reader.onerror = reject;
@@ -406,7 +333,7 @@ function setCustomListUsedToday() {
     alert.className = `alert alert-${type}`;
     alert.textContent = message;
     document.body.appendChild(alert);
-    
+
     setTimeout(() => {
       alert.classList.add('fade-out');
       setTimeout(() => alert.remove(), 500);
@@ -420,14 +347,14 @@ function setCustomListUsedToday() {
     } else {
       flaggedWords.splice(index, 1);
     }
-    localStorage.setItem('flaggedWords', JSON.stringify(flaggedWords));
+    localStorage.setItem('flaggedWordsOET', JSON.stringify(flaggedWords));
     updateFlagButton();
   }
 
   function updateFlagButton() {
     const flagBtn = document.getElementById('flag-btn');
     if (flagBtn) {
-      flagBtn.classList.toggle('active', flaggedWords.includes(currentWord));
+      flagBtn.classList.toggle('active', flaggedWords.includes(words[currentIndex]));
     }
   }
 
@@ -439,7 +366,7 @@ function setCustomListUsedToday() {
         localStorage.setItem('darkMode', document.body.classList.contains('dark-mode'));
         updateDarkModeIcon();
       });
-      
+
       if (localStorage.getItem('darkMode') === 'true') {
         document.body.classList.add('dark-mode');
       }
