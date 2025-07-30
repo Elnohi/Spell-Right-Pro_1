@@ -202,6 +202,16 @@ auth.onAuthStateChanged(user => {
 
 // ==================== EXAM UI ====================
 function renderExamUI() {
+  let uploadAreaHTML = `
+    <textarea id="custom-words" class="form-control" rows="3"
+      placeholder="Enter words (comma/newline separated), or leave blank to use default list."></textarea>
+    <input type="file" id="word-file" accept=".txt,.csv" class="form-control" style="margin-top: 5px;">
+    <button id="add-custom-btn" class="btn btn-info" style="margin-top: 7px;">
+      <i class="fas fa-plus-circle"></i> Use This List
+    </button>
+    <div id="upload-info" class="upload-info" style="margin-top:6px;font-size:0.95em;color:var(--gray);"></div>
+  `;
+
   examUI.innerHTML = `
     <div class="mode-selector">
       <button id="practice-mode-btn" class="mode-btn ${sessionMode === 'practice' ? 'selected' : ''}">
@@ -224,7 +234,7 @@ function renderExamUI() {
       </select>
       <span id="flag-svg" style="display: inline-flex; align-items: center;"></span>
     </div>
-    <div id="custom-upload-area"></div>
+    <div id="custom-upload-area">${uploadAreaHTML}</div>
     <button id="start-btn" class="btn btn-primary" style="margin-top: 15px;">
       <i class="fas fa-play"></i> Start Session
     </button>`;
@@ -234,7 +244,7 @@ function renderExamUI() {
 
   document.getElementById('exam-type').onchange = e => {
     examType = e.target.value;
-    renderExamUI(); // reload UI
+    renderExamUI();
   };
 
   document.getElementById('accent-select').onchange = e => {
@@ -251,7 +261,42 @@ function renderExamUI() {
     sessionMode = "test";
     renderExamUI();
   };
+  // =========== Custom List Logic (ALL MODES) ===========
+  customWordList = [];
+  useCustomList = false;
 
+  // File upload support
+  document.getElementById('word-file').addEventListener('change', function (e) {
+    const file = e.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = function (evt) {
+        const text = evt.target.result;
+        customWordList = processWordList(text);
+        useCustomList = true;
+        document.getElementById('upload-info').textContent = `Loaded ${customWordList.length} words from file.`;
+      };
+      reader.readAsText(file);
+    }
+  });
+
+  // Textarea support
+  document.getElementById('add-custom-btn').onclick = () => {
+    const input = document.getElementById('custom-words').value.trim();
+    if (input.length) {
+      customWordList = processWordList(input);
+      useCustomList = true;
+      document.getElementById('upload-info').textContent = `Added ${customWordList.length} words from textarea.`;
+    } else if (customWordList.length) {
+      document.getElementById('upload-info').textContent = `Using ${customWordList.length} words loaded from file.`;
+      useCustomList = true;
+    } else {
+      useCustomList = false; // fallback to default
+      document.getElementById('upload-info').textContent = `Using default list.`;
+    }
+  };
+
+  // Start session (uses custom list if present)
   document.getElementById('start-btn').onclick = () => {
     summaryArea.innerHTML = "";
     if (examType === "OET") {
@@ -259,11 +304,15 @@ function renderExamUI() {
     } else if (examType === "Bee") {
       startBee();
     } else if (examType === "Custom") {
-      renderCustomInput();
+      if (customWordList.length) {
+        words = customWordList.slice();
+      }
+      appTitle.textContent = "Custom Spelling Practice";
+      startCustomPractice();
     }
   };
 
-  if (examType === "Custom") renderCustomInput();
+  updateFlag();
 }
 
 function updateFlag() {
@@ -303,14 +352,14 @@ function renderCustomInput() {
   };
 }
 
+// Utility for processing word lists
 function processWordList(text) {
-  words = [...new Set(text.split(/[\s,;\/\-–—|]+/))]
-    .map(w => w.trim())
-    .filter(w => w && w.length > 1);
-  if (words.length === 0) {
-    throw new Error("No valid words found in the input");
-  }
-  return words;
+  return [...new Set(
+    text.replace(/\r/g, '')
+      .split(/[\n,;|\/\-–—\t]+/)
+      .map(w => w.trim())
+      .filter(w => w && w.length > 1)
+  )];
 }
 
 // ==================== OET PRACTICE (FIXED AUTO-ADVANCE) ====================
@@ -323,15 +372,23 @@ function startOET() {
   summaryArea.innerHTML = "";
   sessionStartTime = Date.now();
 
-  words = sessionMode === "test"
-    ? [...window.oetWords].sort(() => 0.5 - Math.random()).slice(0, 24)
-    : window.oetWords.slice();
+  if (useCustomList && customWordList.length) {
+    words = customWordList.slice();
+    appTitle.textContent = "OET (Custom List)";
+  } else {
+    words = sessionMode === "test"
+      ? [...window.oetWords].sort(() => 0.5 - Math.random()).slice(0, 24)
+      : window.oetWords.slice();
+    appTitle.textContent = "OET Spelling Practice";
+  }
 
+  retryCount = 0;
   trackEvent('session_started', {
     session_id: sessionId,
     exam_type: 'OET',
     mode: sessionMode,
-    word_count: words.length
+    word_count: words.length,
+    used_custom: useCustomList
   });
 
   showOETWord();
@@ -623,20 +680,28 @@ function startBee() {
   summaryArea.innerHTML = "";
   sessionStartTime = Date.now();
 
-  words = [
-    "accommodate", "belligerent", "conscientious", "disastrous",
-    "embarrass", "foreign", "guarantee", "harass",
-    "interrupt", "jealous", "knowledge", "liaison",
-    "millennium", "necessary", "occasionally", "possession",
-    "questionnaire", "rhythm", "separate", "tomorrow",
-    "unforeseen", "vacuum", "withhold", "yacht"
-  ];
+  if (useCustomList && customWordList.length) {
+    words = customWordList.slice();
+    appTitle.textContent = "Spelling Bee (Custom List)";
+  } else {
+    words = [
+      "accommodate", "belligerent", "conscientious", "disastrous",
+      "embarrass", "foreign", "guarantee", "harass",
+      "interrupt", "jealous", "knowledge", "liaison",
+      "millennium", "necessary", "occasionally", "possession",
+      "questionnaire", "rhythm", "separate", "tomorrow",
+      "unforeseen", "vacuum", "withhold", "yacht"
+    ];
+    appTitle.textContent = "Spelling Bee";
+  }
 
+  retryCount = 0;
   trackEvent('session_started', {
     session_id: sessionId,
     exam_type: 'Bee',
     mode: sessionMode,
-    word_count: words.length
+    word_count: words.length,
+    used_custom: useCustomList
   });
 
   showBeeWord();
