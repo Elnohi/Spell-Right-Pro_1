@@ -115,14 +115,15 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function playCurrentWord() {
-    if (currentIndex >= words.length) {
-      endSession();
-      return;
-    }
-    currentWord = words[currentIndex];
-    renderWordInterface();
-    speakWord(currentWord);
+  if (currentIndex >= words.length) {
+    endSession();
+    return;
   }
+
+  currentWord = words[currentIndex];
+  renderWordInterface();
+  speakWord(currentWord);
+}
 
   function renderWordInterface() {
     spellingVisual.innerHTML = '';
@@ -159,55 +160,59 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function speakWord(word) {
-    if (!window.speechSynthesis) {
-      showAlert("Text-to-speech not supported in your browser.", 'error');
-      return;
-    }
-    window.speechSynthesis.cancel();
-    const utterance = new SpeechSynthesisUtterance(word);
-    utterance.lang = accent;
-    utterance.rate = 0.8;
-    utterance.onend = () => {
-      if (isSessionActive) {
-        startVoiceRecognition();
-      }
-    };
-    window.speechSynthesis.speak(utterance);
+  if (!window.speechSynthesis) {
+    showAlert("Text-to-speech not supported in your browser.", 'error');
+    return;
   }
 
+  speechSynthesis.cancel();
+  const utterance = new SpeechSynthesisUtterance(word);
+  utterance.lang = accent;
+  utterance.rate = 0.8;
+
+  // Only start voice recognition after the word is spoken
+  utterance.onend = () => {
+    if (isSessionActive) {
+      startVoiceRecognition();
+    }
+  };
+
+  speechSynthesis.speak(utterance);
+}
   function startVoiceRecognition() {
-    if (!('webkitSpeechRecognition' in window || 'SpeechRecognition' in window)) {
-      showAlert("Speech recognition not supported in this browser.", 'error');
-      return;
-    }
-    micStatus.classList.remove('hidden');
-    updateSpellingVisual();
-    recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
-    recognition.lang = accent;
-    recognition.interimResults = false;
-    recognition.maxAlternatives = 5;
-    recognition.continuous = false;
-
-    recognition.onresult = (event) => {
-      const results = event.results[0];
-      const bestMatch = findBestMatch(results);
-      processSpellingAttempt(bestMatch);
-    };
-
-    recognition.onerror = (event) => {
-      micStatus.classList.add('hidden');
-      if (event.error !== 'no-speech') {
-        showAlert(`Recognition error: ${event.error}`, 'error');
-      }
-      setTimeout(() => isSessionActive && startVoiceRecognition(), 1000);
-    };
-
-    recognition.onend = () => {
-      micStatus.classList.add('hidden');
-    };
-
-    recognition.start();
+  if (!('webkitSpeechRecognition' in window || 'SpeechRecognition' in window)) {
+    showAlert("Speech recognition not supported in this browser.", 'error');
+    return;
   }
+
+  micStatus.classList.remove('hidden');
+  updateSpellingVisual();
+
+  recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+  recognition.lang = accent;
+  recognition.interimResults = false;
+  recognition.maxAlternatives = 5;
+
+  recognition.onresult = (event) => {
+    const results = event.results[0];
+    const bestMatch = findBestMatch(results);
+    processSpellingAttempt(bestMatch);
+  };
+
+  recognition.onerror = (event) => {
+    micStatus.classList.add('hidden');
+    if (event.error !== 'no-speech') {
+      showAlert(`Recognition error: ${event.error}`, 'error');
+    }
+    setTimeout(() => isSessionActive && startVoiceRecognition(), 1000);
+  };
+
+  recognition.onend = () => {
+    micStatus.classList.add('hidden');
+  };
+
+  recognition.start();
+}
 
   function findBestMatch(results) {
     for (let i = 0; i < results.length; i++) {
@@ -219,31 +224,38 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function processSpellingAttempt(attempt) {
-    if (!attempt) {
-      setTimeout(() => isSessionActive && startVoiceRecognition(), 800);
-      return;
-    }
-    userAttempts[currentIndex] = attempt;
-    const isCorrect = attempt === currentWord.toLowerCase();
-    const feedback = document.getElementById('mic-feedback');
-    updateSpellingVisual(
-      currentWord.split('').map((letter, i) => ({
-        letter: attempt[i] || '',
-        correct: attempt[i]?.toLowerCase() === letter.toLowerCase()
-      }))
-    );
-    if (feedback) {
-      if (isCorrect) {
-        feedback.textContent = "✓ Correct!";
-        feedback.className = "feedback correct";
-        score++;
-        setTimeout(nextWord, 1500);
-      } else {
-        feedback.textContent = "✗ Incorrect. Try again!";
-        feedback.className = "feedback incorrect";
-      }
-    }
+  if (!attempt) {
+    setTimeout(() => isSessionActive && startVoiceRecognition(), 800);
+    return;
   }
+
+  userAttempts[currentIndex] = attempt;
+  const isCorrect = attempt === currentWord.toLowerCase();
+  const feedback = document.getElementById('mic-feedback');
+
+  // Update visual feedback
+  updateSpellingVisual(
+    currentWord.split('').map((letter, i) => ({
+      letter: attempt[i] || '',
+      correct: attempt[i]?.toLowerCase() === letter.toLowerCase()
+    }))
+  );
+
+  if (isCorrect) {
+    feedback.textContent = "✓ Correct!";
+    feedback.className = "feedback correct";
+    score++;
+    setTimeout(() => {
+      currentIndex++;
+      playCurrentWord();
+    }, 1500);
+  } else {
+    feedback.textContent = "✗ Incorrect. Try again!";
+    feedback.className = "feedback incorrect";
+    // Optionally retry automatically or let user try again
+    setTimeout(() => isSessionActive && startVoiceRecognition(), 1200);
+  }
+}
 
   function updateSpellingVisual(letters = []) {
     spellingVisual.innerHTML = currentWord.split('').map((letter, i) => {
