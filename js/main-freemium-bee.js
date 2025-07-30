@@ -31,6 +31,15 @@ document.addEventListener('DOMContentLoaded', () => {
   let isSessionActive = false;
   let currentWord = "";
 
+  function customListAllowedToday() {
+  const today = new Date().toISOString().slice(0, 10); // e.g., "2025-07-29"
+  return localStorage.getItem('customListDate') !== today;
+}
+function setCustomListUsedToday() {
+  const today = new Date().toISOString().slice(0, 10);
+  localStorage.setItem('customListDate', today);
+}
+
   // Enhanced word splitting pattern - accepts multiple separators
   const WORD_SEPARATORS = /[\s,;\/\-–—|]+/;
 
