@@ -1,20 +1,31 @@
-// main-freemium-bee.js — Patched Full Version (Null Safety + One List/Day Restriction)
+// main-freemium-bee.js — 100% Bulletproof Version
 
 document.addEventListener('DOMContentLoaded', () => {
-  // DOM Elements
-  const accentPicker = document.querySelector('.accent-picker');
-  const customInput = document.getElementById('custom-words');
-  const fileInput = document.getElementById('file-input');
-  const addCustomBtn = document.getElementById('add-custom-btn');
-  const startBtn = document.getElementById('start-btn');
-  const beeArea = document.getElementById('bee-area');
-  const spellingVisual = document.getElementById('spelling-visual');
-  const summaryArea = document.getElementById('summary-area');
-  const micStatus = document.getElementById('mic-status');
+  // Helper to get element and warn if missing
+  function $(id) {
+    const el = document.getElementById(id);
+    if (!el) console.warn(`Element #${id} not found.`);
+    return el;
+  }
+  function $cls(cls) {
+    const el = document.querySelector(cls);
+    if (!el) console.warn(`Element ${cls} not found.`);
+    return el;
+  }
 
-  // Defensive check
+  // DOM Elements
+  const accentPicker = $cls('.accent-picker');
+  const customInput = $('custom-words');
+  const fileInput = $('file-input');
+  const addCustomBtn = $('add-custom-btn');
+  const startBtn = $('start-btn');
+  const beeArea = $('bee-area');
+  const spellingVisual = $('spelling-visual');
+  const summaryArea = $('summary-area');
+  const micStatus = $('mic-status');
+
   if (!accentPicker || !customInput || !fileInput || !addCustomBtn || !startBtn || !beeArea || !spellingVisual || !summaryArea || !micStatus) {
-    alert("Some required page elements are missing. Please check your HTML file.");
+    alert("Some required elements are missing from the HTML. Please check your page IDs and classes.");
     return;
   }
 
@@ -25,7 +36,7 @@ document.addEventListener('DOMContentLoaded', () => {
   let flaggedWords = JSON.parse(localStorage.getItem('flaggedWords')) || [];
   let userAttempts = [];
   let usedCustomListToday = false;
-  const todayKey = new Date().toISOString().split('T')[0];
+  const todayKey = new Date().toISOString().slice(0, 10);
   const savedDate = localStorage.getItem('customListDate');
   if (savedDate === todayKey) {
     usedCustomListToday = true;
@@ -39,16 +50,12 @@ document.addEventListener('DOMContentLoaded', () => {
   let isSessionActive = false;
   let currentWord = "";
 
-  // Enhanced word splitting pattern - accepts multiple separators
   const WORD_SEPARATORS = /[\s,;\/\-–—|]+/;
 
-  // Initialize
   setupEventListeners();
   initDarkMode();
 
-  // Event Listeners
   function setupEventListeners() {
-    // Accent Selection
     accentPicker.addEventListener('click', (e) => {
       if (e.target.tagName === 'BUTTON') {
         accentPicker.querySelectorAll('button').forEach(btn => btn.classList.remove('active'));
@@ -56,14 +63,11 @@ document.addEventListener('DOMContentLoaded', () => {
         accent = e.target.dataset.accent;
       }
     });
-
-    // Word Source Controls
     addCustomBtn.addEventListener('click', addCustomWords);
     fileInput.addEventListener('change', handleFileUpload);
     startBtn.addEventListener('click', toggleSession);
   }
 
-  // Core Session Functions
   function toggleSession() {
     if (isSessionActive) {
       endSession();
@@ -74,7 +78,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function startSession() {
     if (!usedCustomListToday) {
-      // Default words for Spelling Bee
       words = [
         "accommodate", "belligerent", "conscientious", "disastrous", 
         "embarrass", "foreign", "guarantee", "harass", 
@@ -94,12 +97,12 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function updateUIForActiveSession() {
-    if (beeArea) beeArea.classList.remove('hidden');
-    if (summaryArea) summaryArea.classList.add('hidden');
-    if (startBtn) startBtn.innerHTML = '<i class="fas fa-stop"></i> End Session';
-    if (customInput) customInput.disabled = true;
-    if (fileInput) fileInput.disabled = true;
-    if (addCustomBtn) addCustomBtn.disabled = true;
+    beeArea.classList.remove('hidden');
+    summaryArea.classList.add('hidden');
+    startBtn.innerHTML = '<i class="fas fa-stop"></i> End Session';
+    customInput.disabled = true;
+    fileInput.disabled = true;
+    addCustomBtn.disabled = true;
   }
 
   function playCurrentWord() {
@@ -113,40 +116,38 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function renderWordInterface() {
-    if (spellingVisual) spellingVisual.innerHTML = '';
-    if (beeArea) {
-      beeArea.innerHTML = `
-        <div class="word-progress">Word ${currentIndex + 1} of ${words.length}</div>
-        <div id="spelling-visual"></div>
-        <div id="auto-recording-info">
-          <i class="fas fa-info-circle"></i> Speak the spelling after the word is pronounced
-        </div>
-        <div class="button-group">
-          <button id="prev-btn" class="btn-secondary" ${currentIndex === 0 ? 'disabled' : ''}>
-            <i class="fas fa-arrow-left"></i> Previous
-          </button>
-          <button id="repeat-btn" class="btn-secondary">
-            <i class="fas fa-redo"></i> Repeat Word
-          </button>
-          <button id="next-btn" class="btn-secondary">
-            <i class="fas fa-arrow-right"></i> Skip
-          </button>
-          <button id="flag-btn" class="btn-icon ${flaggedWords.includes(currentWord) ? 'active' : ''}">
-            <i class="fas fa-star"></i> Flag
-          </button>
-        </div>
-        <div id="mic-feedback" class="feedback"></div>
-      `;
-      // Set up event listeners
-      const prevBtn = document.getElementById('prev-btn');
-      const nextBtn = document.getElementById('next-btn');
-      const repeatBtn = document.getElementById('repeat-btn');
-      const flagBtn = document.getElementById('flag-btn');
-      if (prevBtn) prevBtn.addEventListener('click', prevWord);
-      if (nextBtn) nextBtn.addEventListener('click', nextWord);
-      if (repeatBtn) repeatBtn.addEventListener('click', () => speakWord(currentWord));
-      if (flagBtn) flagBtn.addEventListener('click', () => toggleFlagWord(currentWord));
-    }
+    spellingVisual.innerHTML = '';
+    beeArea.innerHTML = `
+      <div class="word-progress">Word ${currentIndex + 1} of ${words.length}</div>
+      <div id="spelling-visual"></div>
+      <div id="auto-recording-info">
+        <i class="fas fa-info-circle"></i> Speak the spelling after the word is pronounced
+      </div>
+      <div class="button-group">
+        <button id="prev-btn" class="btn-secondary" ${currentIndex === 0 ? 'disabled' : ''}>
+          <i class="fas fa-arrow-left"></i> Previous
+        </button>
+        <button id="repeat-btn" class="btn-secondary">
+          <i class="fas fa-redo"></i> Repeat Word
+        </button>
+        <button id="next-btn" class="btn-secondary">
+          <i class="fas fa-arrow-right"></i> Skip
+        </button>
+        <button id="flag-btn" class="btn-icon ${flaggedWords.includes(currentWord) ? 'active' : ''}">
+          <i class="fas fa-star"></i> Flag
+        </button>
+      </div>
+      <div id="mic-feedback" class="feedback"></div>
+    `;
+    // Set up event listeners for in-DOM elements
+    const prevBtn = document.getElementById('prev-btn');
+    const nextBtn = document.getElementById('next-btn');
+    const repeatBtn = document.getElementById('repeat-btn');
+    const flagBtn = document.getElementById('flag-btn');
+    if (prevBtn) prevBtn.addEventListener('click', prevWord);
+    if (nextBtn) nextBtn.addEventListener('click', nextWord);
+    if (repeatBtn) repeatBtn.addEventListener('click', () => speakWord(currentWord));
+    if (flagBtn) flagBtn.addEventListener('click', () => toggleFlagWord(currentWord));
   }
 
   function speakWord(word) {
@@ -171,32 +172,28 @@ document.addEventListener('DOMContentLoaded', () => {
       showAlert("Speech recognition not supported in this browser.", 'error');
       return;
     }
-    if (micStatus) micStatus.classList.remove('hidden');
+    micStatus.classList.remove('hidden');
     updateSpellingVisual();
     recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
     recognition.lang = accent;
     recognition.interimResults = false;
     recognition.maxAlternatives = 5;
     recognition.continuous = false;
-
     recognition.onresult = (event) => {
       const results = event.results[0];
       const bestMatch = findBestMatch(results);
       processSpellingAttempt(bestMatch);
     };
-
     recognition.onerror = (event) => {
-      if (micStatus) micStatus.classList.add('hidden');
+      micStatus.classList.add('hidden');
       if (event.error !== 'no-speech') {
         showAlert(`Recognition error: ${event.error}`, 'error');
       }
       setTimeout(() => isSessionActive && startVoiceRecognition(), 1000);
     };
-
     recognition.onend = () => {
-      if (micStatus) micStatus.classList.add('hidden');
+      micStatus.classList.add('hidden');
     };
-
     recognition.start();
   }
 
@@ -237,7 +234,6 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function updateSpellingVisual(letters = []) {
-    if (!spellingVisual) return;
     spellingVisual.innerHTML = currentWord.split('').map((letter, i) => {
       const letterData = letters[i] || {};
       const letterClass = letterData.correct ? 'correct' : (letterData.letter ? 'incorrect' : '');
@@ -253,74 +249,68 @@ document.addEventListener('DOMContentLoaded', () => {
       endSession();
     }
   }
-
   function prevWord() {
     if (currentIndex > 0) {
       currentIndex--;
       playCurrentWord();
     }
   }
-
   function endSession() {
     isSessionActive = false;
     if (recognition) recognition.stop();
     const percent = Math.round((score / words.length) * 100);
     const wrongWords = words.filter((w, i) => (userAttempts[i] || "").toLowerCase() !== w.toLowerCase());
-    if (summaryArea) {
-      summaryArea.innerHTML = `
-        <div class="summary-header">
-          <h2>Spelling Bee Results</h2>
-          <div class="score-display">${score}/${words.length} (${percent}%)</div>
-        </div>
-        <div class="results-grid">
-          <div class="results-card correct">
-            <h3><i class="fas fa-check-circle"></i> Correct</h3>
-            <div class="score-number">${score}</div>
-            <div class="word-list">
-              ${words.filter((w, i) => (userAttempts[i] || "").toLowerCase() === w.toLowerCase())
-                .map(w => `<div class="word-item">${w}</div>`).join('')}
-            </div>
-          </div>
-          <div class="results-card incorrect">
-            <h3><i class="fas fa-times-circle"></i> Needs Practice</h3>
-            <div class="score-number">${wrongWords.length}</div>
-            <div class="word-list">
-              ${wrongWords.map(w => `<div class="word-item">${w}</div>`).join('')}
-            </div>
+    summaryArea.innerHTML = `
+      <div class="summary-header">
+        <h2>Spelling Bee Results</h2>
+        <div class="score-display">${score}/${words.length} (${percent}%)</div>
+      </div>
+      <div class="results-grid">
+        <div class="results-card correct">
+          <h3><i class="fas fa-check-circle"></i> Correct</h3>
+          <div class="score-number">${score}</div>
+          <div class="word-list">
+            ${words.filter((w, i) => (userAttempts[i] || "").toLowerCase() === w.toLowerCase())
+              .map(w => `<div class="word-item">${w}</div>`).join('')}
           </div>
         </div>
-        <div class="summary-actions">
-          <button id="restart-btn" class="btn-primary">
-            <i class="fas fa-redo"></i> Restart Session
-          </button>
-          <button id="new-list-btn" class="btn-secondary">
-            <i class="fas fa-sync-alt"></i> Change Word List
-          </button>
+        <div class="results-card incorrect">
+          <h3><i class="fas fa-times-circle"></i> Needs Practice</h3>
+          <div class="score-number">${wrongWords.length}</div>
+          <div class="word-list">
+            ${wrongWords.map(w => `<div class="word-item">${w}</div>`).join('')}
+          </div>
         </div>
-      `;
-    }
-    if (beeArea) beeArea.classList.add('hidden');
-    if (summaryArea) summaryArea.classList.remove('hidden');
-    if (startBtn) startBtn.innerHTML = '<i class="fas fa-play"></i> Start Session';
-    if (customInput) customInput.disabled = false;
-    if (fileInput) fileInput.disabled = false;
-    if (addCustomBtn) addCustomBtn.disabled = false;
+      </div>
+      <div class="summary-actions">
+        <button id="restart-btn" class="btn-primary">
+          <i class="fas fa-redo"></i> Restart Session
+        </button>
+        <button id="new-list-btn" class="btn-secondary">
+          <i class="fas fa-sync-alt"></i> Change Word List
+        </button>
+      </div>
+    `;
+    beeArea.classList.add('hidden');
+    summaryArea.classList.remove('hidden');
+    startBtn.innerHTML = '<i class="fas fa-play"></i> Start Session';
+    customInput.disabled = false;
+    fileInput.disabled = false;
+    addCustomBtn.disabled = false;
     // Set up summary event listeners
     const restartBtn = document.getElementById('restart-btn');
     const newListBtn = document.getElementById('new-list-btn');
     if (restartBtn) restartBtn.addEventListener('click', startSession);
     if (newListBtn) newListBtn.addEventListener('click', resetWordList);
   }
-
   function resetWordList() {
     words = [];
     usedCustomListToday = false;
     if (customInput) customInput.value = '';
     if (fileInput) fileInput.value = '';
-    if (summaryArea) summaryArea.classList.add('hidden');
+    summaryArea.classList.add('hidden');
     showAlert("Word list cleared. Add new words or use default list.", 'info');
   }
-
   async function handleFileUpload(e) {
     const file = e.target.files[0];
     if (!file) return;
@@ -333,7 +323,6 @@ document.addEventListener('DOMContentLoaded', () => {
       console.error(error);
     }
   }
-
   function addCustomWords() {
     if (usedCustomListToday) {
       showAlert("You can only use one custom list per day in the freemium version. Upgrade to premium for unlimited lists.", "warning");
@@ -349,7 +338,6 @@ document.addEventListener('DOMContentLoaded', () => {
     usedCustomListToday = true;
     localStorage.setItem('customListDate', todayKey);
   }
-
   function processWordList(text) {
     words = [...new Set(text.split(WORD_SEPARATORS))]
       .map(w => w.trim())
@@ -360,7 +348,6 @@ document.addEventListener('DOMContentLoaded', () => {
     usedCustomListToday = true;
     localStorage.setItem('customListDate', todayKey);
   }
-
   function readFileAsText(file) {
     return new Promise((resolve, reject) => {
       if (file.size > 2 * 1024 * 1024) {
@@ -373,7 +360,6 @@ document.addEventListener('DOMContentLoaded', () => {
       reader.readAsText(file);
     });
   }
-
   function showAlert(message, type = 'error') {
     const alert = document.createElement('div');
     alert.className = `alert alert-${type}`;
@@ -384,7 +370,6 @@ document.addEventListener('DOMContentLoaded', () => {
       setTimeout(() => alert.remove(), 500);
     }, 3000);
   }
-
   function toggleFlagWord(word) {
     const index = flaggedWords.indexOf(word);
     if (index === -1) {
@@ -395,16 +380,14 @@ document.addEventListener('DOMContentLoaded', () => {
     localStorage.setItem('flaggedWords', JSON.stringify(flaggedWords));
     updateFlagButton();
   }
-
   function updateFlagButton() {
     const flagBtn = document.getElementById('flag-btn');
     if (flagBtn) {
       flagBtn.classList.toggle('active', flaggedWords.includes(currentWord));
     }
   }
-
   function initDarkMode() {
-    const darkModeToggle = document.getElementById('dark-mode-toggle');
+    const darkModeToggle = $('dark-mode-toggle');
     if (darkModeToggle) {
       darkModeToggle.addEventListener('click', () => {
         document.body.classList.toggle('dark-mode');
@@ -417,7 +400,6 @@ document.addEventListener('DOMContentLoaded', () => {
       updateDarkModeIcon();
     }
   }
-
   function updateDarkModeIcon() {
     const icon = document.querySelector('#dark-mode-toggle i');
     if (icon) {
