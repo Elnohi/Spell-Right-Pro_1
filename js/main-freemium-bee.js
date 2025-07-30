@@ -1,31 +1,19 @@
-// main-freemium-bee.js — 100% Bulletproof Version
+// main-freemium-bee.js — Ready-to-Use, Default List is Unlimited, Custom List Once Per Day
 
 document.addEventListener('DOMContentLoaded', () => {
-  // Helper to get element and warn if missing
-  function $(id) {
-    const el = document.getElementById(id);
-    if (!el) console.warn(`Element #${id} not found.`);
-    return el;
-  }
-  function $cls(cls) {
-    const el = document.querySelector(cls);
-    if (!el) console.warn(`Element ${cls} not found.`);
-    return el;
-  }
-
   // DOM Elements
-  const accentPicker = $cls('.accent-picker');
-  const customInput = $('custom-words');
-  const fileInput = $('file-input');
-  const addCustomBtn = $('add-custom-btn');
-  const startBtn = $('start-btn');
-  const beeArea = $('bee-area');
-  const spellingVisual = $('spelling-visual');
-  const summaryArea = $('summary-area');
-  const micStatus = $('mic-status');
+  const accentPicker = document.querySelector('.accent-picker');
+  const customInput = document.getElementById('custom-words');
+  const fileInput = document.getElementById('file-input');
+  const addCustomBtn = document.getElementById('add-custom-btn');
+  const startBtn = document.getElementById('start-btn');
+  const beeArea = document.getElementById('bee-area');
+  const spellingVisual = document.getElementById('spelling-visual');
+  const summaryArea = document.getElementById('summary-area');
+  const micStatus = document.getElementById('mic-status');
 
   if (!accentPicker || !customInput || !fileInput || !addCustomBtn || !startBtn || !beeArea || !spellingVisual || !summaryArea || !micStatus) {
-    alert("Some required elements are missing from the HTML. Please check your page IDs and classes.");
+    alert("Some required page elements are missing. Please check your HTML file.");
     return;
   }
 
@@ -36,13 +24,15 @@ document.addEventListener('DOMContentLoaded', () => {
   let flaggedWords = JSON.parse(localStorage.getItem('flaggedWords')) || [];
   let userAttempts = [];
   let usedCustomListToday = false;
-  const todayKey = new Date().toISOString().slice(0, 10);
+  let isUsingCustomList = false;
+
+  const todayKey = new Date().toISOString().split('T')[0];
   const savedDate = localStorage.getItem('customListDate');
   if (savedDate === todayKey) {
     usedCustomListToday = true;
   } else {
-    localStorage.setItem('customListDate', todayKey);
     usedCustomListToday = false;
+    localStorage.setItem('customListDate', todayKey); // Reset every new day
   }
 
   let accent = "en-US";
@@ -52,8 +42,28 @@ document.addEventListener('DOMContentLoaded', () => {
 
   const WORD_SEPARATORS = /[\s,;\/\-–—|]+/;
 
+  const DEFAULT_BEE_WORDS = [
+    "accommodate", "belligerent", "conscientious", "disastrous", 
+    "embarrass", "foreign", "guarantee", "harass", 
+    "interrupt", "jealous", "knowledge", "liaison",
+    "millennium", "necessary", "occasionally", "possession",
+    "questionnaire", "rhythm", "separate", "tomorrow",
+    "unforeseen", "vacuum", "withhold", "yacht"
+  ];
+
   setupEventListeners();
   initDarkMode();
+  loadDefaultList();
+
+  function loadDefaultList() {
+    words = [...DEFAULT_BEE_WORDS];
+    isUsingCustomList = false;
+    updateStartBtnState();
+  }
+
+  function updateStartBtnState() {
+    startBtn.disabled = !(words && words.length);
+  }
 
   function setupEventListeners() {
     accentPicker.addEventListener('click', (e) => {
@@ -63,6 +73,7 @@ document.addEventListener('DOMContentLoaded', () => {
         accent = e.target.dataset.accent;
       }
     });
+
     addCustomBtn.addEventListener('click', addCustomWords);
     fileInput.addEventListener('change', handleFileUpload);
     startBtn.addEventListener('click', toggleSession);
@@ -72,26 +83,23 @@ document.addEventListener('DOMContentLoaded', () => {
     if (isSessionActive) {
       endSession();
     } else {
+      if (!words || !words.length) {
+        showAlert("No word list loaded. Please add words or upload a list.", 'error');
+        return;
+      }
       startSession();
     }
   }
 
   function startSession() {
-    if (!usedCustomListToday) {
-      words = [
-        "accommodate", "belligerent", "conscientious", "disastrous", 
-        "embarrass", "foreign", "guarantee", "harass", 
-        "interrupt", "jealous", "knowledge", "liaison",
-        "millennium", "necessary", "occasionally", "possession",
-        "questionnaire", "rhythm", "separate", "tomorrow",
-        "unforeseen", "vacuum", "withhold", "yacht"
-      ];
+    if (!words || !words.length) {
+      showAlert("No words to practice. Please add a list.", "error");
+      return;
     }
     currentIndex = 0;
     score = 0;
     userAttempts = [];
     isSessionActive = true;
-
     updateUIForActiveSession();
     playCurrentWord();
   }
@@ -100,6 +108,7 @@ document.addEventListener('DOMContentLoaded', () => {
     beeArea.classList.remove('hidden');
     summaryArea.classList.add('hidden');
     startBtn.innerHTML = '<i class="fas fa-stop"></i> End Session';
+    startBtn.disabled = false;
     customInput.disabled = true;
     fileInput.disabled = true;
     addCustomBtn.disabled = true;
@@ -139,7 +148,6 @@ document.addEventListener('DOMContentLoaded', () => {
       </div>
       <div id="mic-feedback" class="feedback"></div>
     `;
-    // Set up event listeners for in-DOM elements
     const prevBtn = document.getElementById('prev-btn');
     const nextBtn = document.getElementById('next-btn');
     const repeatBtn = document.getElementById('repeat-btn');
@@ -179,11 +187,13 @@ document.addEventListener('DOMContentLoaded', () => {
     recognition.interimResults = false;
     recognition.maxAlternatives = 5;
     recognition.continuous = false;
+
     recognition.onresult = (event) => {
       const results = event.results[0];
       const bestMatch = findBestMatch(results);
       processSpellingAttempt(bestMatch);
     };
+
     recognition.onerror = (event) => {
       micStatus.classList.add('hidden');
       if (event.error !== 'no-speech') {
@@ -191,9 +201,11 @@ document.addEventListener('DOMContentLoaded', () => {
       }
       setTimeout(() => isSessionActive && startVoiceRecognition(), 1000);
     };
+
     recognition.onend = () => {
       micStatus.classList.add('hidden');
     };
+
     recognition.start();
   }
 
@@ -249,12 +261,14 @@ document.addEventListener('DOMContentLoaded', () => {
       endSession();
     }
   }
+
   function prevWord() {
     if (currentIndex > 0) {
       currentIndex--;
       playCurrentWord();
     }
   }
+
   function endSession() {
     isSessionActive = false;
     if (recognition) recognition.stop();
@@ -297,32 +311,44 @@ document.addEventListener('DOMContentLoaded', () => {
     customInput.disabled = false;
     fileInput.disabled = false;
     addCustomBtn.disabled = false;
-    // Set up summary event listeners
+    updateStartBtnState();
     const restartBtn = document.getElementById('restart-btn');
     const newListBtn = document.getElementById('new-list-btn');
     if (restartBtn) restartBtn.addEventListener('click', startSession);
     if (newListBtn) newListBtn.addEventListener('click', resetWordList);
   }
+
   function resetWordList() {
-    words = [];
-    usedCustomListToday = false;
-    if (customInput) customInput.value = '';
-    if (fileInput) fileInput.value = '';
+    loadDefaultList();
+    isUsingCustomList = false;
+    customInput.value = '';
+    fileInput.value = '';
     summaryArea.classList.add('hidden');
     showAlert("Word list cleared. Add new words or use default list.", 'info');
   }
+
   async function handleFileUpload(e) {
+    if (usedCustomListToday) {
+      showAlert("You can only use one custom/uploaded list per day. Upgrade to premium for unlimited lists.", "warning");
+      return;
+    }
     const file = e.target.files[0];
     if (!file) return;
     try {
       const text = await readFileAsText(file);
       processWordList(text);
       showAlert(`Loaded ${words.length} words from file!`, 'success');
+      usedCustomListToday = true;
+      isUsingCustomList = true;
+      localStorage.setItem('customListDate', todayKey);
+      updateStartBtnState();
+      startSession();
     } catch (error) {
       showAlert("Error processing file. Please try a text file.", 'error');
       console.error(error);
     }
   }
+
   function addCustomWords() {
     if (usedCustomListToday) {
       showAlert("You can only use one custom list per day in the freemium version. Upgrade to premium for unlimited lists.", "warning");
@@ -336,8 +362,12 @@ document.addEventListener('DOMContentLoaded', () => {
     processWordList(input);
     showAlert(`Added ${words.length} words!`, 'success');
     usedCustomListToday = true;
+    isUsingCustomList = true;
     localStorage.setItem('customListDate', todayKey);
+    updateStartBtnState();
+    startSession();
   }
+
   function processWordList(text) {
     words = [...new Set(text.split(WORD_SEPARATORS))]
       .map(w => w.trim())
@@ -345,9 +375,8 @@ document.addEventListener('DOMContentLoaded', () => {
     if (words.length === 0) {
       throw new Error("No valid words found");
     }
-    usedCustomListToday = true;
-    localStorage.setItem('customListDate', todayKey);
   }
+
   function readFileAsText(file) {
     return new Promise((resolve, reject) => {
       if (file.size > 2 * 1024 * 1024) {
@@ -360,6 +389,7 @@ document.addEventListener('DOMContentLoaded', () => {
       reader.readAsText(file);
     });
   }
+
   function showAlert(message, type = 'error') {
     const alert = document.createElement('div');
     alert.className = `alert alert-${type}`;
@@ -370,6 +400,7 @@ document.addEventListener('DOMContentLoaded', () => {
       setTimeout(() => alert.remove(), 500);
     }, 3000);
   }
+
   function toggleFlagWord(word) {
     const index = flaggedWords.indexOf(word);
     if (index === -1) {
@@ -380,14 +411,16 @@ document.addEventListener('DOMContentLoaded', () => {
     localStorage.setItem('flaggedWords', JSON.stringify(flaggedWords));
     updateFlagButton();
   }
+
   function updateFlagButton() {
     const flagBtn = document.getElementById('flag-btn');
     if (flagBtn) {
       flagBtn.classList.toggle('active', flaggedWords.includes(currentWord));
     }
   }
+
   function initDarkMode() {
-    const darkModeToggle = $('dark-mode-toggle');
+    const darkModeToggle = document.getElementById('dark-mode-toggle');
     if (darkModeToggle) {
       darkModeToggle.addEventListener('click', () => {
         document.body.classList.toggle('dark-mode');
@@ -400,6 +433,7 @@ document.addEventListener('DOMContentLoaded', () => {
       updateDarkModeIcon();
     }
   }
+
   function updateDarkModeIcon() {
     const icon = document.querySelector('#dark-mode-toggle i');
     if (icon) {
