@@ -1,4 +1,5 @@
-// main-freemium-bee.js — Enhanced with Real-Time Marking, Improved Speech Recognition, and Notice Placement
+// main-freemium-bee.js — Complete, with Real-Time Marking & Notice
+
 document.addEventListener('DOMContentLoaded', () => {
   // DOM Elements
   const accentPicker = document.querySelector('.accent-picker');
@@ -10,17 +11,6 @@ document.addEventListener('DOMContentLoaded', () => {
   const spellingVisual = document.getElementById('spelling-visual');
   const summaryArea = document.getElementById('summary-area');
   const micStatus = document.getElementById('mic-status');
-  const customNotice = document.getElementById('custom-list-notice');
-
-  // Insert notice dynamically if missing
-  if (!customNotice) {
-    const notice = document.createElement('div');
-    notice.id = 'custom-list-notice';
-    notice.className = 'notice-info';
-    notice.textContent = "You can only use one custom list per day.";
-    // Place above or below custom words input
-    customInput.parentNode.insertBefore(notice, customInput.nextSibling);
-  }
 
   if (!accentPicker || !customInput || !fileInput || !addCustomBtn || !startBtn || !beeArea || !spellingVisual || !summaryArea || !micStatus) {
     alert("Some required page elements are missing. Please check your HTML file.");
@@ -44,7 +34,6 @@ document.addEventListener('DOMContentLoaded', () => {
   let recognition;
   let isSessionActive = false;
   let currentWord = "";
-  let lastPartial = "";
 
   const WORD_SEPARATORS = /[\s,;\/\-–—|]+/;
   const MIN_WORD_LENGTH = 2;
@@ -58,6 +47,14 @@ document.addEventListener('DOMContentLoaded', () => {
     "questionnaire", "rhythm", "separate", "tomorrow",
     "unforeseen", "vacuum", "withhold", "yacht"
   ];
+
+  // Add notice right by input area
+  const notice = document.createElement('div');
+  notice.style.color = "#777";
+  notice.style.fontSize = "0.98em";
+  notice.style.marginTop = "4px";
+  notice.textContent = "You can only use one custom list per day.";
+  customInput.parentElement.appendChild(notice);
 
   // Initialize
   loadDefaultList();
@@ -76,7 +73,6 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function setupEventListeners() {
-    // Accent Picker
     accentPicker.addEventListener('click', (e) => {
       if (e.target.tagName === 'BUTTON') {
         accentPicker.querySelectorAll('button').forEach(btn => {
@@ -93,7 +89,6 @@ document.addEventListener('DOMContentLoaded', () => {
     fileInput.addEventListener('change', handleFileUpload);
     startBtn.addEventListener('click', toggleSession);
 
-    // Event Delegation
     document.addEventListener('click', (e) => {
       if (!isSessionActive) return;
       if (e.target.closest('#prev-btn')) prevWord();
@@ -102,7 +97,6 @@ document.addEventListener('DOMContentLoaded', () => {
       if (e.target.closest('#flag-btn')) toggleFlagWord(currentWord);
     });
 
-    // Keyboard Shortcuts
     document.addEventListener('keydown', (e) => {
       if (!isSessionActive) return;
       if (e.key === 'ArrowLeft' && currentIndex > 0) prevWord();
@@ -131,14 +125,6 @@ document.addEventListener('DOMContentLoaded', () => {
     score = 0;
     userAttempts = [];
     isSessionActive = true;
-    lastPartial = "";
-
-    localStorage.setItem('spellingBeeSession', JSON.stringify({
-      words,
-      currentIndex,
-      score,
-      userAttempts
-    }));
 
     updateUIForActiveSession();
     playCurrentWord();
@@ -187,7 +173,6 @@ document.addEventListener('DOMContentLoaded', () => {
         </button>
       </div>
       <div id="mic-feedback" class="feedback" aria-live="assertive"></div>
-      <div class="correct-word-preview"><strong>Correct:</strong> <span>${currentWord}</span></div>
     `;
     updateFlagButton();
   }
@@ -197,115 +182,73 @@ document.addEventListener('DOMContentLoaded', () => {
       showAlert("Text-to-speech not supported in your browser.", 'error');
       return;
     }
-
     speechSynthesis.cancel();
     const utterance = new SpeechSynthesisUtterance(word);
     utterance.lang = accent;
-    utterance.rate = 0.85;
-
-    utterance.onerror = (event) => {
+    utterance.rate = 0.8;
+    utterance.onerror = () => {
       showAlert("Error pronouncing word. Please check your audio settings.", 'error');
-      setTimeout(() => startVoiceRecognition(), 600);
+      setTimeout(() => startVoiceRecognition(), 1000);
     };
-
     utterance.onend = () => {
-      setTimeout(() => startVoiceRecognition(), 400);
+      setTimeout(() => startVoiceRecognition(), 300);
     };
-
     speechSynthesis.speak(utterance);
   }
 
   function startVoiceRecognition() {
-    if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
+    if (!('webkitSpeechRecognition' in window || 'SpeechRecognition' in window)) {
       showAlert("Speech recognition not supported in this browser.", 'error');
       return;
     }
-
-    if (recognition) recognition.abort(); // Always abort before starting a new one
-
     micStatus.classList.remove('hidden');
     updateSpellingVisual();
 
     recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
     recognition.lang = accent;
-    recognition.interimResults = true;
+    recognition.interimResults = false;
     recognition.maxAlternatives = 5;
 
     recognition.onresult = (event) => {
-      let resultStr = '';
-      let bestConfidence = 0;
-      for (let i = 0; i < event.results.length; i++) {
-        let r = event.results[i][0];
-        let cleaned = r.transcript.trim().toLowerCase().replace(/[^a-z]/g, '');
-        if (cleaned.length > bestConfidence) {
-          bestConfidence = cleaned.length;
-          resultStr = cleaned;
-        }
-      }
-      lastPartial = resultStr;
-      // Real-time marking
-      updateSpellingVisual(
-        currentWord.split('').map((letter, i) => ({
-          letter: resultStr[i] || '',
-          correct: resultStr[i]?.toLowerCase() === letter.toLowerCase()
-        }))
-      );
-
-      // If this is the final result (not interim), proceed
-      if (event.results[event.results.length - 1].isFinal) {
-        processSpellingAttempt(resultStr);
-      }
+      const results = event.results[0];
+      const bestMatch = Array.from(results)
+        .map(result => result.transcript.trim().toLowerCase().replace(/[^a-z]/g, ''))
+        .find(transcript => transcript.length >= MIN_WORD_LENGTH) || '';
+      processSpellingAttempt(bestMatch);
     };
-
     recognition.onerror = (event) => {
       if (event.error !== 'no-speech') {
         showAlert(`Recognition error: ${event.error}`, 'error');
       }
-      // Retry after a short pause if error occurs
-      setTimeout(() => isSessionActive && startVoiceRecognition(), 500);
+      // If no-speech or not recognized, retry
+      setTimeout(() => isSessionActive && startVoiceRecognition(), 800);
     };
-
-    recognition.onend = () => {
-      micStatus.classList.add('hidden');
-      // If we have an interim/partial attempt, process it even if not final
-      if (lastPartial && isSessionActive) {
-        processSpellingAttempt(lastPartial);
-        lastPartial = "";
-      }
-    };
-
     recognition.start();
   }
 
   function processSpellingAttempt(attempt) {
+    const feedback = document.getElementById('mic-feedback');
     if (!attempt) {
-      // Retry fast if no answer
-      setTimeout(() => isSessionActive && startVoiceRecognition(), 700);
+      feedback.textContent = "Didn't catch that, try again!";
+      feedback.className = "feedback incorrect";
+      setTimeout(() => isSessionActive && startVoiceRecognition(), 900);
       return;
     }
-
     userAttempts[currentIndex] = attempt;
     const isCorrect = attempt === currentWord.toLowerCase();
-    const feedback = document.getElementById('mic-feedback');
-
-    // Real-time visual stays; add verdict below
+    updateSpellingVisual(
+      currentWord.split('').map((letter, i) => ({
+        letter: attempt[i] || '',
+        correct: attempt[i]?.toLowerCase() === letter.toLowerCase()
+      }))
+    );
     if (isCorrect) {
       feedback.textContent = "✓ Correct!";
       feedback.className = "feedback correct";
-      score++;
     } else {
       feedback.textContent = `✗ Incorrect. Correct: ${currentWord}`;
       feedback.className = "feedback incorrect";
     }
-
-    // Update session state
-    const session = JSON.parse(localStorage.getItem('spellingBeeSession')) || {};
-    session.score = score;
-    session.userAttempts = userAttempts;
-    session.currentIndex = currentIndex + 1;
-    localStorage.setItem('spellingBeeSession', JSON.stringify(session));
-
-    // Move to next after short delay
     setTimeout(() => {
       currentIndex++;
       if (currentIndex < words.length) {
@@ -313,7 +256,7 @@ document.addEventListener('DOMContentLoaded', () => {
       } else {
         endSession();
       }
-    }, 1400);
+    }, 1500);
   }
 
   function updateSpellingVisual(letters = []) {
@@ -342,12 +285,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function endSession() {
     isSessionActive = false;
-    if (recognition) recognition.abort();
-    localStorage.removeItem('spellingBeeSession');
-
+    if (recognition) recognition.stop();
     const percent = Math.round((score / words.length) * 100);
     const wrongWords = words.filter((w, i) => (userAttempts[i] || "").toLowerCase() !== w.toLowerCase());
-
     summaryArea.innerHTML = `
       <div class="summary-header">
         <h2>Spelling Bee Results</h2>
@@ -379,14 +319,12 @@ document.addEventListener('DOMContentLoaded', () => {
         </button>
       </div>
     `;
-
     beeArea.classList.add('hidden');
     summaryArea.classList.remove('hidden');
     startBtn.innerHTML = '<i class="fas fa-play"></i> Start Session';
     customInput.disabled = false;
     fileInput.disabled = false;
     addCustomBtn.disabled = false;
-
     document.getElementById('restart-btn')?.addEventListener('click', startSession);
     document.getElementById('new-list-btn')?.addEventListener('click', resetWordList);
   }
@@ -463,7 +401,7 @@ document.addEventListener('DOMContentLoaded', () => {
     alert.textContent = message;
     alert.setAttribute('role', 'alert');
     document.body.appendChild(alert);
-    setTimeout(() => alert.remove(), 3500);
+    setTimeout(() => alert.remove(), 3000);
   }
 
   function toggleFlagWord(word) {
@@ -508,4 +446,3 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 });
-
