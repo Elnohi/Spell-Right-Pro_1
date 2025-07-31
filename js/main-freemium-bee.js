@@ -1,4 +1,4 @@
-// main-freemium-bee.js — Complete Auto-Advance Version (Patched)
+// main-freemium-bee.js — Enhanced with Real-Time Marking, Improved Speech Recognition, and Notice Placement
 document.addEventListener('DOMContentLoaded', () => {
   // DOM Elements
   const accentPicker = document.querySelector('.accent-picker');
@@ -10,6 +10,17 @@ document.addEventListener('DOMContentLoaded', () => {
   const spellingVisual = document.getElementById('spelling-visual');
   const summaryArea = document.getElementById('summary-area');
   const micStatus = document.getElementById('mic-status');
+  const customNotice = document.getElementById('custom-list-notice');
+
+  // Insert notice dynamically if missing
+  if (!customNotice) {
+    const notice = document.createElement('div');
+    notice.id = 'custom-list-notice';
+    notice.className = 'notice-info';
+    notice.textContent = "You can only use one custom list per day.";
+    // Place above or below custom words input
+    customInput.parentNode.insertBefore(notice, customInput.nextSibling);
+  }
 
   if (!accentPicker || !customInput || !fileInput || !addCustomBtn || !startBtn || !beeArea || !spellingVisual || !summaryArea || !micStatus) {
     alert("Some required page elements are missing. Please check your HTML file.");
@@ -30,9 +41,10 @@ document.addEventListener('DOMContentLoaded', () => {
   usedCustomListToday = savedDate === todayKey;
 
   let accent = "en-US";
-  let recognition = null;
+  let recognition;
   let isSessionActive = false;
   let currentWord = "";
+  let lastPartial = "";
 
   const WORD_SEPARATORS = /[\s,;\/\-–—|]+/;
   const MIN_WORD_LENGTH = 2;
@@ -64,6 +76,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function setupEventListeners() {
+    // Accent Picker
     accentPicker.addEventListener('click', (e) => {
       if (e.target.tagName === 'BUTTON') {
         accentPicker.querySelectorAll('button').forEach(btn => {
@@ -80,6 +93,7 @@ document.addEventListener('DOMContentLoaded', () => {
     fileInput.addEventListener('change', handleFileUpload);
     startBtn.addEventListener('click', toggleSession);
 
+    // Event Delegation
     document.addEventListener('click', (e) => {
       if (!isSessionActive) return;
       if (e.target.closest('#prev-btn')) prevWord();
@@ -88,6 +102,7 @@ document.addEventListener('DOMContentLoaded', () => {
       if (e.target.closest('#flag-btn')) toggleFlagWord(currentWord);
     });
 
+    // Keyboard Shortcuts
     document.addEventListener('keydown', (e) => {
       if (!isSessionActive) return;
       if (e.key === 'ArrowLeft' && currentIndex > 0) prevWord();
@@ -116,6 +131,8 @@ document.addEventListener('DOMContentLoaded', () => {
     score = 0;
     userAttempts = [];
     isSessionActive = true;
+    lastPartial = "";
+
     localStorage.setItem('spellingBeeSession', JSON.stringify({
       words,
       currentIndex,
@@ -144,7 +161,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     currentWord = words[currentIndex];
     renderWordInterface();
-    // Speak word, then recognize
     speakWord(currentWord);
   }
 
@@ -171,6 +187,7 @@ document.addEventListener('DOMContentLoaded', () => {
         </button>
       </div>
       <div id="mic-feedback" class="feedback" aria-live="assertive"></div>
+      <div class="correct-word-preview"><strong>Correct:</strong> <span>${currentWord}</span></div>
     `;
     updateFlagButton();
   }
@@ -181,82 +198,89 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
 
-    // Stop any current speech
-    window.speechSynthesis.cancel();
-
-    // Stop any current recognition before starting new word!
-    if (recognition) {
-      try { recognition.onresult = null; recognition.onerror = null; recognition.stop(); } catch (e) {}
-      recognition = null;
-    }
-
+    speechSynthesis.cancel();
     const utterance = new SpeechSynthesisUtterance(word);
     utterance.lang = accent;
-    utterance.rate = 0.8;
+    utterance.rate = 0.85;
 
     utterance.onerror = (event) => {
       showAlert("Error pronouncing word. Please check your audio settings.", 'error');
-      setTimeout(() => startVoiceRecognition(), 1000);
+      setTimeout(() => startVoiceRecognition(), 600);
     };
 
     utterance.onend = () => {
-      setTimeout(() => startVoiceRecognition(), 250); // shorter pause for speed!
+      setTimeout(() => startVoiceRecognition(), 400);
     };
 
-    window.speechSynthesis.speak(utterance);
+    speechSynthesis.speak(utterance);
   }
 
   function startVoiceRecognition() {
-    // Stop any previous recognition
-    if (recognition) {
-      try { recognition.onresult = null; recognition.onerror = null; recognition.stop(); } catch (e) {}
-      recognition = null;
-    }
-
     if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
       showAlert("Speech recognition not supported in this browser.", 'error');
       return;
     }
+
+    if (recognition) recognition.abort(); // Always abort before starting a new one
 
     micStatus.classList.remove('hidden');
     updateSpellingVisual();
 
     recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
     recognition.lang = accent;
-    recognition.interimResults = false;
+    recognition.interimResults = true;
     recognition.maxAlternatives = 5;
 
     recognition.onresult = (event) => {
-      const results = event.results[0];
-      const bestMatch = Array.from(results)
-        .map(result => result.transcript.trim().toLowerCase().replace(/[^a-z]/g, ''))
-        .find(transcript => transcript.length >= MIN_WORD_LENGTH) || '';
-      processSpellingAttempt(bestMatch);
+      let resultStr = '';
+      let bestConfidence = 0;
+      for (let i = 0; i < event.results.length; i++) {
+        let r = event.results[i][0];
+        let cleaned = r.transcript.trim().toLowerCase().replace(/[^a-z]/g, '');
+        if (cleaned.length > bestConfidence) {
+          bestConfidence = cleaned.length;
+          resultStr = cleaned;
+        }
+      }
+      lastPartial = resultStr;
+      // Real-time marking
+      updateSpellingVisual(
+        currentWord.split('').map((letter, i) => ({
+          letter: resultStr[i] || '',
+          correct: resultStr[i]?.toLowerCase() === letter.toLowerCase()
+        }))
+      );
+
+      // If this is the final result (not interim), proceed
+      if (event.results[event.results.length - 1].isFinal) {
+        processSpellingAttempt(resultStr);
+      }
     };
 
     recognition.onerror = (event) => {
-      micStatus.classList.add('hidden');
       if (event.error !== 'no-speech') {
         showAlert(`Recognition error: ${event.error}`, 'error');
       }
-      // Try again for the same word if user wants, otherwise skip to next?
-      setTimeout(() => {
-        if (isSessionActive) nextWord();
-      }, 1500);
+      // Retry after a short pause if error occurs
+      setTimeout(() => isSessionActive && startVoiceRecognition(), 500);
     };
 
     recognition.onend = () => {
       micStatus.classList.add('hidden');
+      // If we have an interim/partial attempt, process it even if not final
+      if (lastPartial && isSessionActive) {
+        processSpellingAttempt(lastPartial);
+        lastPartial = "";
+      }
     };
 
     recognition.start();
   }
 
   function processSpellingAttempt(attempt) {
-    if (!isSessionActive) return;
     if (!attempt) {
-      // No valid attempt, auto-proceed after delay
-      setTimeout(() => nextWord(), 1500);
+      // Retry fast if no answer
+      setTimeout(() => isSessionActive && startVoiceRecognition(), 700);
       return;
     }
 
@@ -264,19 +288,13 @@ document.addEventListener('DOMContentLoaded', () => {
     const isCorrect = attempt === currentWord.toLowerCase();
     const feedback = document.getElementById('mic-feedback');
 
-    updateSpellingVisual(
-      currentWord.split('').map((letter, i) => ({
-        letter: attempt[i] || '',
-        correct: attempt[i]?.toLowerCase() === letter.toLowerCase()
-      }))
-    );
-
+    // Real-time visual stays; add verdict below
     if (isCorrect) {
       feedback.textContent = "✓ Correct!";
       feedback.className = "feedback correct";
       score++;
     } else {
-      feedback.textContent = "✗ Incorrect";
+      feedback.textContent = `✗ Incorrect. Correct: ${currentWord}`;
       feedback.className = "feedback incorrect";
     }
 
@@ -287,10 +305,15 @@ document.addEventListener('DOMContentLoaded', () => {
     session.currentIndex = currentIndex + 1;
     localStorage.setItem('spellingBeeSession', JSON.stringify(session));
 
-    // Always auto-advance after short delay (even for incorrect)
+    // Move to next after short delay
     setTimeout(() => {
-      nextWord();
-    }, 1200); // slightly faster
+      currentIndex++;
+      if (currentIndex < words.length) {
+        playCurrentWord();
+      } else {
+        endSession();
+      }
+    }, 1400);
   }
 
   function updateSpellingVisual(letters = []) {
@@ -319,10 +342,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function endSession() {
     isSessionActive = false;
-    if (recognition) {
-      try { recognition.onresult = null; recognition.onerror = null; recognition.stop(); } catch (e) {}
-      recognition = null;
-    }
+    if (recognition) recognition.abort();
     localStorage.removeItem('spellingBeeSession');
 
     const percent = Math.round((score / words.length) * 100);
@@ -384,10 +404,8 @@ document.addEventListener('DOMContentLoaded', () => {
       showAlert("You can only use one custom/uploaded list per day.", "warning");
       return;
     }
-
     const file = e.target.files[0];
     if (!file) return;
-
     try {
       const text = await readFileAsText(file);
       processWordList(text);
@@ -405,13 +423,11 @@ document.addEventListener('DOMContentLoaded', () => {
       showAlert("You can only use one custom list per day.", "warning");
       return;
     }
-
     const input = customInput.value.trim();
     if (!input) {
       showAlert("Please enter words first!", 'error');
       return;
     }
-
     processWordList(input);
     usedCustomListToday = true;
     isUsingCustomList = true;
@@ -423,7 +439,6 @@ document.addEventListener('DOMContentLoaded', () => {
     words = [...new Set(text.split(WORD_SEPARATORS)
       .map(w => w.trim())
       .filter(w => w.match(WORD_REGEX) && w.length >= MIN_WORD_LENGTH))];
-
     if (!words.length) {
       throw new Error("No valid words found");
     }
@@ -435,7 +450,6 @@ document.addEventListener('DOMContentLoaded', () => {
         reject(new Error("File too large (max 2MB)"));
         return;
       }
-
       const reader = new FileReader();
       reader.onload = e => resolve(e.target.result);
       reader.onerror = () => reject(new Error("Error reading file"));
@@ -449,7 +463,7 @@ document.addEventListener('DOMContentLoaded', () => {
     alert.textContent = message;
     alert.setAttribute('role', 'alert');
     document.body.appendChild(alert);
-    setTimeout(() => alert.remove(), 3000);
+    setTimeout(() => alert.remove(), 3500);
   }
 
   function toggleFlagWord(word) {
@@ -476,10 +490,22 @@ document.addEventListener('DOMContentLoaded', () => {
       darkModeToggle.addEventListener('click', () => {
         document.body.classList.toggle('dark-mode');
         localStorage.setItem('darkMode', document.body.classList.contains('dark-mode'));
+        updateDarkModeIcon();
       });
       if (localStorage.getItem('darkMode') === 'true') {
         document.body.classList.add('dark-mode');
       }
+      updateDarkModeIcon();
+    }
+  }
+
+  function updateDarkModeIcon() {
+    const icon = document.querySelector('#dark-mode-toggle i');
+    if (icon) {
+      icon.className = document.body.classList.contains('dark-mode')
+        ? 'fas fa-sun'
+        : 'fas fa-moon';
     }
   }
 });
+
