@@ -1,4 +1,4 @@
-// main-freemium-bee.js — Complete Auto-Advance Version
+// main-freemium-bee.js — Complete Auto-Advance Version (Patched)
 document.addEventListener('DOMContentLoaded', () => {
   // DOM Elements
   const accentPicker = document.querySelector('.accent-picker');
@@ -30,7 +30,7 @@ document.addEventListener('DOMContentLoaded', () => {
   usedCustomListToday = savedDate === todayKey;
 
   let accent = "en-US";
-  let recognition;
+  let recognition = null;
   let isSessionActive = false;
   let currentWord = "";
 
@@ -64,7 +64,6 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function setupEventListeners() {
-    // Accent Picker
     accentPicker.addEventListener('click', (e) => {
       if (e.target.tagName === 'BUTTON') {
         accentPicker.querySelectorAll('button').forEach(btn => {
@@ -77,12 +76,10 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     });
 
-    // Main Controls
     addCustomBtn.addEventListener('click', addCustomWords);
     fileInput.addEventListener('change', handleFileUpload);
     startBtn.addEventListener('click', toggleSession);
 
-    // Event Delegation
     document.addEventListener('click', (e) => {
       if (!isSessionActive) return;
       if (e.target.closest('#prev-btn')) prevWord();
@@ -91,7 +88,6 @@ document.addEventListener('DOMContentLoaded', () => {
       if (e.target.closest('#flag-btn')) toggleFlagWord(currentWord);
     });
 
-    // Keyboard Shortcuts
     document.addEventListener('keydown', (e) => {
       if (!isSessionActive) return;
       if (e.key === 'ArrowLeft' && currentIndex > 0) prevWord();
@@ -120,7 +116,6 @@ document.addEventListener('DOMContentLoaded', () => {
     score = 0;
     userAttempts = [];
     isSessionActive = true;
-    
     localStorage.setItem('spellingBeeSession', JSON.stringify({
       words,
       currentIndex,
@@ -149,6 +144,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     currentWord = words[currentIndex];
     renderWordInterface();
+    // Speak word, then recognize
     speakWord(currentWord);
   }
 
@@ -185,7 +181,15 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
 
-    speechSynthesis.cancel();
+    // Stop any current speech
+    window.speechSynthesis.cancel();
+
+    // Stop any current recognition before starting new word!
+    if (recognition) {
+      try { recognition.onresult = null; recognition.onerror = null; recognition.stop(); } catch (e) {}
+      recognition = null;
+    }
+
     const utterance = new SpeechSynthesisUtterance(word);
     utterance.lang = accent;
     utterance.rate = 0.8;
@@ -196,14 +200,20 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     utterance.onend = () => {
-      setTimeout(() => startVoiceRecognition(), 500);
+      setTimeout(() => startVoiceRecognition(), 250); // shorter pause for speed!
     };
 
-    speechSynthesis.speak(utterance);
+    window.speechSynthesis.speak(utterance);
   }
 
   function startVoiceRecognition() {
-    if (!('webkitSpeechRecognition' in window)) {
+    // Stop any previous recognition
+    if (recognition) {
+      try { recognition.onresult = null; recognition.onerror = null; recognition.stop(); } catch (e) {}
+      recognition = null;
+    }
+
+    if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
       showAlert("Speech recognition not supported in this browser.", 'error');
       return;
     }
@@ -225,17 +235,28 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     recognition.onerror = (event) => {
+      micStatus.classList.add('hidden');
       if (event.error !== 'no-speech') {
         showAlert(`Recognition error: ${event.error}`, 'error');
       }
+      // Try again for the same word if user wants, otherwise skip to next?
+      setTimeout(() => {
+        if (isSessionActive) nextWord();
+      }, 1500);
+    };
+
+    recognition.onend = () => {
+      micStatus.classList.add('hidden');
     };
 
     recognition.start();
   }
 
   function processSpellingAttempt(attempt) {
+    if (!isSessionActive) return;
     if (!attempt) {
-      setTimeout(() => isSessionActive && startVoiceRecognition(), 800);
+      // No valid attempt, auto-proceed after delay
+      setTimeout(() => nextWord(), 1500);
       return;
     }
 
@@ -266,15 +287,10 @@ document.addEventListener('DOMContentLoaded', () => {
     session.currentIndex = currentIndex + 1;
     localStorage.setItem('spellingBeeSession', JSON.stringify(session));
 
-    // Auto-advance after delay
+    // Always auto-advance after short delay (even for incorrect)
     setTimeout(() => {
-      currentIndex++;
-      if (currentIndex < words.length) {
-        playCurrentWord();
-      } else {
-        endSession();
-      }
-    }, 1500);
+      nextWord();
+    }, 1200); // slightly faster
   }
 
   function updateSpellingVisual(letters = []) {
@@ -303,12 +319,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function endSession() {
     isSessionActive = false;
-    if (recognition) recognition.stop();
+    if (recognition) {
+      try { recognition.onresult = null; recognition.onerror = null; recognition.stop(); } catch (e) {}
+      recognition = null;
+    }
     localStorage.removeItem('spellingBeeSession');
-    
+
     const percent = Math.round((score / words.length) * 100);
     const wrongWords = words.filter((w, i) => (userAttempts[i] || "").toLowerCase() !== w.toLowerCase());
-    
+
     summaryArea.innerHTML = `
       <div class="summary-header">
         <h2>Spelling Bee Results</h2>
@@ -340,14 +359,14 @@ document.addEventListener('DOMContentLoaded', () => {
         </button>
       </div>
     `;
-    
+
     beeArea.classList.add('hidden');
     summaryArea.classList.remove('hidden');
     startBtn.innerHTML = '<i class="fas fa-play"></i> Start Session';
     customInput.disabled = false;
     fileInput.disabled = false;
     addCustomBtn.disabled = false;
-    
+
     document.getElementById('restart-btn')?.addEventListener('click', startSession);
     document.getElementById('new-list-btn')?.addEventListener('click', resetWordList);
   }
@@ -365,10 +384,10 @@ document.addEventListener('DOMContentLoaded', () => {
       showAlert("You can only use one custom/uploaded list per day.", "warning");
       return;
     }
-    
+
     const file = e.target.files[0];
     if (!file) return;
-    
+
     try {
       const text = await readFileAsText(file);
       processWordList(text);
@@ -386,13 +405,13 @@ document.addEventListener('DOMContentLoaded', () => {
       showAlert("You can only use one custom list per day.", "warning");
       return;
     }
-    
+
     const input = customInput.value.trim();
     if (!input) {
       showAlert("Please enter words first!", 'error');
       return;
     }
-    
+
     processWordList(input);
     usedCustomListToday = true;
     isUsingCustomList = true;
@@ -404,7 +423,7 @@ document.addEventListener('DOMContentLoaded', () => {
     words = [...new Set(text.split(WORD_SEPARATORS)
       .map(w => w.trim())
       .filter(w => w.match(WORD_REGEX) && w.length >= MIN_WORD_LENGTH))];
-    
+
     if (!words.length) {
       throw new Error("No valid words found");
     }
@@ -416,7 +435,7 @@ document.addEventListener('DOMContentLoaded', () => {
         reject(new Error("File too large (max 2MB)"));
         return;
       }
-      
+
       const reader = new FileReader();
       reader.onload = e => resolve(e.target.result);
       reader.onerror = () => reject(new Error("Error reading file"));
