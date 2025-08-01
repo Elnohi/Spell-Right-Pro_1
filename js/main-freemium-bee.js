@@ -1,4 +1,4 @@
-// main-freemium-bee.js — Complete, with Real-Time Marking & Notice
+// main-freemium-bee.js — Fixed: Auto-Advance on Mark, Short Pause
 
 document.addEventListener('DOMContentLoaded', () => {
   // DOM Elements
@@ -141,21 +141,19 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function playCurrentWord() {
-  if (currentIndex >= words.length) {
-    endSession();
-    return;
+    if (currentIndex >= words.length) {
+      endSession();
+      return;
+    }
+    // Ensure any previous recognition is stopped
+    if (recognition) {
+      recognition.stop();
+      recognition = null;
+    }
+    currentWord = words[currentIndex];
+    renderWordInterface();
+    speakWord(currentWord);
   }
-  
-  // Ensure any previous recognition is stopped
-  if (recognition) {
-    recognition.stop();
-    recognition = null;
-  }
-
-  currentWord = words[currentIndex];
-  renderWordInterface();
-  speakWord(currentWord);
-}
 
   function renderWordInterface() {
     spellingVisual.innerHTML = '';
@@ -185,31 +183,26 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function speakWord(word) {
-  if (!window.speechSynthesis) {
-    showAlert("Text-to-speech not supported in your browser.", 'error');
-    return;
-  }
-  
-  speechSynthesis.cancel();
-  const utterance = new SpeechSynthesisUtterance(word);
-  utterance.lang = accent;
-  utterance.rate = 0.8;
-  
-  utterance.onerror = () => {
-    showAlert("Error pronouncing word. Please check your audio settings.", 'error');
-    setTimeout(() => startVoiceRecognition(), 1000);
-  };
-  
-  utterance.onend = () => {
-    // Clear any previous recognition before starting new one
-    if (recognition) {
-      recognition.stop();
+    if (!window.speechSynthesis) {
+      showAlert("Text-to-speech not supported in your browser.", 'error');
+      return;
     }
-    setTimeout(() => startVoiceRecognition(), 300);
-  };
-  
-  speechSynthesis.speak(utterance);
-}
+    speechSynthesis.cancel();
+    const utterance = new SpeechSynthesisUtterance(word);
+    utterance.lang = accent;
+    utterance.rate = 0.8;
+    utterance.onerror = () => {
+      showAlert("Error pronouncing word. Please check your audio settings.", 'error');
+      setTimeout(() => startVoiceRecognition(), 300);
+    };
+    utterance.onend = () => {
+      if (recognition) {
+        recognition.stop();
+      }
+      setTimeout(() => startVoiceRecognition(), 200);
+    };
+    speechSynthesis.speak(utterance);
+  }
 
   function startVoiceRecognition() {
     if (!('webkitSpeechRecognition' in window || 'SpeechRecognition' in window)) {
@@ -235,54 +228,54 @@ document.addEventListener('DOMContentLoaded', () => {
       if (event.error !== 'no-speech') {
         showAlert(`Recognition error: ${event.error}`, 'error');
       }
-      // If no-speech or not recognized, retry
-      setTimeout(() => isSessionActive && startVoiceRecognition(), 800);
+      setTimeout(() => isSessionActive && startVoiceRecognition(), 400);
     };
     recognition.start();
   }
 
   function processSpellingAttempt(attempt) {
-  const feedback = document.getElementById('mic-feedback');
-  if (!attempt) {
-    feedback.textContent = "Didn't catch that, try again!";
-    feedback.className = "feedback incorrect";
-    setTimeout(() => isSessionActive && startVoiceRecognition(), 900);
-    return;
-  }
-  
-  userAttempts[currentIndex] = attempt;
-  const isCorrect = attempt === currentWord.toLowerCase();
-  updateSpellingVisual(
-    currentWord.split('').map((letter, i) => ({
-      letter: attempt[i] || '',
-      correct: attempt[i]?.toLowerCase() === letter.toLowerCase()
-    }))
-  );
-  
-  if (isCorrect) {
-    feedback.textContent = "✓ Correct!";
-    feedback.className = "feedback correct";
-    score++;
-  } else {
-    feedback.textContent = `✗ Incorrect. Correct: ${currentWord}`;
-    feedback.className = "feedback incorrect";
-  }
-
-  // Stop recognition before moving to next word
-  if (recognition) {
-    recognition.stop();
-    recognition = null;
-  }
-
-  setTimeout(() => {
-    currentIndex++;
-    if (currentIndex < words.length) {
-      playCurrentWord();
-    } else {
-      endSession();
+    const feedback = document.getElementById('mic-feedback');
+    if (!attempt) {
+      feedback.textContent = "Didn't catch that, try again!";
+      feedback.className = "feedback incorrect";
+      setTimeout(() => isSessionActive && startVoiceRecognition(), 500);
+      return;
     }
-  }, 1500);
-}
+
+    userAttempts[currentIndex] = attempt;
+    const isCorrect = attempt === currentWord.toLowerCase();
+    updateSpellingVisual(
+      currentWord.split('').map((letter, i) => ({
+        letter: attempt[i] || '',
+        correct: attempt[i]?.toLowerCase() === letter.toLowerCase()
+      }))
+    );
+
+    if (isCorrect) {
+      feedback.textContent = "✓ Correct!";
+      feedback.className = "feedback correct";
+      score++;
+    } else {
+      feedback.textContent = `✗ Incorrect. Correct: ${currentWord}`;
+      feedback.className = "feedback incorrect";
+    }
+
+    // Stop recognition before moving to next word
+    if (recognition) {
+      recognition.stop();
+      recognition = null;
+    }
+
+    // DECREASED PAUSE: Proceed after 700ms (was 1500ms)
+    setTimeout(() => {
+      currentIndex++;
+      if (currentIndex < words.length) {
+        playCurrentWord();
+      } else {
+        endSession();
+      }
+    }, 700);
+  }
 
   function updateSpellingVisual(letters = []) {
     spellingVisual.innerHTML = currentWord.split('').map((letter, i) => {
