@@ -141,14 +141,21 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function playCurrentWord() {
-    if (currentIndex >= words.length) {
-      endSession();
-      return;
-    }
-    currentWord = words[currentIndex];
-    renderWordInterface();
-    speakWord(currentWord);
+  if (currentIndex >= words.length) {
+    endSession();
+    return;
   }
+  
+  // Ensure any previous recognition is stopped
+  if (recognition) {
+    recognition.stop();
+    recognition = null;
+  }
+
+  currentWord = words[currentIndex];
+  renderWordInterface();
+  speakWord(currentWord);
+}
 
   function renderWordInterface() {
     spellingVisual.innerHTML = '';
@@ -178,23 +185,31 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function speakWord(word) {
-    if (!window.speechSynthesis) {
-      showAlert("Text-to-speech not supported in your browser.", 'error');
-      return;
-    }
-    speechSynthesis.cancel();
-    const utterance = new SpeechSynthesisUtterance(word);
-    utterance.lang = accent;
-    utterance.rate = 0.8;
-    utterance.onerror = () => {
-      showAlert("Error pronouncing word. Please check your audio settings.", 'error');
-      setTimeout(() => startVoiceRecognition(), 1000);
-    };
-    utterance.onend = () => {
-      setTimeout(() => startVoiceRecognition(), 300);
-    };
-    speechSynthesis.speak(utterance);
+  if (!window.speechSynthesis) {
+    showAlert("Text-to-speech not supported in your browser.", 'error');
+    return;
   }
+  
+  speechSynthesis.cancel();
+  const utterance = new SpeechSynthesisUtterance(word);
+  utterance.lang = accent;
+  utterance.rate = 0.8;
+  
+  utterance.onerror = () => {
+    showAlert("Error pronouncing word. Please check your audio settings.", 'error');
+    setTimeout(() => startVoiceRecognition(), 1000);
+  };
+  
+  utterance.onend = () => {
+    // Clear any previous recognition before starting new one
+    if (recognition) {
+      recognition.stop();
+    }
+    setTimeout(() => startVoiceRecognition(), 300);
+  };
+  
+  speechSynthesis.speak(utterance);
+}
 
   function startVoiceRecognition() {
     if (!('webkitSpeechRecognition' in window || 'SpeechRecognition' in window)) {
@@ -247,13 +262,18 @@ document.addEventListener('DOMContentLoaded', () => {
   if (isCorrect) {
     feedback.textContent = "✓ Correct!";
     feedback.className = "feedback correct";
-    score++; // Increment score only when correct
+    score++;
   } else {
     feedback.textContent = `✗ Incorrect. Correct: ${currentWord}`;
     feedback.className = "feedback incorrect";
   }
-  
-  // Move to next word after delay regardless of correctness
+
+  // Stop recognition before moving to next word
+  if (recognition) {
+    recognition.stop();
+    recognition = null;
+  }
+
   setTimeout(() => {
     currentIndex++;
     if (currentIndex < words.length) {
