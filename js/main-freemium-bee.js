@@ -227,37 +227,42 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function processSpellingAttempt(attempt) {
-    const feedback = document.getElementById('mic-feedback');
-    if (!attempt) {
-      feedback.textContent = "Didn't catch that, try again!";
-      feedback.className = "feedback incorrect";
-      setTimeout(() => isSessionActive && startVoiceRecognition(), 900);
-      return;
-    }
-    userAttempts[currentIndex] = attempt;
-    const isCorrect = attempt === currentWord.toLowerCase();
-    updateSpellingVisual(
-      currentWord.split('').map((letter, i) => ({
-        letter: attempt[i] || '',
-        correct: attempt[i]?.toLowerCase() === letter.toLowerCase()
-      }))
-    );
-    if (isCorrect) {
-      feedback.textContent = "✓ Correct!";
-      feedback.className = "feedback correct";
-    } else {
-      feedback.textContent = `✗ Incorrect. Correct: ${currentWord}`;
-      feedback.className = "feedback incorrect";
-    }
-    setTimeout(() => {
-      currentIndex++;
-      if (currentIndex < words.length) {
-        playCurrentWord();
-      } else {
-        endSession();
-      }
-    }, 1500);
+  const feedback = document.getElementById('mic-feedback');
+  if (!attempt) {
+    feedback.textContent = "Didn't catch that, try again!";
+    feedback.className = "feedback incorrect";
+    setTimeout(() => isSessionActive && startVoiceRecognition(), 900);
+    return;
   }
+  
+  userAttempts[currentIndex] = attempt;
+  const isCorrect = attempt === currentWord.toLowerCase();
+  updateSpellingVisual(
+    currentWord.split('').map((letter, i) => ({
+      letter: attempt[i] || '',
+      correct: attempt[i]?.toLowerCase() === letter.toLowerCase()
+    }))
+  );
+  
+  if (isCorrect) {
+    feedback.textContent = "✓ Correct!";
+    feedback.className = "feedback correct";
+    score++; // Increment score only when correct
+  } else {
+    feedback.textContent = `✗ Incorrect. Correct: ${currentWord}`;
+    feedback.className = "feedback incorrect";
+  }
+  
+  // Move to next word after delay regardless of correctness
+  setTimeout(() => {
+    currentIndex++;
+    if (currentIndex < words.length) {
+      playCurrentWord();
+    } else {
+      endSession();
+    }
+  }, 1500);
+}
 
   function updateSpellingVisual(letters = []) {
     spellingVisual.innerHTML = currentWord.split('').map((letter, i) => {
