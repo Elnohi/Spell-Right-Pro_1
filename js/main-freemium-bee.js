@@ -1,4 +1,4 @@
-// main-freemium-bee.js — Fixed: Auto-Advance on Mark, Short Pause
+// main-freemium-bee.js — Robust Auto-Advance Version with Debug Logging
 
 document.addEventListener('DOMContentLoaded', () => {
   // DOM Elements
@@ -156,7 +156,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function renderWordInterface() {
-    spellingVisual.innerHTML = '';
+    if (!beeArea) { console.error('beeArea missing!'); return; }
     beeArea.innerHTML = `
       <div class="word-progress">Word ${currentIndex + 1} of ${words.length}</div>
       <div id="spelling-visual" aria-live="polite"></div>
@@ -196,9 +196,7 @@ document.addEventListener('DOMContentLoaded', () => {
       setTimeout(() => startVoiceRecognition(), 300);
     };
     utterance.onend = () => {
-      if (recognition) {
-        recognition.stop();
-      }
+      if (recognition) recognition.stop();
       setTimeout(() => startVoiceRecognition(), 200);
     };
     speechSynthesis.speak(utterance);
@@ -209,6 +207,7 @@ document.addEventListener('DOMContentLoaded', () => {
       showAlert("Speech recognition not supported in this browser.", 'error');
       return;
     }
+    if (!micStatus) { console.error('micStatus missing!'); return; }
     micStatus.classList.remove('hidden');
     updateSpellingVisual();
 
@@ -235,6 +234,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function processSpellingAttempt(attempt) {
     const feedback = document.getElementById('mic-feedback');
+    if (!feedback) return;
+
     if (!attempt) {
       feedback.textContent = "Didn't catch that, try again!";
       feedback.className = "feedback incorrect";
@@ -242,14 +243,22 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
 
+    // Defensive: userAttempts always has correct length
     userAttempts[currentIndex] = attempt;
     const isCorrect = attempt === currentWord.toLowerCase();
-    updateSpellingVisual(
-      currentWord.split('').map((letter, i) => ({
-        letter: attempt[i] || '',
-        correct: attempt[i]?.toLowerCase() === letter.toLowerCase()
-      }))
-    );
+
+    const spellingVisualEl = document.getElementById('spelling-visual');
+    if (typeof updateSpellingVisual === "function" && spellingVisualEl) {
+      updateSpellingVisual(
+        currentWord.split('').map((letter, i) => ({
+          letter: attempt[i] || '',
+          correct: attempt[i]?.toLowerCase() === letter.toLowerCase()
+        }))
+      );
+    } else if (spellingVisualEl) {
+      // Fallback: just show attempt
+      spellingVisualEl.innerHTML = attempt.split('').map(l => `<span>${l}</span>`).join('');
+    }
 
     if (isCorrect) {
       feedback.textContent = "✓ Correct!";
@@ -260,15 +269,15 @@ document.addEventListener('DOMContentLoaded', () => {
       feedback.className = "feedback incorrect";
     }
 
-    // Stop recognition before moving to next word
     if (recognition) {
       recognition.stop();
       recognition = null;
     }
 
-    // DECREASED PAUSE: Proceed after 700ms (was 1500ms)
+    // Auto-advance to next word after 700ms
     setTimeout(() => {
       currentIndex++;
+      console.log('Advancing to word', currentIndex, 'of', words.length);
       if (currentIndex < words.length) {
         playCurrentWord();
       } else {
@@ -277,8 +286,11 @@ document.addEventListener('DOMContentLoaded', () => {
     }, 700);
   }
 
+  // Provide global for fallback spelling visuals
   function updateSpellingVisual(letters = []) {
-    spellingVisual.innerHTML = currentWord.split('').map((letter, i) => {
+    const spellingVisualEl = document.getElementById('spelling-visual');
+    if (!spellingVisualEl) return;
+    spellingVisualEl.innerHTML = currentWord.split('').map((letter, i) => {
       const letterData = letters[i] || {};
       const letterClass = letterData.correct ? 'correct' : (letterData.letter ? 'incorrect' : '');
       return `<div class="letter-tile ${letterClass}">${letterData.letter || ''}</div>`;
@@ -306,6 +318,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (recognition) recognition.stop();
     const percent = Math.round((score / words.length) * 100);
     const wrongWords = words.filter((w, i) => (userAttempts[i] || "").toLowerCase() !== w.toLowerCase());
+    if (!summaryArea) { console.error('summaryArea missing!'); return; }
     summaryArea.innerHTML = `
       <div class="summary-header">
         <h2>Spelling Bee Results</h2>
