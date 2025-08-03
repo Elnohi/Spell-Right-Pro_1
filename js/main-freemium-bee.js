@@ -1,6 +1,39 @@
-// main-freemium-bee.js — Robust Auto-Advance Version with Debug Logging
+// main-freemium-bee.js — Complete Version with Auto-Advance, Firebase, and AdSense
 
 document.addEventListener('DOMContentLoaded', () => {
+  // Initialize Firebase
+  const firebaseConfig = {
+    apiKey: "YOUR_API_KEY",
+    authDomain: "YOUR_AUTH_DOMAIN",
+    projectId: "YOUR_PROJECT_ID",
+    storageBucket: "YOUR_STORAGE_BUCKET",
+    messagingSenderId: "YOUR_SENDER_ID",
+    appId: "YOUR_APP_ID",
+    measurementId: "YOUR_MEASUREMENT_ID"
+  };
+
+  // Initialize Firebase services
+  firebase.initializeApp(firebaseConfig);
+  const db = firebase.firestore();
+  const auth = firebase.auth();
+  const analytics = firebase.analytics();
+  
+  // AdSense Initialization
+  const initAdSense = () => {
+    const adsByGoogle = document.createElement('script');
+    adsByGoogle.src = 'https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-YOUR_PUB_ID';
+    adsByGoogle.async = true;
+    adsByGoogle.crossOrigin = "anonymous";
+    document.head.appendChild(adsByGoogle);
+    
+    // Ad slots
+    window.adsbygoogle = window.adsbygoogle || [];
+    window.adsbygoogle.push({
+      google_ad_client: "ca-pub-YOUR_PUB_ID",
+      enable_page_level_ads: true
+    });
+  };
+
   // DOM Elements
   const accentPicker = document.querySelector('.accent-picker');
   const customInput = document.getElementById('custom-words');
@@ -11,34 +44,28 @@ document.addEventListener('DOMContentLoaded', () => {
   const spellingVisual = document.getElementById('spelling-visual');
   const summaryArea = document.getElementById('summary-area');
   const micStatus = document.getElementById('mic-status');
-
-  if (!accentPicker || !customInput || !fileInput || !addCustomBtn || !startBtn || !beeArea || !spellingVisual || !summaryArea || !micStatus) {
-    alert("Some required page elements are missing. Please check your HTML file.");
-    return;
-  }
+  const authContainer = document.getElementById('auth-container');
+  const profileBtn = document.getElementById('profile-btn');
+  const loginBtn = document.getElementById('login-btn');
+  const logoutBtn = document.getElementById('logout-btn');
 
   // State Variables
   let words = [];
   let currentIndex = 0;
   let score = 0;
-  let flaggedWords = JSON.parse(localStorage.getItem('flaggedWords')) || [];
+  let flaggedWords = [];
   let userAttempts = [];
   let usedCustomListToday = false;
   let isUsingCustomList = false;
-
-  const todayKey = new Date().toISOString().split('T')[0];
-  const savedDate = localStorage.getItem('customListDate');
-  usedCustomListToday = savedDate === todayKey;
-
-  let accent = "en-US";
-  let recognition;
   let isSessionActive = false;
   let currentWord = "";
-
+  let user = null;
+  
+  const todayKey = new Date().toISOString().split('T')[0];
   const WORD_SEPARATORS = /[\s,;\/\-–—|]+/;
   const MIN_WORD_LENGTH = 2;
   const WORD_REGEX = /^[a-zA-Z'-]+$/;
-
+  
   const DEFAULT_BEE_WORDS = [
     "accommodate", "belligerent", "conscientious", "disastrous", 
     "embarrass", "foreign", "guarantee", "harass", 
@@ -48,31 +75,138 @@ document.addEventListener('DOMContentLoaded', () => {
     "unforeseen", "vacuum", "withhold", "yacht"
   ];
 
-  // Add notice right by input area
-  const notice = document.createElement('div');
-  notice.style.color = "#777";
-  notice.style.fontSize = "0.98em";
-  notice.style.marginTop = "4px";
-  notice.textContent = "You can only use one custom list per day.";
-  customInput.parentElement.appendChild(notice);
+  // Initialize the app
+  const initApp = () => {
+    checkAuthState();
+    loadDefaultList();
+    setupEventListeners();
+    initDarkMode();
+    initAdSense();
+    renderAdSlots();
+  };
 
-  // Initialize
-  loadDefaultList();
-  setupEventListeners();
-  initDarkMode();
+  // Authentication
+  const checkAuthState = () => {
+    auth.onAuthStateChanged((firebaseUser) => {
+      if (firebaseUser) {
+        user = firebaseUser;
+        loadUserData();
+        updateAuthUI(true);
+        analytics.setUserId(firebaseUser.uid);
+        analytics.logEvent('login');
+      } else {
+        user = null;
+        updateAuthUI(false);
+        loadLocalData();
+      }
+    });
+  };
 
-  function loadDefaultList() {
+  const loadUserData = async () => {
+    try {
+      const doc = await db.collection('users').doc(user.uid).get();
+      if (doc.exists) {
+        const data = doc.data();
+        flaggedWords = data.flaggedWords || [];
+        usedCustomListToday = data.lastCustomListDate === todayKey;
+      }
+    } catch (error) {
+      console.error("Error loading user data:", error);
+      loadLocalData();
+    }
+  };
+
+  const saveUserData = async () => {
+    if (!user) return;
+    
+    try {
+      await db.collection('users').doc(user.uid).set({
+        flaggedWords,
+        lastCustomListDate: usedCustomListToday ? todayKey : null,
+        lastActive: firebase.firestore.FieldValue.serverTimestamp()
+      }, { merge: true });
+    } catch (error) {
+      console.error("Error saving user data:", error);
+      saveLocalData();
+    }
+  };
+
+  const loadLocalData = () => {
+    flaggedWords = JSON.parse(localStorage.getItem('flaggedWords')) || [];
+    usedCustomListToday = localStorage.getItem('customListDate') === todayKey;
+  };
+
+  const saveLocalData = () => {
+    localStorage.setItem('flaggedWords', JSON.stringify(flaggedWords));
+    if (usedCustomListToday) {
+      localStorage.setItem('customListDate', todayKey);
+    }
+  };
+
+  const updateAuthUI = (isLoggedIn) => {
+    if (isLoggedIn) {
+      authContainer.classList.add('hidden');
+      profileBtn.classList.remove('hidden');
+      logoutBtn.classList.remove('hidden');
+      loginBtn.classList.add('hidden');
+      profileBtn.textContent = user.displayName || user.email.split('@')[0];
+    } else {
+      authContainer.classList.remove('hidden');
+      profileBtn.classList.add('hidden');
+      logoutBtn.classList.add('hidden');
+      loginBtn.classList.remove('hidden');
+    }
+  };
+
+  // Ad Slots
+  const renderAdSlots = () => {
+    // Top banner ad
+    const topAd = document.createElement('ins');
+    topAd.className = 'adsbygoogle';
+    topAd.style.display = 'block';
+    topAd.dataset.adClient = 'ca-pub-YOUR_PUB_ID';
+    topAd.dataset.adSlot = 'YOUR_TOP_SLOT';
+    topAd.dataset.adFormat = 'auto';
+    topAd.dataset.fullWidthResponsive = 'true';
+    document.getElementById('top-ad').appendChild(topAd);
+    (adsbygoogle = window.adsbygoogle || []).push({});
+
+    // Bottom banner ad
+    const bottomAd = document.createElement('ins');
+    bottomAd.className = 'adsbygoogle';
+    bottomAd.style.display = 'block';
+    bottomAd.dataset.adClient = 'ca-pub-YOUR_PUB_ID';
+    bottomAd.dataset.adSlot = 'YOUR_BOTTOM_SLOT';
+    bottomAd.dataset.adFormat = 'auto';
+    bottomAd.dataset.fullWidthResponsive = 'true';
+    document.getElementById('bottom-ad').appendChild(bottomAd);
+    (adsbygoogle = window.adsbygoogle || []).push({});
+  };
+
+  // Core App Functions
+  const loadDefaultList = () => {
     words = [...DEFAULT_BEE_WORDS];
     isUsingCustomList = false;
     updateStartBtnState();
-  }
+  };
 
-  function updateStartBtnState() {
+  const updateStartBtnState = () => {
     startBtn.disabled = !(words && words.length);
     startBtn.setAttribute('aria-disabled', startBtn.disabled);
-  }
+  };
 
-  function setupEventListeners() {
+  const setupEventListeners = () => {
+    // Auth event listeners
+    loginBtn.addEventListener('click', () => {
+      const provider = new firebase.auth.GoogleAuthProvider();
+      auth.signInWithPopup(provider);
+    });
+
+    logoutBtn.addEventListener('click', () => {
+      auth.signOut();
+    });
+
+    // App event listeners
     accentPicker.addEventListener('click', (e) => {
       if (e.target.tagName === 'BUTTON') {
         accentPicker.querySelectorAll('button').forEach(btn => {
@@ -106,9 +240,10 @@ document.addEventListener('DOMContentLoaded', () => {
         speakWord(currentWord);
       }
     });
-  }
+  };
 
-  function toggleSession() {
+  // Auto-Advance Functions
+  const toggleSession = () => {
     if (isSessionActive) {
       endSession();
     } else {
@@ -118,96 +253,72 @@ document.addEventListener('DOMContentLoaded', () => {
       }
       startSession();
     }
-  }
+  };
 
-  function startSession() {
+  const startSession = () => {
     currentIndex = 0;
     score = 0;
     userAttempts = [];
     isSessionActive = true;
 
+    analytics.logEvent('start_session', {
+      word_count: words.length,
+      custom_list: isUsingCustomList
+    });
+
     updateUIForActiveSession();
     playCurrentWord();
-  }
+  };
 
-  function updateUIForActiveSession() {
-    beeArea.classList.remove('hidden');
-    summaryArea.classList.add('hidden');
-    startBtn.innerHTML = '<i class="fas fa-stop"></i> End Session';
-    startBtn.setAttribute('aria-label', 'End session');
-    customInput.disabled = true;
-    fileInput.disabled = true;
-    addCustomBtn.disabled = true;
-  }
-
-  function playCurrentWord() {
+  const playCurrentWord = () => {
     if (currentIndex >= words.length) {
       endSession();
       return;
     }
-    // Ensure any previous recognition is stopped
+
     if (recognition) {
       recognition.stop();
       recognition = null;
     }
+
     currentWord = words[currentIndex];
     renderWordInterface();
-    speakWord(currentWord);
-  }
+    speakWordAutoAdvance(currentWord);
+  };
 
-  function renderWordInterface() {
-    if (!beeArea) { console.error('beeArea missing!'); return; }
-    beeArea.innerHTML = `
-      <div class="word-progress">Word ${currentIndex + 1} of ${words.length}</div>
-      <div id="spelling-visual" aria-live="polite"></div>
-      <div id="auto-recording-info">
-        <i class="fas fa-info-circle"></i> Speak the spelling after the word is pronounced
-      </div>
-      <div class="button-group">
-        <button id="prev-btn" class="btn-secondary" ${currentIndex === 0 ? 'disabled' : ''}>
-          <i class="fas fa-arrow-left"></i> Previous
-        </button>
-        <button id="repeat-btn" class="btn-secondary">
-          <i class="fas fa-redo"></i> Repeat Word
-        </button>
-        <button id="next-btn" class="btn-secondary">
-          <i class="fas fa-arrow-right"></i> Skip
-        </button>
-        <button id="flag-btn" class="btn-icon ${flaggedWords.includes(currentWord) ? 'active' : ''}">
-          <i class="fas fa-star"></i> Flag
-        </button>
-      </div>
-      <div id="mic-feedback" class="feedback" aria-live="assertive"></div>
-    `;
-    updateFlagButton();
-  }
-
-  function speakWord(word) {
+  const speakWordAutoAdvance = (word) => {
     if (!window.speechSynthesis) {
-      showAlert("Text-to-speech not supported in your browser.", 'error');
+      showAlert("Text-to-speech not supported. Auto-advancing...", 'error');
+      setTimeout(() => autoAdvance(), 1500);
       return;
     }
+
     speechSynthesis.cancel();
     const utterance = new SpeechSynthesisUtterance(word);
     utterance.lang = accent;
     utterance.rate = 0.8;
-    utterance.onerror = () => {
-      showAlert("Error pronouncing word. Please check your audio settings.", 'error');
-      setTimeout(() => startVoiceRecognition(), 300);
-    };
-    utterance.onend = () => {
-      if (recognition) recognition.stop();
-      setTimeout(() => startVoiceRecognition(), 200);
-    };
-    speechSynthesis.speak(utterance);
-  }
 
-  function startVoiceRecognition() {
+    utterance.onend = () => {
+      setTimeout(() => {
+        if (isSessionActive) startVoiceRecognition();
+      }, 300);
+    };
+
+    utterance.onerror = () => {
+      showAlert("Pronunciation error. Auto-advancing...", 'error');
+      setTimeout(() => autoAdvance(), 1500);
+    };
+
+    speechSynthesis.speak(utterance);
+  };
+
+  const startVoiceRecognition = () => {
     if (!('webkitSpeechRecognition' in window || 'SpeechRecognition' in window)) {
       showAlert("Speech recognition not supported in this browser.", 'error');
+      autoAdvance();
       return;
     }
-    if (!micStatus) { console.error('micStatus missing!'); return; }
+
     micStatus.classList.remove('hidden');
     updateSpellingVisual();
 
@@ -223,124 +334,108 @@ document.addEventListener('DOMContentLoaded', () => {
         .find(transcript => transcript.length >= MIN_WORD_LENGTH) || '';
       processSpellingAttempt(bestMatch);
     };
+
     recognition.onerror = (event) => {
       if (event.error !== 'no-speech') {
         showAlert(`Recognition error: ${event.error}`, 'error');
       }
-      setTimeout(() => isSessionActive && startVoiceRecognition(), 400);
+      setTimeout(() => isSessionActive && autoAdvance(), 500);
     };
-    recognition.start();
-  }
 
-  function processSpellingAttempt(attempt) {
+    recognition.start();
+  };
+
+  const processSpellingAttempt = (attempt) => {
     const feedback = document.getElementById('mic-feedback');
     if (!feedback) return;
 
-    if (!attempt) {
-      feedback.textContent = "Didn't catch that, try again!";
-      feedback.className = "feedback incorrect";
-      setTimeout(() => isSessionActive && startVoiceRecognition(), 500);
-      return;
-    }
-
-    // Defensive: userAttempts always has correct length
-    userAttempts[currentIndex] = attempt;
+    userAttempts[currentIndex] = attempt || "";
     const isCorrect = attempt === currentWord.toLowerCase();
 
-    const spellingVisualEl = document.getElementById('spelling-visual');
-    if (typeof updateSpellingVisual === "function" && spellingVisualEl) {
-      updateSpellingVisual(
-        currentWord.split('').map((letter, i) => ({
-          letter: attempt[i] || '',
-          correct: attempt[i]?.toLowerCase() === letter.toLowerCase()
-        }))
-      );
-    } else if (spellingVisualEl) {
-      // Fallback: just show attempt
-      spellingVisualEl.innerHTML = attempt.split('').map(l => `<span>${l}</span>`).join('');
-    }
+    updateSpellingVisual(
+      currentWord.split('').map((letter, i) => ({
+        letter: attempt?.[i] || '',
+        correct: attempt?.[i]?.toLowerCase() === letter.toLowerCase()
+      }))
+    );
 
     if (isCorrect) {
       feedback.textContent = "✓ Correct!";
       feedback.className = "feedback correct";
       score++;
+      analytics.logEvent('correct_spelling', { word: currentWord });
     } else {
       feedback.textContent = `✗ Incorrect. Correct: ${currentWord}`;
       feedback.className = "feedback incorrect";
+      analytics.logEvent('incorrect_spelling', { 
+        word: currentWord, 
+        attempt: attempt 
+      });
     }
 
-    if (recognition) {
-      recognition.stop();
-      recognition = null;
-    }
+    setTimeout(() => autoAdvance(), 1500);
+  };
 
-    // Auto-advance to next word after 700ms
-    setTimeout(() => {
-      currentIndex++;
-      console.log('Advancing to word', currentIndex, 'of', words.length);
-      if (currentIndex < words.length) {
-        playCurrentWord();
-      } else {
-        endSession();
-      }
-    }, 700);
-  }
-
-  // Provide global for fallback spelling visuals
-  function updateSpellingVisual(letters = []) {
-    const spellingVisualEl = document.getElementById('spelling-visual');
-    if (!spellingVisualEl) return;
-    spellingVisualEl.innerHTML = currentWord.split('').map((letter, i) => {
-      const letterData = letters[i] || {};
-      const letterClass = letterData.correct ? 'correct' : (letterData.letter ? 'incorrect' : '');
-      return `<div class="letter-tile ${letterClass}">${letterData.letter || ''}</div>`;
-    }).join('');
-  }
-
-  function nextWord() {
-    if (currentIndex < words.length - 1) {
-      currentIndex++;
+  const autoAdvance = () => {
+    if (!isSessionActive) return;
+    
+    currentIndex++;
+    if (currentIndex < words.length) {
       playCurrentWord();
     } else {
       endSession();
     }
-  }
+  };
 
-  function prevWord() {
-    if (currentIndex > 0) {
-      currentIndex--;
-      playCurrentWord();
-    }
-  }
-
-  function endSession() {
+  const endSession = () => {
     isSessionActive = false;
     if (recognition) recognition.stop();
+    
     const percent = Math.round((score / words.length) * 100);
     const wrongWords = words.filter((w, i) => (userAttempts[i] || "").toLowerCase() !== w.toLowerCase());
-    if (!summaryArea) { console.error('summaryArea missing!'); return; }
+    
+    analytics.logEvent('end_session', {
+      score: score,
+      total_words: words.length,
+      percentage: percent
+    });
+
+    saveUserData();
+    renderSummary(percent, wrongWords);
+    
+    beeArea.classList.add('hidden');
+    summaryArea.classList.remove('hidden');
+    startBtn.innerHTML = '<i class="fas fa-play"></i> Start Session';
+    customInput.disabled = false;
+    fileInput.disabled = false;
+    addCustomBtn.disabled = false;
+  };
+
+  const renderSummary = (percent, wrongWords) => {
     summaryArea.innerHTML = `
       <div class="summary-header">
         <h2>Spelling Bee Results</h2>
         <div class="score-display">${score}/${words.length} (${percent}%)</div>
       </div>
-      <div class="results-grid">
-        <div class="results-card correct">
-          <h3><i class="fas fa-check-circle"></i> Correct</h3>
-          <div class="score-number">${score}</div>
-          <div class="word-list">
-            ${words.filter((w, i) => (userAttempts[i] || "").toLowerCase() === w.toLowerCase())
-              .map(w => `<div class="word-item">${w}</div>`).join('')}
-          </div>
-        </div>
-        <div class="results-card incorrect">
-          <h3><i class="fas fa-times-circle"></i> Needs Practice</h3>
-          <div class="score-number">${wrongWords.length}</div>
-          <div class="word-list">
-            ${wrongWords.map(w => `<div class="word-item">${w}</div>`).join('')}
-          </div>
+      
+      <div class="results-actions">
+        <div class="view-options">
+          <button class="view-option active" data-view="all">
+            <i class="fas fa-list"></i> All Words
+          </button>
+          <button class="view-option" data-view="incorrect">
+            <i class="fas fa-times-circle"></i> Incorrect (${wrongWords.length})
+          </button>
+          <button class="view-option" data-view="flagged">
+            <i class="fas fa-star"></i> Flagged (${flaggedWords.length})
+          </button>
         </div>
       </div>
+      
+      <div class="results-container">
+        <div id="words-display" class="words-list"></div>
+      </div>
+      
       <div class="summary-actions">
         <button id="restart-btn" class="btn-primary">
           <i class="fas fa-redo"></i> Restart Session
@@ -349,45 +444,180 @@ document.addEventListener('DOMContentLoaded', () => {
           <i class="fas fa-sync-alt"></i> Change Word List
         </button>
       </div>
+      
+      <!-- Mid-page ad -->
+      <div id="summary-ad" class="ad-container"></div>
     `;
-    beeArea.classList.add('hidden');
-    summaryArea.classList.remove('hidden');
-    startBtn.innerHTML = '<i class="fas fa-play"></i> Start Session';
-    customInput.disabled = false;
-    fileInput.disabled = false;
-    addCustomBtn.disabled = false;
-    document.getElementById('restart-btn')?.addEventListener('click', startSession);
-    document.getElementById('new-list-btn')?.addEventListener('click', resetWordList);
-  }
+    
+    // Render mid-session ad
+    const midAd = document.createElement('ins');
+    midAd.className = 'adsbygoogle';
+    midAd.style.display = 'block';
+    midAd.dataset.adClient = 'ca-pub-YOUR_PUB_ID';
+    midAd.dataset.adSlot = 'YOUR_MID_SLOT';
+    midAd.dataset.adFormat = 'auto';
+    midAd.dataset.fullWidthResponsive = 'true';
+    document.getElementById('summary-ad').appendChild(midAd);
+    (adsbygoogle = window.adsbygoogle || []).push({});
+    
+    displayWords('all');
+    
+    document.querySelectorAll('.view-option').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.view-option').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        displayWords(btn.dataset.view);
+      });
+    });
+    
+    document.getElementById('restart-btn').addEventListener('click', startSession);
+    document.getElementById('new-list-btn').addEventListener('click', resetWordList);
+  };
 
-  function resetWordList() {
+  const displayWords = (viewType) => {
+    const wordsDisplay = document.getElementById('words-display');
+    if (!wordsDisplay) return;
+    
+    let wordsToShow = [];
+    
+    switch(viewType) {
+      case 'incorrect':
+        wordsToShow = words.filter((w, i) => (userAttempts[i] || "").toLowerCase() !== w.toLowerCase());
+        break;
+      case 'flagged':
+        wordsToShow = flaggedWords.filter(w => words.includes(w));
+        break;
+      default:
+        wordsToShow = [...words];
+    }
+    
+    wordsDisplay.innerHTML = wordsToShow.map(word => {
+      const isCorrect = userAttempts[words.indexOf(word)]?.toLowerCase() === word.toLowerCase();
+      const isFlagged = flaggedWords.includes(word);
+      
+      return `
+        <div class="result-word ${isCorrect ? 'correct' : 'incorrect'} ${isFlagged ? 'flagged' : ''}">
+          <span class="word">${word}</span>
+          <span class="word-actions">
+            <button class="btn-icon small hear-word" data-word="${word}">
+              <i class="fas fa-volume-up"></i>
+            </button>
+            <button class="btn-icon small toggle-flag" data-word="${word}">
+              <i class="fas fa-star ${isFlagged ? 'active' : ''}"></i>
+            </button>
+          </span>
+        </div>
+      `;
+    }).join('');
+    
+    document.querySelectorAll('.hear-word').forEach(btn => {
+      btn.addEventListener('click', () => speakWord(btn.dataset.word));
+    });
+    
+    document.querySelectorAll('.toggle-flag').forEach(btn => {
+      btn.addEventListener('click', () => {
+        toggleFlagWord(btn.dataset.word);
+        btn.querySelector('i').classList.toggle('active');
+      });
+    });
+  };
+
+  // Helper Functions
+  const updateUIForActiveSession = () => {
+    beeArea.classList.remove('hidden');
+    summaryArea.classList.add('hidden');
+    startBtn.innerHTML = '<i class="fas fa-stop"></i> End Session';
+    startBtn.setAttribute('aria-label', 'End session');
+    customInput.disabled = true;
+    fileInput.disabled = true;
+    addCustomBtn.disabled = true;
+  };
+
+  const renderWordInterface = () => {
+    beeArea.innerHTML = `
+      <div class="word-progress">Word ${currentIndex + 1} of ${words.length}</div>
+      <div id="spelling-visual" aria-live="polite"></div>
+      
+      <div id="auto-flow-notice">
+        <i class="fas fa-robot"></i> Auto-advance mode active
+      </div>
+      
+      <div id="mic-feedback" class="feedback" aria-live="assertive"></div>
+      
+      <div class="button-group optional-controls">
+        <button id="prev-btn" class="btn-secondary" ${currentIndex === 0 ? 'disabled' : ''}>
+          <i class="fas fa-arrow-left"></i> Previous
+        </button>
+        <button id="repeat-btn" class="btn-secondary">
+          <i class="fas fa-redo"></i> Repeat Word
+        </button>
+        <button id="next-btn" class="btn-secondary">
+          <i class="fas fa-arrow-right"></i> Skip
+        </button>
+        <button id="flag-btn" class="btn-icon ${flaggedWords.includes(currentWord) ? 'active' : ''}">
+          <i class="fas fa-star"></i> Flag
+        </button>
+      </div>
+    `;
+    updateFlagButton();
+  };
+
+  const updateSpellingVisual = (letters = []) => {
+    const spellingVisualEl = document.getElementById('spelling-visual');
+    if (!spellingVisualEl) return;
+    spellingVisualEl.innerHTML = currentWord.split('').map((letter, i) => {
+      const letterData = letters[i] || {};
+      const letterClass = letterData.correct ? 'correct' : (letterData.letter ? 'incorrect' : '');
+      return `<div class="letter-tile ${letterClass}">${letterData.letter || ''}</div>`;
+    }).join('');
+  };
+
+  const nextWord = () => {
+    if (currentIndex < words.length - 1) {
+      currentIndex++;
+      playCurrentWord();
+    } else {
+      endSession();
+    }
+  };
+
+  const prevWord = () => {
+    if (currentIndex > 0) {
+      currentIndex--;
+      playCurrentWord();
+    }
+  };
+
+  const resetWordList = () => {
     loadDefaultList();
     isUsingCustomList = false;
     customInput.value = '';
     fileInput.value = '';
     summaryArea.classList.add('hidden');
-  }
+  };
 
-  async function handleFileUpload(e) {
-    if (usedCustomListToday) {
-      showAlert("You can only use one custom/uploaded list per day.", "warning");
-      return;
+  const toggleFlagWord = (word) => {
+    const index = flaggedWords.indexOf(word);
+    if (index === -1) {
+      flaggedWords.push(word);
+      analytics.logEvent('flag_word', { word });
+    } else {
+      flaggedWords.splice(index, 1);
     }
-    const file = e.target.files[0];
-    if (!file) return;
-    try {
-      const text = await readFileAsText(file);
-      processWordList(text);
-      usedCustomListToday = true;
-      isUsingCustomList = true;
-      localStorage.setItem('customListDate', todayKey);
-      startSession();
-    } catch (error) {
-      showAlert("Error processing file. Please try a text file with one word per line.", 'error');
-    }
-  }
+    saveUserData();
+    updateFlagButton();
+  };
 
-  function addCustomWords() {
+  const updateFlagButton = () => {
+    const flagBtn = document.getElementById('flag-btn');
+    if (flagBtn) {
+      flagBtn.classList.toggle('active', flaggedWords.includes(currentWord));
+      flagBtn.setAttribute('aria-pressed', flaggedWords.includes(currentWord));
+    }
+  };
+
+  // Word List Management
+  const addCustomWords = () => {
     if (usedCustomListToday) {
       showAlert("You can only use one custom list per day.", "warning");
       return;
@@ -400,20 +630,40 @@ document.addEventListener('DOMContentLoaded', () => {
     processWordList(input);
     usedCustomListToday = true;
     isUsingCustomList = true;
-    localStorage.setItem('customListDate', todayKey);
+    saveUserData();
     startSession();
-  }
+  };
 
-  function processWordList(text) {
+  const handleFileUpload = async (e) => {
+    if (usedCustomListToday) {
+      showAlert("You can only use one custom/uploaded list per day.", "warning");
+      return;
+    }
+    const file = e.target.files[0];
+    if (!file) return;
+    try {
+      const text = await readFileAsText(file);
+      processWordList(text);
+      usedCustomListToday = true;
+      isUsingCustomList = true;
+      saveUserData();
+      startSession();
+    } catch (error) {
+      showAlert("Error processing file. Please try a text file with one word per line.", 'error');
+    }
+  };
+
+  const processWordList = (text) => {
     words = [...new Set(text.split(WORD_SEPARATORS)
       .map(w => w.trim())
-      .filter(w => w.match(WORD_REGEX) && w.length >= MIN_WORD_LENGTH))];
+      .filter(w => w.match(WORD_REGEX) && w.length >= MIN_WORD_LENGTH)];
     if (!words.length) {
       throw new Error("No valid words found");
     }
-  }
+    analytics.logEvent('custom_wordlist_loaded', { word_count: words.length });
+  };
 
-  function readFileAsText(file) {
+  const readFileAsText = (file) => {
     return new Promise((resolve, reject) => {
       if (file.size > 2 * 1024 * 1024) {
         reject(new Error("File too large (max 2MB)"));
@@ -424,56 +674,43 @@ document.addEventListener('DOMContentLoaded', () => {
       reader.onerror = () => reject(new Error("Error reading file"));
       reader.readAsText(file);
     });
-  }
+  };
 
-  function showAlert(message, type = 'error') {
+  // UI Helpers
+  const showAlert = (message, type = 'error') => {
     const alert = document.createElement('div');
     alert.className = `alert alert-${type}`;
     alert.textContent = message;
     alert.setAttribute('role', 'alert');
     document.body.appendChild(alert);
     setTimeout(() => alert.remove(), 3000);
-  }
+  };
 
-  function toggleFlagWord(word) {
-    const index = flaggedWords.indexOf(word);
-    if (index === -1) {
-      flaggedWords.push(word);
-    } else {
-      flaggedWords.splice(index, 1);
-    }
-    localStorage.setItem('flaggedWords', JSON.stringify(flaggedWords));
-    updateFlagButton();
-  }
-
-  function updateFlagButton() {
-    const flagBtn = document.getElementById('flag-btn');
-    if (flagBtn) {
-      flagBtn.classList.toggle('active', flaggedWords.includes(currentWord));
-    }
-  }
-
-  function initDarkMode() {
+  const initDarkMode = () => {
     const darkModeToggle = document.getElementById('dark-mode-toggle');
     if (darkModeToggle) {
       darkModeToggle.addEventListener('click', () => {
         document.body.classList.toggle('dark-mode');
         localStorage.setItem('darkMode', document.body.classList.contains('dark-mode'));
         updateDarkModeIcon();
+        analytics.logEvent('toggle_dark_mode');
       });
       if (localStorage.getItem('darkMode') === 'true') {
         document.body.classList.add('dark-mode');
       }
       updateDarkModeIcon();
     }
-  }
+  };
 
-  function updateDarkModeIcon() {
+  const updateDarkModeIcon = () => {
     const icon = document.querySelector('#dark-mode-toggle i');
     if (icon) {
       icon.className = document.body.classList.contains('dark-mode')
         ? 'fas fa-sun'
         : 'fas fa-moon';
     }
-  }
+  };
+
+  // Initialize the app
+  initApp();
 });
