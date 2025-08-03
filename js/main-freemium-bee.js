@@ -654,13 +654,26 @@ document.addEventListener('DOMContentLoaded', () => {
   };
 
   const processWordList = (text) => {
-    words = [...new Set(text.split(WORD_SEPARATORS)
-      .map(w => w.trim())
-      .filter(w => w.match(WORD_REGEX) && w.length >= MIN_WORD_LENGTH)];
+    words = [...new Set(
+      text.split(WORD_SEPARATORS)
+        .map(w => w.trim())
+        .filter(w => w.match(WORD_REGEX) && w.length >= MIN_WORD_LENGTH)
+    )];  // Added missing parenthesis here
+    
     if (!words.length) {
       throw new Error("No valid words found");
     }
-    analytics.logEvent('custom_wordlist_loaded', { word_count: words.length });
+    
+    // Added safe analytics logging
+    try {
+      if (analytics) {
+        analytics.logEvent('custom_wordlist_loaded', { 
+          word_count: words.length 
+        });
+      }
+    } catch (e) {
+      console.warn("Failed to log analytics event:", e);
+    }
   };
 
   const readFileAsText = (file) => {
@@ -675,7 +688,7 @@ document.addEventListener('DOMContentLoaded', () => {
       reader.readAsText(file);
     });
   };
-
+  
   // UI Helpers
   const showAlert = (message, type = 'error') => {
     const alert = document.createElement('div');
