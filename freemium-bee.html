@@ -5,173 +5,42 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>SpellRightPro (Bee - Freemium)</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  <link rel="stylesheet" href="css/styles.css" />
-  <!-- Google AdSense -->
-  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7632930282249669"
-     crossorigin="anonymous"></script>
   <style>
-    /* Original Bee styles unchanged */
-    .bee-card { position: relative; }
-    #mic-status {
-      position: absolute;
-      top: 1rem;
-      right: 1rem;
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-      font-size: 0.9rem;
-    }
-    .mic-active {
-      color: var(--success);
-      animation: pulse 1.5s infinite;
-    }
-    @keyframes pulse {
-      0% { opacity: 1; }
-      50% { opacity: 0.6; }
-      100% { opacity: 1; }
-    }
-    #spelling-visual {
-      display: flex;
-      justify-content: center;
-      gap: 0.5rem;
-      margin: 1.5rem 0;
-      min-height: 2.5rem;
-      flex-wrap: wrap;
-    }
-    .letter-tile {
-      width: 2rem;
-      height: 2.5rem;
-      border-bottom: 3px solid var(--primary);
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      font-size: 1.5rem;
-      font-weight: bold;
-    }
-    .letter-tile.correct { color: var(--correct); }
-    .letter-tile.incorrect { color: var(--incorrect); }
-    #bee-area { min-height: 300px; }
-    #auto-recording-info {
-      font-size: 0.9rem;
-      color: var(--gray);
-      text-align: center;
-      margin: 1rem 0;
-    }
-
-    /* Non-intrusive Ad Styles */
-    .ad-container {
-      margin: 1.5rem auto;
-      padding: 0;
-      text-align: center;
-      max-width: 728px;
-      overflow: hidden;
-    }
-    .ad-container.header-ad {
-      margin-bottom: 1rem;
-    }
-    .ad-container.footer-ad {
-      margin-top: 2rem;
-      margin-bottom: 1rem;
-    }
-    @media (max-width: 768px) {
-      .ad-container {
-        margin: 1rem auto;
-        max-width: 320px;
-      }
-    }
+    body { font-family: Arial, sans-serif; background: #f7fafc; margin:0; }
+    .app-container { max-width: 500px; margin: 30px auto; background: #fff; border-radius: 12px; box-shadow: 0 4px 10px #0001; padding: 32px 20px 20px 20px; }
+    #accent-picker button { margin: 2px; }
+    .hidden { display: none; }
+    .letter-tile { display: inline-block; min-width: 22px; font-size: 1.3em; border-bottom: 2px solid #ccc; margin: 2px; text-align: center; }
+    .letter-tile.correct { color: green; border-color: green; }
+    .letter-tile.incorrect { color: red; border-color: red; }
+    .feedback { font-size: 1.1em; margin-top: 12px; }
+    .feedback.correct { color: green; }
+    .feedback.incorrect { color: red; }
+    .button-group { margin: 14px 0 6px 0; }
+    .btn-secondary { background: #eee; border: none; border-radius: 6px; padding: 6px 15px; margin: 0 4px; cursor: pointer; }
+    .btn-icon.active { color: #d2aa3d; }
+    .score-display { font-size: 1.2em; font-weight: bold; margin: 12px 0; }
+    .summary-header h2 { margin-bottom: 8px; }
   </style>
 </head>
 <body>
-  <nav class="navbar">
-    <div class="brand">
-      <img src="assets/logo.png" alt="SpellRightPro Logo" class="logo"/>
-      <div>
-        <span>SpellRightPro</span>
-        <span class="subtitle">Spelling Bee</span>
-      </div>
+  <div class="app-container">
+    <h1>Spelling Bee (Freemium)</h1>
+
+    <div id="accent-picker" class="accent-picker">
+      <button class="active" data-accent="en-US" aria-pressed="true">🇺🇸 US</button>
+      <button data-accent="en-GB" aria-pressed="false">🇬🇧 UK</button>
     </div>
-    <div class="nav-actions">
-      <button class="btn-home" onclick="window.location.href='index.html'">
-        <i class="fas fa-home"></i>
-      </button>
-      <button id="dark-mode-toggle" title="Toggle dark mode">
-        <i class="fas fa-moon"></i>
-      </button>
-    </div>
-  </nav>
 
-  <!-- Header Ad (Outside main content area) -->
-  <div class="ad-container header-ad">
-    <ins class="adsbygoogle"
-         style="display:block"
-         data-ad-client="ca-pub-7632930282249669"
-         data-ad-slot="YOUR_HEADER_SLOT"
-         data-ad-format="auto"
-         data-full-width-responsive="true"></ins>
-    <script>
-         (adsbygoogle = window.adsbygoogle || []).push({});
-    </script>
+    <textarea id="custom-words" rows="2" placeholder="Enter words (one per line)"></textarea><br>
+    <input type="file" id="file-input" accept=".txt"/>
+    <button id="add-custom-btn">Add Words</button>
+    <button id="start-btn">Start Session</button>
+    <div id="bee-area"></div>
+    <div id="spelling-visual"></div>
+    <div id="mic-status" class="hidden"></div>
+    <div id="summary-area" class="hidden"></div>
   </div>
-
-  <main class="container">
-    <section class="training-card bee-card">
-      <h1 class="card-title">Spelling Bee Trainer</h1>
-      
-      <div id="mic-status" class="hidden">
-        <i class="fas fa-microphone mic-active"></i>
-        <span>Listening...</span>
-      </div>
-
-      <div id="accent-picker" class="accent-picker">
-        <button data-accent="en-US" class="active">
-          <span class="flag-icon">🇺🇸</span> US
-        </button>
-        <button data-accent="en-GB">
-          <span class="flag-icon">🇬🇧</span> UK
-        </button>
-      </div>
-
-      <div class="custom-words-section">
-        <label class="section-label">Custom Words</label>
-        <textarea id="custom-words" placeholder="Type or paste words (comma separated)"></textarea>
-        <div class="file-upload">
-          <label for="file-input" class="btn-upload">
-            <i class="fas fa-file-upload"></i> Upload Word List
-          </label>
-          <input type="file" id="file-input" accept=".txt,.pdf,.docx"/>
-        </div>
-        <button id="add-custom-btn" class="btn-primary">
-          <i class="fas fa-plus"></i> Add Words
-        </button>
-      </div>
-
-      <button id="start-btn" class="btn-start">
-        <i class="fas fa-play"></i> Start Session
-      </button>
-
-      <!-- Practice Area (Ad-Free Zone) -->
-      <div id="bee-area" class="hidden">
-        <div id="spelling-visual"></div>
-        <div id="feedback" class="feedback"></div>
-      </div>
-
-      <div id="summary-area" class="summary-area hidden"></div>
-    </section>
-  </main>
-
-  <!-- Footer Ad (Outside main content area) -->
-  <div class="ad-container footer-ad">
-    <ins class="adsbygoogle"
-         style="display:block"
-         data-ad-client="ca-pub-7632930282249669"
-         data-ad-slot="YOUR_FOOTER_SLOT"
-         data-ad-format="auto"
-         data-full-width-responsive="true"></ins>
-    <script>
-         (adsbygoogle = window.adsbygoogle || []).push({});
-    </script>
-  </div>
-
-  <script src="js/main-freemium-bee.js"></script>
+  <script src="main-freemium-bee.js"></script>
 </body>
 </html>
