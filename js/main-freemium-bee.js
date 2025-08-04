@@ -60,6 +60,7 @@ document.addEventListener('DOMContentLoaded', () => {
   let isSessionActive = false;
   let currentWord = "";
   let user = null;
+  let recognition = null; // Added missing recognition variable
   
   const todayKey = new Date().toISOString().split('T')[0];
   const WORD_SEPARATORS = /[\s,;\/\-–—|]+/;
@@ -132,7 +133,8 @@ document.addEventListener('DOMContentLoaded', () => {
   };
 
   const loadLocalData = () => {
-    flaggedWords = JSON.parse(localStorage.getItem('flaggedWords')) || [];
+    const storedFlags = localStorage.getItem('flaggedWords');
+    flaggedWords = storedFlags ? JSON.parse(storedFlags) : [];
     usedCustomListToday = localStorage.getItem('customListDate') === todayKey;
   };
 
@@ -140,6 +142,8 @@ document.addEventListener('DOMContentLoaded', () => {
     localStorage.setItem('flaggedWords', JSON.stringify(flaggedWords));
     if (usedCustomListToday) {
       localStorage.setItem('customListDate', todayKey);
+    } else {
+      localStorage.removeItem('customListDate');
     }
   };
 
@@ -169,7 +173,7 @@ document.addEventListener('DOMContentLoaded', () => {
     topAd.dataset.adFormat = 'auto';
     topAd.dataset.fullWidthResponsive = 'true';
     document.getElementById('top-ad').appendChild(topAd);
-    (adsbygoogle = window.adsbygoogle || []).push({});
+    (window.adsbygoogle = window.adsbygoogle || []).push({});
 
     // Bottom banner ad
     const bottomAd = document.createElement('ins');
@@ -180,7 +184,7 @@ document.addEventListener('DOMContentLoaded', () => {
     bottomAd.dataset.adFormat = 'auto';
     bottomAd.dataset.fullWidthResponsive = 'true';
     document.getElementById('bottom-ad').appendChild(bottomAd);
-    (adsbygoogle = window.adsbygoogle || []).push({});
+    (window.adsbygoogle = window.adsbygoogle || []).push({});
   };
 
   // Core App Functions
@@ -191,19 +195,24 @@ document.addEventListener('DOMContentLoaded', () => {
   };
 
   const updateStartBtnState = () => {
-    startBtn.disabled = !(words && words.length);
-    startBtn.setAttribute('aria-disabled', startBtn.disabled);
+    startBtn.disabled = !(words && words.length > 0);
+    startBtn.setAttribute('aria-disabled', startBtn.disabled ? 'true' : 'false');
   };
 
   const setupEventListeners = () => {
     // Auth event listeners
     loginBtn.addEventListener('click', () => {
       const provider = new firebase.auth.GoogleAuthProvider();
-      auth.signInWithPopup(provider);
+      auth.signInWithPopup(provider).catch(error => {
+        console.error("Login error:", error);
+        showAlert("Login failed. Please try again.", 'error');
+      });
     });
 
     logoutBtn.addEventListener('click', () => {
-      auth.signOut();
+      auth.signOut().catch(error => {
+        console.error("Logout error:", error);
+      });
     });
 
     // App event listeners
@@ -234,7 +243,7 @@ document.addEventListener('DOMContentLoaded', () => {
     document.addEventListener('keydown', (e) => {
       if (!isSessionActive) return;
       if (e.key === 'ArrowLeft' && currentIndex > 0) prevWord();
-      if (e.key === 'ArrowRight') nextWord();
+      if (e.key === 'ArrowRight' && currentIndex < words.length - 1) nextWord();
       if (e.key === ' ') {
         e.preventDefault();
         speakWord(currentWord);
@@ -261,10 +270,14 @@ document.addEventListener('DOMContentLoaded', () => {
     userAttempts = [];
     isSessionActive = true;
 
-    analytics.logEvent('start_session', {
-      word_count: words.length,
-      custom_list: isUsingCustomList
-    });
+    try {
+      analytics.logEvent('start_session', {
+        word_count: words.length,
+        custom_list: isUsingCustomList
+      });
+    } catch (e) {
+      console.warn("Analytics error:", e);
+    }
 
     updateUIForActiveSession();
     playCurrentWord();
@@ -304,7 +317,8 @@ document.addEventListener('DOMContentLoaded', () => {
       }, 300);
     };
 
-    utterance.onerror = () => {
+    utterance.onerror = (event) => {
+      console.error("Speech synthesis error:", event);
       showAlert("Pronunciation error. Auto-advancing...", 'error');
       setTimeout(() => autoAdvance(), 1500);
     };
@@ -337,11 +351,19 @@ document.addEventListener('DOMContentLoaded', () => {
 
     recognition.onerror = (event) => {
       if (event.error !== 'no-speech') {
+        console.error("Recognition error:", event.error);
         showAlert(`Recognition error: ${event.error}`, 'error');
       }
       setTimeout(() => isSessionActive && autoAdvance(), 500);
     };
 
+    recognition.onend = () => {
+      if (isSessionActive && !recognition.manualStop) {
+        setTimeout(() => startVoiceRecognition(), 500);
+      }
+    };
+
+    recognition.manualStop = false;
     recognition.start();
   };
 
@@ -363,14 +385,22 @@ document.addEventListener('DOMContentLoaded', () => {
       feedback.textContent = "✓ Correct!";
       feedback.className = "feedback correct";
       score++;
-      analytics.logEvent('correct_spelling', { word: currentWord });
+      try {
+        analytics.logEvent('correct_spelling', { word: currentWord });
+      } catch (e) {
+        console.warn("Analytics error:", e);
+      }
     } else {
       feedback.textContent = `✗ Incorrect. Correct: ${currentWord}`;
       feedback.className = "feedback incorrect";
-      analytics.logEvent('incorrect_spelling', { 
-        word: currentWord, 
-        attempt: attempt 
-      });
+      try {
+        analytics.logEvent('incorrect_spelling', { 
+          word: currentWord, 
+          attempt: attempt 
+        });
+      } catch (e) {
+        console.warn("Analytics error:", e);
+      }
     }
 
     setTimeout(() => autoAdvance(), 1500);
@@ -389,16 +419,24 @@ document.addEventListener('DOMContentLoaded', () => {
 
   const endSession = () => {
     isSessionActive = false;
-    if (recognition) recognition.stop();
+    if (recognition) {
+      recognition.manualStop = true;
+      recognition.stop();
+      recognition = null;
+    }
     
     const percent = Math.round((score / words.length) * 100);
     const wrongWords = words.filter((w, i) => (userAttempts[i] || "").toLowerCase() !== w.toLowerCase());
     
-    analytics.logEvent('end_session', {
-      score: score,
-      total_words: words.length,
-      percentage: percent
-    });
+    try {
+      analytics.logEvent('end_session', {
+        score: score,
+        total_words: words.length,
+        percentage: percent
+      });
+    } catch (e) {
+      console.warn("Analytics error:", e);
+    }
 
     saveUserData();
     renderSummary(percent, wrongWords);
@@ -458,7 +496,7 @@ document.addEventListener('DOMContentLoaded', () => {
     midAd.dataset.adFormat = 'auto';
     midAd.dataset.fullWidthResponsive = 'true';
     document.getElementById('summary-ad').appendChild(midAd);
-    (adsbygoogle = window.adsbygoogle || []).push({});
+    (window.adsbygoogle = window.adsbygoogle || []).push({});
     
     displayWords('all');
     
@@ -600,7 +638,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const index = flaggedWords.indexOf(word);
     if (index === -1) {
       flaggedWords.push(word);
-      analytics.logEvent('flag_word', { word });
+      try {
+        analytics.logEvent('flag_word', { word });
+      } catch (e) {
+        console.warn("Analytics error:", e);
+      }
     } else {
       flaggedWords.splice(index, 1);
     }
@@ -612,7 +654,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const flagBtn = document.getElementById('flag-btn');
     if (flagBtn) {
       flagBtn.classList.toggle('active', flaggedWords.includes(currentWord));
-      flagBtn.setAttribute('aria-pressed', flaggedWords.includes(currentWord));
+      flagBtn.setAttribute('aria-pressed', flaggedWords.includes(currentWord) ? 'true' : 'false');
     }
   };
 
@@ -649,6 +691,7 @@ document.addEventListener('DOMContentLoaded', () => {
       saveUserData();
       startSession();
     } catch (error) {
+      console.error("File upload error:", error);
       showAlert("Error processing file. Please try a text file with one word per line.", 'error');
     }
   };
@@ -658,13 +701,12 @@ document.addEventListener('DOMContentLoaded', () => {
       text.split(WORD_SEPARATORS)
         .map(w => w.trim())
         .filter(w => w.match(WORD_REGEX) && w.length >= MIN_WORD_LENGTH)
-    )];  // Added missing parenthesis here
+    )];
     
     if (!words.length) {
       throw new Error("No valid words found");
     }
     
-    // Added safe analytics logging
     try {
       if (analytics) {
         analytics.logEvent('custom_wordlist_loaded', { 
@@ -672,7 +714,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
       }
     } catch (e) {
-      console.warn("Failed to log analytics event:", e);
+      console.warn("Analytics error:", e);
     }
   };
 
@@ -706,7 +748,11 @@ document.addEventListener('DOMContentLoaded', () => {
         document.body.classList.toggle('dark-mode');
         localStorage.setItem('darkMode', document.body.classList.contains('dark-mode'));
         updateDarkModeIcon();
-        analytics.logEvent('toggle_dark_mode');
+        try {
+          analytics.logEvent('toggle_dark_mode');
+        } catch (e) {
+          console.warn("Analytics error:", e);
+        }
       });
       if (localStorage.getItem('darkMode') === 'true') {
         document.body.classList.add('dark-mode');
