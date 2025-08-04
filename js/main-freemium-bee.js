@@ -34,20 +34,24 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   };
 
-  // DOM Elements
-  const accentPicker = document.querySelector('.accent-picker');
-  const customInput = document.getElementById('custom-words');
-  const fileInput = document.getElementById('file-input');
-  const addCustomBtn = document.getElementById('add-custom-btn');
-  const startBtn = document.getElementById('start-btn');
-  const beeArea = document.getElementById('bee-area');
-  const spellingVisual = document.getElementById('spelling-visual');
-  const summaryArea = document.getElementById('summary-area');
-  const micStatus = document.getElementById('mic-status');
-  const authContainer = document.getElementById('auth-container');
-  const profileBtn = document.getElementById('profile-btn');
-  const loginBtn = document.getElementById('login-btn');
-  const logoutBtn = document.getElementById('logout-btn');
+  // DOM Elements with null checks
+const getElement = (id) => document.getElementById(id) || console.warn(`Element ${id} not found`);
+const getQuery = (selector) => document.querySelector(selector) || console.warn(`Selector ${selector} not found`);
+
+const accentPicker = getQuery('.accent-picker');
+const customInput = getElement('custom-words');
+const fileInput = getElement('file-input');
+const addCustomBtn = getElement('add-custom-btn');
+const startBtn = getElement('start-btn');
+const beeArea = getElement('bee-area');
+const spellingVisual = getElement('spelling-visual');
+const summaryArea = getElement('summary-area');
+const micStatus = getElement('mic-status');
+const authContainer = getElement('auth-container');
+const profileBtn = getElement('profile-btn');
+const loginBtn = getElement('login-btn');
+const logoutBtn = getElement('logout-btn');
+const darkModeToggle = getElement('dark-mode-toggle');
 
   // State Variables
   let words = [];
@@ -148,19 +152,26 @@ document.addEventListener('DOMContentLoaded', () => {
   };
 
   const updateAuthUI = (isLoggedIn) => {
-    if (isLoggedIn) {
-      authContainer.classList.add('hidden');
-      profileBtn.classList.remove('hidden');
-      logoutBtn.classList.remove('hidden');
-      loginBtn.classList.add('hidden');
+  if (!authContainer || !profileBtn || !logoutBtn || !loginBtn) {
+    console.warn("Auth UI elements not found");
+    return;
+  }
+
+  if (isLoggedIn) {
+    authContainer.classList.add('hidden');
+    profileBtn.classList.remove('hidden');
+    logoutBtn.classList.remove('hidden');
+    loginBtn.classList.add('hidden');
+    if (user) {
       profileBtn.textContent = user.displayName || user.email.split('@')[0];
-    } else {
-      authContainer.classList.remove('hidden');
-      profileBtn.classList.add('hidden');
-      logoutBtn.classList.add('hidden');
-      loginBtn.classList.remove('hidden');
     }
-  };
+  } else {
+    authContainer.classList.remove('hidden');
+    profileBtn.classList.add('hidden');
+    logoutBtn.classList.add('hidden');
+    loginBtn.classList.remove('hidden');
+  }
+};
 
   // Ad Slots
   const renderAdSlots = () => {
@@ -200,7 +211,8 @@ document.addEventListener('DOMContentLoaded', () => {
   };
 
   const setupEventListeners = () => {
-    // Auth event listeners
+  // Auth event listeners - only if elements exist
+  if (loginBtn) {
     loginBtn.addEventListener('click', () => {
       const provider = new firebase.auth.GoogleAuthProvider();
       auth.signInWithPopup(provider).catch(error => {
@@ -208,14 +220,18 @@ document.addEventListener('DOMContentLoaded', () => {
         showAlert("Login failed. Please try again.", 'error');
       });
     });
+  }
 
+  if (logoutBtn) {
     logoutBtn.addEventListener('click', () => {
       auth.signOut().catch(error => {
         console.error("Logout error:", error);
       });
     });
+  }
 
-    // App event listeners
+  // App event listeners
+  if (accentPicker) {
     accentPicker.addEventListener('click', (e) => {
       if (e.target.tagName === 'BUTTON') {
         accentPicker.querySelectorAll('button').forEach(btn => {
@@ -227,29 +243,30 @@ document.addEventListener('DOMContentLoaded', () => {
         accent = e.target.dataset.accent;
       }
     });
+  }
 
-    addCustomBtn.addEventListener('click', addCustomWords);
-    fileInput.addEventListener('change', handleFileUpload);
-    startBtn.addEventListener('click', toggleSession);
+  if (addCustomBtn) addCustomBtn.addEventListener('click', addCustomWords);
+  if (fileInput) fileInput.addEventListener('change', handleFileUpload);
+  if (startBtn) startBtn.addEventListener('click', toggleSession);
 
-    document.addEventListener('click', (e) => {
-      if (!isSessionActive) return;
-      if (e.target.closest('#prev-btn')) prevWord();
-      if (e.target.closest('#next-btn')) nextWord();
-      if (e.target.closest('#repeat-btn')) speakWord(currentWord);
-      if (e.target.closest('#flag-btn')) toggleFlagWord(currentWord);
-    });
+  document.addEventListener('click', (e) => {
+    if (!isSessionActive) return;
+    if (e.target.closest('#prev-btn')) prevWord();
+    if (e.target.closest('#next-btn')) nextWord();
+    if (e.target.closest('#repeat-btn')) speakWord(currentWord);
+    if (e.target.closest('#flag-btn')) toggleFlagWord(currentWord);
+  });
 
-    document.addEventListener('keydown', (e) => {
-      if (!isSessionActive) return;
-      if (e.key === 'ArrowLeft' && currentIndex > 0) prevWord();
-      if (e.key === 'ArrowRight' && currentIndex < words.length - 1) nextWord();
-      if (e.key === ' ') {
-        e.preventDefault();
-        speakWord(currentWord);
-      }
-    });
-  };
+  document.addEventListener('keydown', (e) => {
+    if (!isSessionActive) return;
+    if (e.key === 'ArrowLeft' && currentIndex > 0) prevWord();
+    if (e.key === 'ArrowRight' && currentIndex < words.length - 1) nextWord();
+    if (e.key === ' ') {
+      e.preventDefault();
+      speakWord(currentWord);
+    }
+  });
+};
 
   // Auto-Advance Functions
   const toggleSession = () => {
@@ -742,33 +759,38 @@ document.addEventListener('DOMContentLoaded', () => {
   };
 
   const initDarkMode = () => {
-    const darkModeToggle = document.getElementById('dark-mode-toggle');
-    if (darkModeToggle) {
-      darkModeToggle.addEventListener('click', () => {
-        document.body.classList.toggle('dark-mode');
-        localStorage.setItem('darkMode', document.body.classList.contains('dark-mode'));
-        updateDarkModeIcon();
-        try {
-          analytics.logEvent('toggle_dark_mode');
-        } catch (e) {
-          console.warn("Analytics error:", e);
-        }
-      });
-      if (localStorage.getItem('darkMode') === 'true') {
-        document.body.classList.add('dark-mode');
-      }
-      updateDarkModeIcon();
+  if (!darkModeToggle) {
+    console.warn("Dark mode toggle not found");
+    return;
+  }
+
+  darkModeToggle.addEventListener('click', () => {
+    document.body.classList.toggle('dark-mode');
+    localStorage.setItem('darkMode', document.body.classList.contains('dark-mode'));
+    updateDarkModeIcon();
+    try {
+      analytics.logEvent('toggle_dark_mode');
+    } catch (e) {
+      console.warn("Analytics error:", e);
     }
-  };
+  });
+
+  if (localStorage.getItem('darkMode') === 'true') {
+    document.body.classList.add('dark-mode');
+  }
+  updateDarkModeIcon();
+};
 
   const updateDarkModeIcon = () => {
-    const icon = document.querySelector('#dark-mode-toggle i');
-    if (icon) {
-      icon.className = document.body.classList.contains('dark-mode')
-        ? 'fas fa-sun'
-        : 'fas fa-moon';
-    }
-  };
+  const icon = document.querySelector('#dark-mode-toggle i');
+  if (!icon) {
+    console.warn("Dark mode icon not found");
+    return;
+  }
+  icon.className = document.body.classList.contains('dark-mode')
+    ? 'fas fa-sun'
+    : 'fas fa-moon';
+};
 
   // Initialize the app
   initApp();
