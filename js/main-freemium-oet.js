@@ -246,31 +246,29 @@ function shuffleArray(array) {
     }
   }
   function addCustomWords() {
-    if (usedCustomListToday) {
-      showAlert("You can only use one custom list per day in the freemium version. Upgrade to premium for unlimited lists.", "warning");
-      return;
-    }
-    const input = customInput.value.trim();
-    if (!input) {
-      showAlert("Please enter or paste words first!", 'error');
-      return;
-    }
+  if (usedCustomListToday) {
+    showAlert("You can only use one custom list per day in the freemium version. Upgrade to premium for unlimited lists.", "warning");
+    return;
+  }
+  const input = customInput.value.trim();
+  if (!input) {
+    showAlert("Please enter or paste words first!", 'error');
+    return;
+  }
+
+  try {
     processWordList(input);
-    localStorage.setItem('oet_customListDate', todayKey);
     usedCustomListToday = true;
-    showAlert(`Added ${words.length} words!`, 'success');
+    showAlert(`Added ${words.length} words! Ready to start.`, 'success');
+    // Optionally, focus the Start Session button
+    startBtn.focus();
+    // Optionally, clear the customInput box
+    // customInput.value = '';
+  } catch (error) {
+    showAlert("Failed to add words: " + error.message, 'error');
   }
-  function processWordList(text) {
-    words = [...new Set(
-      text.split(/[\s,;\/\-–—|]+/)
-        .map(w => w.trim())
-        .filter(w => w && w.length > 1)
-    )];
-    if (!words.length) {
-      showAlert("No valid words found.", 'error');
-      throw new Error("No valid words found");
-    }
-  }
+}
+
   function readFileAsText(file) {
     return new Promise((resolve, reject) => {
       if (file.size > 2 * 1024 * 1024) {
