@@ -60,19 +60,21 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // ---- SESSION LOGIC ----
-function shuffleArray(array) {
-  const arr = [...array];
-  for (let i = arr.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [arr[i], arr[j]] = [arr[j], arr[i]];
+  function shuffleArray(array) {
+    const arr = [...array];
+    for (let i = arr.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [arr[i], arr[j]] = [arr[j], arr[i]];
+    }
+    return arr;
   }
-  return arr;
-}
-  
+
   function toggleSession() {
     isSessionActive ? endSession() : startSession();
   }
+
   function startSession() {
+    // Built-in OET list should always work unlimited times!
     if (words.length === 0 && !usedCustomListToday) {
       words = Array.isArray(oetWords) ? [...oetWords] : [];
     }
@@ -116,11 +118,11 @@ function shuffleArray(array) {
       </div>
       <div id="feedback" class="feedback"></div>
     `;
-    document.getElementById('prev-btn').addEventListener('click', prevWord);
-    document.getElementById('next-btn').addEventListener('click', nextWord);
-    document.getElementById('repeat-btn').addEventListener('click', () => speakWord(word));
-    document.getElementById('check-btn').addEventListener('click', () => checkAnswer(word));
-    document.getElementById('flag-btn').addEventListener('click', () => toggleFlagWord(word));
+    document.getElementById('prev-btn')?.addEventListener('click', prevWord);
+    document.getElementById('next-btn')?.addEventListener('click', nextWord);
+    document.getElementById('repeat-btn')?.addEventListener('click', () => speakWord(word));
+    document.getElementById('check-btn')?.addEventListener('click', () => checkAnswer(word));
+    document.getElementById('flag-btn')?.addEventListener('click', () => toggleFlagWord(word));
     const inputField = document.getElementById('user-input');
     inputField.addEventListener('keypress', (e) => { if (e.key === 'Enter') checkAnswer(word); });
     inputField.focus();
@@ -226,7 +228,6 @@ function shuffleArray(array) {
     try {
       let text = '';
       if (file.type === "application/pdf") {
-        // Use PDF.js or skip in freemium, fallback to error
         showAlert("PDF upload requires premium version or copy text manually.", 'warning');
         return;
       } else if (file.type === "application/vnd.openxmlformats-officedocument.wordprocessingml.document") {
@@ -246,29 +247,33 @@ function shuffleArray(array) {
     }
   }
   function addCustomWords() {
-  if (usedCustomListToday) {
-    showAlert("You can only use one custom list per day in the freemium version. Upgrade to premium for unlimited lists.", "warning");
-    return;
+    if (usedCustomListToday) {
+      showAlert("You can only use one custom list per day in the freemium version. Upgrade to premium for unlimited lists.", "warning");
+      return;
+    }
+    const input = customInput.value.trim();
+    if (!input) {
+      showAlert("Please enter or paste words first!", 'error');
+      return;
+    }
+    try {
+      processWordList(input);
+      usedCustomListToday = true;
+      localStorage.setItem('oet_customListDate', todayKey);
+      showAlert(`Added ${words.length} words! Ready to start.`, 'success');
+      startBtn.focus();
+    } catch (error) {
+      showAlert("Failed to add words: " + error.message, 'error');
+    }
   }
-  const input = customInput.value.trim();
-  if (!input) {
-    showAlert("Please enter or paste words first!", 'error');
-    return;
+  function processWordList(text) {
+    words = [...new Set(text.split(/[\s,;]+/))]
+      .map(w => w.trim())
+      .filter(w => w && w.length > 1);
+    if (words.length === 0) {
+      throw new Error("No valid words found");
+    }
   }
-
-  try {
-    processWordList(input);
-    usedCustomListToday = true;
-    showAlert(`Added ${words.length} words! Ready to start.`, 'success');
-    // Optionally, focus the Start Session button
-    startBtn.focus();
-    // Optionally, clear the customInput box
-    // customInput.value = '';
-  } catch (error) {
-    showAlert("Failed to add words: " + error.message, 'error');
-  }
-}
-
   function readFileAsText(file) {
     return new Promise((resolve, reject) => {
       if (file.size > 2 * 1024 * 1024) {
@@ -290,8 +295,7 @@ function shuffleArray(array) {
     setTimeout(() => { alert.classList.add('fade-out'); setTimeout(() => alert.remove(), 500); }, 2400);
   }
   function loadSavedSession() {
-    // You may want to load a saved session here
-    // (left blank intentionally for minimalism/freemium)
+    // No auto-load in freemium (you can implement this if needed)
   }
   function initDarkMode() {
     const darkModeToggle = document.getElementById('dark-mode-toggle');
