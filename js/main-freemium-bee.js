@@ -458,6 +458,4 @@ processSpellingAttempt(attempt);
       summaryArea.innerHTML = "<div class='summary-header'>Spelling Bee Trainer Ready. Start a session!</div>";
       summaryArea.classList.remove('hidden');
       beeArea.classList.add('hidden');
-    }
-  }
 });
