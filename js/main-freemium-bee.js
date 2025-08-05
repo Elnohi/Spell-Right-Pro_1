@@ -213,46 +213,79 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function startVoiceRecognition() {
-    if (!('webkitSpeechRecognition' in window || 'SpeechRecognition' in window)) {
-      showAlert("Speech recognition not supported in this browser.", 'error');
-      return;
-    }
-    micStatus && micStatus.classList.remove('hidden');
-    updateSpellingVisual();
-
-    recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
-    recognition.lang = accent;
-    recognition.interimResults = false;
-    recognition.maxAlternatives = 5;
-
-    recognition.onresult = (event) => {
-      const results = event.results[0];
-      const bestMatch = Array.from(results)
-  .map(result => result.transcript.trim().toUpperCase())
-  .find(transcript => transcript.length >= 1) || '';
-
-let attempt = bestMatch.replace(/[^A-Z ]/g, ''); // only A-Z and space
-let letters = attempt.split(/\s+/).filter(Boolean); // split by space
-
-// If the user said "A C C O M M O D A T E", letters = ['A','C','C','O',...]
-// Try to reconstruct the word from spelled letters:
-if (letters.length > 1 && letters.join('').length === currentWord.length) {
-  attempt = letters.join('').toLowerCase();
-} else {
-  attempt = bestMatch.trim().toLowerCase().replace(/[^a-z]/g, '');
-}
-
-    processSpellingAttempt(attempt);
-      };
-
-    recognition.onerror = (event) => {
-      if (event.error !== 'no-speech') {
-        showAlert(`Recognition error: ${event.error}`, 'error');
-      }
-      setTimeout(() => isSessionActive && startVoiceRecognition(), 700);
-    };
-    recognition.start();
+  if (!('webkitSpeechRecognition' in window || 'SpeechRecognition' in window)) {
+    showAlert("Speech recognition not supported in this browser.", 'error');
+    return;
   }
+  micStatus && micStatus.classList.remove('hidden');
+  updateSpellingVisual();
+
+  // Clean up previous recognition if any
+  if (recognition) {
+    recognition.onend = null;
+    recognition.onresult = null;
+    recognition.onerror = null;
+    recognition.abort();
+    recognition = null;
+  }
+
+  recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+  recognition.lang = accent;
+  recognition.interimResults = false;
+  recognition.maxAlternatives = 5;
+
+  let gotResult = false; // Track if onresult fired
+
+  recognition.onresult = (event) => {
+    gotResult = true;
+    const results = event.results[0];
+    const bestMatch = Array.from(results)
+      .map(result => result.transcript.trim().toUpperCase())
+      .find(transcript => transcript.length >= 1) || '';
+
+    let attempt = bestMatch.replace(/[^A-Z ]/g, '');
+    let letters = attempt.split(/\s+/).filter(Boolean);
+
+    if (letters.length > 1 && letters.join('').length === currentWord.length) {
+      attempt = letters.join('').toLowerCase();
+    } else {
+      attempt = bestMatch.trim().toLowerCase().replace(/[^a-z]/g, '');
+    }
+    processSpellingAttempt(attempt);
+  };
+
+  recognition.onerror = (event) => {
+    gotResult = true; // treat error as handled
+    if (event.error !== 'no-speech') {
+      showAlert(`Recognition error: ${event.error}`, 'error');
+    }
+    // Immediately try again
+    setTimeout(() => {
+      if (isSessionActive) startVoiceRecognition();
+    }, 400);
+  };
+
+  recognition.onend = () => {
+    if (!gotResult && isSessionActive) {
+      // No result and not manually stopped: auto-advance to next word
+      const feedback = document.getElementById('mic-feedback');
+      if (feedback) {
+        feedback.textContent = "No response detected, skipping to next word...";
+        feedback.className = "feedback incorrect";
+      }
+      setTimeout(() => {
+        currentIndex++;
+        if (currentIndex < words.length) {
+          playCurrentWord();
+        } else {
+          endSession();
+        }
+      }, 700);
+    }
+  };
+
+  recognition.start();
+}
 
   function processSpellingAttempt(attempt) {
     const feedback = document.getElementById('mic-feedback');
