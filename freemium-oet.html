@@ -1,137 +1,487 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>SpellRightPro (OET - Freemium)</title>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  <link rel="stylesheet" href="css/styles.css" />
-  <!-- Google AdSense -->
-  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7632930282249669"
-     crossorigin="anonymous"></script>
-  <style>
-    /* Ad Container Styles (Non-intrusive) */
-    .ad-container {
-      margin: 1.5rem auto;
-      padding: 0;
-      text-align: center;
-      max-width: 728px;
-      overflow: hidden;
+// main-freemium-oet.js — Full, modern OET Freemium logic (one custom/upload list per day)
+
+document.addEventListener('DOMContentLoaded', () => {
+  // DOM Elements
+  const accentPicker = document.querySelector('.accent-picker');
+  const customInput = document.getElementById('custom-words');
+  const fileInput = document.getElementById('file-input');
+  const addCustomBtn = document.getElementById('add-custom-btn');
+  const startBtn = document.getElementById('start-btn');
+  const trainerArea = document.getElementById('trainer-area');
+  const summaryArea = document.getElementById('summary-area');
+  const practiceModeBtn = document.getElementById('practice-mode-btn');
+  const testModeBtn = document.getElementById('test-mode-btn');
+  const darkModeToggle = document.getElementById('dark-mode-toggle');
+
+  // State
+  let words = [];
+  let allWords = [];
+  let currentIndex = 0;
+  let correctCount = 0;
+  let flaggedWords = JSON.parse(localStorage.getItem('oet_flaggedWords') || '[]');
+  let userAttempts = [];
+  let usedCustomListToday = false;
+  let isUsingCustomList = false;
+  let isSessionActive = false;
+  let currentWord = '';
+  let mode = 'practice';
+  let accent = 'en-US';
+
+  // Only 1 custom/upload per day logic
+  const todayKey = new Date().toISOString().split('T')[0];
+  usedCustomListToday = localStorage.getItem('oet_customListDate') === todayKey;
+
+  // Insert 1-list-per-day notice
+  if (customInput && !document.getElementById('list-once-notice')) {
+    const notice = document.createElement('div');
+    notice.style.color = "#777";
+    notice.style.fontSize = "0.98em";
+    notice.style.marginTop = "4px";
+    notice.textContent = "You can only use one custom/uploaded list per day.";
+    notice.id = "list-once-notice";
+    customInput.parentElement.appendChild(notice);
+  }
+
+  // ---- Initialization ----
+  loadDefaultList();
+  setupEventListeners();
+  initDarkMode();
+
+  function loadDefaultList() {
+    words = [...(typeof oetWordList !== "undefined" ? oetWordList : [])];
+    allWords = [...words];
+    isUsingCustomList = false;
+    updateStartBtnState();
+    renderSummaryArea(true);
+  }
+
+  function updateStartBtnState() {
+    startBtn.disabled = !words.length;
+    startBtn.setAttribute('aria-disabled', startBtn.disabled ? 'true' : 'false');
+  }
+
+  function setupEventListeners() {
+    // Accent picker
+    if (accentPicker) {
+      accentPicker.addEventListener('click', (e) => {
+        if (e.target.closest('button')) {
+          accentPicker.querySelectorAll('button').forEach(btn => {
+            btn.classList.remove('active');
+            btn.setAttribute('aria-pressed', 'false');
+          });
+          const btn = e.target.closest('button');
+          btn.classList.add('active');
+          btn.setAttribute('aria-pressed', 'true');
+          accent = btn.dataset.accent;
+        }
+      });
     }
-    .ad-container.header-ad {
-      margin-bottom: 0.5rem;
+    // Modes
+    if (practiceModeBtn && testModeBtn) {
+      practiceModeBtn.addEventListener('click', () => {
+        practiceModeBtn.classList.add('active');
+        testModeBtn.classList.remove('active');
+        mode = 'practice';
+      });
+      testModeBtn.addEventListener('click', () => {
+        testModeBtn.classList.add('active');
+        practiceModeBtn.classList.remove('active');
+        mode = 'test';
+      });
     }
-    .ad-container.footer-ad {
-      margin-top: 1.5rem;
-    }
-    @media (max-width: 768px) {
-      .ad-container {
-        margin: 1rem auto;
-        max-width: 320px;
+    addCustomBtn.addEventListener('click', addCustomWords);
+    fileInput.addEventListener('change', handleFileUpload);
+    startBtn.addEventListener('click', toggleSession);
+
+    // Word nav/buttons
+    trainerArea.addEventListener('click', (e) => {
+      if (!isSessionActive) return;
+      if (e.target.closest('#prev-btn')) prevWord();
+      if (e.target.closest('#next-btn')) nextWord();
+      if (e.target.closest('#repeat-btn')) speakWord(currentWord);
+      if (e.target.closest('#flag-btn')) toggleFlagWord(currentWord);
+    });
+
+    document.addEventListener('keydown', (e) => {
+      if (!isSessionActive) return;
+      if (e.key === 'ArrowLeft' && currentIndex > 0) prevWord();
+      if (e.key === 'ArrowRight') nextWord();
+      if (e.key === ' ') {
+        e.preventDefault();
+        speakWord(currentWord);
       }
+    });
+
+    // Dark mode
+    if (darkModeToggle) {
+      darkModeToggle.addEventListener('click', () => {
+        document.body.classList.toggle('dark-mode');
+        localStorage.setItem('oet_darkMode', document.body.classList.contains('dark-mode'));
+        updateDarkModeIcon();
+      });
+      if (localStorage.getItem('oet_darkMode') === 'true') {
+        document.body.classList.add('dark-mode');
+      }
+      updateDarkModeIcon();
     }
-    
-    /* Ensure trainer area remains completely clean */
-    #trainer-area {
-      ad-display: none !important;
+  }
+
+  function updateDarkModeIcon() {
+    const icon = document.querySelector('#dark-mode-toggle i');
+    if (icon) {
+      icon.className = document.body.classList.contains('dark-mode')
+        ? 'fas fa-sun'
+        : 'fas fa-moon';
     }
-  </style>
-</head>
-<body>
-  <nav class="navbar">
-    <div class="brand">
-      <img src="assets/logo.png" alt="SpellRightPro Logo" class="logo"/>
-      <div>
-        <span>SpellRightPro</span>
-        <span class="subtitle">OET Trainer</span>
+  }
+
+  // ---- Main OET Flow ----
+  function toggleSession() {
+    if (isSessionActive) {
+      endSession();
+    } else {
+      if (!words.length) {
+        showAlert("No word list loaded. Please add words or upload a list.", 'error');
+        return;
+      }
+      startSession();
+    }
+  }
+
+  function startSession() {
+    if (mode === 'test') {
+      // 24 random words from current list (not just oetWordList)
+      words = shuffle([...words]).slice(0, 24);
+    } else {
+      words = [...(isUsingCustomList ? words : allWords)];
+    }
+    currentIndex = 0;
+    correctCount = 0;
+    userAttempts = [];
+    isSessionActive = true;
+    trainerArea.classList.remove('hidden');
+    summaryArea.classList.add('hidden');
+    startBtn.innerHTML = '<i class="fas fa-stop"></i> End Session';
+    startBtn.setAttribute('aria-label', 'End session');
+    customInput.disabled = true;
+    fileInput.disabled = true;
+    addCustomBtn.disabled = true;
+    playCurrentWord();
+  }
+
+  function playCurrentWord() {
+    if (currentIndex >= words.length) {
+      endSession();
+      return;
+    }
+    currentWord = words[currentIndex];
+    renderWordInterface();
+    speakWord(currentWord);
+  }
+
+  function renderWordInterface() {
+    trainerArea.innerHTML = `
+      <div class="word-progress">Word ${currentIndex + 1} of ${words.length}</div>
+      <div class="spelling-row">
+        <button id="repeat-btn" class="btn-secondary">
+          <i class="fas fa-redo"></i> Repeat
+        </button>
       </div>
-    </div>
-    <div class="nav-actions">
-      <button class="btn-home" onclick="window.location.href='index.html'">
-        <i class="fas fa-home"></i>
-      </button>
-      <button id="dark-mode-toggle" title="Toggle dark mode">
-        <i class="fas fa-moon"></i>
-      </button>
-    </div>
-  </nav>
-
-  <!-- Header Ad (Outside main practice flow) -->
-  <div class="ad-container header-ad">
-    <ins class="adsbygoogle"
-         style="display:block"
-         data-ad-client="ca-pub-7632930282249669"
-         data-ad-slot="YOUR_OET_HEADER_SLOT"
-         data-ad-format="auto"
-         data-full-width-responsive="true"></ins>
-    <script>
-         (adsbygoogle = window.adsbygoogle || []).push({});
-    </script>
-  </div>
-
-  <main class="container">
-    <section class="training-card">
-      <h1 class="card-title">OET Spelling Trainer</h1>
-      
-      <div class="mode-selector">
-        <button id="practice-mode-btn" class="btn-mode active">
-          <i class="fas fa-graduation-cap"></i> Practice
+      <input id="spelling-input" type="text" placeholder="Type what you hear and hit Enter"/>
+      <div class="button-group">
+        <button id="prev-btn" class="btn-secondary" ${currentIndex === 0 ? 'disabled' : ''}>
+          <i class="fas fa-arrow-left"></i> Previous
         </button>
-        <button id="test-mode-btn" class="btn-mode">
-          <i class="fas fa-clock"></i> Test
+        <button id="next-btn" class="btn-secondary">
+          <i class="fas fa-arrow-right"></i> Skip
+        </button>
+        <button id="flag-btn" class="btn-icon ${flaggedWords.includes(currentWord) ? 'active' : ''}">
+          <i class="fas fa-star"></i> Flag
         </button>
       </div>
+      <div id="marking-status" class="feedback"></div>
+    `;
+    updateFlagButton();
 
-      <div class="accent-picker">
-        <button data-accent="en-US" class="active">
-          <span class="flag-icon">🇺🇸</span> US
-        </button>
-        <button data-accent="en-GB">
-          <span class="flag-icon">🇬🇧</span> UK
-        </button>
+    // Input check
+    const input = document.getElementById('spelling-input');
+    const markingStatus = document.getElementById('marking-status');
+    input.focus();
+    input.addEventListener('keydown', function (e) {
+      if (e.key === "Enter") {
+        checkAnswer();
+      }
+    });
+
+    function checkAnswer() {
+      const typed = input.value.trim().toLowerCase();
+      const expected = currentWord.toLowerCase();
+
+      userAttempts[currentIndex] = typed;
+      if (typed === expected) {
+        markingStatus.textContent = "✓ Correct!";
+        markingStatus.className = "feedback correct";
+        correctCount++;
+      } else {
+        markingStatus.textContent = `✗ Incorrect. Correct: ${currentWord}`;
+        markingStatus.className = "feedback incorrect";
+      }
+      setTimeout(() => {
+        currentIndex++;
+        if (currentIndex < words.length) {
+          playCurrentWord();
+        } else {
+          endSession();
+        }
+      }, 1000);
+    }
+  }
+
+  function speakWord(word) {
+    if (!window.speechSynthesis) {
+      showAlert("Text-to-speech not supported in your browser.", 'error');
+      return;
+    }
+    speechSynthesis.cancel();
+    const utterance = new SpeechSynthesisUtterance(word);
+    utterance.lang = accent;
+    utterance.rate = 0.95;
+    speechSynthesis.speak(utterance);
+  }
+
+  function nextWord() {
+    if (currentIndex < words.length - 1) {
+      currentIndex++;
+      playCurrentWord();
+    } else {
+      endSession();
+    }
+  }
+
+  function prevWord() {
+    if (currentIndex > 0) {
+      currentIndex--;
+      playCurrentWord();
+    }
+  }
+
+  function endSession() {
+    isSessionActive = false;
+    summaryArea.innerHTML = `
+      <div class="summary-header">
+        <h2>OET Results</h2>
+        <div class="score-display">${correctCount}/${words.length} (${Math.round(correctCount/words.length*100)}%)</div>
       </div>
-
-      <div class="custom-words-section">
-        <label class="section-label">Custom Words</label>
-        <textarea id="custom-words" placeholder="Type or paste words (comma separated)"></textarea>
-        <div class="file-upload">
-          <label for="file-input" class="btn-upload">
-            <i class="fas fa-file-upload"></i> Upload TXT
-          </label>
-          <input type="file" id="file-input" accept=".txt"/>
+      <div class="results-grid">
+        <div class="results-card correct">
+          <h3><i class="fas fa-check-circle"></i> Correct</h3>
+          <div class="score-number">${correctCount}</div>
+          <div class="word-list">
+            ${words.filter((w, i) => (userAttempts[i] || "") === w.toLowerCase())
+              .map(w => `<div class="word-item">${w}</div>`).join('')}
+          </div>
         </div>
-        <button id="add-custom-btn" class="btn-primary">
-          <i class="fas fa-plus"></i> Add Words
+        <div class="results-card incorrect">
+          <h3><i class="fas fa-times-circle"></i> Needs Practice</h3>
+          <div class="score-number">${words.length - correctCount}</div>
+          <div class="word-list">
+            ${words.filter((w, i) => (userAttempts[i] || "") !== w.toLowerCase())
+              .map(w => `<div class="word-item">${w}</div>`).join('')}
+          </div>
+        </div>
+      </div>
+      <div class="summary-actions">
+        <button id="restart-btn" class="btn-primary">
+          <i class="fas fa-redo"></i> Restart Session
+        </button>
+        <button id="new-list-btn" class="btn-secondary">
+          <i class="fas fa-sync-alt"></i> Change Word List
         </button>
       </div>
+    `;
+    trainerArea.classList.add('hidden');
+    summaryArea.classList.remove('hidden');
+    startBtn.innerHTML = '<i class="fas fa-play"></i> Start Session';
+    customInput.disabled = false;
+    fileInput.disabled = false;
+    addCustomBtn.disabled = false;
+    document.getElementById('restart-btn')?.addEventListener('click', startSession);
+    document.getElementById('new-list-btn')?.addEventListener('click', resetWordList);
+  }
 
-      <button id="start-btn" class="btn-start">
-        <i class="fas fa-play"></i> Start Session
-      </button>
+  function resetWordList() {
+    loadDefaultList();
+    isUsingCustomList = false;
+    customInput.value = '';
+    fileInput.value = '';
+    summaryArea.classList.add('hidden');
+  }
 
-      <!-- Protected Practice Area (No Ads) -->
-      <div id="trainer-area" class="trainer-area hidden">
-        <!-- Dynamically populated by JS -->
-      </div>
+  // ------ Custom List Handlers ------
+  async function handleFileUpload(e) {
+    if (usedCustomListToday) {
+      showAlert("You can only use one custom/uploaded list per day.", "warning");
+      return;
+    }
+    const file = e.target.files[0];
+    if (!file) return;
+    let text = "";
+    try {
+      if (file.name.endsWith('.txt')) {
+        text = await readFileAsText(file);
+      } else if (file.name.endsWith('.pdf')) {
+        text = await extractTextFromPDF(file);
+      } else if (file.name.endsWith('.docx')) {
+        text = await extractTextFromDocx(file);
+      } else {
+        showAlert("Unsupported file type. Please upload TXT, PDF, or DOCX.", "error");
+        return;
+      }
+      processWordList(text);
+      usedCustomListToday = true;
+      isUsingCustomList = true;
+      localStorage.setItem('oet_customListDate', todayKey);
+      startSession();
+    } catch (error) {
+      showAlert("Error processing file. Please try a text file with one word per line.", 'error');
+    }
+  }
 
-      <div id="summary-area" class="summary-area hidden"></div>
-    </section>
-  </main>
+  function addCustomWords() {
+    if (usedCustomListToday) {
+      showAlert("You can only use one custom list per day.", "warning");
+      return;
+    }
+    const input = customInput.value.trim();
+    if (!input) {
+      showAlert("Please enter words first!", 'error');
+      return;
+    }
+    processWordList(input);
+    usedCustomListToday = true;
+    isUsingCustomList = true;
+    localStorage.setItem('oet_customListDate', todayKey);
+    startSession();
+  }
 
-  <!-- Footer Ad (Outside main practice flow) -->
-  <div class="ad-container footer-ad">
-    <ins class="adsbygoogle"
-         style="display:block"
-         data-ad-client="ca-pub-7632930282249669"
-         data-ad-slot="YOUR_OET_FOOTER_SLOT"
-         data-ad-format="auto"
-         data-full-width-responsive="true"></ins>
-    <script>
-         (adsbygoogle = window.adsbygoogle || []).push({});
-    </script>
-  </div>
+  function processWordList(text) {
+    words = [...new Set(text.split(/[\s,;\/\-–—|]+/)
+      .map(w => w.trim())
+      .filter(w => w.match(/^[a-zA-Z'-]+$/) && w.length >= 2))];
+    if (!words.length) {
+      showAlert("No valid words found.", 'error');
+      throw new Error("No valid words found");
+    }
+  }
 
-  <script src="js/oet_word_list.js"></script>
-  <script src="js/main-freemium-oet.js"></script>
-</body>
-</html>
+  function readFileAsText(file) {
+    return new Promise((resolve, reject) => {
+      if (file.size > 2 * 1024 * 1024) {
+        reject(new Error("File too large (max 2MB)"));
+        return;
+      }
+      const reader = new FileReader();
+      reader.onload = e => resolve(e.target.result);
+      reader.onerror = () => reject(new Error("Error reading file"));
+      reader.readAsText(file);
+    });
+  }
+
+  // -------- PDF & DOCX Extraction (uses CDN libs) --------
+  async function extractTextFromPDF(file) {
+    return new Promise((resolve, reject) => {
+      if (!window.pdfjsLib) {
+        showAlert("PDF library not loaded.", 'error');
+        reject("PDF lib not found");
+        return;
+      }
+      const reader = new FileReader();
+      reader.onload = async (e) => {
+        try {
+          const typedarray = new Uint8Array(e.target.result);
+          const pdf = await pdfjsLib.getDocument({ data: typedarray }).promise;
+          let text = '';
+          for (let i = 1; i <= pdf.numPages; i++) {
+            const page = await pdf.getPage(i);
+            const content = await page.getTextContent();
+            text += content.items.map(item => item.str).join(' ') + ' ';
+          }
+          resolve(text);
+        } catch (err) {
+          reject(err);
+        }
+      };
+      reader.readAsArrayBuffer(file);
+    });
+  }
+
+  async function extractTextFromDocx(file) {
+    return new Promise((resolve, reject) => {
+      if (!window.mammoth) {
+        showAlert("DOCX library not loaded.", 'error');
+        reject("DOCX lib not found");
+        return;
+      }
+      const reader = new FileReader();
+      reader.onload = async (e) => {
+        try {
+          const arrayBuffer = e.target.result;
+          const result = await mammoth.extractRawText({ arrayBuffer });
+          resolve(result.value);
+        } catch (err) {
+          reject(err);
+        }
+      };
+      reader.readAsArrayBuffer(file);
+    });
+  }
+
+  function showAlert(message, type = 'error') {
+    const alert = document.createElement('div');
+    alert.className = `alert alert-${type}`;
+    alert.textContent = message;
+    alert.setAttribute('role', 'alert');
+    document.body.appendChild(alert);
+    setTimeout(() => alert.remove(), 2200);
+  }
+
+  function toggleFlagWord(word) {
+    const index = flaggedWords.indexOf(word);
+    if (index === -1) {
+      flaggedWords.push(word);
+    } else {
+      flaggedWords.splice(index, 1);
+    }
+    localStorage.setItem('oet_flaggedWords', JSON.stringify(flaggedWords));
+    updateFlagButton();
+  }
+
+  function updateFlagButton() {
+    const flagBtn = document.getElementById('flag-btn');
+    if (flagBtn) {
+      flagBtn.classList.toggle('active', flaggedWords.includes(currentWord));
+    }
+  }
+
+  function renderSummaryArea(loading = false) {
+    if (loading) {
+      summaryArea.innerHTML = "<div class='summary-header'>OET Trainer Ready. Start a session!</div>";
+      summaryArea.classList.remove('hidden');
+      trainerArea.classList.add('hidden');
+    }
+  }
+
+  // ---- Load 3rd party parsing libs if needed ----
+  if (typeof pdfjsLib === "undefined") {
+    const pdfScript = document.createElement('script');
+    pdfScript.src = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.10.377/pdf.min.js";
+    pdfScript.onload = () => window.pdfjsLib = window.pdfjsLib || pdfjsLib;
+    document.body.appendChild(pdfScript);
+  }
+  if (typeof mammoth === "undefined") {
+    const docxScript = document.createElement('script');
+    docxScript.src = "https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.4.0/mammoth.browser.min.js";
+    docxScript.onload = () => window.mammoth = window.mammoth || mammoth;
+    document.body.appendChild(docxScript);
+  }
+});
