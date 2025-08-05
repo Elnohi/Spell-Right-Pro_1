@@ -193,14 +193,16 @@ document.addEventListener('DOMContentLoaded', () => {
   }
   // ---- WORD LIST MANAGEMENT ----
   function resetWordList() {
-    words = [];
-    usedCustomListToday = false;
-    localStorage.removeItem('oet_customListDate');
-    customInput.value = '';
-    fileInput.value = '';
-    summaryArea.classList.add('hidden');
-    showAlert("Word list cleared. Add new words or use default OET list.", 'info');
-  }
+  words = [];
+  usedCustomListToday = false;
+  localStorage.removeItem('oet_customListDate');
+  customInput.value = '';
+  fileInput.value = '';
+  summaryArea.classList.add('hidden');
+  showAlert("Word list cleared. Add new words or use default OET list.", 'info');
+  // Add this line:
+  words = Array.isArray(window.oetWords) ? [...window.oetWords] : [];
+}
   function switchWordSource() {
     if (isSessionActive) {
       if (confirm("Changing word source will end current session. Continue?")) {
