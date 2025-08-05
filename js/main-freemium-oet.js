@@ -185,12 +185,17 @@ document.addEventListener('DOMContentLoaded', () => {
         <button id="new-list-btn" class="btn-secondary"><i class="fas fa-sync-alt"></i> Change Word List</button>
       </div>
     `;
-    trainerArea.classList.add('hidden'); summaryArea.classList.remove('hidden');
-    startBtn.innerHTML = '<i class="fas fa-play"></i> Start Session';
-    customInput.disabled = false; fileInput.disabled = false; addCustomBtn.disabled = false;
-    document.getElementById('restart-btn')?.addEventListener('click', startSession);
-    document.getElementById('new-list-btn')?.addEventListener('click', resetWordList);
-  }
+trainerArea.classList.add('hidden');
+summaryArea.classList.remove('hidden');
+startBtn.innerHTML = '<i class="fas fa-play"></i> Start Session';
+customInput.disabled = false; fileInput.disabled = false; addCustomBtn.disabled = false;
+
+// >>> INSERT THIS LINE <<<
+if (window.insertSummaryAd) window.insertSummaryAd();
+
+document.getElementById('restart-btn')?.addEventListener('click', startSession);
+document.getElementById('new-list-btn')?.addEventListener('click', resetWordList);
+
   // ---- WORD LIST MANAGEMENT ----
   function resetWordList() {
   words = [];
