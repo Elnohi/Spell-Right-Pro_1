@@ -1,7 +1,7 @@
-// main-freemium-bee.js — Fixed: Proper One-by-One Speaking and Marking
+// main-freemium-bee.js — Fully Fixed, Working Auto-Advance Freemium Spelling Bee
 
 document.addEventListener('DOMContentLoaded', () => {
-  // DOM Elements
+  // Elements
   const accentPicker = document.querySelector('.accent-picker');
   const customInput = document.getElementById('custom-words');
   const fileInput = document.getElementById('file-input');
@@ -11,22 +11,24 @@ document.addEventListener('DOMContentLoaded', () => {
   const spellingVisual = document.getElementById('spelling-visual');
   const summaryArea = document.getElementById('summary-area');
   const micStatus = document.getElementById('mic-status');
+  const darkModeToggle = document.getElementById('dark-mode-toggle');
 
-  // State Variables
+  // State
   let words = [];
   let currentIndex = 0;
   let score = 0;
-  let flaggedWords = JSON.parse(localStorage.getItem('flaggedWords')) || [];
+  let flaggedWords = JSON.parse(localStorage.getItem('bee_flaggedWords') || '[]');
   let userAttempts = [];
   let usedCustomListToday = false;
   let isUsingCustomList = false;
   let isSessionActive = false;
-  let currentWord = "";
-  let accent = "en-US";
+  let currentWord = '';
   let recognition = null;
+  let accent = 'en-US';
 
+  // Day key for "one custom list per day"
   const todayKey = new Date().toISOString().split('T')[0];
-  usedCustomListToday = localStorage.getItem('customListDate') === todayKey;
+  usedCustomListToday = localStorage.getItem('bee_customListDate') === todayKey;
 
   const DEFAULT_BEE_WORDS = [
     "accommodate", "belligerent", "conscientious", "disastrous",
@@ -37,7 +39,17 @@ document.addEventListener('DOMContentLoaded', () => {
     "unforeseen", "vacuum", "withhold", "yacht"
   ];
 
-  // Initialize
+  // Notice for 1 list/day
+  if (customInput) {
+    const notice = document.createElement('div');
+    notice.style.color = "#777";
+    notice.style.fontSize = "0.98em";
+    notice.style.marginTop = "4px";
+    notice.textContent = "You can only use one custom list per day.";
+    customInput.parentElement.appendChild(notice);
+  }
+
+  // ---- Initialization ----
   loadDefaultList();
   setupEventListeners();
   initDarkMode();
@@ -46,49 +58,76 @@ document.addEventListener('DOMContentLoaded', () => {
     words = [...DEFAULT_BEE_WORDS];
     isUsingCustomList = false;
     updateStartBtnState();
+    renderSummaryArea(true);
   }
 
   function updateStartBtnState() {
-    startBtn.disabled = !(words && words.length);
-    startBtn.setAttribute('aria-disabled', startBtn.disabled);
+    startBtn.disabled = !words.length;
+    startBtn.setAttribute('aria-disabled', startBtn.disabled ? 'true' : 'false');
   }
 
   function setupEventListeners() {
-    accentPicker.addEventListener('click', (e) => {
-      if (e.target.tagName === 'BUTTON') {
-        accentPicker.querySelectorAll('button').forEach(btn => {
-          btn.classList.remove('active');
-          btn.setAttribute('aria-pressed', 'false');
-        });
-        e.target.classList.add('active');
-        e.target.setAttribute('aria-pressed', 'true');
-        accent = e.target.dataset.accent;
-      }
-    });
-
+    if (accentPicker) {
+      accentPicker.addEventListener('click', (e) => {
+        if (e.target.closest('button')) {
+          accentPicker.querySelectorAll('button').forEach(btn => {
+            btn.classList.remove('active');
+            btn.setAttribute('aria-pressed', 'false');
+          });
+          const btn = e.target.closest('button');
+          btn.classList.add('active');
+          btn.setAttribute('aria-pressed', 'true');
+          accent = btn.dataset.accent;
+        }
+      });
+    }
     addCustomBtn.addEventListener('click', addCustomWords);
     fileInput.addEventListener('change', handleFileUpload);
     startBtn.addEventListener('click', toggleSession);
 
-    document.addEventListener('click', (e) => {
+    // Word nav/buttons
+    beeArea.addEventListener('click', (e) => {
       if (!isSessionActive) return;
       if (e.target.closest('#prev-btn')) prevWord();
       if (e.target.closest('#next-btn')) nextWord();
-      if (e.target.closest('#repeat-btn')) speakWord(currentWord, startVoiceRecognition);
+      if (e.target.closest('#repeat-btn')) speakWord(currentWord);
       if (e.target.closest('#flag-btn')) toggleFlagWord(currentWord);
     });
 
     document.addEventListener('keydown', (e) => {
       if (!isSessionActive) return;
       if (e.key === 'ArrowLeft' && currentIndex > 0) prevWord();
-      if (e.key === 'ArrowRight' && currentIndex < words.length - 1) nextWord();
+      if (e.key === 'ArrowRight') nextWord();
       if (e.key === ' ') {
         e.preventDefault();
-        speakWord(currentWord, startVoiceRecognition);
+        speakWord(currentWord);
       }
     });
+
+    // Dark mode
+    if (darkModeToggle) {
+      darkModeToggle.addEventListener('click', () => {
+        document.body.classList.toggle('dark-mode');
+        localStorage.setItem('bee_darkMode', document.body.classList.contains('dark-mode'));
+        updateDarkModeIcon();
+      });
+      if (localStorage.getItem('bee_darkMode') === 'true') {
+        document.body.classList.add('dark-mode');
+      }
+      updateDarkModeIcon();
+    }
   }
 
+  function updateDarkModeIcon() {
+    const icon = document.querySelector('#dark-mode-toggle i');
+    if (icon) {
+      icon.className = document.body.classList.contains('dark-mode')
+        ? 'fas fa-sun'
+        : 'fas fa-moon';
+    }
+  }
+
+  // ---- Main Bee Flow ----
   function toggleSession() {
     if (isSessionActive) {
       endSession();
@@ -121,13 +160,16 @@ document.addEventListener('DOMContentLoaded', () => {
       endSession();
       return;
     }
+    // Reset recognition
     if (recognition) {
       recognition.stop();
       recognition = null;
     }
     currentWord = words[currentIndex];
     renderWordInterface();
-    speakWord(currentWord, startVoiceRecognition);
+    speakWord(currentWord, () => {
+      setTimeout(() => startVoiceRecognition(), 200); // very slight pause
+    });
   }
 
   function renderWordInterface() {
@@ -156,23 +198,17 @@ document.addEventListener('DOMContentLoaded', () => {
     updateFlagButton();
   }
 
-  function speakWord(word, callback) {
+  function speakWord(word, onEnd) {
     if (!window.speechSynthesis) {
       showAlert("Text-to-speech not supported in your browser.", 'error');
-      if (callback) callback();
       return;
     }
     speechSynthesis.cancel();
     const utterance = new SpeechSynthesisUtterance(word);
     utterance.lang = accent;
     utterance.rate = 0.8;
-    utterance.onerror = () => {
-      showAlert("Error pronouncing word. Please check your audio settings.", 'error');
-      if (callback) setTimeout(callback, 300);
-    };
-    utterance.onend = () => {
-      if (callback) setTimeout(callback, 300); // slight pause
-    };
+    utterance.onerror = () => showAlert("Error pronouncing word.", 'error');
+    utterance.onend = onEnd || null;
     speechSynthesis.speak(utterance);
   }
 
@@ -181,7 +217,7 @@ document.addEventListener('DOMContentLoaded', () => {
       showAlert("Speech recognition not supported in this browser.", 'error');
       return;
     }
-    micStatus?.classList.remove('hidden');
+    micStatus && micStatus.classList.remove('hidden');
     updateSpellingVisual();
 
     recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
@@ -196,32 +232,30 @@ document.addEventListener('DOMContentLoaded', () => {
         .find(transcript => transcript.length >= 2) || '';
       processSpellingAttempt(bestMatch);
     };
+
     recognition.onerror = (event) => {
       if (event.error !== 'no-speech') {
         showAlert(`Recognition error: ${event.error}`, 'error');
       }
-      // Try again
-      setTimeout(() => isSessionActive && startVoiceRecognition(), 600);
+      setTimeout(() => isSessionActive && startVoiceRecognition(), 700);
     };
     recognition.start();
   }
 
   function processSpellingAttempt(attempt) {
     const feedback = document.getElementById('mic-feedback');
-    if (!attempt) {
-      feedback.textContent = "Didn't catch that, try again!";
-      feedback.className = "feedback incorrect";
-      setTimeout(() => isSessionActive && startVoiceRecognition(), 800);
-      return;
-    }
-    userAttempts[currentIndex] = attempt;
+    if (!feedback) return;
+
+    userAttempts[currentIndex] = attempt || "";
     const isCorrect = attempt === currentWord.toLowerCase();
+
     updateSpellingVisual(
       currentWord.split('').map((letter, i) => ({
-        letter: attempt[i] || '',
-        correct: attempt[i]?.toLowerCase() === letter.toLowerCase()
+        letter: attempt?.[i] || '',
+        correct: attempt?.[i]?.toLowerCase() === letter.toLowerCase()
       }))
     );
+
     if (isCorrect) {
       feedback.textContent = "✓ Correct!";
       feedback.className = "feedback correct";
@@ -230,10 +264,10 @@ document.addEventListener('DOMContentLoaded', () => {
       feedback.textContent = `✗ Incorrect. Correct: ${currentWord}`;
       feedback.className = "feedback incorrect";
     }
-    if (recognition) {
-      recognition.stop();
-      recognition = null;
-    }
+
+    if (recognition) recognition.stop();
+    recognition = null;
+
     setTimeout(() => {
       currentIndex++;
       if (currentIndex < words.length) {
@@ -241,7 +275,7 @@ document.addEventListener('DOMContentLoaded', () => {
       } else {
         endSession();
       }
-    }, 1200);
+    }, 1000);
   }
 
   function updateSpellingVisual(letters = []) {
@@ -271,12 +305,10 @@ document.addEventListener('DOMContentLoaded', () => {
   function endSession() {
     isSessionActive = false;
     if (recognition) recognition.stop();
-    const percent = Math.round((score / words.length) * 100);
-    const wrongWords = words.filter((w, i) => (userAttempts[i] || "").toLowerCase() !== w.toLowerCase());
     summaryArea.innerHTML = `
       <div class="summary-header">
         <h2>Spelling Bee Results</h2>
-        <div class="score-display">${score}/${words.length} (${percent}%)</div>
+        <div class="score-display">${score}/${words.length} (${Math.round(score/words.length*100)}%)</div>
       </div>
       <div class="results-grid">
         <div class="results-card correct">
@@ -289,9 +321,10 @@ document.addEventListener('DOMContentLoaded', () => {
         </div>
         <div class="results-card incorrect">
           <h3><i class="fas fa-times-circle"></i> Needs Practice</h3>
-          <div class="score-number">${wrongWords.length}</div>
+          <div class="score-number">${words.length - score}</div>
           <div class="word-list">
-            ${wrongWords.map(w => `<div class="word-item">${w}</div>`).join('')}
+            ${words.filter((w, i) => (userAttempts[i] || "").toLowerCase() !== w.toLowerCase())
+              .map(w => `<div class="word-item">${w}</div>`).join('')}
           </div>
         </div>
       </div>
@@ -322,25 +355,6 @@ document.addEventListener('DOMContentLoaded', () => {
     summaryArea.classList.add('hidden');
   }
 
-  async function handleFileUpload(e) {
-    if (usedCustomListToday) {
-      showAlert("You can only use one custom/uploaded list per day.", "warning");
-      return;
-    }
-    const file = e.target.files[0];
-    if (!file) return;
-    try {
-      const text = await readFileAsText(file);
-      processWordList(text);
-      usedCustomListToday = true;
-      isUsingCustomList = true;
-      localStorage.setItem('customListDate', todayKey);
-      startSession();
-    } catch (error) {
-      showAlert("Error processing file. Please try a text file with one word per line.", 'error');
-    }
-  }
-
   function addCustomWords() {
     if (usedCustomListToday) {
       showAlert("You can only use one custom list per day.", "warning");
@@ -354,8 +368,27 @@ document.addEventListener('DOMContentLoaded', () => {
     processWordList(input);
     usedCustomListToday = true;
     isUsingCustomList = true;
-    localStorage.setItem('customListDate', todayKey);
+    localStorage.setItem('bee_customListDate', todayKey);
     startSession();
+  }
+
+  async function handleFileUpload(e) {
+    if (usedCustomListToday) {
+      showAlert("You can only use one custom/uploaded list per day.", "warning");
+      return;
+    }
+    const file = e.target.files[0];
+    if (!file) return;
+    try {
+      const text = await readFileAsText(file);
+      processWordList(text);
+      usedCustomListToday = true;
+      isUsingCustomList = true;
+      localStorage.setItem('bee_customListDate', todayKey);
+      startSession();
+    } catch (error) {
+      showAlert("Error processing file. Please try a text file with one word per line.", 'error');
+    }
   }
 
   function processWordList(text) {
@@ -363,6 +396,7 @@ document.addEventListener('DOMContentLoaded', () => {
       .map(w => w.trim())
       .filter(w => w.match(/^[a-zA-Z'-]+$/) && w.length >= 2))];
     if (!words.length) {
+      showAlert("No valid words found.", 'error');
       throw new Error("No valid words found");
     }
   }
@@ -386,7 +420,7 @@ document.addEventListener('DOMContentLoaded', () => {
     alert.textContent = message;
     alert.setAttribute('role', 'alert');
     document.body.appendChild(alert);
-    setTimeout(() => alert.remove(), 2500);
+    setTimeout(() => alert.remove(), 2200);
   }
 
   function toggleFlagWord(word) {
@@ -396,7 +430,7 @@ document.addEventListener('DOMContentLoaded', () => {
     } else {
       flaggedWords.splice(index, 1);
     }
-    localStorage.setItem('flaggedWords', JSON.stringify(flaggedWords));
+    localStorage.setItem('bee_flaggedWords', JSON.stringify(flaggedWords));
     updateFlagButton();
   }
 
@@ -407,27 +441,11 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  function initDarkMode() {
-    const darkModeToggle = document.getElementById('dark-mode-toggle');
-    if (darkModeToggle) {
-      darkModeToggle.addEventListener('click', () => {
-        document.body.classList.toggle('dark-mode');
-        localStorage.setItem('darkMode', document.body.classList.contains('dark-mode'));
-        updateDarkModeIcon();
-      });
-      if (localStorage.getItem('darkMode') === 'true') {
-        document.body.classList.add('dark-mode');
-      }
-      updateDarkModeIcon();
-    }
-  }
-
-  function updateDarkModeIcon() {
-    const icon = document.querySelector('#dark-mode-toggle i');
-    if (icon) {
-      icon.className = document.body.classList.contains('dark-mode')
-        ? 'fas fa-sun'
-        : 'fas fa-moon';
+  function renderSummaryArea(loading = false) {
+    if (loading) {
+      summaryArea.innerHTML = "<div class='summary-header'>Spelling Bee Trainer Ready. Start a session!</div>";
+      summaryArea.classList.remove('hidden');
+      beeArea.classList.add('hidden');
     }
   }
 });
