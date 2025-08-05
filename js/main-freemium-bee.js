@@ -1,4 +1,4 @@
-// main-freemium-bee.js — Fully Fixed, Working Auto-Advance Freemium Spelling Bee
+// main-freemium-bee.js — Fully Fixed, Working Auto-Advance Freemium Spelling Bee + Summary AdSense
 
 document.addEventListener('DOMContentLoaded', () => {
   // Elements
@@ -213,79 +213,79 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function startVoiceRecognition() {
-  if (!('webkitSpeechRecognition' in window || 'SpeechRecognition' in window)) {
-    showAlert("Speech recognition not supported in this browser.", 'error');
-    return;
-  }
-  micStatus && micStatus.classList.remove('hidden');
-  updateSpellingVisual();
-
-  // Clean up previous recognition if any
-  if (recognition) {
-    recognition.onend = null;
-    recognition.onresult = null;
-    recognition.onerror = null;
-    recognition.abort();
-    recognition = null;
-  }
-
-  recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
-  recognition.lang = accent;
-  recognition.interimResults = false;
-  recognition.maxAlternatives = 5;
-
-  let gotResult = false; // Track if onresult fired
-
-  recognition.onresult = (event) => {
-    gotResult = true;
-    const results = event.results[0];
-    const bestMatch = Array.from(results)
-      .map(result => result.transcript.trim().toUpperCase())
-      .find(transcript => transcript.length >= 1) || '';
-
-    let attempt = bestMatch.replace(/[^A-Z ]/g, '');
-    let letters = attempt.split(/\s+/).filter(Boolean);
-
-    if (letters.length > 1 && letters.join('').length === currentWord.length) {
-      attempt = letters.join('').toLowerCase();
-    } else {
-      attempt = bestMatch.trim().toLowerCase().replace(/[^a-z]/g, '');
+    if (!('webkitSpeechRecognition' in window || 'SpeechRecognition' in window)) {
+      showAlert("Speech recognition not supported in this browser.", 'error');
+      return;
     }
-    processSpellingAttempt(attempt);
-  };
+    micStatus && micStatus.classList.remove('hidden');
+    updateSpellingVisual();
 
-  recognition.onerror = (event) => {
-    gotResult = true; // treat error as handled
-    if (event.error !== 'no-speech') {
-      showAlert(`Recognition error: ${event.error}`, 'error');
+    // Clean up previous recognition if any
+    if (recognition) {
+      recognition.onend = null;
+      recognition.onresult = null;
+      recognition.onerror = null;
+      recognition.abort();
+      recognition = null;
     }
-    // Immediately try again
-    setTimeout(() => {
-      if (isSessionActive) startVoiceRecognition();
-    }, 400);
-  };
 
-  recognition.onend = () => {
-    if (!gotResult && isSessionActive) {
-      // No result and not manually stopped: auto-advance to next word
-      const feedback = document.getElementById('mic-feedback');
-      if (feedback) {
-        feedback.textContent = "No response detected, skipping to next word...";
-        feedback.className = "feedback incorrect";
+    recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+    recognition.lang = accent;
+    recognition.interimResults = false;
+    recognition.maxAlternatives = 5;
+
+    let gotResult = false; // Track if onresult fired
+
+    recognition.onresult = (event) => {
+      gotResult = true;
+      const results = event.results[0];
+      const bestMatch = Array.from(results)
+        .map(result => result.transcript.trim().toUpperCase())
+        .find(transcript => transcript.length >= 1) || '';
+
+      let attempt = bestMatch.replace(/[^A-Z ]/g, '');
+      let letters = attempt.split(/\s+/).filter(Boolean);
+
+      if (letters.length > 1 && letters.join('').length === currentWord.length) {
+        attempt = letters.join('').toLowerCase();
+      } else {
+        attempt = bestMatch.trim().toLowerCase().replace(/[^a-z]/g, '');
       }
-      setTimeout(() => {
-        currentIndex++;
-        if (currentIndex < words.length) {
-          playCurrentWord();
-        } else {
-          endSession();
-        }
-      }, 700);
-    }
-  };
+      processSpellingAttempt(attempt);
+    };
 
-  recognition.start();
-}
+    recognition.onerror = (event) => {
+      gotResult = true; // treat error as handled
+      if (event.error !== 'no-speech') {
+        showAlert(`Recognition error: ${event.error}`, 'error');
+      }
+      // Immediately try again
+      setTimeout(() => {
+        if (isSessionActive) startVoiceRecognition();
+      }, 400);
+    };
+
+    recognition.onend = () => {
+      if (!gotResult && isSessionActive) {
+        // No result and not manually stopped: auto-advance to next word
+        const feedback = document.getElementById('mic-feedback');
+        if (feedback) {
+          feedback.textContent = "No response detected, skipping to next word...";
+          feedback.className = "feedback incorrect";
+        }
+        setTimeout(() => {
+          currentIndex++;
+          if (currentIndex < words.length) {
+            playCurrentWord();
+          } else {
+            endSession();
+          }
+        }, 700);
+      }
+    };
+
+    recognition.start();
+  }
 
   function processSpellingAttempt(attempt) {
     const feedback = document.getElementById('mic-feedback');
@@ -388,8 +388,32 @@ document.addEventListener('DOMContentLoaded', () => {
     customInput.disabled = false;
     fileInput.disabled = false;
     addCustomBtn.disabled = false;
+
+    // ---- INSERT SUMMARY ADSENSE ----
+    insertBeeSummaryAd();
+
     document.getElementById('restart-btn')?.addEventListener('click', startSession);
     document.getElementById('new-list-btn')?.addEventListener('click', resetWordList);
+  }
+
+  function insertBeeSummaryAd() {
+    // Remove previous summary ad if it exists
+    const prev = document.getElementById('summary-bee-ad');
+    if (prev) prev.remove();
+    // Create the AdSense container
+    const adDiv = document.createElement('div');
+    adDiv.className = 'ad-container summary-ad';
+    adDiv.id = 'summary-bee-ad';
+    adDiv.innerHTML = `
+      <ins class="adsbygoogle"
+           style="display:block"
+           data-ad-client="ca-pub-7632930282249669"
+           data-ad-slot="YOUR_BEE_SUMMARY_SLOT"
+           data-ad-format="auto"
+           data-full-width-responsive="true"></ins>
+    `;
+    summaryArea.insertAdjacentElement('afterend', adDiv);
+    if (window.adsbygoogle) window.adsbygoogle.push({});
   }
 
   function resetWordList() {
@@ -491,6 +515,6 @@ document.addEventListener('DOMContentLoaded', () => {
       summaryArea.innerHTML = "<div class='summary-header'>Spelling Bee Trainer Ready. Start a session!</div>";
       summaryArea.classList.remove('hidden');
       beeArea.classList.add('hidden');
-      }
     }
+  }
 });
