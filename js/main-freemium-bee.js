@@ -242,8 +242,8 @@ if (letters.length > 1 && letters.join('').length === currentWord.length) {
   attempt = bestMatch.trim().toLowerCase().replace(/[^a-z]/g, '');
 }
 
-processSpellingAttempt(attempt);
-
+    processSpellingAttempt(attempt);
+      };
 
     recognition.onerror = (event) => {
       if (event.error !== 'no-speech') {
@@ -458,4 +458,6 @@ processSpellingAttempt(attempt);
       summaryArea.innerHTML = "<div class='summary-header'>Spelling Bee Trainer Ready. Start a session!</div>";
       summaryArea.classList.remove('hidden');
       beeArea.classList.add('hidden');
+      }
+    }
 });
