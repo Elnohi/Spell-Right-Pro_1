@@ -26,12 +26,7 @@
       visibility: hidden;
       transition: all 0.3s ease;
     }
-    
-    .modal.active {
-      opacity: 1;
-      visibility: visible;
-    }
-    
+    .modal.active { opacity: 1; visibility: visible; }
     .modal-content {
       background: var(--light);
       padding: 2rem;
@@ -41,7 +36,6 @@
       box-shadow: var(--shadow-md);
       position: relative;
     }
-    
     .close-modal {
       position: absolute;
       top: 1rem;
@@ -50,18 +44,13 @@
       cursor: pointer;
       color: var(--gray);
     }
-    
-    .form-group {
-      margin-bottom: 1.25rem;
-    }
-    
+    .form-group { margin-bottom: 1.25rem; }
     .form-group label {
       display: block;
       margin-bottom: 0.5rem;
       font-weight: 500;
       color: var(--dark);
     }
-    
     .form-group input,
     .form-group textarea {
       width: 100%;
@@ -72,13 +61,11 @@
       color: var(--dark);
       font-size: 1rem;
     }
-    
     .form-submit-btn {
       width: 100%;
       padding: 0.75rem;
       margin-top: 1rem;
     }
-    
     /* Landing-specific styles */
     .landing-container {
       max-width: 670px;
@@ -121,6 +108,7 @@
       margin: 0 4px 12px 4px;
       box-shadow: 0 2px 8px #a48dff17;
       text-align: left;
+      position: relative;
     }
     .feature-box h2 {
       font-size: 1.26rem;
@@ -128,6 +116,29 @@
       margin-bottom: 12px;
       margin-top: 0;
       font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .feature-badge {
+      background: #22ba53;
+      color: #fff;
+      font-size: 0.95em;
+      padding: 2px 10px;
+      border-radius: 8px;
+      margin-left: 6px;
+      font-weight: 600;
+      letter-spacing: 0.3px;
+    }
+    .feature-premium-badge {
+      background: #4418c0;
+      color: #fff;
+      font-size: 0.95em;
+      padding: 2px 10px;
+      border-radius: 8px;
+      margin-left: 6px;
+      font-weight: 600;
+      letter-spacing: 0.3px;
     }
     .feature-box ul {
       margin: 0 0 0 1.1em;
@@ -151,12 +162,24 @@
       box-shadow: 0 2px 12px #098cfb18;
       transition: background 0.2s, color 0.2s, transform 0.11s;
     }
+    .version-links a.premium-link {
+      background: #4418c0;
+      position: relative;
+    }
+    .version-links a .crown-icon {
+      color: #ffd700;
+      margin-right: 6px;
+      font-size: 1.15em;
+      vertical-align: -2px;
+    }
     .version-links a:hover {
       background: #22ba53;
       color: #fff;
       transform: translateY(-2px) scale(1.03);
     }
-    
+    .version-links a.premium-link:hover {
+      background: #1c085c;
+    }
     /* Ad Container Styles */
     .ad-container {
       margin: 30px auto;
@@ -168,7 +191,6 @@
     .dark-mode .ad-container {
       background: rgba(255,255,255,0.05);
     }
-    
     @media (max-width: 720px) {
       .landing-container { padding: 17px 2vw 23px 2vw; margin: 11vw 2vw; }
       .feature-grid { flex-direction: column; gap: 0; }
@@ -196,6 +218,11 @@
 
   <main>
     <div class="landing-container">
+
+      <div style="font-size:1.06rem; color:#4418c0; margin-bottom: 14px;">
+        Choose your mode: <b>OET</b> (medical spelling), <b>Bee</b> (spoken spelling), or unlock everything with <b>Premium</b>.
+      </div>
+
       <div class="main-title">SpellRightPro</div>
       <div class="subtitle">
         Your Complete English Spelling Solution.<br>
@@ -205,28 +232,31 @@
 
       <div class="feature-grid">
         <div class="feature-box">
-          <h2>🩺 Medical Terminology</h2>
+          <h2>🩺 OET Medical Trainer <span class="feature-badge">Free</span></h2>
           <ul>
-            <li>OET-ready spelling practice</li>
-            <li>Automatic pronunciation (British & American)</li>
-            <li>Upload your own lists</li>
+            <li>Spelling practice with real OET medical vocabulary</li>
+            <li>Instant word pronunciation (British or American accent)</li>
+            <li>Upload <strong>one</strong> custom word list per day</li>
+            <li>Immediate marking and feedback</li>
           </ul>
         </div>
         <div class="feature-box">
-          <h2>🐝 Spelling Bee</h2>
+          <h2>🐝 Spelling Bee Mode <span class="feature-badge">Free</span></h2>
           <ul>
-            <li>Competition-level spelling with voice input</li>
-            <li>Practice spelling aloud with instant feedback</li>
-            <li>Sample or custom word lists</li>
+            <li>Classic Spelling Bee with speech input</li>
+            <li>Hear a word, spell it aloud—get marked automatically</li>
+            <li>Practice with official and sample lists, or upload one custom list daily</li>
+            <li>Fun, challenge, and progress tracking</li>
           </ul>
         </div>
         <div class="feature-box">
-          <h2>✨ Premium Features</h2>
+          <h2>✨ Go Premium <span class="feature-premium-badge">Unlimited</span></h2>
           <ul>
-            <li>All exam modes unlocked</li>
-            <li>Progress tracking (login required)</li>
-            <li>Unlimited custom lists & detailed results</li>
-            <li>Ad-free & extra features</li>
+            <li>All modes unlocked—no restrictions</li>
+            <li>Unlimited uploads and custom lists</li>
+            <li>Full progress history, stats, and flagged word review</li>
+            <li>Ad-free experience and priority support</li>
+            <li>Best for OET, IELTS, and advanced spellers</li>
           </ul>
         </div>
       </div>
@@ -247,7 +277,9 @@
       <div class="version-links">
         <a href="freemium-oet.html">OET Trainer (Freemium)</a>
         <a href="freemium-bee.html">Spelling Bee (Freemium)</a>
-        <a href="premium.html" style="background: #4418c0;">Premium Edition</a>
+        <a href="premium.html" class="premium-link">
+          <i class="fas fa-crown crown-icon"></i>Premium Edition
+        </a>
       </div>
 
       <!-- AdSense Banner 2 -->
