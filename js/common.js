@@ -1,110 +1,61 @@
-// Accent selection with flags
-document.getElementById('accentSelect')?.addEventListener('change', function() {
-  const flagImg = document.getElementById('accentFlag');
-  const flags = {
-    'en-US': 'us.png',
-    'en-GB': 'gb.png',
-    'en-AU': 'au.png',
-    'en-CA': 'ca.png'
-  };
-  if (flagImg) flagImg.src = `assets/flags/${flags[this.value]}`;
-});
+// common.js - Shared Core Functionality v2.3
 
-// Initialize Firebase
-export function initializeFirebase() {
-  if (!firebase.apps.length) {
-    firebase.initializeApp({
-      apiKey: "YOUR_API_KEY",
-      authDomain: "YOUR_AUTH_DOMAIN",
-      projectId: "YOUR_PROJECT_ID",
-      storageBucket: "YOUR_STORAGE_BUCKET",
-      messagingSenderId: "YOUR_SENDER_ID",
-      appId: "YOUR_APP_ID"
-    });
-  }
-  return firebase;
+// ======================
+// Firebase Initialization
+// ======================
+const firebaseConfig = {
+  apiKey: "YOUR_API_KEY",
+  authDomain: "YOUR_AUTH_DOMAIN",
+  projectId: "YOUR_PROJECT_ID",
+  storageBucket: "YOUR_STORAGE_BUCKET",
+  messagingSenderId: "YOUR_SENDER_ID",
+  appId: "YOUR_APP_ID"
+};
+
+let firebaseApp;
+if (typeof firebase !== 'undefined' && !firebase.apps.length) {
+  firebaseApp = firebase.initializeApp(firebaseConfig);
 }
 
-// Flagging system
+// ======================
+// DOM Utilities
+// ======================
+const getElement = (id) => document.getElementById(id) || console.warn(`Element #${id} not found`);
+
+// ======================
+// Flagging System (Legacy)
+// ======================
 let flaggedWords = JSON.parse(localStorage.getItem('flaggedWords')) || [];
 
-export function toggleFlagWord(currentWord) {
-  if (!currentWord) return;
+export function toggleFlagWord(word, options = {}) {
+  const index = flaggedWords.indexOf(word);
   
-  const flagBtn = document.getElementById('flagWordBtn');
-  const wordIndex = flaggedWords.indexOf(currentWord);
-  
-  if (wordIndex === -1) {
-    flaggedWords.push(currentWord);
-    if (flagBtn) {
-      flagBtn.classList.add('active');
-      flagBtn.innerHTML = '<i class="fas fa-flag"></i> Flagged';
-    }
-    document.querySelector('.current-word')?.classList.add('flagged-word');
+  if (index === -1) {
+    flaggedWords.push(word);
   } else {
-    flaggedWords.splice(wordIndex, 1);
-    if (flagBtn) {
-      flagBtn.classList.remove('active');
-      flagBtn.innerHTML = '<i class="far fa-flag"></i> Flag Word';
-    }
-    document.querySelector('.current-word')?.classList.remove('flagged-word');
+    flaggedWords.splice(index, 1);
   }
   
   localStorage.setItem('flaggedWords', JSON.stringify(flaggedWords));
-}
-
-export function initFlagButton(currentWord) {
-  const flagBtn = document.getElementById('flagWordBtn');
-  if (!flagBtn || !currentWord) return;
   
-  flagBtn.onclick = () => toggleFlagWord(currentWord);
-  
-  if (flaggedWords.includes(currentWord)) {
-    flagBtn.classList.add('active');
-    flagBtn.innerHTML = '<i class="fas fa-flag"></i> Flagged';
-    document.querySelector('.current-word')?.classList.add('flagged-word');
-  } else {
-    flagBtn.classList.remove('active');
-    flagBtn.innerHTML = '<i class="far fa-flag"></i> Flag Word';
-    document.querySelector('.current-word')?.classList.remove('flagged-word');
+  // Legacy UI update (unchanged for OET)
+  if (!options.forSpelling) {
+    const flagBtn = getElement('flagWordBtn');
+    if (flagBtn) {
+      flagBtn.classList.toggle('active', flaggedWords.includes(word));
+      flagBtn.innerHTML = flaggedWords.includes(word) 
+        ? '<i class="fas fa-flag"></i> Flagged' 
+        : '<i class="far fa-flag"></i> Flag Word';
+    }
   }
 }
 
-export function showFlaggedWords() {
-  const flagged = JSON.parse(localStorage.getItem('flaggedWords')) || [];
-  const scoreDisplay = document.getElementById('scoreDisplay');
-  
-  if (flagged.length > 0 && scoreDisplay && !document.querySelector('.flagged-section')) {
-    const flaggedSection = document.createElement('div');
-    flaggedSection.className = 'flagged-section';
-    flaggedSection.innerHTML = `
-      <h3><i class="fas fa-flag"></i> Flagged Words for Review</h3>
-      <ul class="flagged-words-list">
-        ${flagged.map(word => `<li>${word}</li>`).join('')}
-      </ul>
-      <button id="practiceFlaggedBtn" class="btn btn-warning">
-        <i class="fas fa-redo"></i> Practice Flagged Words
-      </button>
-    `;
-    scoreDisplay.appendChild(flaggedSection);
-  }
-}
-
-export function clearFlaggedWords() {
-  flaggedWords = [];
-  localStorage.removeItem('flaggedWords');
-  const flagBtn = document.getElementById('flagWordBtn');
-  if (flagBtn) {
-    flagBtn.classList.remove('active');
-    flagBtn.innerHTML = '<i class="far fa-flag"></i> Flag Word';
-  }
-  document.querySelector('.flagged-section')?.remove();
-}
-
-// Theme Toggle
+// ======================
+// Theme Management
+// ======================
 export function initThemeToggle() {
-  const toggleBtn = document.getElementById('modeToggle');
-  const icon = document.getElementById('modeIcon');
+  const toggleBtn = getElement('modeToggle');
+  const icon = getElement('modeIcon');
   
   if (!toggleBtn || !icon) return;
 
@@ -121,19 +72,30 @@ export function initThemeToggle() {
   applyDarkMode(localStorage.getItem('darkMode') === 'on');
 }
 
-// Navigation Controls
-export function setupNavigation() {
-  document.getElementById('homeBtn')?.addEventListener('click', () => {
-    window.location.href = 'index.html';
-  });
+// ======================
+// Spelling Bee Extensions
+// ======================
+export const _spelling = {
+  speak: (text, lang = 'en-US', rate = 0.8) => {
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.lang = lang;
+    utterance.rate = rate;
+    speechSynthesis.speak(utterance);
+    return utterance;
+  },
+  
+  cancelSpeech: () => speechSynthesis.cancel(),
+  
+  initRecognition: (lang = 'en-US') => {
+    const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+    recognition.lang = lang;
+    return recognition;
+  }
+};
 
-  document.getElementById('premiumBtn')?.addEventListener('click', () => {
-    window.location.href = 'premium.html';
-  });
-}
-
-// Initialize when loaded
+// ======================
+// Initialization
+// ======================
 document.addEventListener('DOMContentLoaded', () => {
   initThemeToggle();
-  setupNavigation();
 });
