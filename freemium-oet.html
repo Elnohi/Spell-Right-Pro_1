@@ -182,5 +182,32 @@
     // Call insertSummaryAd() at session end via main-freemium-oet.js after rendering results
     window.insertSummaryAd = insertSummaryAd;
   </script>
+  <script>
+  window.insertSummaryAd = function() {
+    var summaryArea = document.getElementById('summary-area');
+    if (!summaryArea) return;
+    // Remove previous summary ad if it exists
+    var oldAd = summaryArea.querySelector('.summary-ad-container');
+    if (oldAd) oldAd.remove();
+
+    // Create a container for the summary ad
+    var adDiv = document.createElement('div');
+    adDiv.className = "ad-container summary-ad-container";
+    adDiv.innerHTML = `
+      <ins class="adsbygoogle"
+           style="display:block"
+           data-ad-client="ca-pub-7632930282249669"
+           data-ad-slot="YOUR_OET_SUMMARY_SLOT"
+           data-ad-format="auto"
+           data-full-width-responsive="true"></ins>
+    `;
+    summaryArea.appendChild(adDiv);
+    // (Re)load the ad
+    try {
+      (adsbygoogle = window.adsbygoogle || []).push({});
+    } catch(e) { /* ignore if adsbygoogle isn't ready */ }
+  }
+</script>
+
 </body>
 </html>
