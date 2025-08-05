@@ -228,10 +228,22 @@ document.addEventListener('DOMContentLoaded', () => {
     recognition.onresult = (event) => {
       const results = event.results[0];
       const bestMatch = Array.from(results)
-        .map(result => result.transcript.trim().toLowerCase().replace(/[^a-z]/g, ''))
-        .find(transcript => transcript.length >= 2) || '';
-      processSpellingAttempt(bestMatch);
-    };
+  .map(result => result.transcript.trim().toUpperCase())
+  .find(transcript => transcript.length >= 1) || '';
+
+let attempt = bestMatch.replace(/[^A-Z ]/g, ''); // only A-Z and space
+let letters = attempt.split(/\s+/).filter(Boolean); // split by space
+
+// If the user said "A C C O M M O D A T E", letters = ['A','C','C','O',...]
+// Try to reconstruct the word from spelled letters:
+if (letters.length > 1 && letters.join('').length === currentWord.length) {
+  attempt = letters.join('').toLowerCase();
+} else {
+  attempt = bestMatch.trim().toLowerCase().replace(/[^a-z]/g, '');
+}
+
+processSpellingAttempt(attempt);
+
 
     recognition.onerror = (event) => {
       if (event.error !== 'no-speech') {
