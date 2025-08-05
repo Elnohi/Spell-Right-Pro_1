@@ -30,10 +30,22 @@
         max-width: 320px;
       }
     }
-    
     /* Ensure trainer area remains completely clean */
     #trainer-area {
       ad-display: none !important;
+    }
+    /* WARNING BANNER STYLE */
+    .custom-warning {
+      color: #b03a2e;
+      background: #fff3cd;
+      border-radius: 6px;
+      padding: 0.7em 1em;
+      font-size: 1em;
+      margin-top: 0.5em;
+      margin-bottom: 0.7em;
+      font-weight: 500;
+      border: 1px solid #ffe1a3;
+      display: block;
     }
   </style>
 </head>
@@ -99,6 +111,10 @@
             <i class="fas fa-file-upload"></i> Upload TXT
           </label>
           <input type="file" id="file-input" accept=".txt"/>
+        </div>
+        <!-- WARNING BANNER MOVED UP -->
+        <div class="custom-warning">
+          You can only use one custom list per day in the freemium version. Upgrade to premium for unlimited lists.
         </div>
         <button id="add-custom-btn" class="btn-primary">
           <i class="fas fa-plus"></i> Add Words
