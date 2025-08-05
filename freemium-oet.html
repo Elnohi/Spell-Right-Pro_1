@@ -10,7 +10,6 @@
   <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7632930282249669"
      crossorigin="anonymous"></script>
   <style>
-    /* Ad Container Styles (Non-intrusive) */
     .ad-container {
       margin: 1.5rem auto;
       padding: 0;
@@ -18,23 +17,24 @@
       max-width: 728px;
       overflow: hidden;
     }
-    .ad-container.header-ad {
-      margin-bottom: 0.5rem;
-    }
-    .ad-container.footer-ad {
-      margin-top: 1.5rem;
+    .ad-container.header-ad { margin-bottom: 0.5rem; }
+    .ad-container.footer-ad { margin-top: 1.5rem; }
+    .ad-container.summary-ad { margin-top: 2rem; }
+    /* Sticky ad for mobile (optional, only enabled via JS for small screens) */
+    .ad-container.sticky-footer-ad {
+      display: none;
+      position: fixed;
+      left: 0; right: 0; bottom: 0;
+      background: #fff; z-index: 999;
+      box-shadow: 0 -2px 12px rgba(0,0,0,0.12);
+      padding: 4px 0;
+      border-top: 1px solid #e3e3e3;
     }
     @media (max-width: 768px) {
-      .ad-container {
-        margin: 1rem auto;
-        max-width: 320px;
-      }
+      .ad-container { margin: 1rem auto; max-width: 320px; }
+      .ad-container.sticky-footer-ad { display: block; }
     }
-    /* Ensure trainer area remains completely clean */
-    #trainer-area {
-      ad-display: none !important;
-    }
-    /* WARNING BANNER STYLE */
+    #trainer-area { ad-display: none !important; }
     .custom-warning {
       color: #b03a2e;
       background: #fff3cd;
@@ -68,7 +68,7 @@
     </div>
   </nav>
 
-  <!-- Header Ad (Outside main practice flow) -->
+  <!-- Header Ad -->
   <div class="ad-container header-ad">
     <ins class="adsbygoogle"
          style="display:block"
@@ -76,15 +76,12 @@
          data-ad-slot="YOUR_OET_HEADER_SLOT"
          data-ad-format="auto"
          data-full-width-responsive="true"></ins>
-    <script>
-         (adsbygoogle = window.adsbygoogle || []).push({});
-    </script>
+    <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
   </div>
 
   <main class="container">
     <section class="training-card">
       <h1 class="card-title">OET Spelling Trainer</h1>
-      
       <div class="mode-selector">
         <button id="practice-mode-btn" class="btn-mode active">
           <i class="fas fa-graduation-cap"></i> Practice
@@ -93,7 +90,6 @@
           <i class="fas fa-clock"></i> Test
         </button>
       </div>
-
       <div class="accent-picker">
         <button data-accent="en-US" class="active">
           <span class="flag-icon">🇺🇸</span> US
@@ -102,7 +98,6 @@
           <span class="flag-icon">🇬🇧</span> UK
         </button>
       </div>
-
       <div class="custom-words-section">
         <label class="section-label">Custom Words</label>
         <textarea id="custom-words" placeholder="Type or paste words (comma separated)"></textarea>
@@ -112,7 +107,6 @@
           </label>
           <input type="file" id="file-input" accept=".txt"/>
         </div>
-        <!-- WARNING BANNER MOVED UP -->
         <div class="custom-warning">
           You can only use one custom list per day in the freemium version. Upgrade to premium for unlimited lists.
         </div>
@@ -120,21 +114,17 @@
           <i class="fas fa-plus"></i> Add Words
         </button>
       </div>
-
       <button id="start-btn" class="btn-start">
         <i class="fas fa-play"></i> Start Session
       </button>
-
-      <!-- Protected Practice Area (No Ads) -->
-      <div id="trainer-area" class="trainer-area hidden">
-        <!-- Dynamically populated by JS -->
-      </div>
-
+      <div id="trainer-area" class="trainer-area hidden"></div>
+      <!-- Summary Area (ad will be inserted here dynamically after each session) -->
       <div id="summary-area" class="summary-area hidden"></div>
+      <div id="summary-ad-slot"></div>
     </section>
   </main>
 
-  <!-- Footer Ad (Outside main practice flow) -->
+  <!-- Footer Ad -->
   <div class="ad-container footer-ad">
     <ins class="adsbygoogle"
          style="display:block"
@@ -142,12 +132,55 @@
          data-ad-slot="YOUR_OET_FOOTER_SLOT"
          data-ad-format="auto"
          data-full-width-responsive="true"></ins>
-    <script>
-         (adsbygoogle = window.adsbygoogle || []).push({});
-    </script>
+    <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
+  </div>
+
+  <!-- Sticky footer ad for mobile (optional, can disable by removing this block) -->
+  <div class="ad-container sticky-footer-ad" id="sticky-ad-mobile">
+    <ins class="adsbygoogle"
+         style="display:inline-block;width:320px;height:50px"
+         data-ad-client="ca-pub-7632930282249669"
+         data-ad-slot="YOUR_OET_MOBILE_SLOT"></ins>
+    <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
   </div>
 
   <script src="js/oet_word_list.js"></script>
   <script src="js/main-freemium-oet.js"></script>
+  <script>
+    // Show/hide sticky ad only when not in session or summary
+    function toggleStickyAd(show) {
+      var ad = document.getElementById('sticky-ad-mobile');
+      if (ad) ad.style.display = show ? 'block' : 'none';
+    }
+    // Monitor session area and hide sticky ad as needed
+    document.addEventListener('DOMContentLoaded', function() {
+      // You may want to control this with your JS session logic as well
+      toggleStickyAd(true); // Default on
+      // Example: hide when trainer is visible
+      var observer = new MutationObserver(function() {
+        var inSession = !document.getElementById('trainer-area').classList.contains('hidden');
+        var inSummary = !document.getElementById('summary-area').classList.contains('hidden');
+        toggleStickyAd(!(inSession || inSummary));
+      });
+      observer.observe(document.body, { subtree: true, childList: true, attributes: true });
+    });
+    // Ad in summary area (at session end)
+    function insertSummaryAd() {
+      var slot = document.getElementById('summary-ad-slot');
+      if (slot) {
+        slot.innerHTML = `<div class="ad-container summary-ad">
+          <ins class="adsbygoogle"
+               style="display:block"
+               data-ad-client="ca-pub-7632930282249669"
+               data-ad-slot="YOUR_OET_SUMMARY_SLOT"
+               data-ad-format="auto"
+               data-full-width-responsive="true"></ins>
+        </div>`;
+        (adsbygoogle = window.adsbygoogle || []).push({});
+      }
+    }
+    // Call insertSummaryAd() at session end via main-freemium-oet.js after rendering results
+    window.insertSummaryAd = insertSummaryAd;
+  </script>
 </body>
 </html>
