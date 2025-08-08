@@ -11,18 +11,34 @@
   <!-- Google AdSense -->
   <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7632930282249669" crossorigin="anonymous"></script>
   <style>
-    .ad-container {
-      margin: 1rem auto;
+    .ad-container { margin: 1rem auto; text-align: center; max-width: 728px; }
+    body.logged-in .ad-container { display: none; }
+    #upgrade-message {
       text-align: center;
-      max-width: 728px;
+      padding: 2rem;
+      font-size: 1.2rem;
+      background: #fff3cd;
+      border: 1px solid #ffeeba;
+      border-radius: 8px;
+      margin-top: 2rem;
     }
-    body.logged-in .ad-container {
-      display: none;
+    #upgrade-message a {
+      display: inline-block;
+      margin-top: 1rem;
+      background: #098cfb;
+      color: #fff;
+      padding: 10px 20px;
+      border-radius: 6px;
+      text-decoration: none;
+      font-weight: 600;
+    }
+    #upgrade-message a:hover {
+      background: #0673c7;
     }
   </style>
 </head>
 <body>
-  <!-- Ad only shown before login. Hidden after login by JS/CSS -->
+  <!-- Ad only shown before login -->
   <div class="ad-container">
     <ins class="adsbygoogle"
          style="display:block"
@@ -42,7 +58,16 @@
       <button id="dark-mode-toggle" class="btn btn-icon"><i class="fas fa-moon"></i></button>
     </nav>
 
-    <div class="card"><div id="auth-area"></div></div>
+    <!-- Login/Signup Area -->
+    <div class="card" id="auth-area"></div>
+
+    <!-- Upgrade Message -->
+    <div id="upgrade-message" class="card hidden">
+      <p>You are logged in, but your account does not have Premium access.</p>
+      <a href="pricing.html">Upgrade to Premium</a>
+    </div>
+
+    <!-- Premium App Area -->
     <div id="premium-app" class="card hidden">
       <div class="card-header"><h2 id="app-title">Premium Trainer</h2></div>
       <div id="exam-ui"></div>
