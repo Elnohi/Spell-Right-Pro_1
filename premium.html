@@ -1,65 +1,52 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>SpellRightPro Premium</title>
-  <link rel="stylesheet" href="css/premium.css" />
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
-  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
-
-  <!-- Google AdSense -->
-  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7632930282249669" crossorigin="anonymous"></script>
-  <style>
-    .ad-container {
-      margin: 1rem auto;
-      text-align: center;
-      max-width: 728px;
-    }
-    body.logged-in .ad-container {
-      display: none;
-    }
-  </style>
+  <link rel="stylesheet" href="css/premium.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  
+  <!-- Stripe.js -->
+  <script src="https://js.stripe.com/v3/"></script>
+  
+  <!-- Firebase -->
+  <script src="https://www.gstatic.com/firebasejs/10.4.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.4.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.4.0/firebase-firestore-compat.js"></script>
 </head>
 <body>
-  <!-- Ad only shown before login. Hidden after login by JS/CSS -->
-  <div class="ad-container">
-    <ins class="adsbygoogle"
-         style="display:block"
-         data-ad-client="ca-pub-7632930282249669"
-         data-ad-slot="6355416638"
-         data-ad-format="auto"
-         data-full-width-responsive="true"></ins>
-    <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
-  </div>
-
   <div class="container">
     <nav class="navbar">
       <div class="brand">
         <img src="assets/logo.png" alt="Logo">
         <span>SpellRightPro <small>Premium</small></span>
       </div>
-      <button id="dark-mode-toggle" class="btn btn-icon"><i class="fas fa-moon"></i></button>
+      <div id="auth-area"></div>
     </nav>
 
-    <div class="card"><div id="auth-area"></div></div>
-    <div id="premium-app" class="card hidden">
-      <div class="card-header"><h2 id="app-title">Premium Trainer</h2></div>
-      <div id="exam-ui"></div>
-      <div id="trainer-area"></div>
-      <div id="summary-area"></div>
+    <div id="premium-app" class="hidden">
+      <div class="card">
+        <div id="exam-ui"></div>
+        <div id="trainer-area"></div>
+        <div id="summary-area"></div>
+      </div>
     </div>
   </div>
 
-  <!-- Firebase SDKs -->
-  <script src="https://www.gstatic.com/firebasejs/10.4.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.4.0/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.4.0/firebase-firestore-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.4.0/firebase-analytics-compat.js"></script>
-
-  <!-- Config and App Logic -->
   <script src="js/config.js"></script>
-  <script src="js/oet_word_list.js"></script>
   <script src="js/main-premium.js"></script>
+  
+  <script>
+    // Initialize Stripe
+    const stripe = Stripe('YOUR_STRIPE_PUBLIC_KEY');
+    
+    // Check for payment success redirect
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.has('payment_success')) {
+      showAlert('Payment successful! Premium activated.', 'success');
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }
+  </script>
 </body>
 </html>
