@@ -9,13 +9,6 @@ const firebaseConfig = {
   measurementId: "G-H09MF13297"
 };
 
-// Stripe Configuration
-const stripeConfig = {
-  publicKey: "pk_live_your_key_here",
-  monthlyPlanId: "price_monthly_plan_id",
-  annualPlanId: "price_annual_plan_id"
-};
-
 // Application Configuration
 const appConfig = {
   trialDays: 7,
@@ -33,3 +26,10 @@ try {
 } catch (e) {
   console.warn("Analytics init failed", e);
 }
+
+// Stripe Configuration
+const stripeConfig = {
+  publicKey: "pk_live_your_key_here",
+  monthlyPlanId: "price_monthly_plan_id",
+  annualPlanId: "price_annual_plan_id"
+};
