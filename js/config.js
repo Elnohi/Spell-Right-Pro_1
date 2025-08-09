@@ -9,6 +9,21 @@ const firebaseConfig = {
   measurementId: "G-H09MF13297"
 };
 
+// Stripe Configuration
+const stripeConfig = {
+  publicKey: "pk_live_your_key_here",
+  monthlyPlanId: "price_monthly_plan_id",
+  annualPlanId: "price_annual_plan_id"
+};
+
+// Application Configuration
+const appConfig = {
+  trialDays: 7,
+  defaultTheme: 'light',
+  adClient: 'ca-pub-7632930282249669'
+};
+
+// Initialize Firebase
 const app = firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
 const db = firebase.firestore();
