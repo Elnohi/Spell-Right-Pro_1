@@ -18,6 +18,9 @@
   --shadow-md: 0 10px 15px rgba(0, 0, 0, 0.1);
   --radius: 8px;
   --radius-lg: 12px;
+  --gold: #ffd700;
+  --silver: #c0c0c0;
+  --bronze: #cd7f32;
 }
 
 .dark-mode {
@@ -31,6 +34,7 @@
   --light-gray: #2d3748;
   --border: #4a5568;
   --shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+  --gold: #ffdf00;
 }
 
 * {
@@ -53,16 +57,194 @@ body {
   padding: 0 1.5rem;
 }
 
+/* ==================== PREMIUM COMPONENTS ==================== */
+.premium-container {
+  max-width: 800px;
+  margin: 2rem auto;
+  padding: 2rem;
+  background: var(--light);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-md);
+  border: 1px solid var(--border);
+  animation: fadeIn 0.5s ease-out;
+}
+
+.premium-header {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.premium-icon {
+  font-size: 3rem;
+  color: var(--gold);
+  margin-bottom: 1rem;
+}
+
+.premium-features {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+  margin: 2rem 0;
+}
+
+.premium-feature {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 1rem;
+  background: var(--secondary);
+  border-radius: var(--radius);
+  transition: transform 0.2s ease;
+}
+
+.premium-feature:hover {
+  transform: translateY(-3px);
+}
+
+.premium-feature i {
+  color: var(--success);
+  font-size: 1.25rem;
+  margin-top: 0.2rem;
+}
+
+.pricing-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1.5rem;
+  margin: 2.5rem 0;
+}
+
+.pricing-card {
+  position: relative;
+  padding: 1.75rem;
+  border-radius: var(--radius-lg);
+  background: var(--light);
+  border: 1px solid var(--border);
+  transition: all 0.3s ease;
+}
+
+.pricing-card:hover {
+  transform: translateY(-5px);
+  box-shadow: var(--shadow-md);
+}
+
+.pricing-card.recommended {
+  border: 2px solid var(--gold);
+  background: linear-gradient(to bottom, var(--light) 0%, rgba(255, 215, 0, 0.05) 100%);
+}
+
+.recommended-badge {
+  position: absolute;
+  top: -12px;
+  right: 20px;
+  background: var(--gold);
+  color: #000;
+  padding: 0.25rem 1rem;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: bold;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+.price-display {
+  font-size: 2.5rem;
+  font-weight: 700;
+  margin: 1rem 0;
+  color: var(--primary);
+}
+
+.price-period {
+  font-size: 1rem;
+  color: var(--gray);
+}
+
+.price-savings {
+  color: var(--success);
+  font-weight: 600;
+  margin-bottom: 1rem;
+}
+
+.payment-methods {
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+  margin: 2rem 0 1rem;
+  font-size: 2rem;
+  opacity: 0.8;
+}
+
+.payment-methods i {
+  color: var(--gray);
+  transition: color 0.2s ease;
+}
+
+.payment-methods i:hover {
+  color: var(--primary);
+}
+
+.trial-notice {
+  text-align: center;
+  padding: 1rem;
+  background: var(--primary-light);
+  border-radius: var(--radius);
+  margin-top: 1.5rem;
+  color: var(--primary-dark);
+  border-left: 4px solid var(--primary);
+}
+
+.premium-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: linear-gradient(135deg, var(--gold), #ffcc00);
+  color: #000;
+  padding: 0.25rem 0.75rem;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  margin-left: 0.5rem;
+}
+
+/* ==================== LOADING OVERLAY ==================== */
+.loading-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 9999;
+  backdrop-filter: blur(5px);
+}
+
+.loading-spinner {
+  text-align: center;
+  color: white;
+}
+
+.loading-spinner i {
+  font-size: 3rem;
+  margin-bottom: 1rem;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  100% { transform: rotate(360deg); }
+}
+
+/* ==================== EXISTING STYLES ==================== */
 .ad-container {
   margin: 1rem auto;
   text-align: center;
   max-width: 728px;
 }
 body.logged-in .ad-container {
-  display: none !important; /* Force hide ads when logged in */
+  display: none !important;
 }
 
-/* Header/Navbar */
 .navbar {
   display: flex;
   justify-content: space-between;
@@ -183,7 +365,6 @@ body.logged-in .ad-container {
   align-items: center;
 }
 
-/* Cards */
 .card {
   background: var(--light);
   border-radius: var(--radius-lg);
@@ -208,7 +389,6 @@ body.logged-in .ad-container {
   color: var(--dark);
 }
 
-/* Buttons */
 .btn {
   padding: 0.625rem 1.25rem;
   border-radius: var(--radius);
@@ -275,7 +455,6 @@ body.logged-in .ad-container {
   justify-content: center;
 }
 
-/* Forms */
 .form-control {
   width: 100%;
   padding: 0.75rem 1rem;
@@ -298,7 +477,6 @@ textarea.form-control {
   resize: vertical;
 }
 
-/* Exam UI */
 .mode-selector {
   display: flex;
   gap: 0.5rem;
@@ -330,7 +508,6 @@ textarea.form-control {
   align-items: center;
 }
 
-/* Trainer Area */
 .word-progress {
   color: var(--gray);
   font-size: 0.875rem;
@@ -365,7 +542,6 @@ textarea.form-control {
   margin-top: 1.25rem;
 }
 
-/* Feedback */
 .feedback {
   padding: 0.75rem 1rem;
   border-radius: var(--radius);
@@ -388,7 +564,6 @@ textarea.form-control {
   border: 1px solid var(--danger);
 }
 
-/* Spelling Visual */
 .spelling-visual {
   display: flex;
   gap: 0.5rem;
@@ -421,7 +596,6 @@ textarea.form-control {
   border-color: var(--danger);
 }
 
-/* Results */
 .results-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -476,7 +650,6 @@ textarea.form-control {
   margin-top: 1.5rem;
 }
 
-/* Alerts */
 .alert {
   position: fixed;
   top: 1.5rem;
@@ -506,7 +679,7 @@ textarea.form-control {
   opacity: 0;
 }
 
-/* Responsive */
+/* ==================== RESPONSIVE STYLES ==================== */
 @media (max-width: 768px) {
   .container {
     padding: 0 1rem;
@@ -536,9 +709,44 @@ textarea.form-control {
   .card {
     padding: 1.25rem;
   }
+
+  .premium-container {
+    padding: 1.5rem;
+    margin: 1rem;
+  }
+  
+  .pricing-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .premium-features {
+    grid-template-columns: 1fr;
+  }
+  
+  .payment-methods {
+    font-size: 1.5rem;
+  }
+  
+  .price-display {
+    font-size: 2rem;
+  }
 }
 
-/* Animations */
+@media (max-width: 480px) {
+  .premium-container {
+    padding: 1rem;
+  }
+  
+  .pricing-card {
+    padding: 1.25rem;
+  }
+  
+  .premium-icon {
+    font-size: 2rem;
+  }
+}
+
+/* ==================== ANIMATIONS ==================== */
 @keyframes fadeIn {
   from { opacity: 0; transform: translateY(10px); }
   to { opacity: 1; transform: translateY(0); }
@@ -548,7 +756,7 @@ textarea.form-control {
   animation: fadeIn 0.3s ease-out;
 }
 
-/* Utility Classes */
+/* ==================== UTILITY CLASSES ==================== */
 .text-center {
   text-align: center;
 }
@@ -565,10 +773,9 @@ textarea.form-control {
   display: none;
 }
 
-/* Floating Feedback Banner */
 #feedback {
   position: fixed;
-  bottom: -100px; /* Hidden by default */
+  bottom: -100px;
   left: 1rem;
   right: 1rem;
   padding: 1rem;
@@ -584,38 +791,35 @@ textarea.form-control {
 }
 
 #feedback.keyboard-active {
-  bottom: calc(1rem + env(safe-area-inset-bottom) + 60px); /* Above keyboard */
+  bottom: calc(1rem + env(safe-area-inset-bottom) + 60px);
 }
 
 @media (max-width: 768px) {
   #feedback.visible {
     bottom: calc(60px + env(safe-area-inset-bottom));
   }
-
-  /* ======================
-   Premium Mobile Styles
-   ====================== */
-@media (max-width: 768px) {
-  /* Pricing page specific */
-  .pricing-hero h1 {
-    font-size: 1.8rem;
-  }
-
-  .toggle-container {
-    flex-direction: column;
-    gap: 10px;
-  }
-
-  /* Premium feature cards */
-  .feature-box {
-    min-width: 100%;
-    margin-bottom: 15px;
-  }
-
-  /* Payment buttons */
-  #checkout-btn, .paypal-button-container {
-    width: 100%;
-    padding: 12px;
-  }
 }
-  
+
+/* ==================== DARK MODE OVERRIDES ==================== */
+.dark-mode .pricing-card {
+  background: var(--secondary);
+  border-color: var(--border);
+}
+
+.dark-mode .premium-feature {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.dark-mode .trial-notice {
+  background: rgba(67, 97, 238, 0.15);
+  color: var(--primary);
+}
+
+.dark-mode .premium-container {
+  background: var(--secondary);
+  border-color: var(--border);
+}
+
+.dark-mode .pricing-card.recommended {
+  background: linear-gradient(to bottom, var(--secondary) 0%, rgba(255, 215, 0, 0.1) 100%);
+}
