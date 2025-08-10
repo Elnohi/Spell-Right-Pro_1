@@ -213,3 +213,10 @@ document.addEventListener('DOMContentLoaded', () => {
   initThemeToggle();
   setupNavigation();
 });
+
+// At the very end of common.js:
+window.toggleFlagWord = toggleFlagWord;
+window.showFlaggedWords = showFlaggedWords;
+window.initThemeToggle = initThemeToggle;
+window.spelling = spelling;
+}
