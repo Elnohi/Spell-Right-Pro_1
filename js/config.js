@@ -30,7 +30,7 @@ try {
 
 // Stripe (frontend/public) keys
 const stripeConfig = {
-  publicKey: "pk_live_XXXXXXXXXXXXXXXXXXXXXXXX",
+  publicKey: "pk_live_51RuKs1El99zwdEZr9wjVF3EhADOk4c9x8JjvjPLH8Y16cCPwykZRFVtC1Fr0hSJesStbqcvfvvNOy4NHRaV0GPvg004IIcPfC8",
   monthlyPlanId: "price_XXXXXXXXXXXX",
   annualPlanId: "price_YYYYYYYYYYYY"
 };
