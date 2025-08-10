@@ -5,14 +5,13 @@ const admin = require('firebase-admin');
 const Stripe = require('stripe');
 
 const app = express();
-app.use(cors({ origin: [process.env.FRONTEND_URL], credentials: false }));
+app.use(cors({ origin: process.env.FRONTEND_URL }));
 app.use(express.json());
 
 // Initialize Firebase Admin (env JSON or application default)
 const serviceJson = process.env.FIREBASE_SERVICE_ACCOUNT_JSON;
-const serviceAccount = serviceJson ? JSON.parse(serviceJson) : null;
-admin.initializeApp({
-  credential: serviceAccount ? admin.credential.cert(serviceAccount) : admin.credential.applicationDefault()
+const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_JSON);
+admin.initializeApp({ credential: admin.credential.cert(serviceAccount) });
 });
 
 const db = admin.firestore();
