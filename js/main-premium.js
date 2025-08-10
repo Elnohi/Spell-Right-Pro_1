@@ -62,10 +62,18 @@ function initStripe() {
     console.warn('Stripe.js not loaded yet.');
     return;
   }
-  const key = (window.stripeConfig && stripeConfig.publicKey) || '';
-  if (!key || !/^pk_(test|live)_/.test(key)) {
-    console.warn('Stripe publishable key missing or invalid. Set stripeConfig.publicKey in config.js');
+
+  // Try lexical global first, then window
+  const key =
+    (typeof stripeConfig !== 'undefined' && stripeConfig && stripeConfig.publicKey) ||
+    (window.stripeConfig && window.stripeConfig.publicKey) ||
+    '';
+
+  if (!/^pk_(test|live)_/.test(key)) {
+    console.warn('Stripe publishable key missing or invalid. Check js/config.js');
+    return; // IMPORTANT: don’t call Stripe('') or you’ll get the IntegrationError
   }
+
   stripe = Stripe(key);
 }
 
@@ -676,4 +684,5 @@ function shuffle(arr) {
   }
   return a;
 }
+
 
