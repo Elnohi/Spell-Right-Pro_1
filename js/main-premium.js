@@ -1,4 +1,4 @@
-// main-premium.js — Complete Premium Version (800+ lines)
+// main-premium.js â€” Complete Premium Version (patched keys & API base)
 
 // ==================== GLOBAL STATE ====================
 let currentUser = null;
@@ -37,35 +37,33 @@ function initializeApp() {
 }
 
 function initStripe() {
-  stripe = Stripe('pk_live_your_stripe_key_here');
+  // patched: use key from config.js
+  stripe = Stripe(stripeConfig.publicKey);
 }
 
 function checkUrlForPaymentStatus() {
   const urlParams = new URLSearchParams(window.location.search);
   if (urlParams.has('payment_success')) {
-    showAlert('?? Premium subscription activated!', 'success');
+    showAlert('ðŸŽ‰ Premium subscription activated!', 'success');
     window.history.replaceState({}, '', window.location.pathname);
-    location.reload(); // Refresh to enable premium features
+    location.reload();
   }
 }
 
 // ==================== PREMIUM STATUS & PAYMENT ====================
 async function checkPremiumStatus() {
   if (!currentUser) return false;
-  
   try {
     const userDoc = await firebase.firestore().collection('users').doc(currentUser.uid).get();
     if (!userDoc.exists) return false;
-    
+
     const userData = userDoc.data();
     const hasActiveTrial = userData.trialEndsAt?.toDate() > new Date();
     premiumUser = userData.isPremium === true || hasActiveTrial;
-    
-    // Hide ads for premium users
+
     if (premiumUser) {
       document.querySelectorAll('.ad-container').forEach(ad => ad.style.display = 'none');
     }
-    
     return premiumUser;
   } catch (error) {
     console.error("Premium check error:", error);
@@ -75,10 +73,10 @@ async function checkPremiumStatus() {
 
 async function initiatePayment(planType) {
   showLoading(true);
-  
   try {
     const idToken = await currentUser.getIdToken();
-    const response = await fetch('https://your-api.com/create-subscription', {
+    // patched: call your backend create-checkout-session
+    const response = await fetch(`${appConfig.apiBaseUrl}/create-checkout-session`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -90,12 +88,13 @@ async function initiatePayment(planType) {
         sessionId: sessionId
       })
     });
-    
+
+    if (!response.ok) {
+      const msg = await response.text();
+      throw new Error(`Server error: ${msg}`);
+    }
     const { sessionId: stripeSessionId } = await response.json();
-    const { error } = await stripe.redirectToCheckout({
-      sessionId: stripeSessionId
-    });
-    
+    const { error } = await stripe.redirectToCheckout({ sessionId: stripeSessionId });
     if (error) throw error;
   } catch (error) {
     showAlert(`Payment failed: ${error.message}`, 'error');
@@ -113,14 +112,12 @@ function showPremiumUpsell() {
         <h2>Upgrade to Premium</h2>
         <p>Unlock all features and unlimited practice</p>
       </div>
-      
       <div class="pricing-options">
         <div class="pricing-option">
           <h3>Monthly</h3>
           <div class="price" id="monthly-price">$4.99/mo</div>
           <button id="monthly-btn" class="btn btn-primary">Subscribe</button>
         </div>
-        
         <div class="pricing-option recommended">
           <div class="badge">Best Value</div>
           <h3>Annual</h3>
@@ -129,21 +126,17 @@ function showPremiumUpsell() {
           <button id="annual-btn" class="btn btn-primary">Subscribe</button>
         </div>
       </div>
-      
       <div class="payment-methods">
         <i class="fab fa-cc-visa"></i>
         <i class="fab fa-cc-mastercard"></i>
         <i class="fab fa-cc-amex"></i>
         <i class="fab fa-cc-paypal"></i>
       </div>
-      
       <div class="trial-notice">
         <p><i class="fas fa-info-circle"></i> Your free trial ends in 3 days</p>
       </div>
     </div>`;
-  
   updateLocalizedPrices();
-  
   document.getElementById('monthly-btn').addEventListener('click', () => initiatePayment('monthly'));
   document.getElementById('annual-btn').addEventListener('click', () => initiatePayment('annual'));
 }
@@ -152,15 +145,13 @@ async function updateLocalizedPrices() {
   try {
     const response = await fetch('https://ipapi.co/json/');
     const { currency } = await response.json();
-    
     if (currency !== 'USD') {
       const rates = await fetch(`https://api.exchangerate-api.com/v4/latest/USD`);
       const { rates: conversions } = await rates.json();
-      
       if (conversions[currency]) {
-        document.getElementById('monthly-price').textContent = 
+        document.getElementById('monthly-price').textContent =
           `${currency} ${(4.99 * conversions[currency]).toFixed(2)}/mo`;
-        document.getElementById('annual-price').textContent = 
+        document.getElementById('annual-price').textContent =
           `${currency} ${(49.99 * conversions[currency]).toFixed(2)}/yr`;
       }
     }
@@ -197,7 +188,6 @@ function renderAuth() {
           <i class="fas fa-sign-out-alt"></i> Logout
         </button>
       </div>`;
-    
     document.getElementById('logout-btn').addEventListener('click', handleLogout);
     premiumApp.classList.remove('hidden');
   } else {
@@ -208,7 +198,6 @@ function renderAuth() {
         <button id="login-btn" class="btn btn-primary">Login</button>
         <button id="signup-btn" class="btn btn-outline">Sign Up</button>
       </div>`;
-    
     document.getElementById('login-btn').addEventListener('click', handleLogin);
     document.getElementById('signup-btn').addEventListener('click', handleSignup);
     premiumApp.classList.add('hidden');
@@ -219,7 +208,6 @@ function renderAuth() {
 async function handleLogin() {
   const email = document.getElementById('email').value;
   const password = document.getElementById('password').value;
-  
   try {
     await firebase.auth().signInWithEmailAndPassword(email, password);
     trackEvent('login_success');
@@ -232,18 +220,14 @@ async function handleLogin() {
 async function handleSignup() {
   const email = document.getElementById('email').value;
   const password = document.getElementById('password').value;
-  
   try {
     const userCred = await firebase.auth().createUserWithEmailAndPassword(email, password);
-    
-    // Set 7-day trial
     await firebase.firestore().collection('users').doc(userCred.user.uid).set({
       email,
       trialEndsAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
       createdAt: new Date()
     });
-    
-    showAlert('?? 7-day premium trial started!', 'success');
+    showAlert('ðŸŽ‰ 7-day premium trial started!', 'success');
     trackEvent('trial_started');
   } catch (error) {
     showAlert(error.message, 'error');
@@ -265,7 +249,6 @@ function loadVoices() {
     window.speechSynthesis.onvoiceschanged = null;
   }
 }
-
 window.speechSynthesis.onvoiceschanged = loadVoices;
 loadVoices();
 
@@ -274,21 +257,16 @@ function speakWord(word, rate = 1.0) {
     setTimeout(() => speakWord(word, rate), 300);
     return;
   }
-
   if ('speechSynthesis' in window) {
     window.speechSynthesis.cancel();
     const utterance = new SpeechSynthesisUtterance(word);
     utterance.rate = rate;
     utterance.lang = accent;
     utterance.volume = 1.0;
-
     const voices = window.speechSynthesis.getVoices();
     const preferredVoice = voices.find(v => v.lang === accent) ||
       voices.find(v => v.lang.startsWith(accent.split('-')[0]));
-    if (preferredVoice) {
-      utterance.voice = preferredVoice;
-    }
-
+    if (preferredVoice) utterance.voice = preferredVoice;
     window.speechSynthesis.speak(utterance);
   } else {
     console.error('Speech synthesis not supported');
@@ -452,7 +430,7 @@ function renderCustomInput() {
 function processWordList(text) {
   return [...new Set(
     text.replace(/\r/g, '')
-      .split(/[\n,;|\/\-–—\t]+/)
+      .split(/[\n,;|\/\-â€“â€”\t]+/)
       .map(w => w.trim())
       .filter(w => w && w.length > 1)
   )];
@@ -1331,4 +1309,5 @@ window.addEventListener('error', (e) => {
 });
 
 // ==================== START APP ====================
+
 document.addEventListener('DOMContentLoaded', initializeApp);
