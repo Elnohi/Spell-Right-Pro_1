@@ -1,3 +1,5 @@
+<!-- js/config.js - No module syntax -->
+<script>
 // js/config.js - No module syntax
 const firebaseConfig = {
   apiKey: "AIzaSyCZ-rAPnRgVjSRFOFvbiQlowE6A3RVvwWo",
@@ -13,6 +15,7 @@ const firebaseConfig = {
 const appConfig = {
   trialDays: 7,
   defaultTheme: 'light',
+  apiBaseUrl: 'https://your-backend.onrender.com',
   adClient: 'ca-pub-7632930282249669'
 };
 
@@ -33,3 +36,4 @@ const stripeConfig = {
   monthlyPlanId: "price_monthly_plan_id",
   annualPlanId: "price_annual_plan_id"
 };
+</script>
