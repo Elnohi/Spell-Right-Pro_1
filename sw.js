@@ -1,51 +1,41 @@
-const CACHE_NAME = 'spellrightpro-cache-v4';
-const OFFLINE_URL = '/offline.html';
+const CACHE_NAME = 'spellrightpro-cache-v5';
+const OFFLINE_URL = 'offline.html';
 const PRECACHE_URLS = [
-  '/',
-  '/index.html',
-  '/premium.html',
-  '/pricing.html',
-  '/thankyou.html',
-  '/offline.html',
-  '/styles.css',
-  '/premium.css',
-  '/config.js',
-  '/common.js',
-  '/main-freemium-oet.js',
-  '/main-freemium-bee.js',
-  '/main-premium.js',
-  '/oet.json',
-  '/spelling-bee.json',
-  '/logo.png',
-  '/manifest.json',
-  '/robots.txt'
+  'index.html',
+  'premium.html',
+  'pricing.html',
+  'thankyou.html',
+  'offline.html',
+  'manifest.json',
+  'robots.txt',
+  'css/styles.css',
+  'css/premium.css',
+  'js/config.js',
+  'js/common.js',
+  'js/main-premium.js',
+  'js/main-freemium-oet.js',
+  'js/main-freemium-bee.js',
+  'js/oet_word_list.js',
+  'data/oet.json',
+  'data/spelling-bee.json',
+  'assets/logo.png',
+  'assets/icons/icon-192x192.png',
+  'assets/icons/icon-512x512.png'
 ];
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME)
-      .then((cache) => {
-        console.log('[ServiceWorker] Pre-caching');
-        return cache.addAll(PRECACHE_URLS)
-          .then(() => cache.add(OFFLINE_URL));
-      })
+      .then((cache) => cache.addAll(PRECACHE_URLS.concat([OFFLINE_URL])))
       .then(() => self.skipWaiting())
   );
 });
 
 self.addEventListener('activate', (event) => {
-  const cacheWhitelist = [CACHE_NAME];
   event.waitUntil(
-    caches.keys().then((cacheNames) => {
-      return Promise.all(
-        cacheNames.map((cacheName) => {
-          if (!cacheWhitelist.includes(cacheName)) {
-            console.log('[ServiceWorker] Deleting old cache:', cacheName);
-            return caches.delete(cacheName);
-          }
-        })
-      );
-    }).then(() => self.clients.claim())
+    caches.keys().then(names =>
+      Promise.all(names.map(n => (n === CACHE_NAME ? null : caches.delete(n)))))
+      .then(() => self.clients.claim())
   );
 });
 
@@ -54,8 +44,18 @@ self.addEventListener('fetch', (event) => {
   if (new URL(event.request.url).origin !== location.origin) return;
 
   event.respondWith(
-    caches.match(event.request)
-      .then((response) => response || fetch(event.request))
-      .catch(() => event.request.headers.get('accept')?.includes('text/html') ? caches.match(OFFLINE_URL) : undefined)
+    caches.match(event.request).then(resp => {
+      return resp || fetch(event.request).then(networkResp => {
+        if (networkResp && networkResp.status === 200 && networkResp.type === 'basic') {
+          const copy = networkResp.clone();
+          caches.open(CACHE_NAME).then(cache => cache.put(event.request, copy));
+        }
+        return networkResp;
+      }).catch(() => {
+        if (event.request.headers.get('accept')?.includes('text/html')) {
+          return caches.match(OFFLINE_URL);
+        }
+      });
+    })
   );
 });
