@@ -13,7 +13,7 @@ const firebaseConfig = {
 const appConfig = {
   trialDays: 7,
   defaultTheme: 'light',
-  apiBaseUrl: 'https://0fPSNrvwK0VQSYggOlpS6xxKOic2', // e.g. https://srp-backend.onrender.com
+  apiBaseUrl: 'https://<YOUR_API_BASE_URL>', // e.g. https://srp-backend.onrender.com
   adClient: 'ca-pub-7632930282249669'
 };
 
@@ -31,6 +31,6 @@ try {
 // Stripe (frontend/public) keys
 const stripeConfig = {
   publicKey: "pk_live_51RuKs1El99zwdEZr9wjVF3EhADOk4c9x8JjvjPLH8Y16cCPwykZRFVtC1Fr0hSJesStbqcvfvvNOy4NHRaV0GPvg004IIcPfC8",
-  monthlyPlanId: "price_XXXXXXXXXXXX",
-  annualPlanId: "price_YYYYYYYYYYYY"
+  monthlyPlanId: "price_1RuZVNEl99zwdEZrit75tV1F",
+  annualPlanId: "price_1RuZR3El99zwdEZrgqiGz1FL"
 };
