@@ -179,6 +179,56 @@ async function checkPremiumStatus() {
     const hasActiveTrial = trialEndsAt ? (trialEndsAt > new Date()) : false;
     premiumUser = data.isPremium === true || hasActiveTrial;
 
+     // === Ensure /users/<uid> exists and fields have correct types ===
+async function ensureUserDoc(user, trialDays = 7) {
+  const ref = firebase.firestore().collection('users').doc(user.uid);
+  let snap;
+
+  try {
+    snap = await ref.get();
+  } catch (err) {
+    console.error('Failed to read user doc:', err);
+    showAlert && showAlert('Could not access your profile. Check Firestore rules.', 'error', 5000);
+    throw err;
+  }
+
+  const future = new Date(Date.now() + trialDays * 24 * 60 * 60 * 1000);
+  const trialEndsAtTS = firebase.firestore.Timestamp.fromDate(future);
+
+  if (!snap.exists) {
+    try {
+      await ref.set({
+        email: user.email || '',
+        isPremium: false,
+        trialEndsAt: trialEndsAtTS,
+        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+      }, { merge: true });
+      return;
+    } catch (err) {
+      console.error('Failed to create user doc:', err);
+      showAlert && showAlert('Could not create your profile. Please try again.', 'error', 5000);
+      throw err;
+    }
+  }
+
+  // backfill/repair types if needed
+  const data = snap.data() || {};
+  const updates = {};
+  if (typeof data.isPremium !== 'boolean') updates.isPremium = false;
+  const isTimestamp = data.trialEndsAt && typeof data.trialEndsAt.toDate === 'function';
+  if (!isTimestamp) updates.trialEndsAt = trialEndsAtTS;
+  if (!data.email) updates.email = user.email || '';
+  if (Object.keys(updates).length) {
+    try {
+      await ref.set(updates, { merge: true });
+    } catch (err) {
+      console.error('Failed to update user doc:', err);
+      showAlert && showAlert('Could not update your profile. Please try again.', 'error', 5000);
+      throw err;
+    }
+  }
+}
+
     // Hide ads for premium
     if (premiumUser) {
       document.querySelectorAll('.ad-container').forEach(el => el.style.display = 'none');
@@ -197,19 +247,26 @@ function initAuthState() {
     currentUser = user;
 
     if (!user) {
-      renderAuthLoggedOut();
+      renderAuth();         // your existing "logged out" UI
       return;
     }
 
     try {
+      // NEW: guarantee the user document exists/types are correct
       await ensureUserDoc(user, (window.appConfig && appConfig.trialDays) || 7);
+
+      // then your existing flow
       await checkPremiumStatus();
-      renderAuthLoggedIn();
-      premiumUser ? renderExamUI() : showPremiumUpsell();
+      renderAuth();
+      if (premiumUser) {
+        renderExamUI();
+      } else {
+        showPremiumUpsell();
+      }
     } catch (err) {
       console.error('Auth init error:', err);
-      alertSafe('We could not load your premium status. Please try again.', 'error', 4500);
-      renderAuthLoggedIn(); // still show logout
+      showAlert && showAlert('We could not load your premium status. Please try again.', 'error', 4500);
+      renderAuth(); // at least show header/logout so user isn't stuck
     }
   });
 }
@@ -619,3 +676,4 @@ function shuffle(arr) {
   }
   return a;
 }
+
