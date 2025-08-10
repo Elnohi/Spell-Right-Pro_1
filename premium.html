@@ -5,6 +5,7 @@
   <title>SpellRightPro Premium</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 
+  <!-- Make all relative paths resolve from site root (works with Netlify pretty URLs) -->
   <base href="/" />
 
   <!-- Styles -->
@@ -19,8 +20,10 @@
   <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-analytics-compat.js"></script>
 
-  <!-- App config MUST load before main-premium -->
+  <!-- Config MUST load before other app scripts -->
   <script src="js/config.js"></script>
+
+  <!-- Shared helpers (classic script, no exports, no Firebase vars) -->
   <script src="js/common.js" defer></script>
 
   <!-- Data / word lists -->
@@ -32,22 +35,14 @@
   <!-- Main premium app -->
   <script src="js/main-premium.js" defer></script>
 
-  <!-- SW: project sites (GitHub Pages) + Netlify -->
+  <!-- Service worker: register from root to avoid /premium/sw.js -->
   <script defer>
     if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
-      // Works for Netlify (/) AND GitHub project pages (/RepoName/)
-      const base = location.pathname.split('/')[1] ? `/${location.pathname.split('/')[1]}` : '';
-      navigator.serviceWorker.register(`${base}/sw.js`).catch(console.warn);
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/sw.js').catch(console.warn);
+      });
     }
   </script>
-
-  <script>
-  if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => {
-      navigator.serviceWorker.register('/sw.js').catch(console.warn);
-    });
-  }
-</script>
 </head>
 <body>
   <header class="navbar">
