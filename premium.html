@@ -5,46 +5,44 @@
   <title>SpellRightPro Premium</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 
-  <!-- Styles (root paths) -->
-  <link rel="stylesheet" href="./styles.css">
-  <link rel="stylesheet" href="./premium.css">
-  <link rel="icon" href="./logo.png">
-
-  <!-- Icons -->
+  <!-- Styles -->
+  <link rel="stylesheet" href="css/styles.css">
+  <link rel="stylesheet" href="css/premium.css">
+  <link rel="icon" href="assets/logo.png">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
 
-  <!-- Firebase (compat SDKs) -->
+  <!-- Firebase (compat) -->
   <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-analytics-compat.js"></script>
 
-  <!-- App config must load BEFORE main-premium.js -->
-  <script src="./config.js"></script>
-  <script src="./common.js" defer></script>
+  <!-- App config MUST load before main-premium -->
+  <script src="js/config.js"></script>
+  <script src="js/common.js" defer></script>
 
-  <!-- Word list -->
-  <script src="./oet_word_list.js" defer></script>
+  <!-- Data / word lists -->
+  <script src="js/oet_word_list.js" defer></script>
 
   <!-- Stripe -->
   <script src="https://js.stripe.com/v3/" defer></script>
 
-  <!-- Main app -->
-  <script src="./main-premium.js" defer></script>
+  <!-- Main premium app -->
+  <script src="js/main-premium.js" defer></script>
 
-  <!-- (Optional) Service worker: won’t work over file://; will work on Netlify/GitHub Pages -->
+  <!-- SW: project sites (GitHub Pages) + Netlify -->
   <script defer>
     if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
-      window.addEventListener('load', () => {
-        navigator.serviceWorker.register('./sw.js').catch(console.warn);
-      });
+      // Works for Netlify (/) AND GitHub project pages (/RepoName/)
+      const base = location.pathname.split('/')[1] ? `/${location.pathname.split('/')[1]}` : '';
+      navigator.serviceWorker.register(`${base}/sw.js`).catch(console.warn);
     }
   </script>
 </head>
 <body>
   <header class="navbar">
     <div class="brand">
-      <img src="logo.png" alt="SpellRightPro Logo" class="logo">
+      <img src="assets/logo.png" alt="SpellRightPro Logo" class="logo">
       <div>
         <span>SpellRightPro</span>
         <span class="subtitle">Premium</span>
@@ -65,7 +63,6 @@
       <div id="exam-ui"></div>
       <div id="trainer-area" class="hidden"></div>
       <div id="summary-area" class="hidden"></div>
-      <!-- Ads are hidden automatically for premium users in JS -->
       <div class="ad-container" style="margin-top:1rem;"></div>
     </section>
   </main>
