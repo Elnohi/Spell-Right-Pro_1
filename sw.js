@@ -5,7 +5,6 @@ const PRECACHE_URLS = [
   'premium.html',
   'pricing.html',
   'thankyou.html',
-  'offline.html',
   'manifest.json',
   'robots.txt',
   'css/styles.css',
