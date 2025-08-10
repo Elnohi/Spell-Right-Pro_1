@@ -61,7 +61,7 @@ const showAlert = (message, type = 'error', duration = 3000) => {
 // ======================
 let flaggedWords = JSON.parse(localStorage.getItem('flaggedWords')) || [];
 
-export function toggleFlagWord(word, options = {}) {
+function toggleFlagWord(word, options = {}) {
   if (!word) return;
   
   const index = flaggedWords.indexOf(word);
@@ -93,7 +93,7 @@ export function toggleFlagWord(word, options = {}) {
   }
 }
 
-export function showFlaggedWords(containerId = 'flagged-container') {
+function showFlaggedWords(containerId = 'flagged-container') {
   const container = getElement(containerId);
   if (!container || flaggedWords.length === 0) return;
   
@@ -124,7 +124,7 @@ export function showFlaggedWords(containerId = 'flagged-container') {
 // ======================
 // Theme Management (Full)
 // ======================
-export function initThemeToggle() {
+function initThemeToggle() {
   const toggleBtn = getElement('theme-toggle');
   const icon = getElement('theme-icon');
   
@@ -152,7 +152,7 @@ export function initThemeToggle() {
 // ======================
 // Spelling Extensions (New)
 // ======================
-export const spelling = {
+const spelling = {
   speak: (text, lang = 'en-US', rate = 0.8, callbacks = {}) => {
     const utterance = new SpeechSynthesisUtterance(text);
     utterance.lang = lang;
@@ -187,7 +187,7 @@ export const spelling = {
 // ======================
 // Navigation & Analytics
 // ======================
-export function trackEvent(name, params = {}) {
+function trackEvent(name, params = {}) {
   try {
     if (analytics) {
       analytics.logEvent(name, params);
@@ -198,7 +198,7 @@ export function trackEvent(name, params = {}) {
   }
 }
 
-export function setupNavigation() {
+function setupNavigation() {
   document.querySelectorAll('[data-navigate]').forEach(link => {
     link.addEventListener('click', (e) => {
       e.preventDefault();
