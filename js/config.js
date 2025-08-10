@@ -13,7 +13,7 @@ const firebaseConfig = {
 const appConfig = {
   trialDays: 7,
   defaultTheme: 'light',
-  apiBaseUrl: 'https://<YOUR_API_BASE_URL>', // e.g. https://srp-backend.onrender.com
+  apiBaseUrl: 'https://0fPSNrvwK0VQSYggOlpS6xxKOic2', // e.g. https://srp-backend.onrender.com
   adClient: 'ca-pub-7632930282249669'
 };
 
