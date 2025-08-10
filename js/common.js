@@ -1,210 +1,98 @@
-// common.js - Shared Core v2.4 (Full Feature Set)
+/* common.js - Browser global version (no exports, no Firebase init) */
+(function () {
+  'use strict';
 
-// ======================
-
-let firebaseApp;
-let auth;
-let db;
-let analytics;
-
-try {
-  if (typeof firebase !== 'undefined' && !firebase.apps.length) {
-    firebaseApp = firebase.initializeApp(firebaseConfig);
-    auth = firebase.auth();
-    db = firebase.firestore();
-    analytics = firebase.analytics();
-  }
-} catch (error) {
-  console.error("Firebase init error:", error);
-}
-
-// ======================
-// DOM Utilities
-// ======================
-const getElement = (id) => {
-  const el = document.getElementById(id);
-  if (!el) console.warn(`Element #${id} not found`);
-  return el;
-};
-
-const showAlert = (message, type = 'error', duration = 3000) => {
-  const alert = document.createElement('div');
-  alert.className = `alert alert-${type}`;
-  alert.innerHTML = `
-    <span>${message}</span>
-    <button class="close-btn">&times;</button>
-  `;
-  document.body.appendChild(alert);
-  
-  alert.querySelector('.close-btn').addEventListener('click', () => {
-    alert.remove();
-  });
-  
-  if (duration > 0) {
-    setTimeout(() => alert.remove(), duration);
-  }
-};
-
-// ======================
-// Flagging System (Full Implementation)
-// ======================
-let flaggedWords = JSON.parse(localStorage.getItem('flaggedWords')) || [];
-
-function toggleFlagWord(word, options = {}) {
-  if (!word) return;
-  
-  const index = flaggedWords.indexOf(word);
-  const shouldUpdateUI = options.updateUI !== false;
-  
-  if (index === -1) {
-    flaggedWords.push(word);
-  } else {
-    flaggedWords.splice(index, 1);
-  }
-  
-  localStorage.setItem('flaggedWords', JSON.stringify(flaggedWords));
-  
-  // UI Updates (skip when called from spelling-bee)
-  if (shouldUpdateUI) {
-    const flagBtn = getElement('flagWordBtn');
-    if (flagBtn) {
-      flagBtn.classList.toggle('active', flaggedWords.includes(word));
-      flagBtn.innerHTML = flaggedWords.includes(word)
-        ? '<i class="fas fa-flag"></i> Flagged'
-        : '<i class="far fa-flag"></i> Flag';
-    }
-    
-    document.querySelectorAll('.word-flag').forEach(el => {
-      if (el.dataset.word === word) {
-        el.classList.toggle('active', flaggedWords.includes(word));
-      }
-    });
-  }
-}
-
-function showFlaggedWords(containerId = 'flagged-container') {
-  const container = getElement(containerId);
-  if (!container || flaggedWords.length === 0) return;
-  
-  container.innerHTML = `
-    <div class="flagged-section">
-      <h3><i class="fas fa-flag"></i> Flagged Words</h3>
-      <ul class="flagged-list">
-        ${flaggedWords.map(word => `
-          <li data-word="${word}">
-            ${word}
-            <button class="unflag-btn" data-word="${word}">
-              <i class="fas fa-times"></i>
-            </button>
-          </li>
-        `).join('')}
-      </ul>
-    </div>
-  `;
-  
-  container.querySelectorAll('.unflag-btn').forEach(btn => {
-    btn.addEventListener('click', (e) => {
-      toggleFlagWord(e.target.dataset.word);
-      e.target.closest('li').remove();
-    });
-  });
-}
-
-// ======================
-// Theme Management (Full)
-// ======================
-function initThemeToggle() {
-  const toggleBtn = getElement('theme-toggle');
-  const icon = getElement('theme-icon');
-  
-  if (!toggleBtn || !icon) return;
-  
-  const applyTheme = (isDark) => {
-    document.body.classList.toggle('dark-mode', isDark);
-    localStorage.setItem('darkMode', isDark);
-    icon.className = isDark ? 'fas fa-sun' : 'fas fa-moon';
-    
-    // Dispatch event for other modules
-    document.dispatchEvent(
-      new CustomEvent('themeChange', { detail: { isDark } })
-    );
+  // ---------- DOM Utils ----------
+  window.getElement = function (id) {
+    const el = document.getElementById(id);
+    if (!el) console.warn(`Element #${id} not found`);
+    return el;
   };
-  
-  toggleBtn.addEventListener('click', () => {
-    applyTheme(!document.body.classList.contains('dark-mode'));
-  });
-  
-  // Initialize
-  applyTheme(localStorage.getItem('darkMode') === 'true');
-}
 
-// ======================
-// Spelling Extensions (New)
-// ======================
-const spelling = {
-  speak: (text, lang = 'en-US', rate = 0.8, callbacks = {}) => {
-    const utterance = new SpeechSynthesisUtterance(text);
-    utterance.lang = lang;
-    utterance.rate = rate;
-    
-    if (callbacks.onStart) utterance.onstart = callbacks.onStart;
-    if (callbacks.onEnd) utterance.onend = callbacks.onEnd;
-    if (callbacks.onError) utterance.onerror = callbacks.onError;
-    
-    speechSynthesis.speak(utterance);
-    return utterance;
-  },
-  
-  cancelSpeech: () => {
-    speechSynthesis.cancel();
-  },
-  
-  initRecognition: (lang = 'en-US', callbacks = {}) => {
-    const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
-    recognition.lang = lang;
-    recognition.interimResults = false;
-    recognition.maxAlternatives = 3;
-    
-    if (callbacks.onResult) recognition.onresult = callbacks.onResult;
-    if (callbacks.onError) recognition.onerror = callbacks.onError;
-    if (callbacks.onEnd) recognition.onend = callbacks.onEnd;
-    
-    return recognition;
-  }
-};
+  window.showAlert = function (message, type = 'error', duration = 3000) {
+    const alert = document.createElement('div');
+    alert.className = `alert alert-${type}`;
+    alert.innerHTML = `<span>${message}</span><button class="close-btn" aria-label="Close">&times;</button>`;
+    document.body.appendChild(alert);
+    alert.querySelector('.close-btn').addEventListener('click', () => alert.remove());
+    if (duration > 0) setTimeout(() => alert.remove(), duration);
+  };
 
-// ======================
-// Navigation & Analytics
-// ======================
-function trackEvent(name, params = {}) {
-  try {
-    if (analytics) {
-      analytics.logEvent(name, params);
+  // ---------- Flagging (localStorage; avoids name collision) ----------
+  const FLAGS_KEY = 'flaggedWords';
+  const readFlags = () => {
+    try { return JSON.parse(localStorage.getItem(FLAGS_KEY) || '[]'); }
+    catch { return []; }
+  };
+  const saveFlags = (arr) => localStorage.setItem(FLAGS_KEY, JSON.stringify(arr));
+
+  window.toggleFlagWord = function (word) {
+    if (!word) return;
+    const list = readFlags();
+    const i = list.indexOf(word);
+    if (i === -1) list.push(word); else list.splice(i, 1);
+    saveFlags(list);
+
+    const btn = document.getElementById('flagWordBtn');
+    if (btn) {
+      const active = list.includes(word);
+      btn.classList.toggle('active', active);
+      btn.innerHTML = active ? '<i class="fas fa-flag"></i> Flagged' : '<i class="far fa-flag"></i> Flag';
     }
-    console.debug('[Analytics]', name, params);
-  } catch (error) {
-    console.error('Analytics error:', error);
-  }
-}
-
-function setupNavigation() {
-  document.querySelectorAll('[data-navigate]').forEach(link => {
-    link.addEventListener('click', (e) => {
-      e.preventDefault();
-      trackEvent('navigation', { page: link.dataset.navigate });
-      window.location.href = link.href;
+    document.querySelectorAll('.word-flag').forEach(el => {
+      if (el.dataset.word === word) el.classList.toggle('active', list.includes(word));
     });
-  });
-}
+  };
 
-// Initialize core features
-document.addEventListener('DOMContentLoaded', () => {
-  initThemeToggle();
-  setupNavigation();
-});
+  window.showFlaggedWords = function (containerId = 'flagged-container') {
+    const container = getElement(containerId);
+    const list = readFlags();
+    if (!container || list.length === 0) return;
+    container.innerHTML = `
+      <div class="flagged-section">
+        <h3><i class="fas fa-flag"></i> Flagged Words</h3>
+        <ul class="flagged-list">
+          ${list.map(w => `<li data-word="${w}">${w}
+            <button class="unflag-btn" data-word="${w}"><i class="fas fa-times"></i></button>
+          </li>`).join('')}
+        </ul>
+      </div>`;
+    container.querySelectorAll('.unflag-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const w = e.currentTarget.dataset.word;
+        window.toggleFlagWord(w);
+        e.currentTarget.closest('li')?.remove();
+      });
+    });
+  };
 
-// At the very end of common.js:
-window.toggleFlagWord = toggleFlagWord;
-window.showFlaggedWords = showFlaggedWords;
-window.initThemeToggle = initThemeToggle;
-window.spelling = spelling;
+  // ---------- Theme ----------
+  window.initThemeToggle = function () {
+    const toggleBtn = document.getElementById('dark-mode-toggle');
+    const apply = (isDark) => {
+      document.body.classList.toggle('dark-mode', isDark);
+      localStorage.setItem('darkMode', isDark);
+      const icon = toggleBtn?.querySelector('i');
+      if (icon) icon.className = isDark ? 'fas fa-sun' : 'fas fa-moon';
+      document.dispatchEvent(new CustomEvent('themeChange', { detail: { isDark } }));
+    };
+    if (toggleBtn) {
+      toggleBtn.addEventListener('click', () => apply(!document.body.classList.contains('dark-mode')));
+    }
+    apply(localStorage.getItem('darkMode') === 'true');
+  };
+
+  // ---------- Spelling helpers ----------
+  window.spelling = {
+    speak(text, lang = 'en-US', rate = 0.95) {
+      if (!('speechSynthesis' in window)) { showAlert('Text-to-speech not supported', 'error'); return; }
+      speechSynthesis.cancel();
+      const u = new SpeechSynthesisUtterance(text);
+      u.lang = lang; u.rate = rate; u.volume = 1;
+      const voices = speechSynthesis.getVoices();
+      const v = voices.find(x => x.lang === lang) || voices.find(x => x.lang.startsWith(lang.split('-')[0]));
+      if (v) u.voice = v;
+      speechSynthesis.speak(u);
+    }
+  };
+})();
