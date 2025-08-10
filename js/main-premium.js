@@ -255,26 +255,19 @@ function initAuthState() {
     currentUser = user;
 
     if (!user) {
-      renderAuth();         // your existing "logged out" UI
+      renderAuthLoggedOut();
       return;
     }
 
     try {
-      // NEW: guarantee the user document exists/types are correct
       await ensureUserDoc(user, (window.appConfig && appConfig.trialDays) || 7);
-
-      // then your existing flow
       await checkPremiumStatus();
-      renderAuth();
-      if (premiumUser) {
-        renderExamUI();
-      } else {
-        showPremiumUpsell();
-      }
+      renderAuthLoggedIn();
+      premiumUser ? renderExamUI() : showPremiumUpsell();
     } catch (err) {
       console.error('Auth init error:', err);
-      showAlert && showAlert('We could not load your premium status. Please try again.', 'error', 4500);
-      renderAuth(); // at least show header/logout so user isn't stuck
+      alertSafe('We could not load your premium status. Please try again.', 'error', 4500);
+      renderAuthLoggedIn(); // still show logout so user isn’t stuck
     }
   });
 }
@@ -684,5 +677,6 @@ function shuffle(arr) {
   }
   return a;
 }
+
 
 
