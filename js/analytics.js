@@ -3,7 +3,7 @@
 const sessionStart = Date.now();
 const sessionEvents = [];
 
-export function trackEvent(eventName, params = {}) {
+function trackEvent(eventName, params = {}) {
   const eventData = {
     ...params,
     timestamp: new Date().toISOString(),
@@ -33,7 +33,7 @@ export function trackEvent(eventName, params = {}) {
   }
 }
 
-export function trackError(error, context = {}) {
+function trackError(error, context = {}) {
   const errorData = {
     ...context,
     name: error.name,
