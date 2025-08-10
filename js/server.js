@@ -5,13 +5,14 @@ const admin = require('firebase-admin');
 const Stripe = require('stripe');
 
 const app = express();
-app.use(cors());
+app.use(cors({ origin: [process.env.FRONTEND_URL], credentials: false }));
 app.use(express.json());
 
-// Initialize Firebase Admin
-const serviceAccount = require('./service-account-key.json');
+// Initialize Firebase Admin (env JSON or application default)
+const serviceJson = process.env.FIREBASE_SERVICE_ACCOUNT_JSON;
+const serviceAccount = serviceJson ? JSON.parse(serviceJson) : null;
 admin.initializeApp({
-  credential: admin.credential.cert(serviceAccount)
+  credential: serviceAccount ? admin.credential.cert(serviceAccount) : admin.credential.applicationDefault()
 });
 
 const db = admin.firestore();
@@ -23,7 +24,6 @@ const authenticate = async (req, res, next) => {
   if (!authHeader?.startsWith('Bearer ')) {
     return res.status(401).json({ error: 'Unauthorized' });
   }
-
   const token = authHeader.split(' ')[1];
   try {
     const decoded = await admin.auth().verifyIdToken(token);
@@ -38,24 +38,18 @@ const authenticate = async (req, res, next) => {
 app.post('/create-checkout-session', authenticate, async (req, res) => {
   try {
     const { plan } = req.body;
-    const priceId = plan === 'annual' 
-      ? process.env.STRIPE_ANNUAL_PRICE_ID 
+    const priceId = plan === 'annual'
+      ? process.env.STRIPE_ANNUAL_PRICE_ID
       : process.env.STRIPE_MONTHLY_PRICE_ID;
 
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ['card'],
-      line_items: [{
-        price: priceId,
-        quantity: 1,
-      }],
+      line_items: [{ price: priceId, quantity: 1 }],
       mode: 'subscription',
       success_url: `${process.env.FRONTEND_URL}/?payment_success=true`,
       cancel_url: `${process.env.FRONTEND_URL}/?payment_cancelled=true`,
       client_reference_id: req.user.uid,
-      metadata: {
-        plan,
-        userId: req.user.uid
-      }
+      metadata: { plan, userId: req.user.uid }
     });
 
     res.json({ sessionId: session.id });
@@ -66,7 +60,7 @@ app.post('/create-checkout-session', authenticate, async (req, res) => {
 });
 
 // Stripe Webhook Handler
-app.post('/stripe-webhook', express.raw({type: 'application/json'}), async (req, res) => {
+app.post('/stripe-webhook', express.raw({ type: 'application/json' }), async (req, res) => {
   const sig = req.headers['stripe-signature'];
   const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET;
 
@@ -96,29 +90,25 @@ app.post('/stripe-webhook', express.raw({type: 'application/json'}), async (req,
   }
 });
 
-// Payment Success Handler
+// Handlers
 async function handlePaymentSuccess(session) {
   const userId = session.client_reference_id;
   const plan = session.metadata.plan;
-
-  await db.collection('users').doc(userId).update({
+  await db.collection('users').doc(userId).set({
     isPremium: true,
     premiumSince: admin.firestore.FieldValue.serverTimestamp(),
     premiumPlan: plan,
     stripeCustomerId: session.customer
-  });
-
+  }, { merge: true });
   console.log(`Premium activated for user: ${userId}`);
 }
 
-// Subscription Renewal Handler
 async function handleSubscriptionRenewal(invoice) {
   const customerId = invoice.customer;
   const userSnapshot = await db.collection('users')
     .where('stripeCustomerId', '==', customerId)
     .limit(1)
     .get();
-
   if (!userSnapshot.empty) {
     const userId = userSnapshot.docs[0].id;
     await db.collection('users').doc(userId).update({
@@ -127,14 +117,12 @@ async function handleSubscriptionRenewal(invoice) {
   }
 }
 
-// Subscription Cancelled Handler
 async function handleSubscriptionCancelled(subscription) {
   const customerId = subscription.customer;
   const userSnapshot = await db.collection('users')
     .where('stripeCustomerId', '==', customerId)
     .limit(1)
     .get();
-
   if (!userSnapshot.empty) {
     const userId = userSnapshot.docs[0].id;
     await db.collection('users').doc(userId).update({
