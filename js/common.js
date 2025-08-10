@@ -219,4 +219,3 @@ window.toggleFlagWord = toggleFlagWord;
 window.showFlaggedWords = showFlaggedWords;
 window.initThemeToggle = initThemeToggle;
 window.spelling = spelling;
-}
