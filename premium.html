@@ -1,151 +1,83 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>SpellRightPro Premium | Advanced Spelling Trainer</title>
-  <meta name="description" content="Premium spelling practice for medical professionals, students, and competitive spellers">
-  
-  <!-- Favicon -->
-  <link rel="icon" href="assets/favicon.ico" type="image/x-icon">
-  <link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
-  
-  <!-- CSS -->
-  <link rel="stylesheet" href="css/premium.css">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-  
+  <meta charset="UTF-8" />
+  <title>SpellRightPro Premium</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+
+  <!-- Styles (root paths) -->
+  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="premium.css">
+  <link rel="icon" href="logo.png">
+
+  <!-- FontAwesome (icons) -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+
+  <!-- Firebase (compat SDKs) -->
+  <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-analytics-compat.js"></script>
+
+  <!-- App config must load BEFORE main-premium.js -->
+  <script src="config.js"></script>
+  <script src="common.js" defer></script>
+
+  <!-- Word lists -->
+  <script src="oet_word_list.js" defer></script>
+
   <!-- Stripe.js -->
-  <script src="https://js.stripe.com/v3/"></script>
-  
-  <!-- Firebase -->
-  <script src="https://www.gstatic.com/firebasejs/10.4.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.4.0/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.4.0/firebase-firestore-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.4.0/firebase-analytics-compat.js"></script>
-  
-  <!-- GDPR Compliance -->
-  <script type="text/javascript">
-    window.dataLayer = window.dataLayer || [];
-    function gtag(){dataLayer.push(arguments);}
-    gtag('consent', 'default', {
-      'ad_storage': 'denied',
-      'analytics_storage': 'denied'
-    });
+  <script src="https://js.stripe.com/v3/" defer></script>
+
+  <!-- Main premium logic (calls initializeApp on DOMContentLoaded) -->
+  <script src="main-premium.js" defer></script>
+
+  <!-- Optional: register service worker -->
+  <script defer>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/sw.js').catch(console.warn);
+      });
+    }
   </script>
 </head>
-<body class="light-mode">
-  <!-- Header/Navigation -->
-  <header class="main-header">
-    <div class="container">
-      <div class="header-content">
-        <div class="brand-logo">
-          <img src="assets/logo.svg" alt="SpellRightPro Logo" width="40" height="40">
-          <h1>SpellRightPro <span class="premium-badge">Premium</span></h1>
-        </div>
-        
-        <nav class="main-nav">
-          <div id="auth-area" class="auth-container"></div>
-          <button id="dark-mode-toggle" class="btn btn-icon" aria-label="Toggle dark mode">
-            <i class="fas fa-moon"></i>
-          </button>
-        </nav>
+<body>
+  <header class="navbar">
+    <div class="brand">
+      <img src="logo.png" alt="SpellRightPro Logo" class="logo">
+      <div>
+        <span>SpellRightPro</span>
+        <span class="subtitle">Premium</span>
       </div>
+    </div>
+    <div class="nav-actions">
+      <button id="dark-mode-toggle" class="btn-icon" title="Toggle theme">
+        <i class="fas fa-moon"></i>
+      </button>
     </div>
   </header>
 
-  <!-- Main Content -->
   <main class="container">
-    <!-- Ad Container (Hidden for Premium) -->
-    <div class="ad-container">
-      <ins class="adsbygoogle"
-           style="display:block"
-           data-ad-client="ca-pub-7632930282249669"
-           data-ad-slot="6355416638"
-           data-ad-format="auto"
-           data-full-width-responsive="true"></ins>
-    </div>
+    <div id="auth-area"></div>
 
-    <!-- Premium Application Container -->
-    <div id="premium-app" class="card hidden">
-      <div class="card-header">
-        <h2 id="app-title">Premium Spelling Trainer</h2>
-        <div class="premium-status" id="premium-status">
-          <i class="fas fa-crown"></i> <span>Premium Member</span>
-        </div>
-      </div>
-      
-      <div id="exam-ui" class="exam-ui-section"></div>
-      <div id="trainer-area" class="trainer-section"></div>
-      <div id="summary-area" class="summary-section"></div>
-    </div>
-
-    <!-- Loading Overlay -->
-    <div id="loading-overlay" class="loading-overlay hidden">
-      <div class="loading-spinner">
-        <i class="fas fa-spinner fa-spin"></i>
-        <p>Processing...</p>
-      </div>
-    </div>
+    <section id="premium-app" class="training-card hidden">
+      <h2 id="app-title" class="card-title">Premium</h2>
+      <div id="exam-ui"></div>
+      <div id="trainer-area" class="hidden"></div>
+      <div id="summary-area" class="hidden"></div>
+      <!-- Ads are hidden automatically for premium users in JS -->
+      <div class="ad-container" style="margin-top:1rem;"></div>
+    </section>
   </main>
 
-  <!-- Footer -->
-  <footer class="main-footer">
-    <div class="container">
-      <div class="footer-content">
-        <div class="footer-links">
-          <a href="/terms">Terms of Service</a>
-          <a href="/privacy">Privacy Policy</a>
-          <a href="/refund">Refund Policy</a>
-          <a href="mailto:support@spellrightpro.com">Contact Support</a>
-        </div>
-        
-        <div class="social-links">
-          <a href="#" aria-label="Facebook"><i class="fab fa-facebook"></i></a>
-          <a href="#" aria-label="Twitter"><i class="fab fa-twitter"></i></a>
-          <a href="#" aria-label="Instagram"><i class="fab fa-instagram"></i></a>
-        </div>
-        
-        <div class="copyright">
-          &copy; <span id="current-year"></span> SpellRightPro. All rights reserved.
-        </div>
-      </div>
-    </div>
+  <footer class="container" style="margin-top:2rem;">
+    <p>
+      <a href="#">Terms of Service</a>
+      <a href="#">Privacy Policy</a>
+      <a href="#">Refund Policy</a>
+      <a href="#">Contact Support</a>
+    </p>
+    <p>© 2025 SpellRightPro. All rights reserved.</p>
   </footer>
-
-  <!-- App Configuration -->
-  <script src="js/config.js"></script>
-  
-  <!-- Word Lists -->
-  <script src="js/oet_word_list.js"></script>
-  <script src="js/medical_terms.js"></script>
-  <script src="js/spelling_bee.js"></script>
-  
-  <!-- Main Application -->
-  <script src="js/main-premium.js"></script>
-  
-  <!-- Initialization Script -->
-  <script>
-    // Set current year
-    document.getElementById('current-year').textContent = new Date().getFullYear();
-    
-    // Initialize AdSense (will be disabled for premium users)
-    (adsbygoogle = window.adsbygoogle || []).push({});
-    
-    // Handle payment success redirect
-    document.addEventListener('DOMContentLoaded', () => {
-      const urlParams = new URLSearchParams(window.location.search);
-      if (urlParams.has('payment_success')) {
-        showAlert('Your premium subscription is now active!', 'success');
-        // Clean URL without reload
-        window.history.replaceState({}, '', window.location.pathname);
-      }
-      
-      if (urlParams.has('payment_cancelled')) {
-        showAlert('Payment was cancelled. You can try again anytime.', 'info');
-        window.history.replaceState({}, '', window.location.pathname);
-      }
-    });
-  </script>
 </body>
 </html>
