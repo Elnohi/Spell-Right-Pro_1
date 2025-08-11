@@ -1,2 +1,6 @@
-/* /index.html 200
-/thank-you.html /thankyou.html 200
+/premium        /premium.html   200
+/freemium-oet   /freemium-oet.html 200
+/freemium-bee   /freemium-bee.html 200
+/thankyou       /thankyou.html  200
+/offline        /offline.html   200
+/index          /index.html   200
