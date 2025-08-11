@@ -1,8 +1,7 @@
 /* main-premium.js — Premium app
-   - Auth → ensureUserDoc → premium/trial check → UI → Stripe checkout
-   - Bee mode: voice-only spelling via Web Speech API (no typing fallback)
-   - OET/Custom: typed input
-   - Classic scripts (no modules)
+   - Bee: voice-only. OET/Custom: typed
+   - Summary: correct / needs review / flagged + review buttons
+   - Auto-focus input after TTS ends (OET/Custom)
 */
 
 /* ====================== Global State ====================== */
@@ -21,9 +20,14 @@ let sessionStartTime = null;
 let wordStartTime = null;
 let stripe = null;
 
-let recognition = null;         // For Bee (SpeechRecognition)
+let recognition = null;         // Bee (SpeechRecognition)
 let isListening = false;
 let beeKeyHandlerRef = null;
+
+// NEW: per-session tracking for summary
+let correctWords = [];
+let incorrectWords = [];
+let sessionFlagged = new Set();
 
 const sessionId = 'sess_' + Math.random().toString(36).slice(2, 10);
 
@@ -36,7 +40,7 @@ const summaryArea   = document.getElementById('summary-area');
 const appTitle      = document.getElementById('app-title');
 const darkToggleBtn = document.getElementById('dark-mode-toggle');
 
-/* ====================== Utilities / Guards ====================== */
+/* ====================== Utilities ====================== */
 function noop() {}
 function logEvent(name, params) { try { (window.trackEvent || noop)(name, params || {}); } catch(_){} }
 function logError(err, ctx)     { try { (window.trackError || noop)(err, ctx || {}); } catch(_){} }
@@ -336,19 +340,15 @@ function renderExamUI() {
     </button>
   `;
 
-  // Initialize selectors
   $('#exam-type').value = examType;
   $('#accent-select').value = accent;
 
-  // Mode toggles
   $('#practice-mode-btn')?.addEventListener('click', () => { sessionMode='practice'; renderExamUI(); });
   $('#test-mode-btn')?.addEventListener('click', () => { sessionMode='test'; renderExamUI(); });
 
-  // Select changes
   $('#exam-type')?.addEventListener('change', (e)=>{ examType = e.target.value; updateBeeSupportUI(); });
   $('#accent-select')?.addEventListener('change', (e)=>{ accent = e.target.value; });
 
-  // Custom list (textarea + file)
   let customWordList = [];
   let useCustomList = false;
 
@@ -379,7 +379,6 @@ function renderExamUI() {
     }
   });
 
-  // Enforce voice-only for Bee before starting
   function updateBeeSupportUI() {
     const startBtn = document.getElementById('start-btn');
     const old = document.getElementById('bee-support-notice');
@@ -401,28 +400,29 @@ function renderExamUI() {
   }
   updateBeeSupportUI();
 
-  // Start session
   $('#start-btn')?.addEventListener('click', () => {
     summaryArea.innerHTML = '';
-    examType = $('#exam-type').value; // ensure fresh value from UI
+    examType = $('#exam-type').value;
     appTitle.textContent = (examType === 'OET') ? 'OET Spelling Practice'
                       : (examType === 'Bee') ? 'Spelling Bee (Voice)'
                       : 'Custom Spelling Practice';
 
+    // reset per-session tracking
+    correctWords = [];
+    incorrectWords = [];
+    sessionFlagged = new Set();
+
     if (examType === 'Custom') {
-      if (useCustomList && customWordList.length) {
-        words = customWordList.slice();
-      } else {
-        words = []; // require user list for custom; or you can choose defaults
-      }
-      startTypedTrainer(); // Custom uses typing
+      if (useCustomList && customWordList.length) words = customWordList.slice();
+      else words = [];
+      startTypedTrainer();
       return;
     }
 
     if (examType === 'OET') {
       const base = Array.isArray(window.oetWords) ? window.oetWords.slice() : [];
       words = (sessionMode === 'test') ? shuffle(base).slice(0, 24) : base;
-      startTypedTrainer(); // OET uses typing
+      startTypedTrainer();
       return;
     }
 
@@ -437,7 +437,7 @@ function renderExamUI() {
         "questionnaire","rhythm","separate","tomorrow","unforeseen","vacuum","withhold","yacht"
       ];
       words = (sessionMode === 'test') ? shuffle(beeDefaults).slice(0, 24) : beeDefaults.slice();
-      startBeeVoiceTrainer(); // Bee uses voice spelling only
+      startBeeVoiceTrainer();
       return;
     }
 
@@ -447,7 +447,7 @@ function renderExamUI() {
 
 /* ====================== TYPED TRAINER (OET/Custom) ====================== */
 function startTypedTrainer() {
-  beeCleanup(); // ensure no mic listeners from previous session
+  beeCleanup();
   if (!trainerArea) return;
   currentIndex = 0; score = 0; userAnswers = [];
   sessionStartTime = Date.now();
@@ -487,27 +487,47 @@ function typedShowCurrentWord() {
   $('#next-btn')?.addEventListener('click', () => typedNextWord());
   $('#check-btn')?.addEventListener('click', () => typedCheckAnswer(word));
   $('#user-input')?.addEventListener('keypress', (e) => { if (e.key === 'Enter') typedCheckAnswer(word); });
-  $('#flagWordBtn')?.addEventListener('click', () => (window.toggleFlagWord || noop)(word));
+
+  // Track per-session flagged
+  $('#flagWordBtn')?.addEventListener('click', () => {
+    (window.toggleFlagWord || noop)(word);
+    if (sessionFlagged.has(word)) sessionFlagged.delete(word); else sessionFlagged.add(word);
+  });
 
   wordStartTime = Date.now();
 }
 
 function typedSpeakCurrentWord() {
   const word = words[currentIndex]; if (!word) return;
-  speakOut(word, accent, 0.97);
+  speakOut(word, accent, 0.97, () => {
+    const input = $('#user-input');
+    if (input) { input.focus(); input.select(); }
+  });
 }
 
 function typedCheckAnswer(correctWord) {
   const inputEl = $('#user-input'); if (!inputEl) return;
   const userVal = (inputEl.value || '').trim();
   if (!userVal) { alertSafe('Please type the word first!', 'error'); return; }
+
   userAnswers[currentIndex] = userVal;
   const isCorrect = userVal.toLowerCase() === String(correctWord).toLowerCase();
+
+  // Track buckets (dedup)
+  const lower = String(correctWord).toLowerCase();
+  const removeFrom = isCorrect ? incorrectWords : correctWords;
+  const addTo = isCorrect ? correctWords : incorrectWords;
+  const idx = removeFrom.findIndex(w => w.toLowerCase() === lower);
+  if (idx >= 0) removeFrom.splice(idx,1);
+  if (!addTo.find(w => w.toLowerCase() === lower)) addTo.push(correctWord);
+
   const feedback = $('#feedback');
   if (isCorrect) { score++; feedback.textContent = '✓ Correct!'; feedback.className = 'feedback correct'; inputEl.classList.add('correct-input'); }
   else { feedback.textContent = `✗ Incorrect. The correct spelling was: ${correctWord}`; feedback.className = 'feedback incorrect'; inputEl.classList.add('incorrect-input'); }
+
   const timeSpent = Date.now() - wordStartTime;
   logEvent('word_attempt', { word: correctWord, status: isCorrect ? 'correct' : 'incorrect', time_ms: timeSpent, accent, examType, mode: sessionMode });
+
   setTimeout(() => typedNextWord(), 1100);
 }
 
@@ -519,13 +539,10 @@ function typedNextWord() {
 /* ====================== BEE TRAINER (VOICE-ONLY) ====================== */
 function startBeeVoiceTrainer() {
   if (!trainerArea) return;
-
-  // HARD STOP: Bee requires mic + SpeechRecognition.
   if (!speechSupported()) {
     alertSafe('Spelling Bee requires voice input. Please use a browser that supports SpeechRecognition (Chrome/Edge) and allow mic access.', 'error', 6000);
     return;
   }
-
   currentIndex = 0; score = 0; userAnswers = [];
   sessionStartTime = Date.now();
   trainerArea.classList.remove('hidden');
@@ -570,7 +587,10 @@ function beeRenderUI() {
   $('#repeat-btn')?.addEventListener('click', () => speakOut(w, accent, 0.88));
   $('#skip-btn')?.addEventListener('click', () => beeNextWord());
   $('#toggle-mic-btn')?.addEventListener('click', () => { isListening ? beeStopRecognition() : beeStartRecognition(); });
-  $('#flagWordBtn')?.addEventListener('click', () => (window.toggleFlagWord || noop)(w));
+  $('#flagWordBtn')?.addEventListener('click', () => {
+    (window.toggleFlagWord || noop)(w);
+    if (sessionFlagged.has(w)) sessionFlagged.delete(w); else sessionFlagged.add(w);
+  });
 
   beeAttachKeys();
   wordStartTime = Date.now();
@@ -596,7 +616,7 @@ function beeDetachKeys() {
 
 function beeStartRecognition() {
   try {
-    beeStopRecognition(true); // cleanup any previous
+    beeStopRecognition(true);
     const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
     recognition = new SR();
     recognition.lang = accent;
@@ -654,6 +674,14 @@ function beeGradeAttempt(spelled) {
   const normalized = (spelled || '').toLowerCase().replace(/[^a-z]/g, '');
   const isCorrect = normalized === correct;
 
+  // Track buckets (dedup)
+  const lower = String(words[currentIndex]).toLowerCase();
+  const removeFrom = isCorrect ? incorrectWords : correctWords;
+  const addTo = isCorrect ? correctWords : incorrectWords;
+  const idx = removeFrom.findIndex(w => w.toLowerCase() === lower);
+  if (idx >= 0) removeFrom.splice(idx,1);
+  if (!addTo.find(w => w.toLowerCase() === lower)) addTo.push(words[currentIndex]);
+
   const feedback = $('#bee-feedback');
   if (isCorrect) {
     score++;
@@ -698,12 +726,6 @@ function normalizeToken(t){
   return t.toLowerCase().replace(/[^a-z]/g,'').trim();
 }
 
-/** Converts free-form speech into letters:
- *  - Supports: "a c c o m m o d a t e"
- *  - Supports: "double m" (→ 'mm')
- *  - Maps letter names ("see"→c, "why"→y, "queue"→q, "double you"→'w')
- *  - If user says the whole word, grader still handles it via normalization
- */
 function parseSpelledLetters(transcript) {
   if (!transcript) return '';
   const raw = transcript.toLowerCase();
@@ -743,8 +765,8 @@ function tokenToLetter(tok){
   return null;
 }
 
-/* ====================== SHARED: Speak word & Summary ====================== */
-function speakOut(word, lang='en-US', rate=0.97) {
+/* ====================== Speak & Summary ====================== */
+function speakOut(word, lang='en-US', rate=0.97, onEnd) {
   if (!('speechSynthesis' in window)) { alertSafe('Text-to-speech not supported in this browser.', 'error'); return; }
   window.speechSynthesis.cancel();
   const u = new SpeechSynthesisUtterance(word);
@@ -752,10 +774,10 @@ function speakOut(word, lang='en-US', rate=0.97) {
   const voices = window.speechSynthesis.getVoices();
   const v = voices.find(x => x.lang === lang) || voices.find(x => x.lang.startsWith(lang.split('-')[0]));
   if (v) u.voice = v;
+  if (typeof onEnd === 'function') u.onend = onEnd;
   window.speechSynthesis.speak(u);
 }
 
-/* Reuse summary for both trainers */
 function showSummary() {
   beeCleanup();
   trainerArea?.classList.add('hidden');
@@ -773,25 +795,54 @@ function showSummary() {
     duration_s: durationSec
   });
 
+  // Build lists
+  const li = (w) => `<li>${w}</li>`;
+  const correctList   = correctWords.length   ? `<ul>${correctWords.map(li).join('')}</ul>` : '<em>None</em>';
+  const reviewList    = incorrectWords.length ? `<ul>${incorrectWords.map(li).join('')}</ul>` : '<em>None</em>';
+  const flaggedArray  = Array.from(sessionFlagged);
+  const flaggedList   = flaggedArray.length   ? `<ul>${flaggedArray.map(li).join('')}</ul>` : '<em>None</em>';
+
   summaryArea.innerHTML = `
     <div class="summary-card">
       <h3>Session Summary</h3>
       <p><strong>Score:</strong> ${score} / ${words.length} (${accuracy}%)</p>
       <p><strong>Duration:</strong> ${durationSec}s</p>
-      <div style="margin-top:10px; display:flex; gap:.5rem; flex-wrap:wrap;">
-        <button id="restart-btn" class="btn btn-primary"><i class="fas fa-redo"></i> Restart Same List</button>
+
+      <div class="summary-columns" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px;margin-top:10px;">
+        <div><h4>✅ Correct</h4>${correctList}</div>
+        <div><h4>🟡 Needs Review</h4>${reviewList}</div>
+        <div><h4>⭐ Flagged</h4>${flaggedList}</div>
+      </div>
+
+      <div style="margin-top:12px; display:flex; gap:.5rem; flex-wrap:wrap;">
+        <button id="review-incorrect-btn" class="btn btn-primary" ${incorrectWords.length? '' : 'disabled'}><i class="fas fa-redo"></i> Review Incorrect</button>
+        <button id="review-flagged-btn" class="btn btn-secondary" ${flaggedArray.length? '' : 'disabled'}><i class="fas fa-flag"></i> Review Flagged</button>
         <button id="back-btn" class="btn btn-secondary"><i class="fas fa-arrow-left"></i> Back</button>
       </div>
     </div>
   `;
 
-  $('#restart-btn')?.addEventListener('click', () => {
+  $('#review-incorrect-btn')?.addEventListener('click', () => {
+    if (!incorrectWords.length) return;
+    words = incorrectWords.slice();
     currentIndex = 0; score = 0; userAnswers = [];
-    trainerArea?.classList.remove('hidden');
+    correctWords = []; incorrectWords = []; sessionFlagged = new Set();
     summaryArea?.classList.add('hidden');
-    if (examType === 'Bee') { beePlayCurrentWord(); }
-    else { typedShowCurrentWord(); setTimeout(() => typedSpeakCurrentWord(), 200); }
+    trainerArea?.classList.remove('hidden');
+    examType === 'Bee' ? beePlayCurrentWord() : (typedShowCurrentWord(), setTimeout(() => typedSpeakCurrentWord(), 150));
   });
+
+  $('#review-flagged-btn')?.addEventListener('click', () => {
+    const arr = Array.from(sessionFlagged);
+    if (!arr.length) return;
+    words = arr.slice();
+    currentIndex = 0; score = 0; userAnswers = [];
+    correctWords = []; incorrectWords = []; sessionFlagged = new Set();
+    summaryArea?.classList.add('hidden');
+    trainerArea?.classList.remove('hidden');
+    examType === 'Bee' ? beePlayCurrentWord() : (typedShowCurrentWord(), setTimeout(() => typedSpeakCurrentWord(), 150));
+  });
+
   $('#back-btn')?.addEventListener('click', () => {
     trainerArea?.classList.add('hidden');
     summaryArea?.classList.add('hidden');
@@ -812,7 +863,7 @@ function processWordList(text) {
 
 function shuffle(arr) {
   const a = arr.slice();
-  for (let i = a.length - 1; i > 0; i--) {
+  for (let i = a.length - 1; i > 0; i++) {
     const j = Math.floor(Math.random() * (i + 1));
     [a[i], a[j]] = [a[j], a[i]];
   }
