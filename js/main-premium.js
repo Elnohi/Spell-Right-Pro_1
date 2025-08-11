@@ -1,9 +1,8 @@
-/* main-premium.js — Premium app (classic script, no modules)
-   - Creates/repairs /users/<uid> on login (ensureUserDoc)
-   - Checks premium/trial status safely
-   - Uses Stripe publishable key from stripeConfig.publicKey
-   - Calls backend `${appConfig.apiBaseUrl}/create-checkout-session`
-   - Minimal, robust practice/test flows for OET / Bee / Custom
+/* main-premium.js — Premium app
+   - Auth → ensureUserDoc → premium/trial check → UI → Stripe checkout
+   - Bee mode: voice-only spelling via Web Speech API (no typing fallback)
+   - OET/Custom: typed input
+   - Classic scripts (no modules)
 */
 
 /* ====================== Global State ====================== */
@@ -18,10 +17,13 @@ let words = [];
 let currentIndex = 0;
 let score = 0;
 let userAnswers = [];
-let flaggedWords = [];
 let sessionStartTime = null;
 let wordStartTime = null;
 let stripe = null;
+
+let recognition = null;         // For Bee (SpeechRecognition)
+let isListening = false;
+let beeKeyHandlerRef = null;
 
 const sessionId = 'sess_' + Math.random().toString(36).slice(2, 10);
 
@@ -44,6 +46,9 @@ function alertSafe(msg, type='error', ms=3000) {
 }
 function $(sel, root=document){ return root.querySelector(sel); }
 function $all(sel, root=document){ return Array.from(root.querySelectorAll(sel)); }
+function speechSupported() {
+  return ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window);
+}
 
 /* ====================== Init ====================== */
 document.addEventListener('DOMContentLoaded', initializeApp);
@@ -58,32 +63,18 @@ function initializeApp() {
 
 /* ---------- Stripe ---------- */
 function initStripe() {
-  if (!window.Stripe) {
-    console.warn('Stripe.js not loaded yet.');
-    return;
-  }
-
-  // Try lexical global first, then window
+  if (!window.Stripe) { console.warn('Stripe.js not loaded yet.'); return; }
   const key =
     (typeof stripeConfig !== 'undefined' && stripeConfig && stripeConfig.publicKey) ||
     (window.stripeConfig && window.stripeConfig.publicKey) ||
     '';
-
-  if (!/^pk_(test|live)_/.test(key)) {
-    console.warn('Stripe publishable key missing or invalid. Check js/config.js');
-    return; // IMPORTANT: don’t call Stripe('') or you’ll get the IntegrationError
-  }
-
+  if (!/^pk_(test|live)_/.test(key)) { console.warn('Stripe publishable key missing/invalid.'); return; }
   stripe = Stripe(key);
 }
 
 /* ---------- Theme ---------- */
 function initDarkMode() {
-  if (typeof window.initThemeToggle === 'function') {
-    window.initThemeToggle();
-    return;
-  }
-  // Fallback: simple toggle
+  if (typeof window.initThemeToggle === 'function') { window.initThemeToggle(); return; }
   if (darkToggleBtn) {
     const apply = (isDark) => {
       document.body.classList.toggle('dark-mode', isDark);
@@ -91,9 +82,7 @@ function initDarkMode() {
       const icon = darkToggleBtn.querySelector('i');
       if (icon) icon.className = isDark ? 'fas fa-sun' : 'fas fa-moon';
     };
-    darkToggleBtn.addEventListener('click', () => {
-      apply(!document.body.classList.contains('dark-mode'));
-    });
+    darkToggleBtn.addEventListener('click', () => apply(!document.body.classList.contains('dark-mode')));
     apply(localStorage.getItem('darkMode') === 'true');
   }
 }
@@ -101,14 +90,10 @@ function initDarkMode() {
 /* ---------- Voices ---------- */
 let voicesReady = false;
 function loadVoices() {
-  function handle() {
-    voicesReady = true;
-    window.speechSynthesis.onvoiceschanged = null;
-  }
+  function handle() { voicesReady = true; window.speechSynthesis.onvoiceschanged = null; }
   if ('speechSynthesis' in window) {
     const v = window.speechSynthesis.getVoices();
-    if (v && v.length) handle();
-    else window.speechSynthesis.onvoiceschanged = handle;
+    if (v && v.length) handle(); else window.speechSynthesis.onvoiceschanged = handle;
   }
 }
 
@@ -118,7 +103,6 @@ function checkUrlForPaymentStatus() {
   if (urlParams.has('payment_success')) {
     alertSafe('🎉 Premium subscription activated!', 'success', 4000);
     window.history.replaceState({}, '', window.location.pathname);
-    // On next initAuthState(), checkPremiumStatus will reflect premium
     setTimeout(() => location.reload(), 400);
   }
 }
@@ -127,13 +111,8 @@ function checkUrlForPaymentStatus() {
 async function ensureUserDoc(user, trialDays = 7) {
   const ref = firebase.firestore().collection('users').doc(user.uid);
   let snap;
-  try {
-    snap = await ref.get();
-  } catch (err) {
-    console.error('Failed to read user doc:', err);
-    alertSafe('Could not access your profile. Check Firestore rules.', 'error', 5000);
-    throw err;
-  }
+  try { snap = await ref.get(); }
+  catch (err) { console.error('Failed to read user doc:', err); alertSafe('Could not access your profile. Check Firestore rules.', 'error', 5000); throw err; }
 
   const future = new Date(Date.now() + trialDays * 24 * 60 * 60 * 1000);
   const trialEndsAtTS = firebase.firestore.Timestamp.fromDate(future);
@@ -154,7 +133,6 @@ async function ensureUserDoc(user, trialDays = 7) {
     }
   }
 
-  // Backfill/repair
   const data = snap.data() || {};
   const updates = {};
   if (typeof data.isPremium !== 'boolean') updates.isPremium = false;
@@ -162,13 +140,8 @@ async function ensureUserDoc(user, trialDays = 7) {
   if (!isTimestamp) updates.trialEndsAt = trialEndsAtTS;
   if (!data.email) updates.email = user.email || '';
   if (Object.keys(updates).length) {
-    try {
-      await ref.set(updates, { merge: true });
-    } catch (err) {
-      console.error('Failed to update user doc:', err);
-      alertSafe('Could not update your profile. Please try again.', 'error', 5000);
-      throw err;
-    }
+    try { await ref.set(updates, { merge: true }); }
+    catch (err) { console.error('Failed to update user doc:', err); alertSafe('Could not update your profile. Please try again.', 'error', 5000); throw err; }
   }
 }
 
@@ -178,69 +151,13 @@ async function checkPremiumStatus() {
     const ref  = firebase.firestore().collection('users').doc(currentUser.uid);
     const snap = await ref.get();
     if (!snap.exists) return false;
-
     const data = snap.data();
     const trialEndsAt = data.trialEndsAt && typeof data.trialEndsAt.toDate === 'function'
       ? data.trialEndsAt.toDate()
       : null;
-
     const hasActiveTrial = trialEndsAt ? (trialEndsAt > new Date()) : false;
     premiumUser = data.isPremium === true || hasActiveTrial;
-
-     // === Ensure /users/<uid> exists and fields have correct types ===
-async function ensureUserDoc(user, trialDays = 7) {
-  const ref = firebase.firestore().collection('users').doc(user.uid);
-  let snap;
-
-  try {
-    snap = await ref.get();
-  } catch (err) {
-    console.error('Failed to read user doc:', err);
-    showAlert && showAlert('Could not access your profile. Check Firestore rules.', 'error', 5000);
-    throw err;
-  }
-
-  const future = new Date(Date.now() + trialDays * 24 * 60 * 60 * 1000);
-  const trialEndsAtTS = firebase.firestore.Timestamp.fromDate(future);
-
-  if (!snap.exists) {
-    try {
-      await ref.set({
-        email: user.email || '',
-        isPremium: false,
-        trialEndsAt: trialEndsAtTS,
-        createdAt: firebase.firestore.FieldValue.serverTimestamp()
-      }, { merge: true });
-      return;
-    } catch (err) {
-      console.error('Failed to create user doc:', err);
-      showAlert && showAlert('Could not create your profile. Please try again.', 'error', 5000);
-      throw err;
-    }
-  }
-
-  // backfill/repair types if needed
-  const data = snap.data() || {};
-  const updates = {};
-  if (typeof data.isPremium !== 'boolean') updates.isPremium = false;
-  const isTimestamp = data.trialEndsAt && typeof data.trialEndsAt.toDate === 'function';
-  if (!isTimestamp) updates.trialEndsAt = trialEndsAtTS;
-  if (!data.email) updates.email = user.email || '';
-  if (Object.keys(updates).length) {
-    try {
-      await ref.set(updates, { merge: true });
-    } catch (err) {
-      console.error('Failed to update user doc:', err);
-      showAlert && showAlert('Could not update your profile. Please try again.', 'error', 5000);
-      throw err;
-    }
-  }
-}
-
-    // Hide ads for premium
-    if (premiumUser) {
-      document.querySelectorAll('.ad-container').forEach(el => el.style.display = 'none');
-    }
+    if (premiumUser) { document.querySelectorAll('.ad-container').forEach(el => el.style.display = 'none'); }
     return premiumUser;
   } catch (error) {
     console.error('Premium check error:', error);
@@ -253,12 +170,7 @@ async function ensureUserDoc(user, trialDays = 7) {
 function initAuthState() {
   firebase.auth().onAuthStateChanged(async (user) => {
     currentUser = user;
-
-    if (!user) {
-      renderAuthLoggedOut();
-      return;
-    }
-
+    if (!user) { renderAuthLoggedOut(); return; }
     try {
       await ensureUserDoc(user, (window.appConfig && appConfig.trialDays) || 7);
       await checkPremiumStatus();
@@ -267,7 +179,7 @@ function initAuthState() {
     } catch (err) {
       console.error('Auth init error:', err);
       alertSafe('We could not load your premium status. Please try again.', 'error', 4500);
-      renderAuthLoggedIn(); // still show logout so user isn’t stuck
+      renderAuthLoggedIn();
     }
   });
 }
@@ -283,7 +195,6 @@ function renderAuthLoggedOut() {
     </div>`;
   $('#login-btn')?.addEventListener('click', handleLogin);
   $('#signup-btn')?.addEventListener('click', handleSignup);
-
   premiumApp?.classList.add('hidden');
 }
 
@@ -303,13 +214,8 @@ function renderAuthLoggedIn() {
 async function handleLogin() {
   const email = $('#email')?.value || '';
   const password = $('#password')?.value || '';
-  try {
-    await firebase.auth().signInWithEmailAndPassword(email, password);
-    logEvent('login_success');
-  } catch (error) {
-    alertSafe(error.message, 'error');
-    logError(error, { context: 'login' });
-  }
+  try { await firebase.auth().signInWithEmailAndPassword(email, password); logEvent('login_success'); }
+  catch (error) { alertSafe(error.message, 'error'); logError(error, { context: 'login' }); }
 }
 
 async function handleSignup() {
@@ -317,34 +223,27 @@ async function handleSignup() {
   const password = $('#password')?.value || '';
   try {
     const cred = await firebase.auth().createUserWithEmailAndPassword(email, password);
-    // Seed a basic doc (ensureUserDoc will convert types)
     await firebase.firestore().collection('users').doc(cred.user.uid).set({
       email,
       isPremium: false,
       trialEndsAt: new Date(Date.now() + 7*24*60*60*1000),
       createdAt: new Date()
     }, { merge: true });
-
     await ensureUserDoc(cred.user, (window.appConfig && appConfig.trialDays) || 7);
     alertSafe('🎉 7-day premium trial started!', 'success', 4000);
     logEvent('trial_started');
   } catch (error) {
-    alertSafe(error.message, 'error');
-    logError(error, { context: 'signup' });
+    alertSafe(error.message, 'error'); logError(error, { context: 'signup' });
   }
 }
 
-function handleLogout() {
-  firebase.auth().signOut();
-  logEvent('user_logout');
-}
+function handleLogout() { firebase.auth().signOut(); logEvent('user_logout'); }
 
 /* ====================== Payments ====================== */
 async function initiatePayment(planType) {
   if (!currentUser) { alertSafe('Please log in first.', 'error'); return; }
   const base = (window.appConfig && appConfig.apiBaseUrl) || '';
   if (!base) { alertSafe('Backend URL missing. Set appConfig.apiBaseUrl in config.js', 'error'); return; }
-
   try {
     const idToken = await currentUser.getIdToken();
     const res = await fetch(`${base}/create-checkout-session`, {
@@ -391,7 +290,6 @@ function showPremiumUpsell() {
     </div>`;
   $('#monthly-btn')?.addEventListener('click', () => initiatePayment('monthly'));
   $('#annual-btn')?.addEventListener('click', () => initiatePayment('annual'));
-  // (Optional) price localization could be added here; omitted for simplicity.
 }
 
 /* ====================== Exam UI & Flows ====================== */
@@ -438,12 +336,16 @@ function renderExamUI() {
     </button>
   `;
 
+  // Initialize selectors
   $('#exam-type').value = examType;
   $('#accent-select').value = accent;
 
+  // Mode toggles
   $('#practice-mode-btn')?.addEventListener('click', () => { sessionMode='practice'; renderExamUI(); });
   $('#test-mode-btn')?.addEventListener('click', () => { sessionMode='test'; renderExamUI(); });
-  $('#exam-type')?.addEventListener('change', (e)=>{ examType = e.target.value; });
+
+  // Select changes
+  $('#exam-type')?.addEventListener('change', (e)=>{ examType = e.target.value; updateBeeSupportUI(); });
   $('#accent-select')?.addEventListener('change', (e)=>{ accent = e.target.value; });
 
   // Custom list (textarea + file)
@@ -451,8 +353,7 @@ function renderExamUI() {
   let useCustomList = false;
 
   $('#word-file')?.addEventListener('change', (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
+    const file = e.target.files[0]; if (!file) return;
     const reader = new FileReader();
     reader.onload = (evt) => {
       const text = String(evt.target.result || '');
@@ -478,33 +379,65 @@ function renderExamUI() {
     }
   });
 
+  // Enforce voice-only for Bee before starting
+  function updateBeeSupportUI() {
+    const startBtn = document.getElementById('start-btn');
+    const old = document.getElementById('bee-support-notice');
+    if (old) old.remove();
+
+    if ($('#exam-type').value === 'Bee' && !speechSupported()) {
+      startBtn.disabled = true;
+      startBtn.setAttribute('aria-disabled', 'true');
+      const notice = document.createElement('div');
+      notice.id = 'bee-support-notice';
+      notice.className = 'feedback incorrect';
+      notice.style.marginTop = '8px';
+      notice.innerHTML = '<i class="fas fa-microphone-slash"></i> Voice spelling requires a browser with SpeechRecognition (Chrome/Edge) and mic permissions.';
+      startBtn.insertAdjacentElement('afterend', notice);
+    } else {
+      startBtn.disabled = false;
+      startBtn.setAttribute('aria-disabled', 'false');
+    }
+  }
+  updateBeeSupportUI();
+
+  // Start session
   $('#start-btn')?.addEventListener('click', () => {
     summaryArea.innerHTML = '';
+    examType = $('#exam-type').value; // ensure fresh value from UI
     appTitle.textContent = (examType === 'OET') ? 'OET Spelling Practice'
-                      : (examType === 'Bee') ? 'Spelling Bee Practice'
+                      : (examType === 'Bee') ? 'Spelling Bee (Voice)'
                       : 'Custom Spelling Practice';
 
-    if (examType === 'Custom' && useCustomList && customWordList.length) {
-      words = customWordList.slice();
-      startTrainer();
+    if (examType === 'Custom') {
+      if (useCustomList && customWordList.length) {
+        words = customWordList.slice();
+      } else {
+        words = []; // require user list for custom; or you can choose defaults
+      }
+      startTypedTrainer(); // Custom uses typing
       return;
     }
 
     if (examType === 'OET') {
       const base = Array.isArray(window.oetWords) ? window.oetWords.slice() : [];
       words = (sessionMode === 'test') ? shuffle(base).slice(0, 24) : base;
-      startTrainer();
+      startTypedTrainer(); // OET uses typing
       return;
     }
 
     if (examType === 'Bee') {
+      if (!speechSupported()) {
+        alertSafe('Spelling Bee requires voice input. Please use Chrome/Edge and allow mic access.', 'error', 6000);
+        return;
+      }
       const beeDefaults = [
         "accommodate","belligerent","conscientious","disastrous","embarrass","foreign","guarantee","harass",
         "interrupt","jealous","knowledge","liaison","millennium","necessary","occasionally","possession",
         "questionnaire","rhythm","separate","tomorrow","unforeseen","vacuum","withhold","yacht"
       ];
       words = (sessionMode === 'test') ? shuffle(beeDefaults).slice(0, 24) : beeDefaults.slice();
-      startTrainer();
+      startBeeVoiceTrainer(); // Bee uses voice spelling only
       return;
     }
 
@@ -512,21 +445,19 @@ function renderExamUI() {
   });
 }
 
-/* ---------- Trainer core ---------- */
-function startTrainer() {
+/* ====================== TYPED TRAINER (OET/Custom) ====================== */
+function startTypedTrainer() {
+  beeCleanup(); // ensure no mic listeners from previous session
   if (!trainerArea) return;
-  currentIndex = 0;
-  score = 0;
-  userAnswers = [];
+  currentIndex = 0; score = 0; userAnswers = [];
   sessionStartTime = Date.now();
   trainerArea.classList.remove('hidden');
   summaryArea?.classList.add('hidden');
-  showCurrentWord();
-  // slight delay before first speak
-  setTimeout(() => speakCurrentWord(), 300);
+  typedShowCurrentWord();
+  setTimeout(() => typedSpeakCurrentWord(), 300);
 }
 
-function showCurrentWord() {
+function typedShowCurrentWord() {
   if (currentIndex >= words.length) { return showSummary(); }
   const word = words[currentIndex];
   const prevDisabled = currentIndex === 0 ? 'disabled' : '';
@@ -551,72 +482,282 @@ function showCurrentWord() {
     <div id="feedback" class="feedback" style="min-height:1.25rem;margin-top:.5rem;"></div>
   `;
 
-  $('#repeat-btn')?.addEventListener('click', speakCurrentWord);
-  $('#prev-btn')?.addEventListener('click', () => { if (currentIndex>0){ currentIndex--; showCurrentWord(); setTimeout(speakCurrentWord,150);} });
-  $('#next-btn')?.addEventListener('click', () => nextWord());
-  $('#check-btn')?.addEventListener('click', () => checkAnswer(word));
-  $('#user-input')?.addEventListener('keypress', (e) => { if (e.key === 'Enter') checkAnswer(word); });
-
-  $('#flagWordBtn')?.addEventListener('click', () => {
-    (window.toggleFlagWord || noop)(word);
-  });
+  $('#repeat-btn')?.addEventListener('click', typedSpeakCurrentWord);
+  $('#prev-btn')?.addEventListener('click', () => { if (currentIndex>0){ currentIndex--; typedShowCurrentWord(); setTimeout(typedSpeakCurrentWord,150);} });
+  $('#next-btn')?.addEventListener('click', () => typedNextWord());
+  $('#check-btn')?.addEventListener('click', () => typedCheckAnswer(word));
+  $('#user-input')?.addEventListener('keypress', (e) => { if (e.key === 'Enter') typedCheckAnswer(word); });
+  $('#flagWordBtn')?.addEventListener('click', () => (window.toggleFlagWord || noop)(word));
 
   wordStartTime = Date.now();
 }
 
-function speakCurrentWord() {
-  const word = words[currentIndex];
-  if (!word) return;
-  if (!('speechSynthesis' in window)) { alertSafe('Text-to-speech not supported in this browser.', 'error'); return; }
-  window.speechSynthesis.cancel();
-  const u = new SpeechSynthesisUtterance(word);
-  u.lang = accent;
-  u.rate = 0.97;
-  const voices = window.speechSynthesis.getVoices();
-  const v = voices.find(x => x.lang === accent) || voices.find(x => x.lang.startsWith(accent.split('-')[0]));
-  if (v) u.voice = v;
-  window.speechSynthesis.speak(u);
+function typedSpeakCurrentWord() {
+  const word = words[currentIndex]; if (!word) return;
+  speakOut(word, accent, 0.97);
 }
 
-function checkAnswer(correctWord) {
-  const inputEl = $('#user-input');
-  if (!inputEl) return;
+function typedCheckAnswer(correctWord) {
+  const inputEl = $('#user-input'); if (!inputEl) return;
   const userVal = (inputEl.value || '').trim();
   if (!userVal) { alertSafe('Please type the word first!', 'error'); return; }
-
   userAnswers[currentIndex] = userVal;
   const isCorrect = userVal.toLowerCase() === String(correctWord).toLowerCase();
   const feedback = $('#feedback');
+  if (isCorrect) { score++; feedback.textContent = '✓ Correct!'; feedback.className = 'feedback correct'; inputEl.classList.add('correct-input'); }
+  else { feedback.textContent = `✗ Incorrect. The correct spelling was: ${correctWord}`; feedback.className = 'feedback incorrect'; inputEl.classList.add('incorrect-input'); }
+  const timeSpent = Date.now() - wordStartTime;
+  logEvent('word_attempt', { word: correctWord, status: isCorrect ? 'correct' : 'incorrect', time_ms: timeSpent, accent, examType, mode: sessionMode });
+  setTimeout(() => typedNextWord(), 1100);
+}
 
+function typedNextWord() {
+  if (currentIndex < words.length - 1) { currentIndex++; typedShowCurrentWord(); setTimeout(() => typedSpeakCurrentWord(), 150); }
+  else { showSummary(); }
+}
+
+/* ====================== BEE TRAINER (VOICE-ONLY) ====================== */
+function startBeeVoiceTrainer() {
+  if (!trainerArea) return;
+
+  // HARD STOP: Bee requires mic + SpeechRecognition.
+  if (!speechSupported()) {
+    alertSafe('Spelling Bee requires voice input. Please use a browser that supports SpeechRecognition (Chrome/Edge) and allow mic access.', 'error', 6000);
+    return;
+  }
+
+  currentIndex = 0; score = 0; userAnswers = [];
+  sessionStartTime = Date.now();
+  trainerArea.classList.remove('hidden');
+  summaryArea?.classList.add('hidden');
+  beePlayCurrentWord();
+}
+
+function beePlayCurrentWord() {
+  if (currentIndex >= words.length) { showSummary(); return; }
+  beeRenderUI();
+  const w = words[currentIndex];
+  setTimeout(() => { speakOut(w, accent, 0.88); setTimeout(() => beeStartRecognition(), 300); }, 200);
+}
+
+function beeRenderUI() {
+  const w = words[currentIndex];
+  const prevDisabled = currentIndex === 0 ? 'disabled' : '';
+  trainerArea.innerHTML = `
+    <div class="word-progress">Word ${currentIndex + 1} of ${words.length}</div>
+
+    <div id="spelling-visual" aria-live="polite" class="spelling-visual"
+         style="min-height:2rem;padding:.5rem;border:1px dashed #ccc;border-radius:8px;margin:.25rem 0;">
+      <em>Listening… spell the word letter by letter.</em>
+    </div>
+
+    <div id="mic-status" class="feedback" style="margin:.25rem 0; color: #6c757d;">
+      <i class="fas fa-microphone"></i> Ready
+    </div>
+
+    <div class="button-group" style="display:flex;gap:.5rem;flex-wrap:wrap;margin-top:.5rem;">
+      <button id="prev-btn" class="btn btn-secondary" ${prevDisabled}><i class="fas fa-arrow-left"></i> Previous</button>
+      <button id="repeat-btn" class="btn btn-secondary"><i class="fas fa-redo"></i> Repeat Word</button>
+      <button id="skip-btn" class="btn btn-secondary"><i class="fas fa-arrow-right"></i> Skip</button>
+      <button id="toggle-mic-btn" class="btn btn-primary"><i class="fas fa-microphone"></i> ${isListening ? 'Stop' : 'Start'} Listening</button>
+      <button id="flagWordBtn" class="btn-icon" title="Flag"><i class="far fa-flag"></i></button>
+    </div>
+
+    <div id="bee-feedback" class="feedback" style="min-height:1.25rem;margin-top:.5rem;"></div>
+  `;
+
+  $('#prev-btn')?.addEventListener('click', () => { if (currentIndex>0){ currentIndex--; beePlayCurrentWord(); }});
+  $('#repeat-btn')?.addEventListener('click', () => speakOut(w, accent, 0.88));
+  $('#skip-btn')?.addEventListener('click', () => beeNextWord());
+  $('#toggle-mic-btn')?.addEventListener('click', () => { isListening ? beeStopRecognition() : beeStartRecognition(); });
+  $('#flagWordBtn')?.addEventListener('click', () => (window.toggleFlagWord || noop)(w));
+
+  beeAttachKeys();
+  wordStartTime = Date.now();
+}
+
+function beeAttachKeys() {
+  beeDetachKeys();
+  beeKeyHandlerRef = function(e) {
+    if (examType !== 'Bee') return;
+    if (e.key === ' ') { e.preventDefault(); speakOut(words[currentIndex], accent, 0.88); }
+    if (e.key === 'ArrowRight') { beeNextWord(); }
+    if (e.key === 'ArrowLeft' && currentIndex > 0) { currentIndex--; beePlayCurrentWord(); }
+  };
+  document.addEventListener('keydown', beeKeyHandlerRef);
+}
+
+function beeDetachKeys() {
+  if (beeKeyHandlerRef) {
+    document.removeEventListener('keydown', beeKeyHandlerRef);
+    beeKeyHandlerRef = null;
+  }
+}
+
+function beeStartRecognition() {
+  try {
+    beeStopRecognition(true); // cleanup any previous
+    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+    recognition = new SR();
+    recognition.lang = accent;
+    recognition.interimResults = true;
+    recognition.maxAlternatives = 5;
+    isListening = true;
+    $('#mic-status').innerHTML = `<i class="fas fa-microphone"></i> Listening…`;
+    $('#toggle-mic-btn') && ($('#toggle-mic-btn').innerHTML = `<i class="fas fa-microphone-slash"></i> Stop Listening`);
+
+    let interimLetters = '';
+    recognition.onresult = (event) => {
+      const transcripts = [];
+      for (let i = event.resultIndex; i < event.results.length; i++) {
+        transcripts.push(event.results[i][0].transcript);
+      }
+      const combined = transcripts.join(' ').trim();
+      interimLetters = parseSpelledLetters(combined).toUpperCase();
+      $('#spelling-visual').textContent = interimLetters || combined;
+    };
+
+    recognition.onerror = (e) => {
+      console.warn('Speech error:', e.error);
+      $('#mic-status').innerHTML = `<i class="fas fa-microphone-slash"></i> ${e.error}`;
+    };
+
+    recognition.onend = () => {
+      isListening = false;
+      $('#toggle-mic-btn') && ($('#toggle-mic-btn').innerHTML = `<i class="fas fa-microphone"></i> Start Listening`);
+      $('#mic-status').innerHTML = `<i class="fas fa-info-circle"></i> Processing…`;
+      const attempt = (typeof interimLetters === 'string' ? interimLetters : '').trim();
+      beeGradeAttempt(attempt);
+    };
+
+    recognition.start();
+  } catch (err) {
+    console.error('Recognition start failed:', err);
+    alertSafe('Mic failed to start. Check browser permissions.', 'error', 4000);
+  }
+}
+
+function beeStopRecognition(silent=false) {
+  if (recognition) {
+    try { recognition.onend = null; recognition.stop(); } catch(e){}
+    recognition = null;
+  }
+  isListening = false;
+  if (!silent) {
+    $('#mic-status').innerHTML = `<i class="fas fa-microphone-slash"></i> Stopped`;
+    $('#toggle-mic-btn') && ($('#toggle-mic-btn').innerHTML = `<i class="fas fa-microphone"></i> Start Listening`);
+  }
+}
+
+function beeGradeAttempt(spelled) {
+  const correct = String(words[currentIndex] || '').toLowerCase().replace(/[^a-z]/g,'');
+  const normalized = (spelled || '').toLowerCase().replace(/[^a-z]/g, '');
+  const isCorrect = normalized === correct;
+
+  const feedback = $('#bee-feedback');
   if (isCorrect) {
     score++;
     feedback.textContent = '✓ Correct!';
     feedback.className = 'feedback correct';
-    inputEl.classList.add('correct-input');
   } else {
-    feedback.textContent = `✗ Incorrect. The correct spelling was: ${correctWord}`;
+    feedback.textContent = `✗ Incorrect. You said: ${spelled || '(nothing)'} — Correct: ${words[currentIndex]}`;
     feedback.className = 'feedback incorrect';
-    inputEl.classList.add('incorrect-input');
   }
 
   const timeSpent = Date.now() - wordStartTime;
-  logEvent('word_attempt', { word: correctWord, status: isCorrect ? 'correct' : 'incorrect', time_ms: timeSpent, accent, examType, mode: sessionMode });
+  logEvent('word_attempt', { word: words[currentIndex], status: isCorrect ? 'correct' : 'incorrect', time_ms: timeSpent, accent, examType, mode: sessionMode });
 
-  // Auto-next after a short delay
-  setTimeout(() => nextWord(), 1100);
+  setTimeout(() => beeNextWord(), 1200);
 }
 
-function nextWord() {
-  if (currentIndex < words.length - 1) {
-    currentIndex++;
-    showCurrentWord();
-    setTimeout(() => speakCurrentWord(), 150);
-  } else {
-    showSummary();
+function beeNextWord() {
+  beeStopRecognition(true);
+  if (currentIndex < words.length - 1) { currentIndex++; beePlayCurrentWord(); }
+  else { showSummary(); }
+}
+
+function beeCleanup() {
+  beeStopRecognition(true);
+  beeDetachKeys();
+}
+
+/* ---------- Spelled letter parsing ---------- */
+const LETTER_SYNONYMS = {
+  a:['a','ay','eh','ei'], b:['b','bee','be'], c:['c','see','sea','cee'],
+  d:['d','dee'], e:['e','ee','ea'], f:['f','ef'],
+  g:['g','gee','ji'], h:['h','aitch','h'],
+  i:['i','eye','ai'], j:['j','jay'], k:['k','kay','kei'],
+  l:['l','el'], m:['m','em'], n:['n','en'], o:['o','oh'],
+  p:['p','pee','pea'], q:['q','cue','queue'], r:['r','ar'],
+  s:['s','ess'], t:['t','tee','tea'], u:['u','you','yu','yew'],
+  v:['v','vee'], w:['w','doubleu','double-u','double you','doubleyou'],
+  x:['x','ex'], y:['y','why'], z:['z','zee','zed']
+};
+
+function normalizeToken(t){
+  return t.toLowerCase().replace(/[^a-z]/g,'').trim();
+}
+
+/** Converts free-form speech into letters:
+ *  - Supports: "a c c o m m o d a t e"
+ *  - Supports: "double m" (→ 'mm')
+ *  - Maps letter names ("see"→c, "why"→y, "queue"→q, "double you"→'w')
+ *  - If user says the whole word, grader still handles it via normalization
+ */
+function parseSpelledLetters(transcript) {
+  if (!transcript) return '';
+  const raw = transcript.toLowerCase();
+  const pre = raw.replace(/\bdouble\s+you\b/g, 'doubleyou');
+
+  const tokens = pre.split(/\s+/).map(normalizeToken).filter(Boolean);
+  let out = '';
+  for (let i = 0; i < tokens.length; i++) {
+    const tok = tokens[i];
+
+    if (tok === 'double' || tok === 'triple') {
+      const next = tokens[i+1] || '';
+      const letter = tokenToLetter(next);
+      if (letter) {
+        const times = tok === 'double' ? 2 : 3;
+        out += letter.repeat(times);
+        i++;
+        continue;
+      }
+    }
+
+    const letter = tokenToLetter(tok);
+    if (letter) { out += letter; continue; }
+
+    if (tok.length === 1 && tok >= 'a' && tok <= 'z') {
+      out += tok;
+    }
   }
+  return out;
 }
 
+function tokenToLetter(tok){
+  for (const [letter, names] of Object.entries(LETTER_SYNONYMS)) {
+    if (tok === letter) return letter;
+    if (names.includes(tok)) return letter;
+  }
+  return null;
+}
+
+/* ====================== SHARED: Speak word & Summary ====================== */
+function speakOut(word, lang='en-US', rate=0.97) {
+  if (!('speechSynthesis' in window)) { alertSafe('Text-to-speech not supported in this browser.', 'error'); return; }
+  window.speechSynthesis.cancel();
+  const u = new SpeechSynthesisUtterance(word);
+  u.lang = lang; u.rate = rate;
+  const voices = window.speechSynthesis.getVoices();
+  const v = voices.find(x => x.lang === lang) || voices.find(x => x.lang.startsWith(lang.split('-')[0]));
+  if (v) u.voice = v;
+  window.speechSynthesis.speak(u);
+}
+
+/* Reuse summary for both trainers */
 function showSummary() {
+  beeCleanup();
   trainerArea?.classList.add('hidden');
   summaryArea?.classList.remove('hidden');
 
@@ -648,8 +789,8 @@ function showSummary() {
     currentIndex = 0; score = 0; userAnswers = [];
     trainerArea?.classList.remove('hidden');
     summaryArea?.classList.add('hidden');
-    showCurrentWord();
-    setTimeout(() => speakCurrentWord(), 200);
+    if (examType === 'Bee') { beePlayCurrentWord(); }
+    else { typedShowCurrentWord(); setTimeout(() => typedSpeakCurrentWord(), 200); }
   });
   $('#back-btn')?.addEventListener('click', () => {
     trainerArea?.classList.add('hidden');
@@ -677,6 +818,3 @@ function shuffle(arr) {
   }
   return a;
 }
-
-
-
