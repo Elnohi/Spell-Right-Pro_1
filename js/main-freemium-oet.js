@@ -395,7 +395,7 @@ document.addEventListener('DOMContentLoaded', () => {
       </div>
     `;
 
-    // Optional AdSense hook
+    // Kept as a harmless no-op with Auto Ads (defined in HTML)
     try { if (window.insertSummaryAd) window.insertSummaryAd(); } catch(_) {}
 
     document.getElementById('review-wrong-btn')?.addEventListener('click', () => {
@@ -409,7 +409,6 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     document.getElementById('restart-btn')?.addEventListener('click', () => {
-      // Restart with the same list (kept in `words`)
       currentIndex = 0; score = 0; userAnswers = [];
       isSessionActive = true;
       summaryArea.classList.add('hidden');
@@ -419,7 +418,6 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     document.getElementById('new-list-btn')?.addEventListener('click', () => {
-      // Back to setup
       summaryArea.classList.add('hidden');
       trainerArea.classList.add('hidden');
       isSessionActive = false;
