@@ -1,213 +1,105 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>SpellRightPro (OET - Freemium)</title>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <meta charset="utf-8" />
+  <title>SpellRightPro – OET (Free)</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <base href="/" />
+
+  <!-- AdSense Auto Ads (once per page) -->
+  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js"
+          data-ad-client="ca-pub-7632930282249669" crossorigin="anonymous"></script>
+
+  <!-- Styles & Icons -->
   <link rel="stylesheet" href="css/styles.css" />
-  <!-- Google AdSense -->
-  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7632930282249669"
-     crossorigin="anonymous"></script>
-  <style>
-    .ad-container {
-      margin: 1.5rem auto;
-      padding: 0;
-      text-align: center;
-      max-width: 728px;
-      overflow: hidden;
-    }
-    .ad-container.header-ad { margin-bottom: 0.5rem; }
-    .ad-container.footer-ad { margin-top: 1.5rem; }
-    .ad-container.summary-ad { margin-top: 2rem; }
-    /* Sticky ad for mobile (optional, only enabled via JS for small screens) */
-    .ad-container.sticky-footer-ad {
-      display: none;
-      position: fixed;
-      left: 0; right: 0; bottom: 0;
-      background: #fff; z-index: 999;
-      box-shadow: 0 -2px 12px rgba(0,0,0,0.12);
-      padding: 4px 0;
-      border-top: 1px solid #e3e3e3;
-    }
-    @media (max-width: 768px) {
-      .ad-container { margin: 1rem auto; max-width: 320px; }
-      .ad-container.sticky-footer-ad { display: block; }
-    }
-    #trainer-area { ad-display: none !important; }
-    .custom-warning {
-      color: #b03a2e;
-      background: #fff3cd;
-      border-radius: 6px;
-      padding: 0.7em 1em;
-      font-size: 1em;
-      margin-top: 0.5em;
-      margin-bottom: 0.7em;
-      font-weight: 500;
-      border: 1px solid #ffe1a3;
-      display: block;
-    }
-  </style>
+  <link rel="icon" href="assets/logo.png" />
+  <link rel="apple-touch-icon" href="assets/icons/icon-192x192.png" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css"/>
+
+  <!-- Auto Ads path: no manual ad blocks -->
+  <script>
+    // No-op to keep JS hooks harmless with Auto Ads
+    window.insertSummaryAd = function () {};
+  </script>
 </head>
 <body>
-  <nav class="navbar">
+  <header class="navbar">
     <div class="brand">
-      <img src="assets/logo.png" alt="SpellRightPro Logo" class="logo"/>
+      <img src="assets/logo.png" class="logo" alt="SpellRightPro logo" />
       <div>
         <span>SpellRightPro</span>
-        <span class="subtitle">OET Trainer</span>
+        <span class="subtitle">Freemium OET</span>
       </div>
     </div>
     <div class="nav-actions">
-      <button class="btn-home" onclick="window.location.href='index.html'">
-        <i class="fas fa-home"></i>
-      </button>
-      <button id="dark-mode-toggle" title="Toggle dark mode">
+      <button id="dark-mode-toggle" class="btn-icon" title="Toggle theme" aria-label="Toggle theme">
         <i class="fas fa-moon"></i>
       </button>
     </div>
-  </nav>
+  </header>
 
-  <!-- Header Ad -->
-  <div class="ad-container header-ad">
-    <ins class="adsbygoogle"
-         style="display:block"
-         data-ad-client="ca-pub-7632930282249669"
-         data-ad-slot="YOUR_OET_HEADER_SLOT"
-         data-ad-format="auto"
-         data-full-width-responsive="true"></ins>
-    <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
-  </div>
-
-  <main class="container">
-    <section class="training-card">
-      <h1 class="card-title">OET Spelling Trainer</h1>
-      <div class="mode-selector">
-        <button id="practice-mode-btn" class="btn-mode active">
-          <i class="fas fa-graduation-cap"></i> Practice
-        </button>
-        <button id="test-mode-btn" class="btn-mode">
-          <i class="fas fa-clock"></i> Test
-        </button>
-      </div>
-      <div class="accent-picker">
-        <button data-accent="en-US" class="active">
-          <span class="flag-icon">🇺🇸</span> US
-        </button>
-        <button data-accent="en-GB">
-          <span class="flag-icon">🇬🇧</span> UK
-        </button>
-      </div>
-      <div class="custom-words-section">
-        <label class="section-label">Custom Words</label>
-        <textarea id="custom-words" placeholder="Type or paste words (comma separated)"></textarea>
-        <div class="file-upload">
-          <label for="file-input" class="btn-upload">
-            <i class="fas fa-file-upload"></i> Upload TXT
-          </label>
-          <input type="file" id="file-input" accept=".txt"/>
-        </div>
-        <div class="custom-warning">
-          You can only use one custom list per day in the freemium version. Upgrade to premium for unlimited lists.
-        </div>
-        <button id="add-custom-btn" class="btn-primary">
-          <i class="fas fa-plus"></i> Add Words
-        </button>
-      </div>
-      <button id="start-btn" class="btn-start">
-        <i class="fas fa-play"></i> Start Session
+  <main class="container training-card">
+    <!-- Mode selector -->
+    <div class="mode-selector">
+      <button id="practice-mode-btn" class="btn-mode active" aria-pressed="true">
+        <i class="fas fa-graduation-cap"></i> Practice
       </button>
-      <div id="trainer-area" class="trainer-area hidden"></div>
-      <!-- Summary Area (ad will be inserted here dynamically after each session) -->
-      <div id="summary-area" class="summary-area hidden"></div>
-      <div id="summary-ad-slot"></div>
-    </section>
+      <button id="test-mode-btn" class="btn-mode" aria-pressed="false">
+        <i class="fas fa-clipboard-check"></i> Test
+      </button>
+    </div>
+
+    <!-- Accent picker -->
+    <div class="accent-picker" role="group" aria-label="Accent">
+      <button type="button" data-accent="en-US" class="active" aria-pressed="true">
+        <span class="flag-icon">🇺🇸</span> American
+      </button>
+      <button type="button" data-accent="en-GB" aria-pressed="false">
+        <span class="flag-icon">🇬🇧</span> British
+      </button>
+      <button type="button" data-accent="en-AU" aria-pressed="false">
+        <span class="flag-icon">🇦🇺</span> Australian
+      </button>
+    </div>
+
+    <!-- Custom words -->
+    <div class="custom-words-section">
+      <label class="section-label" for="custom-words">Custom words (one list/day):</label>
+      <textarea id="custom-words" placeholder="Enter words (phrases allowed). Separate with new lines, commas, semicolons, or pipes."></textarea>
+
+      <div class="file-upload">
+        <label class="btn-upload" for="file-input">
+          <i class="fas fa-file-upload"></i> Upload .txt/.csv
+        </label>
+        <input id="file-input" type="file" accept=".txt,.csv" />
+      </div>
+
+      <button id="add-custom-btn" class="btn-primary">
+        <i class="fas fa-plus-circle"></i> Use This List
+      </button>
+    </div>
+
+    <!-- Start -->
+    <button id="start-btn" class="btn-start">
+      <i class="fas fa-play"></i> Start Session
+    </button>
+
+    <!-- Trainer + Summary -->
+    <div id="trainer-area" class="hidden"></div>
+    <div id="summary-area" class="hidden"></div>
   </main>
 
-  <!-- Footer Ad -->
-  <div class="ad-container footer-ad">
-    <ins class="adsbygoogle"
-         style="display:block"
-         data-ad-client="ca-pub-7632930282249669"
-         data-ad-slot="YOUR_OET_FOOTER_SLOT"
-         data-ad-format="auto"
-         data-full-width-responsive="true"></ins>
-    <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
-  </div>
-
-  <!-- Sticky footer ad for mobile (optional, can disable by removing this block) -->
-  <div class="ad-container sticky-footer-ad" id="sticky-ad-mobile">
-    <ins class="adsbygoogle"
-         style="display:inline-block;width:320px;height:50px"
-         data-ad-client="ca-pub-7632930282249669"
-         data-ad-slot="YOUR_OET_MOBILE_SLOT"></ins>
-    <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
-  </div>
-
+  <!-- Data (must load before the app) -->
   <script src="js/oet_word_list.js"></script>
+  <!-- App -->
   <script src="js/main-freemium-oet.js"></script>
+
+  <!-- Service Worker registration (works for Netlify & GH Pages subfolder) -->
   <script>
-    // Show/hide sticky ad only when not in session or summary
-    function toggleStickyAd(show) {
-      var ad = document.getElementById('sticky-ad-mobile');
-      if (ad) ad.style.display = show ? 'block' : 'none';
+    if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
+      const base = location.pathname.split('/')[1] ? `/${location.pathname.split('/')[1]}` : '';
+      navigator.serviceWorker.register(`${base}/sw.js`).catch(console.warn);
     }
-    // Monitor session area and hide sticky ad as needed
-    document.addEventListener('DOMContentLoaded', function() {
-      // You may want to control this with your JS session logic as well
-      toggleStickyAd(true); // Default on
-      // Example: hide when trainer is visible
-      var observer = new MutationObserver(function() {
-        var inSession = !document.getElementById('trainer-area').classList.contains('hidden');
-        var inSummary = !document.getElementById('summary-area').classList.contains('hidden');
-        toggleStickyAd(!(inSession || inSummary));
-      });
-      observer.observe(document.body, { subtree: true, childList: true, attributes: true });
-    });
-    // Ad in summary area (at session end)
-    function insertSummaryAd() {
-      var slot = document.getElementById('summary-ad-slot');
-      if (slot) {
-        slot.innerHTML = `<div class="ad-container summary-ad">
-          <ins class="adsbygoogle"
-               style="display:block"
-               data-ad-client="ca-pub-7632930282249669"
-               data-ad-slot="YOUR_OET_SUMMARY_SLOT"
-               data-ad-format="auto"
-               data-full-width-responsive="true"></ins>
-        </div>`;
-        (adsbygoogle = window.adsbygoogle || []).push({});
-      }
-    }
-    // Call insertSummaryAd() at session end via main-freemium-oet.js after rendering results
-    window.insertSummaryAd = insertSummaryAd;
   </script>
-  <script>
-  window.insertSummaryAd = function() {
-    var summaryArea = document.getElementById('summary-area');
-    if (!summaryArea) return;
-    // Remove previous summary ad if it exists
-    var oldAd = summaryArea.querySelector('.summary-ad-container');
-    if (oldAd) oldAd.remove();
-
-    // Create a container for the summary ad
-    var adDiv = document.createElement('div');
-    adDiv.className = "ad-container summary-ad-container";
-    adDiv.innerHTML = `
-      <ins class="adsbygoogle"
-           style="display:block"
-           data-ad-client="ca-pub-7632930282249669"
-           data-ad-slot="YOUR_OET_SUMMARY_SLOT"
-           data-ad-format="auto"
-           data-full-width-responsive="true"></ins>
-    `;
-    summaryArea.appendChild(adDiv);
-    // (Re)load the ad
-    try {
-      (adsbygoogle = window.adsbygoogle || []).push({});
-    } catch(e) { /* ignore if adsbygoogle isn't ready */ }
-  }
-</script>
-
 </body>
 </html>
