@@ -1,7 +1,7 @@
 // main-freemium-oet.js — polished freemium OET (typed input)
 
-/* ================== Elements ================== */
 document.addEventListener('DOMContentLoaded', () => {
+  /* ================== Elements ================== */
   const accentPicker  = document.querySelector('.accent-picker');
   const practiceBtn   = document.getElementById('practice-mode-btn');
   const testBtn       = document.getElementById('test-mode-btn');
@@ -82,6 +82,13 @@ document.addEventListener('DOMContentLoaded', () => {
         ? '<i class="fas fa-flag"></i> Flagged'
         : '<i class="far fa-flag"></i> Flag';
     }
+  }
+
+  // NEW: detect if the user is typing in a field, so we don't hijack Space/Arrows.
+  function isTypingField(el) {
+    if (!el) return false;
+    const tag = (el.tagName || '').toLowerCase();
+    return tag === 'input' || tag === 'textarea' || el.isContentEditable === true;
   }
 
   /* ================== Init ================== */
@@ -179,10 +186,16 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     });
 
-    // Keyboard shortcuts during session
+    // Keyboard shortcuts during session — ONLY when not typing in a field.
     document.addEventListener('keydown', (e) => {
       if (!isSessionActive) return;
-      if (e.key === ' ') {
+
+      // If the event originated inside an input/textarea/contentEditable, don't hijack keys.
+      if (isTypingField(e.target)) return;
+
+      const isSpace = e.code === 'Space' || e.key === ' ' || e.key === 'Spacebar';
+
+      if (isSpace) {
         e.preventDefault();
         const w = words[currentIndex];
         w && speakWord(w, () => {
@@ -190,8 +203,14 @@ document.addEventListener('DOMContentLoaded', () => {
           if (input) { input.focus(); input.select(); }
         });
       }
-      if (e.key === 'ArrowLeft' && currentIndex > 0) prevWord();
-      if (e.key === 'ArrowRight') nextWord();
+      if (e.key === 'ArrowLeft' && currentIndex > 0) {
+        e.preventDefault();
+        prevWord();
+      }
+      if (e.key === 'ArrowRight') {
+        e.preventDefault();
+        nextWord();
+      }
     });
 
     // Dark mode
@@ -395,7 +414,7 @@ document.addEventListener('DOMContentLoaded', () => {
       </div>
     `;
 
-    // Kept as a harmless no-op with Auto Ads (defined in HTML)
+    // No-op hook for legacy manual ad slot (safe with Auto Ads)
     try { if (window.insertSummaryAd) window.insertSummaryAd(); } catch(_) {}
 
     document.getElementById('review-wrong-btn')?.addEventListener('click', () => {
