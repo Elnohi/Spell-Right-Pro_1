@@ -12,13 +12,12 @@ app.use(cors({
   credentials: false
 }));
 
-/* ---------- JSON body parser (but NOT for the webhook route) ---------- */
-app.use(express.json());
+/* ---------- Stripe & Firebase ---------- */
+const stripe = Stripe(process.env.STRIPE_SECRET_KEY);
 
-/* ---------- Firebase Admin from ENV JSON ---------- */
+// Firebase Admin from ENV JSON (raw or base64)
 let serviceAccount;
 try {
-  // Allow either raw JSON or base64-encoded JSON
   const raw = process.env.FIREBASE_SERVICE_ACCOUNT_JSON || '';
   const json = raw.trim().startsWith('{') ? raw : Buffer.from(raw, 'base64').toString('utf8');
   serviceAccount = JSON.parse(json);
@@ -26,61 +25,13 @@ try {
   console.error('Invalid FIREBASE_SERVICE_ACCOUNT_JSON:', e.message);
   process.exit(1);
 }
-
 admin.initializeApp({ credential: admin.credential.cert(serviceAccount) });
 const db = admin.firestore();
-
-/* ---------- Stripe ---------- */
-const stripe = Stripe(process.env.STRIPE_SECRET_KEY);
-
-/* ---------- Auth middleware ---------- */
-async function authenticate(req, res, next) {
-  const authHeader = req.headers.authorization || '';
-  if (!authHeader.startsWith('Bearer ')) {
-    return res.status(401).json({ error: 'Unauthorized' });
-  }
-  try {
-    const idToken = authHeader.split(' ')[1];
-    const decoded = await admin.auth().verifyIdToken(idToken);
-    req.user = decoded;
-    next();
-  } catch (err) {
-    return res.status(401).json({ error: 'Invalid token' });
-  }
-}
 
 /* ---------- Health check ---------- */
 app.get('/health', (_req, res) => res.json({ ok: true }));
 
-/* ---------- Create Checkout Session ---------- */
-app.post('/create-checkout-session', authenticate, async (req, res) => {
-  try {
-    const { plan } = req.body;
-    if (!['monthly', 'annual'].includes(plan)) {
-      return res.status(400).json({ error: 'Invalid plan' });
-    }
-    const priceId = plan === 'annual'
-      ? process.env.STRIPE_ANNUAL_PRICE_ID
-      : process.env.STRIPE_MONTHLY_PRICE_ID;
-
-    const session = await stripe.checkout.sessions.create({
-      mode: 'subscription',
-      payment_method_types: ['card'],
-      line_items: [{ price: priceId, quantity: 1 }],
-      success_url: `${process.env.FRONTEND_URL}/premium?payment_success=true`,
-      cancel_url: `${process.env.FRONTEND_URL}/premium?payment_cancelled=true`,
-      client_reference_id: req.user.uid,
-      metadata: { plan, userId: req.user.uid }
-    });
-
-    res.json({ sessionId: session.id });
-  } catch (error) {
-    console.error('Checkout error:', error);
-    res.status(500).json({ error: error.message });
-  }
-});
-
-/* ---------- Stripe Webhook (raw body!) ---------- */
+/* ---------- Stripe Webhook (MUST use raw body, BEFORE express.json) ---------- */
 app.post('/stripe-webhook', express.raw({ type: 'application/json' }), async (req, res) => {
   const sig = req.headers['stripe-signature'];
   const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET;
@@ -105,13 +56,59 @@ app.post('/stripe-webhook', express.raw({ type: 'application/json' }), async (re
         await handleSubscriptionCancelled(event.data.object);
         break;
       default:
-        // No-op
+        // no-op
         break;
     }
     res.json({ received: true });
   } catch (err) {
     console.error('Webhook handler error:', err);
     res.status(500).json({ error: err.message });
+  }
+});
+
+/* ---------- JSON body parser for all other routes ---------- */
+app.use(express.json());
+
+/* ---------- Auth middleware ---------- */
+async function authenticate(req, res, next) {
+  const authHeader = req.headers.authorization || '';
+  if (!authHeader.startsWith('Bearer ')) {
+    return res.status(401).json({ error: 'Unauthorized' });
+  }
+  try {
+    const idToken = authHeader.split(' ')[1];
+    const decoded = await admin.auth().verifyIdToken(idToken);
+    req.user = decoded;
+    next();
+  } catch (err) {
+    return res.status(401).json({ error: 'Invalid token' });
+  }
+}
+
+/* ---------- Create Checkout Session ---------- */
+app.post('/create-checkout-session', authenticate, async (req, res) => {
+  try {
+    const { plan } = req.body;
+    if (!['monthly', 'annual'].includes(plan)) {
+      return res.status(400).json({ error: 'Invalid plan' });
+    }
+    const priceId = plan === 'annual'
+      ? process.env.STRIPE_ANNUAL_PRICE_ID
+      : process.env.STRIPE_MONTHLY_PRICE_ID;
+
+    const session = await stripe.checkout.sessions.create({
+      mode: 'subscription',
+      line_items: [{ price: priceId, quantity: 1 }],
+      success_url: `${process.env.FRONTEND_URL}/premium?payment_success=true`,
+      cancel_url: `${process.env.FRONTEND_URL}/premium?payment_cancelled=true`,
+      client_reference_id: req.user.uid,
+      metadata: { plan, userId: req.user.uid }
+    });
+
+    res.json({ sessionId: session.id });
+  } catch (error) {
+    console.error('Checkout error:', error);
+    res.status(500).json({ error: error.message });
   }
 });
 
