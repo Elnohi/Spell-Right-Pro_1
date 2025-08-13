@@ -294,6 +294,11 @@ function showPremiumUpsell() {
 }
 
 // ==================== UTILITIES ====================
+function isTypingField(el) {
+  if (!el) return false;
+  const tag = (el.tagName || '').toLowerCase();
+  return tag === 'input' || tag === 'textarea' || el.isContentEditable === true;
+}
 function processWordList(text) {
   // Preserve phrases; split on newlines, commas, semicolons, or pipes — NOT spaces
   return [...new Set(
@@ -483,7 +488,8 @@ function showTypedWord() {
   focusAnswer();
 }
 function typedShortcuts(e) {
-  if (e.key === ' ') { e.preventDefault(); speakOut(words[currentIndex], 0.95, focusAnswer); }
+  if (isTypingField(document.activeElement)) return; // don't hijack while typing
+  if (e.code === 'Space' || e.key === ' ') { e.preventDefault(); speakOut(words[currentIndex], 0.95, focusAnswer); }
   if (e.key === 'ArrowLeft' && currentIndex > 0) prevTyped();
   if (e.key === 'ArrowRight') nextTyped();
 }
@@ -789,3 +795,4 @@ function shuffle(arr) {
 }
 
 // ==================== END ====================
+
