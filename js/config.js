@@ -1,5 +1,3 @@
-<!-- Make sure this loads BEFORE main-premium.js and other app scripts -->
-<script>
 // ===== js/config.js (clean) =====
 
 // 1) Firebase web config (public)
@@ -13,32 +11,30 @@ window.firebaseConfig = {
   measurementId: "G-H09MF13297"
 };
 
-// Backend + Stripe config (NO placeholders)
+// 2) Backend + Ads config
 window.appConfig = {
-  apiBaseUrl: "https://spellrightpro-api-798456641137.us-central1.run.app", // your Cloud Run URL, no trailing slash
-  trialDays: 0, // you said no trial
+  // ✅ your Cloud Run URL (no trailing slash)
+  apiBaseUrl: "https://spellrightpro-api-798456641137.us-central1.run.app",
+  trialDays: 0, // no trial for premium since you have freemium
   adClient: "ca-pub-7632930282249669"
 };
 
-// 3) Stripe publishable key (safe to expose on the frontend)
+// 3) Stripe publishable key (frontend-safe)
 window.stripeConfig = {
-  // Use pk_test_... while testing; switch to pk_live_... for production
+  // Use pk_test_... in test, pk_live_... in prod
   publicKey: "pk_live_51RuKs1El99zwdEZr9wjVF3EhADOk4c9x8JjvjPLH8Y16cCPwykZRFVtC1Fr0hSJesStbqcvfvvNOy4NHRaV0GPvg004IIcPfC8"
 };
 
-// 4) Initialize Firebase (compat) once and expose handy globals
+// 4) Initialize Firebase (compat) once
 (function initFirebase() {
   try {
-    if (firebase?.apps?.length) {
-      window.firebaseApp = firebase.app();
-    } else {
-      window.firebaseApp = firebase.initializeApp(window.firebaseConfig);
+    if (!firebase?.apps?.length) {
+      firebase.initializeApp(window.firebaseConfig);
     }
     window.auth = firebase.auth();
     window.db   = firebase.firestore();
-    try { window.analytics = firebase.analytics(); } catch (_) {}
+    try { firebase.analytics(); } catch (_) {}
   } catch (e) {
     console.error("[config] Firebase init failed:", e);
   }
 })();
-</script>
