@@ -15,7 +15,7 @@ window.firebaseConfig = {
 
 // Backend + Stripe config (NO placeholders)
 window.appConfig = {
-  apiBaseUrl: "https://spellrightpro-api-<your-id>-uc.a.run.app", // your Cloud Run URL, no trailing slash
+  apiBaseUrl: "https://spellrightpro-api-798456641137.us-central1.run.app", // your Cloud Run URL, no trailing slash
   trialDays: 0, // you said no trial
   adClient: "ca-pub-7632930282249669"
 };
