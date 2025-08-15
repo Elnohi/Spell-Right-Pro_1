@@ -1,5 +1,9 @@
-// js/config.js - No module syntax
-const firebaseConfig = {
+<!-- Make sure this loads BEFORE main-premium.js and other app scripts -->
+<script>
+// ===== js/config.js (clean) =====
+
+// 1) Firebase web config (public)
+window.firebaseConfig = {
   apiKey: "AIzaSyCZ-rAPnRgVjSRFOFvbiQlowE6A3RVvwWo",
   authDomain: "spellrightpro-firebase.firebaseapp.com",
   projectId: "spellrightpro-firebase",
@@ -9,32 +13,34 @@ const firebaseConfig = {
   measurementId: "G-H09MF13297"
 };
 
-// App config
-const appConfig = {
-  trialDays: 7,
-  defaultTheme: 'light',
-  apiBaseUrl: 'https://<YOUR_API_BASE_URL>', // e.g. https://srp-backend.onrender.com
-  adClient: 'ca-pub-7632930282249669'
+// 2) App config (NO TRIALS)
+window.appConfig = {
+  // TODO: replace with your actual Cloud Run URL (no trailing slash)
+  apiBaseUrl: "https://YOUR-CLOUD-RUN-URL.run.app",
+  trialDays: 0,
+  defaultTheme: "light",
+  adClient: "ca-pub-7632930282249669"
 };
 
-// Initialize Firebase (compat)
-const app = firebase.initializeApp(firebaseConfig);
-const auth = firebase.auth();
-const db = firebase.firestore();
-let analytics;
-try {
-  analytics = firebase.analytics();
-} catch (e) {
-  console.warn("Analytics init failed", e);
-}
-
-window.appConfig  = { apiBaseUrl: "https://<SERVICE_URL>", trialDays: 7 };
-window.stripeConfig = { publicKey: "pk_test_... or pk_live_..." };
-
-
-// Stripe (frontend/public) keys
-const stripeConfig = {
-  publicKey: "pk_live_51RuKs1El99zwdEZr9wjVF3EhADOk4c9x8JjvjPLH8Y16cCPwykZRFVtC1Fr0hSJesStbqcvfvvNOy4NHRaV0GPvg004IIcPfC8",
-  monthlyPlanId: "price_1RuZVNEl99zwdEZrit75tV1F",
-  annualPlanId: "price_1RuZR3El99zwdEZrgqiGz1FL"
+// 3) Stripe publishable key (safe to expose on the frontend)
+window.stripeConfig = {
+  // Use pk_test_... while testing; switch to pk_live_... for production
+  publicKey: "pk_test_XXXXXXXXXXXXXXXXXXXXXXXX" // or "pk_live_XXXXXXXXXXXXXXXXXXXXXXXX"
 };
+
+// 4) Initialize Firebase (compat) once and expose handy globals
+(function initFirebase() {
+  try {
+    if (firebase?.apps?.length) {
+      window.firebaseApp = firebase.app();
+    } else {
+      window.firebaseApp = firebase.initializeApp(window.firebaseConfig);
+    }
+    window.auth = firebase.auth();
+    window.db   = firebase.firestore();
+    try { window.analytics = firebase.analytics(); } catch (_) {}
+  } catch (e) {
+    console.error("[config] Firebase init failed:", e);
+  }
+})();
+</script>
