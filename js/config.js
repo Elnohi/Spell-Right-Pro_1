@@ -1,4 +1,4 @@
-// ===== js/config.js (clean) =====
+// ===== js/config.js =====
 
 // 1) Firebase web config (public)
 window.firebaseConfig = {
@@ -11,21 +11,19 @@ window.firebaseConfig = {
   measurementId: "G-H09MF13297"
 };
 
-// 2) Backend + Ads config
+// 2) Backend (+ ads) — ✅ your Cloud Run URL, no trailing slash
 window.appConfig = {
-  // ✅ your Cloud Run URL (no trailing slash)
   apiBaseUrl: "https://spellrightpro-api-798456641137.us-central1.run.app",
-  trialDays: 0, // no trial for premium since you have freemium
+  trialDays: 0, // No trial since you already have freemium
   adClient: "ca-pub-7632930282249669"
 };
 
 // 3) Stripe publishable key (frontend-safe)
 window.stripeConfig = {
-  // Use pk_test_... in test, pk_live_... in prod
   publicKey: "pk_live_51RuKs1El99zwdEZr9wjVF3EhADOk4c9x8JjvjPLH8Y16cCPwykZRFVtC1Fr0hSJesStbqcvfvvNOy4NHRaV0GPvg004IIcPfC8"
 };
 
-// 4) Initialize Firebase (compat) once
+// 4) Initialize Firebase (compat) exactly once
 (function initFirebase() {
   try {
     if (!firebase?.apps?.length) {
