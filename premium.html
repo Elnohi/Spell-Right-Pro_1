@@ -19,7 +19,7 @@
   <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-analytics-compat.js"></script>
 
-  <!-- Config MUST load BEFORE anything that uses it -->
+  <!-- Config MUST load before anything that uses it -->
   <script src="js/config.js"></script>
 
   <!-- Helpers / data -->
@@ -32,10 +32,10 @@
   <!-- Main premium app -->
   <script src="js/main-premium.js" defer></script>
 
-  <!-- Service Worker: register at root so it doesn't 404 under /premium -->
+  <!-- Register SW at root to avoid /premium/sw.js 404 -->
   <script>
     if ('serviceWorker' in navigator) {
-      window.addEventListener('load', () => {
+      addEventListener('load', () => {
         navigator.serviceWorker.register('/sw.js').catch(console.warn);
       });
     }
