@@ -276,13 +276,13 @@ function showPremiumUpsell() {
       <div class="pricing-options">
         <div class="pricing-option">
           <h3>Monthly</h3>
-          <div class="price" id="monthly-price">$4.99/mo</div>
+          <div class="price" id="price_1RuZVNEl99zwdEZrit75tV1F">$7.99/mo</div>
           <button id="monthly-btn" class="btn btn-primary">Subscribe</button>
         </div>
         <div class="pricing-option recommended">
           <div class="badge">Best Value</div>
           <h3>Annual</h3>
-          <div class="price" id="annual-price">$49.99/yr</div>
+          <div class="price" id="price_1RuZR3El99zwdEZrgqiGz1FL">$79.99/yr</div>
           <div class="savings">Save 15%</div>
           <button id="annual-btn" class="btn btn-primary">Subscribe</button>
         </div>
@@ -778,3 +778,4 @@ function shuffle(arr) {
   return a;
 }
 /* ==================== END ==================== */
+
