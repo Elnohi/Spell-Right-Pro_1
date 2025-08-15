@@ -16,7 +16,7 @@ window.firebaseConfig = {
 // 2) App config (NO TRIALS)
 window.appConfig = {
   // TODO: replace with your actual Cloud Run URL (no trailing slash)
-  apiBaseUrl: "https://YOUR-CLOUD-RUN-URL.run.app",
+  apiBaseUrl: "https://spellrightpro-api-798456641137.us-central1.run.app",
   trialDays: 0,
   defaultTheme: "light",
   adClient: "ca-pub-7632930282249669"
@@ -25,7 +25,7 @@ window.appConfig = {
 // 3) Stripe publishable key (safe to expose on the frontend)
 window.stripeConfig = {
   // Use pk_test_... while testing; switch to pk_live_... for production
-  publicKey: "pk_test_XXXXXXXXXXXXXXXXXXXXXXXX" // or "pk_live_XXXXXXXXXXXXXXXXXXXXXXXX"
+  publicKey: "pk_live_51RuKs1El99zwdEZr9wjVF3EhADOk4c9x8JjvjPLH8Y16cCPwykZRFVtC1Fr0hSJesStbqcvfvvNOy4NHRaV0GPvg004IIcPfC8"
 };
 
 // 4) Initialize Firebase (compat) once and expose handy globals
