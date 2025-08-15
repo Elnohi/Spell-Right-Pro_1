@@ -7,6 +7,10 @@
 
   <base href="/" />
 
+  <!-- PWA niceties -->
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#0ea5e9">
+
   <!-- Styles -->
   <link rel="stylesheet" href="css/styles.css">
   <link rel="stylesheet" href="css/premium.css">
@@ -41,6 +45,12 @@
   </script>
 </head>
 <body>
+  <noscript>
+    <div style="padding:12px;background:#fee2e2;color:#991b1b;text-align:center">
+      This app needs JavaScript enabled.
+    </div>
+  </noscript>
+
   <header class="navbar">
     <div class="brand">
       <img src="assets/logo.png" alt="SpellRightPro Logo" class="logo">
@@ -57,6 +67,9 @@
   </header>
 
   <main class="container">
+    <!-- Ads for pre-login / non-premium only (injected via JS) -->
+    <div id="prelogin-ads" class="ad-container" style="margin-bottom:1rem;"></div>
+
     <div id="auth-area"></div>
 
     <section id="premium-app" class="training-card hidden">
@@ -64,6 +77,7 @@
       <div id="exam-ui"></div>
       <div id="trainer-area" class="hidden"></div>
       <div id="summary-area" class="hidden"></div>
+      <!-- Keep this if you ever want a manual ad slot inside the app; JS hides it when premium -->
       <div class="ad-container" style="margin-top:1rem;"></div>
     </section>
   </main>
