@@ -327,8 +327,13 @@ function toggleFlagWord(word, options = {}) {
     }
   }
 }
+// Safe alert wrapper: won't recurse if window.showAlert === this function
 function showAlert(message, type = 'error', duration = 3000) {
-  if (typeof window.showAlert === 'function') return window.showAlert(message, type, duration);
+  const fn = (window && window.showAlert) || null;
+  if (fn && fn !== showAlert && typeof fn === 'function') {
+    return fn(message, type, duration);
+  }
+  // Fallback to console so we still see what happened
   console[type === 'error' ? 'error' : 'log'](message);
 }
 
@@ -778,5 +783,6 @@ function shuffle(arr) {
   return a;
 }
 /* ==================== END ==================== */
+
 
 
