@@ -3,21 +3,16 @@ const STATIC_CACHE = `static-${CACHE_VERSION}`;
 const RUNTIME_CACHE = `runtime-${CACHE_VERSION}`;
 
 const PRECACHE_ASSETS = [
-  '/',                 // Netlify will route to index.html
+  '/',                // Netlify will serve /index.html
+  '/index.html',
   '/premium.html',
-  '/freemium-oet.html',
-  '/freemium-bee.html',
-  '/thankyou.html',
   '/offline.html',
-
-  // CSS/JS you actually have
   '/css/styles.css',
   '/css/premium.css',
   '/js/config.js',
   '/js/common.js',
+  '/js/oet_word_list.js',
   '/js/main-premium.js',
-
-  // light assets to render the shell
   '/assets/logo.png'
 ];
 
