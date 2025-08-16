@@ -9,18 +9,6 @@ const Stripe = require('stripe');
 const app = express();
 app.disable('x-powered-by');
 
-/* ---------- Env validation ---------- */
-const REQUIRED = [
-  'FRONTEND_URL',
-  'STRIPE_SECRET_KEY',
-  'STRIPE_MONTHLY_PRICE_ID',
-  'STRIPE_ANNUAL_PRICE_ID',
-  'STRIPE_WEBHOOK_SECRET',
-  'FIREBASE_SERVICE_ACCOUNT_JSON',
-];
-const missing = REQUIRED.filter(k => !process.env[k] || !String(process.env[k]).trim());
-if (missing.length) throw new Error(`Missing env vars: ${missing.join(', ')}`);
-
 /* ---------- CORS (strict, with proper preflight) ---------- */
 const FRONTEND_URL = process.env.FRONTEND_URL.replace(/\/+$/, '');
 const allowedHosts = [ new URL(FRONTEND_URL).host ];
@@ -61,6 +49,18 @@ app.use((req, res, next) => {
   }
   return next();
 });
+
+/* ---------- Env validation ---------- */
+const REQUIRED = [
+  'FRONTEND_URL',
+  'STRIPE_SECRET_KEY',
+  'STRIPE_MONTHLY_PRICE_ID',
+  'STRIPE_ANNUAL_PRICE_ID',
+  'STRIPE_WEBHOOK_SECRET',
+  'FIREBASE_SERVICE_ACCOUNT_JSON',
+];
+const missing = REQUIRED.filter(k => !process.env[k] || !String(process.env[k]).trim());
+if (missing.length) throw new Error(`Missing env vars: ${missing.join(', ')}`);
 
 /* ---------- Stripe & Firebase ---------- */
 const stripe = Stripe(process.env.STRIPE_SECRET_KEY, { apiVersion: '2023-10-16' });
