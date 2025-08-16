@@ -242,21 +242,68 @@ function handleLogout() { firebase.auth().signOut(); }
 
 /* ==================== PAYMENTS ==================== */
 async function initiatePayment(planType) {
-  if (!currentUser) { showAlert('Please log in first.', 'error'); return; }
-  const base = (window.appConfig && window.appConfig.apiBaseUrl) || ''; // ✅ fixed
-  if (!base) { showAlert('Backend URL missing. Set window.appConfig.apiBaseUrl in config.js', 'error'); return; }
+  if (!currentUser) {
+    showAlert('Please log in first.', 'error');
+    return;
+  }
+
+  // Map friendly planType to the actual Stripe price IDs
+  const priceMap = {
+    monthly: 'price_1RuZVNEl99zwdEZrit75tV1F',
+    annual: 'price_1RuZR3El99zwdEZrgqiGz1FL'
+  };
+  const priceId = priceMap[planType];
+  if (!priceId) {
+    showAlert(`Unknown plan type: ${planType}`, 'error');
+    return;
+  }
+
+  const base = (window.appConfig && window.appConfig.apiBaseUrl) || '';
+  if (!base) {
+    showAlert('Backend URL missing. Set window.appConfig.apiBaseUrl in config.js', 'error');
+    return;
+  }
+
   try {
     const idToken = await currentUser.getIdToken();
+
+    const payload = {
+      priceId,          // required by backend to create Stripe Checkout Session
+      plan: planType,   // keep original for logging if backend uses it
+      userId: currentUser.uid,
+      sessionId         // from global state
+    };
+
     const res = await fetch(`${base}/create-checkout-session`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${idToken}` },
-      body: JSON.stringify({ plan: planType, userId: currentUser.uid, sessionId })
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${idToken}`
+      },
+      body: JSON.stringify(payload)
     });
-    if (!res.ok) throw new Error(await res.text());
-    const { sessionId: sid } = await res.json();
-    if (!stripe) initStripe();
-    const { error } = await stripe.redirectToCheckout({ sessionId: sid });
-    if (error) throw error;
+
+    if (!res.ok) {
+      const text = await res.text().catch(() => '');
+      throw new Error(`Server error ${res.status}${text ? `: ${text}` : ''}`);
+    }
+
+    const data = await res.json().catch(() => ({}));
+
+    // Accept both possible backend shapes
+    if (data.url) {
+      window.location.href = data.url;
+      return;
+    }
+    if (data.sessionId) {
+      if (!stripe) initStripe();
+      const { error } = await stripe.redirectToCheckout({ sessionId: data.sessionId });
+      if (error) throw error;
+      return;
+    }
+
+    throw new Error('Invalid server response: expected `url` or `sessionId`');
+
   } catch (error) {
     showAlert(`Payment failed: ${error.message}`, 'error', 5000);
   }
@@ -783,6 +830,7 @@ function shuffle(arr) {
   return a;
 }
 /* ==================== END ==================== */
+
 
 
 
