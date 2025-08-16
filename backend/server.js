@@ -23,19 +23,36 @@ if (missing.length) throw new Error(`Missing env vars: ${missing.join(', ')}`);
 
 /* ---------- CORS ---------- */
 const FRONTEND_URL = process.env.FRONTEND_URL.replace(/\/+$/, '');
+
 const allowedHosts = [ new URL(FRONTEND_URL).host ];
 const isAllowed = (origin) => {
-  if (!origin) return true;
+  if (!origin) return true; // non-browser or same-origin
   try {
     const { host, protocol } = new URL(origin);
-    if (!/^https:$/i.test(protocol)) return false;
+    if (protocol !== 'https:') return false;
     if (allowedHosts.includes(host)) return true;
     if (/\.netlify\.app$/i.test(host)) return true;
+    if (host === 'localhost:5173' || host === 'localhost:3000') return true;
     return false;
   } catch { return false; }
 };
-app.use(cors({ origin: (origin, cb) => cb(null, isAllowed(origin)), credentials: false }));
-app.options('*', cors());
+
+// Delegate that returns full CORS options for both normal and preflight
+const corsOptionsDelegate = (req, cb) => {
+  const origin = req.header('Origin');
+  const allow = isAllowed(origin);
+  cb(null, {
+    origin: allow ? origin : false,               // reflect origin if allowed
+    credentials: true,                            // OK if you ever use cookies; harmless otherwise
+    methods: ['GET', 'POST', 'OPTIONS'],
+    allowedHeaders: ['Authorization', 'Content-Type'],
+    maxAge: 86400
+  });
+};
+
+// Apply to all routes + preflight
+app.use(cors(corsOptionsDelegate));
+app.options('*', cors(corsOptionsDelegate));
 
 /* ---------- Stripe & Firebase ---------- */
 const stripe = Stripe(process.env.STRIPE_SECRET_KEY, { apiVersion: '2023-10-16' });
