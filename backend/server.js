@@ -107,10 +107,10 @@ app.post('/create-checkout-session', authenticate, async (req, res) => {
   try {
     const { plan, priceId: clientPriceId } = req.body;
 
-    // Choose price ID
+    // Choose price ID (client override or env)
     let priceId = null;
     if (typeof clientPriceId === 'string' && /^price_/.test(clientPriceId)) {
-      priceId = clientPriceId; // allow explicit override
+      priceId = clientPriceId;
     } else if (plan === 'annual') {
       priceId = process.env.STRIPE_ANNUAL_PRICE_ID;
     } else if (plan === 'monthly') {
@@ -119,20 +119,24 @@ app.post('/create-checkout-session', authenticate, async (req, res) => {
       return res.status(400).json({ error: 'Invalid plan/price' });
     }
 
+    // ✅ Sanity check: ensure the price exists in THIS key’s mode (TEST vs LIVE)
+    await stripe.prices.retrieve(priceId);
+
     const session = await stripe.checkout.sessions.create({
       mode: 'subscription',
       line_items: [{ price: priceId, quantity: 1 }],
-      subscription_data: { trial_period_days: 0 }, // force no trial
+      subscription_data: { trial_period_days: 0 },
       success_url: `${FRONTEND_URL}/premium?payment_success=true`,
       cancel_url: `${FRONTEND_URL}/premium?payment_cancelled=true`,
       client_reference_id: req.user.uid,
       metadata: { plan: plan || 'unknown', userId: req.user.uid }
     });
 
-    res.json({ sessionId: session.id });
+    return res.json({ sessionId: session.id });
   } catch (error) {
-    console.error('Checkout error:', error);
-    res.status(500).json({ error: error.message });
+    const mode = (process.env.STRIPE_SECRET_KEY || '').includes('_test_') ? 'TEST' : 'LIVE';
+    console.error('Checkout error:', error.message, `(API mode: ${mode})`);
+    return res.status(400).json({ error: `${error.message} (API mode: ${mode})` });
   }
 });
 
