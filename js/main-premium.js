@@ -40,7 +40,7 @@ document.addEventListener('DOMContentLoaded', () => {
 function initStripe() {
   if (!window.Stripe) { console.warn('Stripe.js not loaded yet.'); return; }
   const key = (window.stripeConfig && window.stripeConfig.publicKey) || '';
-  if (!/^pk_live_51RuKs1El99zwdEZr9wjVF3EhADOk4c9x8JjvjPLH8Y16cCPwykZRFVtC1Fr0hSJesStbqcvfvvNOy4NHRaV0GPvg004IIcPfC8) {
+  if (!/^pk_live_51RuKs1El99zwdEZr9wjVF3EhADOk4c9x8JjvjPLH8Y16cCPwykZRFVtC1Fr0hSJesStbqcvfvvNOy4NHRaV0GPvg004IIcPfC8/.test(key)) {
     console.warn('Stripe publishable key missing/invalid.');
     return;
   }
@@ -602,4 +602,5 @@ function summaryFor(listWords, answers, scoreVal){
 
 /* ==================== HELPERS ==================== */
 function shuffle(arr){ const a=arr.slice(); for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
+
 
