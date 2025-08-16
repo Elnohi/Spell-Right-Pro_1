@@ -1,13 +1,12 @@
-// main-premium.js — Premium app (no trial), ad gating, auto-checkout for non-premium
-// Bee = voice-only (mic spelling). OET/Custom = typed input.
+// main-premium.js — Premium app (no trial) + Stripe checkout
 
 /* ==================== GLOBAL STATE ==================== */
 let currentUser = null;
 let premiumUser = false;
 
-let examType = "OET";            // "OET" | "Bee" | "Custom"
-let accent = "en-US";            // "en-US" | "en-GB" | "en-AU"
-let sessionMode = "practice";    // "practice" | "test"
+let examType = "OET";          // "OET" | "Bee" | "Custom"
+let accent = "en-US";          // "en-US" | "en-GB" | "en-AU"
+let sessionMode = "practice";  // "practice" | "test"
 
 let words = [];
 let currentIndex = 0;
@@ -15,19 +14,18 @@ let score = 0;
 let userAnswers = [];
 let flaggedWordsStore = JSON.parse(localStorage.getItem('flaggedWords') || '[]');
 
-const sessionId = 'sess_' + Math.random().toString(36).substring(2, 9);
-
+const sessionId = 'sess_' + Math.random().toString(36).slice(2, 9);
 let stripe = null;
-let autoCheckoutAttempted = false; // prevent loops per page load
+let autoCheckoutAttempted = false;
 
-/* ==================== DOM REFERENCES ==================== */
-const authArea      = document.getElementById('auth-area');
-const premiumApp    = document.getElementById('premium-app');
-const examUI        = document.getElementById('exam-ui');
-const trainerArea   = document.getElementById('trainer-area');
-const summaryArea   = document.getElementById('summary-area');
-const appTitle      = document.getElementById('app-title');
-const darkModeToggle= document.getElementById('dark-mode-toggle');
+/* ==================== DOM REFS ==================== */
+const authArea       = document.getElementById('auth-area');
+const premiumApp     = document.getElementById('premium-app');
+const examUI         = document.getElementById('exam-ui');
+const trainerArea    = document.getElementById('trainer-area');
+const summaryArea    = document.getElementById('summary-area');
+const appTitle       = document.getElementById('app-title');
+const darkModeToggle = document.getElementById('dark-mode-toggle');
 
 /* ==================== INIT ==================== */
 document.addEventListener('DOMContentLoaded', () => {
@@ -41,18 +39,15 @@ document.addEventListener('DOMContentLoaded', () => {
 /* ==================== STRIPE ==================== */
 function initStripe() {
   if (!window.Stripe) { console.warn('Stripe.js not loaded yet.'); return; }
-  const key =
-    (window.stripeConfig && window.stripeConfig.publicKey) ||
-    (typeof stripeConfig !== 'undefined' && stripeConfig.publicKey) || '';
+  const key = (window.stripeConfig && window.stripeConfig.publicKey) || '';
   if (!/^pk_(test|live)_/.test(key)) {
-    console.warn('Stripe publishable key missing/invalid. Set window.stripeConfig.publicKey in config.js');
+    console.warn('Stripe publishable key missing/invalid.');
     return;
   }
   stripe = Stripe(key);
 }
 
-/* ==================== AD GATING (AUTO ADS) ==================== */
-// Load Auto Ads script only for logged-out or non-premium users.
+/* ==================== ADS ==================== */
 function loadAutoAdsOnce() {
   if (window.__adsLoaded) return;
   const client = (window.appConfig && window.appConfig.adClient) || 'ca-pub-7632930282249669';
@@ -64,8 +59,6 @@ function loadAutoAdsOnce() {
   document.head.appendChild(s);
   window.__adsLoaded = true;
 }
-
-// Pause new requests & hide any rendered Auto Ads.
 function disableAutoAdsNow() {
   try {
     window.adsbygoogle = window.adsbygoogle || [];
@@ -75,9 +68,9 @@ function disableAutoAdsNow() {
     const st = document.createElement('style');
     st.id = 'premium-no-ads-style';
     st.textContent = `
-      .google-auto-placed, ins.adsbygoogle, .ad-container { display: none !important; }
+      .google-auto-placed, ins.adsbygoogle, .ad-container { display:none!important; }
       [id^="google_ads_iframe_"], #google_vignette, #google_anchor_container {
-        display: none !important; visibility: hidden !important;
+        display:none!important; visibility:hidden!important;
       }
     `;
     document.head.appendChild(st);
@@ -99,7 +92,7 @@ function initDarkMode() {
   });
 }
 
-/* ==================== VOICES (TTS) ==================== */
+/* ==================== VOICES ==================== */
 let voicesReady = false;
 function loadVoices() {
   function onVoices() { voicesReady = true; window.speechSynthesis.onvoiceschanged = null; }
@@ -112,8 +105,7 @@ function speakOut(text, rate = 0.95, onEnd) {
   if (!('speechSynthesis' in window)) { showAlert('Text-to-speech not supported.', 'error'); return; }
   window.speechSynthesis.cancel();
   const u = new SpeechSynthesisUtterance(text);
-  u.lang = accent;
-  u.rate = rate;
+  u.lang = accent; u.rate = rate;
   const voices = window.speechSynthesis.getVoices();
   const v = voices.find(x => x.lang === accent) || voices.find(x => x.lang.startsWith(accent.split('-')[0]));
   if (v) u.voice = v;
@@ -132,7 +124,7 @@ function checkUrlForPaymentStatus() {
   }
 }
 
-/* ==================== FIRESTORE & PREMIUM (NO TRIAL) ==================== */
+/* ==================== FIRESTORE & PREMIUM ==================== */
 async function ensureUserDoc(user) {
   const ref = firebase.firestore().collection('users').doc(user.uid);
   let snap;
@@ -143,7 +135,6 @@ async function ensureUserDoc(user) {
       email: user.email || '',
       isPremium: false,
       createdAt: firebase.firestore.FieldValue.serverTimestamp()
-      // ⛔ no trialEndsAt
     }, { merge: true });
     return;
   }
@@ -160,7 +151,7 @@ async function checkPremiumStatus() {
     const snap = await firebase.firestore().collection('users').doc(currentUser.uid).get();
     if (!snap.exists) return false;
     const data = snap.data();
-    premiumUser = data.isPremium === true; // ⛔ ignore any trial
+    premiumUser = data.isPremium === true;
     if (premiumUser) disableAutoAdsNow(); else loadAutoAdsOnce();
     return premiumUser;
   } catch (e) {
@@ -175,10 +166,9 @@ function initAuthState() {
     currentUser = user;
     if (!user) {
       renderAuthLoggedOut();
-      loadAutoAdsOnce(); // show ads while logged out
+      loadAutoAdsOnce();
       return;
     }
-
     await ensureUserDoc(user);
     await checkPremiumStatus();
     renderAuthLoggedIn();
@@ -187,11 +177,9 @@ function initAuthState() {
       renderExamUI();
     } else {
       showPremiumUpsell();
-      // Auto-redirect to Stripe once per page load
       if (!autoCheckoutAttempted) {
         autoCheckoutAttempted = true;
-        // small delay so UI shows a message
-        setTimeout(() => initiatePayment('monthly').catch(console.error), 200);
+        setTimeout(() => initiatePayment('monthly').catch(console.error), 250);
       }
     }
   });
@@ -234,103 +222,60 @@ async function handleSignup() {
     const cred = await firebase.auth().createUserWithEmailAndPassword(email, password);
     await ensureUserDoc(cred.user);
     showAlert('Account created. Redirecting to checkout…', 'success', 2500);
-  } catch (e) {
-    showAlert(e.message, 'error');
-  }
+  } catch (e) { showAlert(e.message, 'error'); }
 }
 function handleLogout() { firebase.auth().signOut(); }
 
-/* ==================== PAYMENTS ==================== */
-async function initiatePayment(planType) {
-  if (!currentUser) {
-    showAlert('Please log in first.', 'error');
-    return;
-  }
-
-// Map friendly planType to the actual Stripe price IDs
+/* ==================== PAYMENTS (single, correct version) ==================== */
 const priceMap = {
-  monthly: 'price_1RuZVNEl99zwdEZrit75tV1F',
-  annual: 'price_1RuZR3El99zwdEZrgqiGz1FL'
+  monthly: 'price_1RuZVNEl99zwdEZrit75tV1F', // CAD 7.99
+  annual:  'price_1RuZR3El99zwdEZrgqiGz1FL'  // CAD 79.99
 };
 
 async function initiatePayment(planType) {
-  if (!currentUser) {
-    showAlert('Please log in first.', 'error');
-    return;
-  }
+  if (!currentUser) { showAlert('Please log in first.', 'error'); return; }
 
-  // Normalize and validate planType
   const normalizedPlan = (planType || '').trim().toLowerCase();
   const priceId = priceMap[normalizedPlan];
-  if (!priceId) {
-    showAlert(`Unknown plan type: ${normalizedPlan}`, 'error');
-    return;
-  }
+  if (!priceId) { showAlert(`Unknown plan: ${normalizedPlan}`, 'error'); return; }
 
   const base = (window.appConfig && window.appConfig.apiBaseUrl) || '';
-  if (!base) {
-    showAlert('Backend URL missing. Set window.appConfig.apiBaseUrl in config.js', 'error');
-    return;
-  }
+  if (!base) { showAlert('Backend URL missing in config.js', 'error'); return; }
 
   try {
     const idToken = await currentUser.getIdToken();
-
-    // Ensure sessionId is defined (if your backend requires it)
-    if (typeof sessionId === 'undefined') {
-      showAlert('Session ID is missing. Please refresh the page and try again.', 'error');
-      return;
-    }
-
-    const payload = {
-      priceId,            // required by backend
-      plan: normalizedPlan,
-      userId: currentUser.uid,
-      sessionId
-    };
-
     const res = await fetch(`${base}/create-checkout-session`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${idToken}`
       },
-      body: JSON.stringify(payload)
+      body: JSON.stringify({
+        plan: normalizedPlan,
+        priceId,       // backend now accepts this too (see server.js)
+        userId: currentUser.uid,
+        sessionId
+      })
     });
 
-    let data;
-    try {
-      data = await res.json();
-    } catch {
-      data = {};
-    }
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.error || `${res.status} ${res.statusText}`);
 
-    if (!res.ok) {
-      const errMsg = data.error || `${res.status} ${res.statusText}`;
-      console.error('Checkout session creation failed:', data);
-      throw new Error(errMsg);
-    }
-
-    // Accept both possible backend shapes
-    if (data.url) {
-      window.location.href = data.url;
-      return;
-    }
+    if (data.url) { window.location.href = data.url; return; }
     if (data.sessionId) {
       if (!stripe) initStripe();
       const { error } = await stripe.redirectToCheckout({ sessionId: data.sessionId });
       if (error) throw error;
       return;
     }
-
-    throw new Error('Invalid server response: expected `url` or `sessionId`');
-  } catch (error) {
-    console.error('Payment initiation error:', error);
-    showAlert(`Payment failed: ${error.message}`, 'error', 5000);
+    throw new Error('Invalid server response (expected `url` or `sessionId`).');
+  } catch (err) {
+    console.error('Payment initiation error:', err);
+    showAlert(`Payment failed: ${err.message}`, 'error', 6000);
   }
 }
 
-/* ==================== UPSELL (non-premium) ==================== */
+/* ==================== UPSELL ==================== */
 function showPremiumUpsell() {
   trainerArea.classList.remove('hidden');
   summaryArea.classList.add('hidden');
@@ -344,13 +289,13 @@ function showPremiumUpsell() {
       <div class="pricing-options">
         <div class="pricing-option">
           <h3>Monthly</h3>
-          <div class="price" id="price_1RuZVNEl99zwdEZrit75tV1F">$7.99/mo</div>
+          <div class="price">$7.99/mo</div>
           <button id="monthly-btn" class="btn btn-primary">Subscribe</button>
         </div>
         <div class="pricing-option recommended">
           <div class="badge">Best Value</div>
           <h3>Annual</h3>
-          <div class="price" id="price_1RuZR3El99zwdEZrgqiGz1FL">$79.99/yr</div>
+          <div class="price">$79.99/yr</div>
           <div class="savings">Save 15%</div>
           <button id="annual-btn" class="btn btn-primary">Subscribe</button>
         </div>
@@ -359,32 +304,18 @@ function showPremiumUpsell() {
     </div>`;
   document.getElementById('monthly-btn')?.addEventListener('click', () => initiatePayment('monthly'));
   document.getElementById('annual-btn')?.addEventListener('click', () => initiatePayment('annual'));
-
-  // While not premium, allow ads
   loadAutoAdsOnce();
 }
 
 /* ==================== UTILITIES ==================== */
-function isTypingField(el) {
-  if (!el) return false;
-  const tag = (el.tagName || '').toLowerCase();
-  return tag === 'input' || tag === 'textarea' || el.isContentEditable === true;
+function isTypingField(el){ if(!el) return false; const t=(el.tagName||'').toLowerCase(); return t==='input'||t==='textarea'||el.isContentEditable===true; }
+function processWordList(text){
+  return [...new Set(String(text||'').replace(/\r/g,'').split(/[\n,;|\/\-–—\t]+/).map(w=>w.trim()).filter(w=>w&&w.length>1))];
 }
-function processWordList(text) {
-  // Preserve phrases; split on newlines, commas, semicolons, or pipes — NOT spaces
-  return [...new Set(
-    String(text || '')
-      .replace(/\r/g, '')
-      .split(/[\n,;|\/\-–—\t]+/)
-      .map(w => w.trim())
-      .filter(w => w && w.length > 1)
-  )];
-}
-function toggleFlagWord(word, options = {}) {
+function toggleFlagWord(word, options={}) {
   if (!word) return;
   const idx = flaggedWordsStore.indexOf(word);
-  if (idx === -1) flaggedWordsStore.push(word);
-  else flaggedWordsStore.splice(idx, 1);
+  if (idx === -1) flaggedWordsStore.push(word); else flaggedWordsStore.splice(idx,1);
   localStorage.setItem('flaggedWords', JSON.stringify(flaggedWordsStore));
   if (options.updateUI !== false) {
     const flagBtn = document.getElementById('flagWordBtn');
@@ -395,23 +326,19 @@ function toggleFlagWord(word, options = {}) {
     }
   }
 }
-// Safe alert wrapper: won't recurse if window.showAlert === this function
-function showAlert(message, type = 'error', duration = 3000) {
+function showAlert(message, type='error', duration=3000) {
   const fn = (window && window.showAlert) || null;
-  if (fn && fn !== showAlert && typeof fn === 'function') {
-    return fn(message, type, duration);
-  }
-  // Fallback to console so we still see what happened
+  if (fn && fn !== showAlert && typeof fn === 'function') return fn(message, type, duration);
   console[type === 'error' ? 'error' : 'log'](message);
 }
 
 /* ==================== EXAM UI (shared) ==================== */
 function renderExamUI() {
-  let uploadAreaHTML = `
+  const uploadAreaHTML = `
     <textarea id="custom-words" class="form-control" rows="3"
       placeholder="Enter words (comma/newline separated), or leave blank to use default list."></textarea>
-    <input type="file" id="word-file" accept=".txt,.csv" class="form-control" style="margin-top: 5px;">
-    <button id="add-custom-btn" class="btn btn-info" style="margin-top: 7px;">
+    <input type="file" id="word-file" accept=".txt,.csv" class="form-control" style="margin-top:5px;">
+    <button id="add-custom-btn" class="btn btn-info" style="margin-top:7px;">
       <i class="fas fa-plus-circle"></i> Use This List
     </button>
     <div id="upload-info" class="upload-info" style="margin-top:6px;font-size:0.95em;color:var(--gray);"></div>
@@ -419,10 +346,10 @@ function renderExamUI() {
 
   examUI.innerHTML = `
     <div class="mode-selector">
-      <button id="practice-mode-btn" class="mode-btn ${sessionMode === 'practice' ? 'selected' : ''}">
+      <button id="practice-mode-btn" class="mode-btn ${sessionMode==='practice'?'selected':''}">
         <i class="fas fa-graduation-cap"></i> Practice Mode
       </button>
-      <button id="test-mode-btn" class="mode-btn ${sessionMode === 'test' ? 'selected' : ''}">
+      <button id="test-mode-btn" class="mode-btn ${sessionMode==='test'?'selected':''}">
         <i class="fas fa-clipboard-check"></i> Test Mode
       </button>
     </div>
@@ -433,17 +360,17 @@ function renderExamUI() {
         <option value="Bee">Spelling Bee</option>
         <option value="Custom">Custom Words</option>
       </select>
-      <select id="accent-select" class="form-control" style="max-width: 150px;">
+      <select id="accent-select" class="form-control" style="max-width:150px;">
         <option value="en-US">American English</option>
         <option value="en-GB">British English</option>
         <option value="en-AU">Australian English</option>
       </select>
-      <span id="flag-svg" style="display: inline-flex; align-items: center;"></span>
+      <span id="flag-svg" style="display:inline-flex;align-items:center;"></span>
     </div>
 
     <div id="custom-upload-area">${uploadAreaHTML}</div>
 
-    <button id="start-btn" class="btn btn-primary" style="margin-top: 15px;">
+    <button id="start-btn" class="btn btn-primary" style="margin-top:15px;">
       <i class="fas fa-play"></i> Start Session
     </button>
   `;
@@ -453,34 +380,28 @@ function renderExamUI() {
 
   document.getElementById('exam-type').onchange = e => {
     examType = e.target.value;
-    appTitle.textContent = (examType === 'OET') ? 'OET Spelling Practice'
-                        : (examType === 'Bee') ? 'Spelling Bee (Voice)'
+    appTitle.textContent = examType === 'OET' ? 'OET Spelling Practice'
+                        : examType === 'Bee' ? 'Spelling Bee (Voice)'
                         : 'Custom Spelling Practice';
   };
-
   document.getElementById('accent-select').onchange = e => { accent = e.target.value; };
 
-  document.getElementById('practice-mode-btn').onclick = () => { sessionMode = "practice"; renderExamUI(); };
-  document.getElementById('test-mode-btn').onclick = () => { sessionMode = "test"; renderExamUI(); };
+  document.getElementById('practice-mode-btn').onclick = () => { sessionMode = 'practice'; renderExamUI(); };
+  document.getElementById('test-mode-btn').onclick    = () => { sessionMode = 'test'; renderExamUI(); };
 
-  // File upload support
-  document.getElementById('word-file').addEventListener('change', function (e) {
-    const file = e.target.files[0];
-    if (!file) return;
+  document.getElementById('word-file').addEventListener('change', e => {
+    const file = e.target.files[0]; if (!file) return;
     const reader = new FileReader();
-    reader.onload = function (evt) {
-      const text = String(evt.target.result || '');
-      const list = processWordList(text);
+    reader.onload = evt => {
+      const list = processWordList(String(evt.target.result||''));
       words = list.slice();
       document.getElementById('upload-info').textContent = `Loaded ${list.length} words from file.`;
     };
     reader.readAsText(file);
   });
 
-  // Textarea support
   document.getElementById('add-custom-btn').onclick = () => {
-    const input = document.getElementById('custom-words').value.trim();
-    const list = processWordList(input);
+    const list = processWordList(document.getElementById('custom-words').value.trim());
     if (!list.length) { showAlert("Please enter some words first!", 'error'); return; }
     words = list.slice();
     document.getElementById('upload-info').textContent = `Using ${list.length} custom words.`;
@@ -492,7 +413,7 @@ function renderExamUI() {
     summaryArea.classList.add('hidden');
     if (examType === "OET") startOET();
     else if (examType === "Bee") startBee();
-    else if (examType === "Custom") startCustomPractice();
+    else startCustomPractice();
   };
 }
 
@@ -502,17 +423,14 @@ function startOET() {
   words = (!words || !words.length)
     ? (Array.isArray(window.oetWords) ? window.oetWords.slice() : [])
     : words.slice();
-
   if (!words.length) { showAlert("OET word list is empty.", 'error'); return; }
-
   if (sessionMode === "test") words = shuffle(words).slice(0, 24);
   appTitle.textContent = "OET Spelling Practice";
   showTypedWord();
   setTimeout(() => speakOut(words[currentIndex], 0.95, focusAnswer), 250);
 }
-
 function showTypedWord() {
-  if (currentIndex >= words.length) { return endSessionTyped(); }
+  if (currentIndex >= words.length) return endSessionTyped();
   const w = words[currentIndex];
   trainerArea.innerHTML = `
     <div class="word-progress">Word ${currentIndex + 1} of ${words.length}</div>
@@ -523,16 +441,16 @@ function showTypedWord() {
     <div class="input-wrapper">
       <input type="text" id="user-input" class="form-control"
         placeholder="Type what you heard..." autofocus
-        value="\${userAnswers[currentIndex] || ''}">
+        value="${userAnswers[currentIndex] || ''}">
     </div>
     <div class="button-group">
-      <button id="prev-btn" class="btn btn-secondary" ${currentIndex === 0 ? "disabled" : ""}>
+      <button id="prev-btn" class="btn btn-secondary" ${currentIndex===0?"disabled":""}>
         <i class="fas fa-arrow-left"></i> Previous
       </button>
       <button id="next-btn" class="btn btn-secondary"><i class="fas fa-arrow-right"></i> Next</button>
       <button id="check-btn" class="btn btn-primary"><i class="fas fa-check"></i> Check</button>
-      <button id="flagWordBtn" class="btn-icon ${flaggedWordsStore.includes(w) ? 'active' : ''}" title="Flag">
-        <i class="${flaggedWordsStore.includes(w) ? 'fas' : 'far'} fa-flag"></i>
+      <button id="flagWordBtn" class="btn-icon ${flaggedWordsStore.includes(w)?'active':''}" title="Flag">
+        <i class="${flaggedWordsStore.includes(w)?'fas':'far'} fa-flag"></i>
       </button>
     </div>
     <div id="feedback" class="feedback" aria-live="assertive"></div>
@@ -544,310 +462,143 @@ function showTypedWord() {
   document.getElementById('flagWordBtn')?.addEventListener('click', () => toggleFlagWord(w));
 
   const input = document.getElementById('user-input');
-  input?.addEventListener('keypress', (e) => { if (e.key === 'Enter') checkTypedAnswer(w); });
-  document.addEventListener('keydown', typedShortcuts, { once: true });
+  input?.addEventListener('keypress', e => { if (e.key === 'Enter') checkTypedAnswer(w); });
+  document.addEventListener('keydown', typedShortcuts, { once:true });
   focusAnswer();
 }
-function typedShortcuts(e) {
-  if (isTypingField(document.activeElement)) return; // don't hijack while typing
-  if (e.code === 'Space' || e.key === ' ') { e.preventDefault(); speakOut(words[currentIndex], 0.95, focusAnswer); }
-  if (e.key === 'ArrowLeft' && currentIndex > 0) prevTyped();
-  if (e.key === 'ArrowRight') nextTyped();
+function typedShortcuts(e){
+  if (isTypingField(document.activeElement)) return;
+  if (e.code==='Space' || e.key===' ') { e.preventDefault(); speakOut(words[currentIndex],0.95,focusAnswer); }
+  if (e.key==='ArrowLeft' && currentIndex>0) prevTyped();
+  if (e.key==='ArrowRight') nextTyped();
 }
-function focusAnswer() {
+function focusAnswer(){ const input=document.getElementById('user-input'); if (input){ input.focus(); input.select(); } }
+function checkTypedAnswer(correctWord){
   const input = document.getElementById('user-input');
-  if (input) { input.focus(); input.select(); }
-}
-function checkTypedAnswer(correctWord) {
-  const input = document.getElementById('user-input');
-  const userAnswer = (input?.value || '').trim();
-  if (!userAnswer) { showAlert("Please type the word first!", 'error'); return; }
-  userAnswers[currentIndex] = userAnswer;
+  const ans = (input?.value || '').trim();
+  if (!ans) { showAlert("Please type the word first!", 'error'); return; }
+  userAnswers[currentIndex] = ans;
   const feedback = document.getElementById('feedback');
-  if (userAnswer.toLowerCase() === correctWord.toLowerCase()) {
-    feedback.textContent = "✓ Correct!"; feedback.className = "feedback correct"; score++;
-  } else {
-    feedback.textContent = `✗ Incorrect. The correct spelling was: ${correctWord}`;
-    feedback.className = "feedback incorrect";
-  }
-  setTimeout(nextTyped, 1000);
+  if (ans.toLowerCase() === correctWord.toLowerCase()) { feedback.textContent="✓ Correct!"; feedback.className="feedback correct"; score++; }
+  else { feedback.textContent=`✗ Incorrect. The correct spelling was: ${correctWord}`; feedback.className="feedback incorrect"; }
+  setTimeout(nextTyped, 900);
 }
-function nextTyped() {
-  if (currentIndex < words.length - 1) { currentIndex++; showTypedWord(); }
-  else { endSessionTyped(); }
-}
-function prevTyped() {
-  if (currentIndex > 0) { currentIndex--; showTypedWord(); }
-}
-function endSessionTyped() { summaryFor(words, userAnswers, score); }
+function nextTyped(){ if (currentIndex < words.length - 1) { currentIndex++; showTypedWord(); } else endSessionTyped(); }
+function prevTyped(){ if (currentIndex > 0) { currentIndex--; showTypedWord(); } }
+function endSessionTyped(){ summaryFor(words, userAnswers, score); }
 
 /* ==================== CUSTOM (typed) ==================== */
-function startCustomPractice() {
+function startCustomPractice(){
   if (!words.length) {
-    const input = document.getElementById('custom-words')?.value || '';
-    const list = processWordList(input);
+    const list = processWordList(document.getElementById('custom-words')?.value || '');
     words = list.slice();
   }
   if (!words.length) { showAlert("No custom words loaded.", 'error'); return; }
-  if (sessionMode === "test") words = shuffle(words).slice(0, 24);
-  currentIndex = 0; score = 0; userAnswers = [];
-  appTitle.textContent = "Custom Spelling Practice";
+  if (sessionMode==="test") words = shuffle(words).slice(0,24);
+  currentIndex=0; score=0; userAnswers=[];
+  appTitle.textContent="Custom Spelling Practice";
   showTypedWord();
-  setTimeout(() => speakOut(words[currentIndex], 0.95, focusAnswer), 250);
+  setTimeout(()=>speakOut(words[currentIndex],0.95,focusAnswer),250);
 }
 
-/* ==================== BEE (voice-only spelling) ==================== */
-const DEFAULT_BEE_WORDS = [
-  "accommodate", "belligerent", "conscientious", "disastrous",
-  "embarrass", "foreign", "guarantee", "harass",
-  "interrupt", "jealous", "knowledge", "liaison",
-  "millennium", "necessary", "occasionally", "possession",
-  "questionnaire", "rhythm", "separate", "tomorrow",
-  "unforeseen", "vacuum", "withhold", "yacht"
-];
-
-let recognition = null;
-let autoAdvanceTimer = null;
-
-function startBee() {
-  words = (!words || !words.length) ? DEFAULT_BEE_WORDS.slice() : words.slice();
+/* ==================== BEE (voice) ==================== */
+const DEFAULT_BEE_WORDS = ["accommodate","belligerent","conscientious","disastrous","embarrass","foreign","guarantee","harass","interrupt","jealous","knowledge","liaison","millennium","necessary","occasionally","possession","questionnaire","rhythm","separate","tomorrow","unforeseen","vacuum","withhold","yacht"];
+let recognition=null, autoAdvanceTimer=null;
+function startBee(){
+  words = (!words||!words.length) ? DEFAULT_BEE_WORDS.slice() : words.slice();
   if (!words.length) { showAlert("No Spelling Bee words available.", 'error'); return; }
-  if (sessionMode === "test") words = shuffle(words).slice(0, 24);
-
-  currentIndex = 0; score = 0; userAnswers = [];
-  appTitle.textContent = "Spelling Bee (Voice)";
+  if (sessionMode==="test") words = shuffle(words).slice(0,24);
+  currentIndex=0; score=0; userAnswers=[];
+  appTitle.textContent="Spelling Bee (Voice)";
   showBeeWord();
-  setTimeout(() => playBeePrompt(), 250);
+  setTimeout(()=>playBeePrompt(),250);
 }
-
-function playBeePrompt() {
-  if (currentIndex >= words.length) { return endSessionBee(); }
-  const w = words[currentIndex];
-  stopRecognition();
-  speakOut(w, 0.9, () => setTimeout(() => startRecognition(w), 200));
-}
-
-function showBeeWord() {
-  if (currentIndex >= words.length) { return endSessionBee(); }
-  const w = words[currentIndex];
+function playBeePrompt(){ if (currentIndex>=words.length) return endSessionBee(); const w=words[currentIndex]; stopRecognition(); speakOut(w,0.9,()=>setTimeout(()=>startRecognition(w),200)); }
+function showBeeWord(){
+  if (currentIndex>=words.length) return endSessionBee();
+  const w=words[currentIndex];
   trainerArea.innerHTML = `
     <div class="word-progress">Word ${currentIndex + 1} of ${words.length}</div>
     <div id="spelling-visual" aria-live="polite"></div>
     <div id="auto-recording-info"><i class="fas fa-info-circle"></i> Speak the spelling after the word is pronounced</div>
     <div class="button-group">
-      <button id="prev-btn" class="btn-secondary" ${currentIndex === 0 ? 'disabled' : ''}><i class="fas fa-arrow-left"></i> Previous</button>
+      <button id="prev-btn" class="btn-secondary" ${currentIndex===0?'disabled':''}><i class="fas fa-arrow-left"></i> Previous</button>
       <button id="repeat-btn" class="btn-secondary"><i class="fas fa-redo"></i> Repeat Word</button>
       <button id="next-btn" class="btn-secondary"><i class="fas fa-arrow-right"></i> Skip</button>
-      <button id="flag-btn" class="btn-icon ${flaggedWordsStore.includes(w) ? 'active' : ''}"><i class="fas fa-star"></i> Flag</button>
+      <button id="flag-btn" class="btn-icon ${flaggedWordsStore.includes(w)?'active':''}"><i class="fas fa-star"></i> Flag</button>
     </div>
     <div id="mic-feedback" class="feedback" aria-live="assertive"></div>
   `;
-  document.getElementById('prev-btn')?.addEventListener('click', () => { if (currentIndex > 0) { currentIndex--; showBeeWord(); playBeePrompt(); } });
+  document.getElementById('prev-btn')?.addEventListener('click', ()=>{ if (currentIndex>0){ currentIndex--; showBeeWord(); playBeePrompt(); }});
   document.getElementById('repeat-btn')?.addEventListener('click', playBeePrompt);
-  document.getElementById('next-btn')?.addEventListener('click', () => { currentIndex++; showBeeWord(); playBeePrompt(); });
-  document.getElementById('flag-btn')?.addEventListener('click', () => toggleFlagWord(w));
-
-  document.addEventListener('keydown', beeShortcuts, { once: true });
+  document.getElementById('next-btn')?.addEventListener('click', ()=>{ currentIndex++; showBeeWord(); playBeePrompt(); });
+  document.getElementById('flag-btn')?.addEventListener('click', ()=>toggleFlagWord(w));
+  document.addEventListener('keydown', beeShortcuts, { once:true });
   updateSpellingVisual("● ● ●");
 }
-
-function beeShortcuts(e) {
-  if (e.key === ' ') { e.preventDefault(); playBeePrompt(); }
-  if (e.key === 'ArrowLeft' && currentIndex > 0) { currentIndex--; showBeeWord(); playBeePrompt(); }
-  if (e.key === 'ArrowRight') { currentIndex++; showBeeWord(); playBeePrompt(); }
+function beeShortcuts(e){ if (e.key===' ') { e.preventDefault(); playBeePrompt(); } if (e.key==='ArrowLeft'&&currentIndex>0){ currentIndex--; showBeeWord(); playBeePrompt(); } if (e.key==='ArrowRight'){ currentIndex++; showBeeWord(); playBeePrompt(); } }
+function startRecognition(targetWord){
+  if (!('webkitSpeechRecognition' in window || 'SpeechRecognition' in window)) { showAlert("Speech recognition not supported in this browser.", 'error'); return; }
+  stopRecognition();
+  const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+  recognition = new SR(); recognition.lang=accent; recognition.interimResults=false; recognition.maxAlternatives=5;
+  let gotResult=false;
+  recognition.onresult=e=>{ gotResult=true; const best=e.results[0][0]?.transcript||''; handleBeeResult(best,targetWord); };
+  recognition.onerror=e=>{ setMicFeedback(`Mic error: ${e.error}`,'error'); scheduleAutoAdvance(); };
+  recognition.onend=()=>{ if (!gotResult){ setMicFeedback("No speech detected. Try again or press Repeat.", 'error'); scheduleAutoAdvance(); } };
+  try { recognition.start(); setMicFeedback("Listening... spell the letters clearly.", 'info'); updateSpellingVisual("● ● ●"); }
+  catch(e){ console.warn('Recognition start failed:',e); scheduleAutoAdvance(); }
 }
-
-function startRecognition(targetWord) {
-  if (!('webkitSpeechRecognition' in window || 'SpeechRecognition' in window)) {
-    showAlert("Speech recognition not supported in this browser.", 'error');
-    return;
-  }
-  stopRecognition(); // cleanup
-
-  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-  recognition = new SR();
-  recognition.lang = accent;
-  recognition.interimResults = false;
-  recognition.maxAlternatives = 5;
-
-  let gotResult = false;
-
-  recognition.onresult = (event) => {
-    gotResult = true;
-    const results = event.results[0];
-    const best = results[0]?.transcript || '';
-    handleBeeResult(best, targetWord);
-  };
-  recognition.onerror = (e) => {
-    setMicFeedback(`Mic error: ${e.error}`, 'error');
-    scheduleAutoAdvance();
-  };
-  recognition.onend = () => {
-    if (!gotResult) {
-      setMicFeedback("No speech detected. Try again or press Repeat.", 'error');
-      scheduleAutoAdvance();
-    }
-  };
-  try {
-    recognition.start();
-    setMicFeedback("Listening... spell the letters clearly.", 'info');
-    updateSpellingVisual("● ● ●");
-  } catch (e) {
-    console.warn('Recognition start failed:', e);
-    scheduleAutoAdvance();
-  }
-}
-
-function stopRecognition() {
-  if (recognition) {
-    try { recognition.onresult = null; recognition.onerror = null; recognition.onend = null; recognition.abort(); } catch (_) {}
-    recognition = null;
-  }
-  clearTimeout(autoAdvanceTimer);
-}
-
-function scheduleAutoAdvance(ms = 1400) {
-  clearTimeout(autoAdvanceTimer);
-  autoAdvanceTimer = setTimeout(() => {
-    currentIndex++;
-    if (currentIndex >= words.length) endSessionBee();
-    else { showBeeWord(); playBeePrompt(); }
-  }, ms);
-}
-
-function handleBeeResult(transcript, targetWord) {
-  const normalized = normalizeSpelling(transcript);
-  userAnswers[currentIndex] = normalized;
-
-  const correct = targetWord.toLowerCase();
-  const feedback = document.getElementById('mic-feedback');
-
-  if (normalized === correct) {
-    score++;
-    feedback.textContent = "✓ Correct!"; feedback.className = "feedback correct";
-  } else {
-    feedback.textContent = `✗ Incorrect. You said: "${normalized}" – Correct: ${targetWord}`;
-    feedback.className = "feedback incorrect";
-  }
+function stopRecognition(){ if (recognition){ try{ recognition.onresult=null; recognition.onerror=null; recognition.onend=null; recognition.abort(); }catch(_){} recognition=null; } clearTimeout(autoAdvanceTimer); }
+function scheduleAutoAdvance(ms=1400){ clearTimeout(autoAdvanceTimer); autoAdvanceTimer=setTimeout(()=>{ currentIndex++; if (currentIndex>=words.length) endSessionBee(); else { showBeeWord(); playBeePrompt(); } },ms); }
+function handleBeeResult(transcript,targetWord){
+  const normalized = normalizeSpelling(transcript); userAnswers[currentIndex]=normalized;
+  const correct=targetWord.toLowerCase(); const fb=document.getElementById('mic-feedback');
+  if (normalized===correct){ score++; fb.textContent="✓ Correct!"; fb.className="feedback correct"; }
+  else { fb.textContent=`✗ Incorrect. You said: "${normalized}" – Correct: ${targetWord}`; fb.className="feedback incorrect"; }
   scheduleAutoAdvance();
 }
+function normalizeSpelling(s){ if(!s) return ""; let t=s.toLowerCase().trim(); t=t.replace(/[^a-z\s]/g,' ').replace(/\s+/g,' ').trim(); const tokens=t.split(' '); if(tokens.length>1){ const letters=tokens.map(x=>x[0]).join(''); if(letters.length>1) return letters; } return t.replace(/\s/g,''); }
+function setMicFeedback(msg,type='info'){ const el=document.getElementById('mic-feedback'); if(!el) return; el.textContent=msg; el.className=`feedback ${type==='error'?'incorrect':(type==='success'?'correct':'')}`; }
+function updateSpellingVisual(t=""){ const el=document.getElementById('spelling-visual'); if(el) el.textContent=t; }
+function endSessionBee(){ stopRecognition(); summaryFor(words,userAnswers,score); }
 
-function normalizeSpelling(s) {
-  if (!s) return "";
-  let t = s.toLowerCase().trim();
-
-  // Remove non-letters
-  t = t.replace(/[^a-z\s]/g, ' ');
-
-  // Collapse spaces
-  t = t.replace(/\s+/g, ' ').trim();
-
-  // If multiple tokens, try first-letter joining (e.g., "b e e" -> "bee")
-  const tokens = t.split(' ');
-  if (tokens.length > 1) {
-    const lettersOnly = tokens.map(tok => tok[0]).join('');
-    if (lettersOnly.length > 1) return lettersOnly;
-  }
-  return t.replace(/\s/g, ''); // fallback
-}
-
-function setMicFeedback(msg, type = 'info') {
-  const el = document.getElementById('mic-feedback');
-  if (!el) return;
-  el.textContent = msg;
-  el.className = `feedback ${type === 'error' ? 'incorrect' : (type === 'success' ? 'correct' : '')}`;
-}
-
-function updateSpellingVisual(text = "") {
-  const el = document.getElementById('spelling-visual');
-  if (el) el.textContent = text;
-}
-
-function endSessionBee() {
-  stopRecognition();
-  summaryFor(words, userAnswers, score);
-}
-
-/* ==================== SUMMARY (shared) ==================== */
-function summaryFor(listWords, answers, scoreVal) {
-  trainerArea.classList.add('hidden');
-  summaryArea.classList.remove('hidden');
-
-  const correctWords = listWords.filter((w, i) => (answers[i] || '').toLowerCase() === String(w).toLowerCase());
-  const wrongWords   = listWords.filter((w, i) => (answers[i] || '').toLowerCase() !== String(w).toLowerCase());
-  const flaggedInThisSession = listWords.filter(w => flaggedWordsStore.includes(w));
-  const percent = listWords.length ? Math.round((scoreVal / listWords.length) * 100) : 0;
-
-  const list = (arr) => arr.length ? `<ul>${arr.map(w => `<li>${w}</li>`).join('')}</ul>` : '<em>None</em>';
-
+/* ==================== SUMMARY ==================== */
+function summaryFor(listWords, answers, scoreVal){
+  trainerArea.classList.add('hidden'); summaryArea.classList.remove('hidden');
+  const correct = listWords.filter((w,i)=>(answers[i]||'').toLowerCase()===String(w).toLowerCase());
+  const wrong   = listWords.filter((w,i)=>(answers[i]||'').toLowerCase()!==String(w).toLowerCase());
+  const flagged = listWords.filter(w=>flaggedWordsStore.includes(w));
+  const percent = listWords.length? Math.round((scoreVal/listWords.length)*100) : 0;
+  const list = arr => arr.length ? `<ul>${arr.map(w=>`<li>${w}</li>`).join('')}</ul>` : '<em>None</em>';
   summaryArea.innerHTML = `
     <div class="summary-header">
       <h2>Session Results</h2>
       <div class="score-display">${scoreVal}/${listWords.length} (${percent}%)</div>
     </div>
-
     <div class="results-grid" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px;margin-top:10px;">
-      <div class="results-card correct">
-        <h3><i class="fas fa-check-circle"></i> Correct</h3>
-        ${list(correctWords)}
-      </div>
-      <div class="results-card incorrect">
-        <h3><i class="fas fa-times-circle"></i> Needs Practice</h3>
-        ${list(wrongWords)}
-      </div>
-      <div class="results-card">
-        <h3><i class="fas fa-star"></i> Flagged</h3>
-        ${list(flaggedInThisSession)}
-      </div>
+      <div class="results-card correct"><h3><i class="fas fa-check-circle"></i> Correct</h3>${list(correct)}</div>
+      <div class="results-card incorrect"><h3><i class="fas fa-times-circle"></i> Needs Practice</h3>${list(wrong)}</div>
+      <div class="results-card"><h3><i class="fas fa-star"></i> Flagged</h3>${list(flagged)}</div>
     </div>
-
     <div class="summary-actions" style="margin-top:12px;display:flex;gap:.5rem;flex-wrap:wrap;">
-      <button id="review-wrong-btn" class="btn btn-primary" ${wrongWords.length ? '' : 'disabled'}>
-        <i class="fas fa-undo"></i> Review Incorrect
-      </button>
-      <button id="review-flagged-btn" class="btn btn-secondary" ${flaggedInThisSession.length ? '' : 'disabled'}>
-        <i class="fas fa-flag"></i> Review Flagged
-      </button>
+      <button id="review-wrong-btn" class="btn btn-primary" ${wrong.length?'':'disabled'}><i class="fas fa-undo"></i> Review Incorrect</button>
+      <button id="review-flagged-btn" class="btn btn-secondary" ${flagged.length?'':'disabled'}><i class="fas fa-flag"></i> Review Flagged</button>
       <button id="restart-btn" class="btn btn-secondary"><i class="fas fa-sync-alt"></i> Restart Session</button>
       <button id="new-list-btn" class="btn btn-secondary"><i class="fas fa-list"></i> Change Word List</button>
-    </div>
-  `;
+    </div>`;
+  document.getElementById('review-wrong-btn')?.addEventListener('click', ()=>{ if(!wrong.length) return; words=wrong.slice(); restartWithCurrentWords(); });
+  document.getElementById('review-flagged-btn')?.addEventListener('click', ()=>{ if(!flagged.length) return; words=flagged.slice(); restartWithCurrentWords(); });
+  document.getElementById('restart-btn')?.addEventListener('click', ()=>{ words=listWords.slice(); restartWithCurrentWords(); });
+  document.getElementById('new-list-btn')?.addEventListener('click', ()=>{ summaryArea.classList.add('hidden'); trainerArea.classList.add('hidden'); });
 
-  document.getElementById('review-wrong-btn')?.addEventListener('click', () => {
-    if (!wrongWords.length) return;
-    words = wrongWords.slice();
-    restartWithCurrentWords();
-  });
-  document.getElementById('review-flagged-btn')?.addEventListener('click', () => {
-    if (!flaggedInThisSession.length) return;
-    words = flaggedInThisSession.slice();
-    restartWithCurrentWords();
-  });
-  document.getElementById('restart-btn')?.addEventListener('click', () => {
-    words = listWords.slice();
-    restartWithCurrentWords();
-  });
-  document.getElementById('new-list-btn')?.addEventListener('click', () => {
-    summaryArea.classList.add('hidden');
-    trainerArea.classList.add('hidden');
-  });
-
-  function restartWithCurrentWords() {
-    currentIndex = 0; score = 0; userAnswers = [];
-    summaryArea.classList.add('hidden');
-    trainerArea.classList.remove('hidden');
-    if (examType === 'Bee') { showBeeWord(); setTimeout(() => playBeePrompt(), 250); }
-    else { showTypedWord(); setTimeout(() => speakOut(words[currentIndex], 0.95, focusAnswer), 250); }
+  function restartWithCurrentWords(){
+    currentIndex=0; score=0; userAnswers=[];
+    summaryArea.classList.add('hidden'); trainerArea.classList.remove('hidden');
+    if (examType==='Bee') { showBeeWord(); setTimeout(()=>playBeePrompt(),250); }
+    else { showTypedWord(); setTimeout(()=>speakOut(words[currentIndex],0.95,focusAnswer),250); }
   }
 }
 
 /* ==================== HELPERS ==================== */
-function shuffle(arr) {
-  const a = arr.slice();
-  for (let i = a.length - 1; i > 0; i++) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [a[i], a[j]] = [a[j], a[i]];
-  }
-  return a;
-}
-/* ==================== END ==================== */
+function shuffle(arr){ const a=arr.slice(); for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
