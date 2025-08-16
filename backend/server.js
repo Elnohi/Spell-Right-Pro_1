@@ -21,38 +21,46 @@ const REQUIRED = [
 const missing = REQUIRED.filter(k => !process.env[k] || !String(process.env[k]).trim());
 if (missing.length) throw new Error(`Missing env vars: ${missing.join(', ')}`);
 
-/* ---------- CORS ---------- */
+/* ---------- CORS (strict, with proper preflight) ---------- */
 const FRONTEND_URL = process.env.FRONTEND_URL.replace(/\/+$/, '');
-
 const allowedHosts = [ new URL(FRONTEND_URL).host ];
-const isAllowed = (origin) => {
+const extraHosts = ['localhost:5173','localhost:3000']; // dev allowance
+
+function isOriginAllowed(origin) {
   if (!origin) return true; // non-browser or same-origin
   try {
-    const { host, protocol } = new URL(origin);
-    if (protocol !== 'https:') return false;
-    if (allowedHosts.includes(host)) return true;
-    if (/\.netlify\.app$/i.test(host)) return true;
-    if (host === 'localhost:5173' || host === 'localhost:3000') return true;
+    const u = new URL(origin);
+    if (u.protocol !== 'https:') return false;
+    if (allowedHosts.includes(u.host)) return true;
+    if (/\.netlify\.app$/i.test(u.host)) return true;
+    if (extraHosts.includes(u.host)) return true;
     return false;
-  } catch { return false; }
-};
+  } catch {
+    return false;
+  }
+}
 
-// Delegate that returns full CORS options for both normal and preflight
-const corsOptionsDelegate = (req, cb) => {
-  const origin = req.header('Origin');
-  const allow = isAllowed(origin);
-  cb(null, {
-    origin: allow ? origin : false,               // reflect origin if allowed
-    credentials: true,                            // OK if you ever use cookies; harmless otherwise
-    methods: ['GET', 'POST', 'OPTIONS'],
-    allowedHeaders: ['Authorization', 'Content-Type'],
-    maxAge: 86400
-  });
-};
+// CORS middleware (covers both normal requests and preflight)
+app.use((req, res, next) => {
+  const origin = req.headers.origin;
+  const allowed = isOriginAllowed(origin);
 
-// Apply to all routes + preflight
-app.use(cors(corsOptionsDelegate));
-app.options('*', cors(corsOptionsDelegate));
+  if (allowed && origin) {
+    res.setHeader('Access-Control-Allow-Origin', origin);
+    res.setHeader('Vary', 'Origin');
+    res.setHeader('Access-Control-Allow-Credentials', 'true');
+    res.setHeader('Access-Control-Allow-Methods', 'GET,POST,OPTIONS');
+    // Reflect requested headers or use a safe default:
+    const reqHdrs = req.headers['access-control-request-headers'];
+    res.setHeader('Access-Control-Allow-Headers', reqHdrs || 'Authorization, Content-Type');
+    res.setHeader('Access-Control-Max-Age', '86400');
+  }
+
+  if (req.method === 'OPTIONS') {
+    return res.sendStatus(allowed ? 204 : 403);
+  }
+  return next();
+});
 
 /* ---------- Stripe & Firebase ---------- */
 const stripe = Stripe(process.env.STRIPE_SECRET_KEY, { apiVersion: '2023-10-16' });
