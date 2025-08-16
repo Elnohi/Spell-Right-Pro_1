@@ -7,11 +7,10 @@
   <base href="/" />
 
   <!-- Styles -->
-  <link rel="stylesheet" href="css/styles.css">
-  <link rel="stylesheet" href="css/premium.css">
-  <link rel="icon" href="assets/logo.png">
-  <link rel="stylesheet"
-        href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="/css/styles.css">
+  <link rel="stylesheet" href="/css/premium.css">
+  <link rel="icon" href="/assets/logo.png">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
   <!-- Firebase (compat) -->
   <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-app-compat.js"></script>
@@ -19,35 +18,38 @@
   <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-analytics-compat.js"></script>
 
-  <!-- Config MUST load before anything that uses it -->
-  <!-- cache-bust to avoid stale config from SW/CDN -->
-  <script src="js/config.js?v=2025-08-15"></script>
+  <!-- Config MUST load before anything that uses it (cache-busted) -->
+  <script src="/js/config.js?v=2025-08-15"></script>
 
   <!-- Helpers / data -->
-  <script src="js/common.js" defer></script>
-  <script src="js/oet_word_list.js" defer></script>
+  <script src="/js/common.js" defer></script>
+  <script src="/js/oet_word_list.js" defer></script>
 
   <!-- Stripe -->
   <script src="https://js.stripe.com/v3/" defer></script>
 
   <!-- Main premium app -->
-  <script src="js/main-premium.js" defer></script>
+  <script src="/js/main-premium.js" defer></script>
 
-  <!-- Register SW at root (so /premium/sw.js 404 can't occur) -->
+  <!-- Register SW at root -->
   <script>
     if ("serviceWorker" in navigator) {
       addEventListener("load", () => {
-        navigator.serviceWorker
-          .register("/sw.js", { scope: "/" })
-          .catch(console.warn);
+        navigator.serviceWorker.register("/sw.js", { scope: "/" }).catch(console.warn);
       });
     }
   </script>
 </head>
 <body>
+  <noscript>
+    <div style="padding:1rem;background:#fee;border:1px solid #f99;margin:1rem">
+      JavaScript is required to use Premium.
+    </div>
+  </noscript>
+
   <header class="navbar">
     <div class="brand">
-      <img src="assets/logo.png" alt="SpellRightPro Logo" class="logo">
+      <img src="/assets/logo.png" alt="SpellRightPro Logo" class="logo">
       <div>
         <span>SpellRightPro</span>
         <span class="subtitle">Premium</span>
