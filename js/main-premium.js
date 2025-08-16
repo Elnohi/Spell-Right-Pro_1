@@ -40,7 +40,7 @@ document.addEventListener('DOMContentLoaded', () => {
 function initStripe() {
   if (!window.Stripe) { console.warn('Stripe.js not loaded yet.'); return; }
   const key = (window.stripeConfig && window.stripeConfig.publicKey) || '';
-  if (!/^pk_live_51RuKs1El99zwdEZr9wjVF3EhADOk4c9x8JjvjPLH8Y16cCPwykZRFVtC1Fr0hSJesStbqcvfvvNOy4NHRaV0GPvg004IIcPfC8/.test(key)) {
+  if (!/^pk_test_51RuKs1El99zwdEZrhrRFzKg7B0Y73rtLGHkZL20V7LHwE3jCJpnTXofp09GYg2reRdirJTXsGyvqRPixdCxraFhF00ZkCTNE4Z/.test(key)) {
     console.warn('Stripe publishable key missing/invalid.');
     return;
   }
@@ -228,8 +228,8 @@ function handleLogout() { firebase.auth().signOut(); }
 
 /* ==================== PAYMENTS (single, correct version) ==================== */
 const priceMap = {
-  monthly: 'price_1RuZVNEl99zwdEZrit75tV1F', // CAD 7.99
-  annual:  'price_1RuZR3El99zwdEZrgqiGz1FL'  // CAD 79.99
+  monthly: 'price_1RwpZXEl99zwdEZrXA9Cetiy', // CAD 7.99
+  annual:  'price_1RwpaNEl99zwdEZrDAeJ4V4e'  // CAD 79.99
 };
 
 async function initiatePayment(planType) {
@@ -602,5 +602,6 @@ function summaryFor(listWords, answers, scoreVal){
 
 /* ==================== HELPERS ==================== */
 function shuffle(arr){ const a=arr.slice(); for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
+
 
 
