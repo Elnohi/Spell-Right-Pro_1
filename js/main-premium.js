@@ -247,14 +247,23 @@ async function initiatePayment(planType) {
     return;
   }
 
-  // Map friendly planType to the actual Stripe price IDs
-  const priceMap = {
-    monthly: 'price_1RuZVNEl99zwdEZrit75tV1F',
-    annual: 'price_1RuZR3El99zwdEZrgqiGz1FL'
-  };
-  const priceId = priceMap[planType];
+// Map friendly planType to the actual Stripe price IDs
+const priceMap = {
+  monthly: 'price_1RuZVNEl99zwdEZrit75tV1F',
+  annual: 'price_1RuZR3El99zwdEZrgqiGz1FL'
+};
+
+async function initiatePayment(planType) {
+  if (!currentUser) {
+    showAlert('Please log in first.', 'error');
+    return;
+  }
+
+  // Normalize and validate planType
+  const normalizedPlan = (planType || '').trim().toLowerCase();
+  const priceId = priceMap[normalizedPlan];
   if (!priceId) {
-    showAlert(`Unknown plan type: ${planType}`, 'error');
+    showAlert(`Unknown plan type: ${normalizedPlan}`, 'error');
     return;
   }
 
@@ -267,11 +276,17 @@ async function initiatePayment(planType) {
   try {
     const idToken = await currentUser.getIdToken();
 
+    // Ensure sessionId is defined (if your backend requires it)
+    if (typeof sessionId === 'undefined') {
+      showAlert('Session ID is missing. Please refresh the page and try again.', 'error');
+      return;
+    }
+
     const payload = {
-      priceId,          // required by backend to create Stripe Checkout Session
-      plan: planType,   // keep original for logging if backend uses it
+      priceId,            // required by backend
+      plan: normalizedPlan,
       userId: currentUser.uid,
-      sessionId         // from global state
+      sessionId
     };
 
     const res = await fetch(`${base}/create-checkout-session`, {
@@ -283,12 +298,18 @@ async function initiatePayment(planType) {
       body: JSON.stringify(payload)
     });
 
-    if (!res.ok) {
-      const text = await res.text().catch(() => '');
-      throw new Error(`Server error ${res.status}${text ? `: ${text}` : ''}`);
+    let data;
+    try {
+      data = await res.json();
+    } catch {
+      data = {};
     }
 
-    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      const errMsg = data.error || `${res.status} ${res.statusText}`;
+      console.error('Checkout session creation failed:', data);
+      throw new Error(errMsg);
+    }
 
     // Accept both possible backend shapes
     if (data.url) {
@@ -303,8 +324,8 @@ async function initiatePayment(planType) {
     }
 
     throw new Error('Invalid server response: expected `url` or `sessionId`');
-
   } catch (error) {
+    console.error('Payment initiation error:', error);
     showAlert(`Payment failed: ${error.message}`, 'error', 5000);
   }
 }
@@ -830,6 +851,7 @@ function shuffle(arr) {
   return a;
 }
 /* ==================== END ==================== */
+
 
 
 
