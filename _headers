@@ -1,21 +1,17 @@
-/*
-  X-Content-Type-Options: nosniff
-  Referrer-Policy: strict-origin-when-cross-origin
-  X-Frame-Options: SAMEORIGIN
-  Permissions-Policy: microphone=(self)
+/index.html
+  Cache-Control: no-store, max-age=0
 
-/sw.js
-  Cache-Control: no-cache
+/premium.html
+  Cache-Control: no-store, max-age=0
 
-/assets/*
-  Cache-Control: public, max-age=604800
-
-/css/*
-  Cache-Control: public, max-age=604800
+/*.html
+  Cache-Control: no-store, max-age=0
 
 /js/*
-  Cache-Control: public, max-age=604800
+  Cache-Control: public, max-age=3600, must-revalidate
 
-# If you enable a strict CSP later, uncomment and adjust:
-# /*
-#   Content-Security-Policy: script-src 'self' https://pagead2.googlesyndication.com https://www.googletagservices.com https://www.google.com; frame-src https://googleads.g.doubleclick.net https://tpc.googlesyndication.com https://adservice.google.com; img-src 'self' https://*.g.doubleclick.net https://*.googlesyndication.com data:;
+/css/*
+  Cache-Control: public, max-age=3600, must-revalidate
+
+/thank-you.html
+  Cache-Control: no-store, max-age=0
