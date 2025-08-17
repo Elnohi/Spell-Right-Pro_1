@@ -74,14 +74,21 @@
     </section>
   </main>
 
-  <footer class="container" style="margin-top:2rem;">
-    <p>
-      <a href="#">Terms of Service</a>
-      <a href="#">Privacy Policy</a>
-      <a href="#">Refund Policy</a>
-      <a href="#">Contact Support</a>
-    </p>
-    <p>© 2025 SpellRightPro. All rights reserved.</p>
-  </footer>
+  <!-- Footer placeholder -->
+<div id="site-footer" data-include="/partials/footer.html"></div>
+
+<!-- Footer loader -->
+<script>
+  (async () => {
+    try {
+      const el = document.getElementById('site-footer');
+      const url = el?.dataset?.include || '/partials/footer.html';
+      const res = await fetch(url, { cache: 'no-store' });
+      el.innerHTML = await res.text();
+    } catch (e) {
+      console.warn('Footer load failed:', e);
+    }
+  })();
+</script>
 </body>
 </html>
