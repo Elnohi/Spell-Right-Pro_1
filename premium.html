@@ -19,19 +19,19 @@
   <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-analytics-compat.js"></script>
 
   <!-- Config MUST load before anything that uses it (cache-busted) -->
-  <script src="/js/config.js?v=2025-08-15"></script>
+  <script src="/js/config.js?v=2025-08-17"></script>
 
   <!-- Helpers / data -->
-  <script src="/js/common.js" defer></script>
-  <script src="/js/oet_word_list.js" defer></script>
+  <script src="/js/common.js?v=2025-08-17" defer></script>
+  <script src="/js/oet_word_list.js?v=2025-08-17" defer></script>
 
   <!-- Stripe -->
   <script src="https://js.stripe.com/v3/" defer></script>
 
   <!-- Main premium app -->
-  <script src="/js/main-premium.js" defer></script>
+  <script src="/js/main-premium.js?v=2025-08-17" defer></script>
 
-  <!-- Register SW at root -->
+  <!-- Register SW at root (unchanged) -->
   <script>
     if ("serviceWorker" in navigator) {
       addEventListener("load", () => {
