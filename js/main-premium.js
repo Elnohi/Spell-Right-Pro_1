@@ -173,16 +173,19 @@ function initAuthState() {
     await checkPremiumStatus();
     renderAuthLoggedIn();
 
-    if (premiumUser) {
-      renderExamUI();
-    } else {
-      showPremiumUpsell();
-      if (!autoCheckoutAttempted) {
-        autoCheckoutAttempted = true;
-        setTimeout(() => initiatePayment('monthly').catch(console.error), 250);
-      }
-    }
-  });
+    // new code
+if (premiumUser) {
+  renderExamUI();
+} else {
+  showPremiumUpsell();
+
+  // Optional: only auto-start if explicitly requested, e.g. /premium?plan=monthly
+  const p = new URLSearchParams(location.search).get('plan');
+  if (p === 'monthly' || p === 'annual') {
+    initiatePayment(p).catch(console.error);
+  }
+}
+});
 }
 
 function renderAuthLoggedOut() {
@@ -602,6 +605,7 @@ function summaryFor(listWords, answers, scoreVal){
 
 /* ==================== HELPERS ==================== */
 function shuffle(arr){ const a=arr.slice(); for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
+
 
 
 
