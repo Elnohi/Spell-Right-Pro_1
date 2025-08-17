@@ -1,5 +1,8 @@
-/premium        /premium.html   200
-/freemium-oet   /freemium-oet.html 200
-/freemium-bee   /freemium-bee.html 200
-/offline        /offline.html   200
-/index          /index.html   200
+/               /index.html           200
+/premium        /premium.html         200
+/freemium-oet   /freemium-oet.html    200
+/freemium-bee   /freemium-bee.html    200
+/offline        /offline.html         200
+/index          /index.html           200
+# (optional SPA fallback – keep LAST if you want unknown paths to hit home)
+/*              /index.html           200
