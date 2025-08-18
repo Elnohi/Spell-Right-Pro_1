@@ -204,6 +204,10 @@ app.post('/create-checkout-session', authenticate, async (req, res) => {
       metadata: { plan: plan || 'unknown', userId: req.user.uid }
     };
 
+        // ✅ Always show the "Add promotion code" input in Stripe Checkout
+    allow_promotion_codes: true,
+  };
+
     // Allow user-entered promotion code, if provided
     if (promoCode && String(promoCode).trim()) {
       const list = await stripe.promotionCodes.list({
