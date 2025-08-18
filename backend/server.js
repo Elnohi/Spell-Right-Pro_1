@@ -48,6 +48,21 @@ app.use((req, res, next) => {
   next();
 });
 
+// Public prices endpoint for the UI
+app.get('/prices', async (_req, res) => {
+  try {
+    const m = await stripe.prices.retrieve(process.env.STRIPE_MONTHLY_PRICE_ID);
+    const a = await stripe.prices.retrieve(process.env.STRIPE_ANNUAL_PRICE_ID);
+    res.json({
+      monthly: { amount: m.unit_amount || 0, currency: m.currency || 'cad' },
+      annual:  { amount: a.unit_amount || 0, currency: a.currency || 'cad' }
+    });
+  } catch (e) {
+    console.error('GET /prices error:', e.message);
+    res.status(500).json({ error: 'Unable to load prices' });
+  }
+});
+
 /* ---------- Env validation ---------- */
 const REQUIRED = [
   'FRONTEND_URL',
@@ -126,10 +141,9 @@ app.post('/create-checkout-session', authenticate, async (req, res) => {
   try {
     const { plan, priceId: clientPriceId, promoCode } = req.body;
 
-    // Choose price ID
     let priceId = null;
     if (typeof clientPriceId === 'string' && /^price_/.test(clientPriceId)) {
-      priceId = clientPriceId; // explicit override
+      priceId = clientPriceId;
     } else if (plan === 'annual') {
       priceId = process.env.STRIPE_ANNUAL_PRICE_ID;
     } else if (plan === 'monthly') {
@@ -138,10 +152,23 @@ app.post('/create-checkout-session', authenticate, async (req, res) => {
       return res.status(400).json({ error: 'Invalid plan/price' });
     }
 
-    // Sanity check: ensure the price exists in this (test/live) key
+    // Sanity check the price belongs to your account & mode.
     await stripe.prices.retrieve(priceId);
 
-    const params = {
+    // Try to look up the promotion code if the user typed one.
+    let discounts;
+    if (promoCode && promoCode.trim()) {
+      try {
+        const list = await stripe.promotionCodes.list({ code: promoCode.trim(), limit: 1 });
+        if (list.data[0]?.id) {
+          discounts = [{ promotion_code: list.data[0].id }];
+        }
+      } catch (_) {
+        // invalid/expired code — just ignore; user can re-try on Checkout page as well
+      }
+    }
+
+    const session = await stripe.checkout.sessions.create({
       mode: 'subscription',
       line_items: [{ price: priceId, quantity: 1 }],
       subscription_data: { trial_period_days: 0 },
@@ -149,22 +176,10 @@ app.post('/create-checkout-session', authenticate, async (req, res) => {
       cancel_url: `${FRONTEND_URL}/premium?payment_cancelled=true`,
       client_reference_id: req.user.uid,
       metadata: { plan: plan || 'unknown', userId: req.user.uid },
+      allow_promotion_codes: true,       // <— shows the “Add promotion code” box
+      discounts                          // <— pre-applies if you found a matching code
+    });
 
-      // ✅ show “Add promotion code” on Checkout
-      allow_promotion_codes: true,
-    };
-
-    // Optional: if the user typed a code in your page, try to pre-apply
-    if (promoCode && typeof promoCode === 'string') {
-      try {
-        const found = await stripe.promotionCodes.list({ code: promoCode.trim(), limit: 1, active: true });
-        if (found.data[0]) params.discounts = [{ promotion_code: found.data[0].id }];
-      } catch (e) {
-        console.warn('Promo lookup failed:', e.message);
-      }
-    }
-
-    const session = await stripe.checkout.sessions.create(params);
     res.json({ sessionId: session.id });
   } catch (error) {
     const mode = (process.env.STRIPE_SECRET_KEY || '').includes('_test_') ? 'TEST' : 'LIVE';
