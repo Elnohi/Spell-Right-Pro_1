@@ -10,17 +10,18 @@ const app = express();
 app.disable('x-powered-by');
 
 /* ---------- CORS (strict, with proper preflight) ---------- */
-const FRONTEND_URL = String(process.env.FRONTEND_URL || '').replace(/\/+$/, '');
-const allowedHosts = [];
-try { if (FRONTEND_URL) allowedHosts.push(new URL(FRONTEND_URL).host); } catch {}
-
-const extraHosts = ['localhost:5173','localhost:3000']; // dev
+const FRONTEND_URL = (process.env.FRONTEND_URL || '').replace(/\/+$/, '');
+if (!FRONTEND_URL) {
+  throw new Error('Missing env var FRONTEND_URL');
+}
+const allowedHosts = [new URL(FRONTEND_URL).host];
+const extraHosts = ['localhost:5173', 'localhost:3000']; // dev allowance
 
 function isOriginAllowed(origin) {
-  if (!origin) return true; // curl / same-origin
+  if (!origin) return true; // non-browser or same-origin
   try {
     const u = new URL(origin);
-    if (!/^https?:$/.test(u.protocol)) return false;
+    if (!/^https?:$/i.test(u.protocol)) return false;
     if (allowedHosts.includes(u.host)) return true;
     if (/\.netlify\.app$/i.test(u.host)) return true;
     if (extraHosts.includes(u.host)) return true;
@@ -44,7 +45,9 @@ app.use((req, res, next) => {
     res.setHeader('Access-Control-Max-Age', '86400');
   }
 
-  if (req.method === 'OPTIONS') return res.sendStatus(allowed ? 204 : 403);
+  if (req.method === 'OPTIONS') {
+    return res.sendStatus(allowed ? 204 : 403);
+  }
   return next();
 });
 
@@ -58,12 +61,13 @@ const REQUIRED = [
   'FIREBASE_SERVICE_ACCOUNT_JSON',
 ];
 const missing = REQUIRED.filter(k => !process.env[k] || !String(process.env[k]).trim());
-if (missing.length) throw new Error(`Missing env vars: ${missing.join(', ')}`);
+if (missing.length) {
+  throw new Error(`Missing env vars: ${missing.join(', ')}`);
+}
 
 /* ---------- Stripe & Firebase ---------- */
 const stripe = Stripe(process.env.STRIPE_SECRET_KEY, { apiVersion: '2023-10-16' });
 
-// Firebase Service Account (JSON or base64)
 let serviceAccount;
 try {
   const raw = process.env.FIREBASE_SERVICE_ACCOUNT_JSON || '';
@@ -79,7 +83,7 @@ const db = admin.firestore();
 /* ---------- Health ---------- */
 app.get('/health', (_req, res) => res.json({ ok: true }));
 
-/* ---------- Webhook (raw body) ---------- */
+/* ---------- Stripe webhook (raw body) ---------- */
 app.post('/stripe-webhook', express.raw({ type: 'application/json' }), async (req, res) => {
   const sig = req.headers['stripe-signature'];
   const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET;
@@ -115,59 +119,6 @@ app.post('/stripe-webhook', express.raw({ type: 'application/json' }), async (re
 /* ---------- JSON for other routes ---------- */
 app.use(express.json());
 
-// Validate a promotion code for a specific price
-app.get('/validate-promo', async (req, res) => {
-  try {
-    const { code, priceId } = req.query;
-    if (!code) return res.status(400).json({ valid: false, error: 'Missing code' });
-    if (!priceId) return res.status(400).json({ valid: false, error: 'Missing priceId' });
-
-    // Look up the price to know product & currency
-    const price = await stripe.prices.retrieve(priceId);
-    const productId = typeof price.product === 'string' ? price.product : price.product.id;
-    const priceCurrency = price.currency; // e.g., 'cad'
-
-    // Find the promotion code in the current (live/test) environment
-    const pcList = await stripe.promotionCodes.list({
-      code,
-      active: true,
-      limit: 1,
-      expand: ['data.coupon.applies_to']
-    });
-
-    const pc = pcList.data[0];
-    if (!pc) return res.json({ valid: false });
-
-    const coupon = pc.coupon;
-
-    // If coupon is restricted to products, ensure it applies to this price’s product
-    if (coupon.applies_to && Array.isArray(coupon.applies_to.products) &&
-        coupon.applies_to.products.length > 0 &&
-        !coupon.applies_to.products.includes(productId)) {
-      return res.json({ valid: false });
-    }
-
-    // If it's an amount_off coupon, currency must match the price currency
-    if (coupon.amount_off && coupon.currency &&
-        coupon.currency.toLowerCase() !== priceCurrency.toLowerCase()) {
-      return res.json({ valid: false });
-    }
-
-    // Looks good
-    return res.json({
-      valid: true,
-      percent_off: coupon.percent_off || null,
-      amount_off: coupon.amount_off || null,
-      currency: coupon.currency || priceCurrency,
-      promoId: pc.id,
-      couponId: coupon.id
-    });
-  } catch (err) {
-    console.error('validate-promo error:', err);
-    return res.status(200).json({ valid: false }); // keep frontend calm
-  }
-});
-
 /* ---------- Auth (Firebase ID token) ---------- */
 async function authenticate(req, res, next) {
   const authHeader = req.headers.authorization || '';
@@ -181,56 +132,52 @@ async function authenticate(req, res, next) {
   }
 }
 
-/* ---------- Tiny in-memory cache for /prices ---------- */
-let pricesCache = null;
-let pricesCacheAt = 0;
-const PRICES_TTL_MS = 10 * 60 * 1000;
-
-/* ---------- GET /prices  (for displaying amounts on the page) ---------- */
-app.get('/prices', async (_req, res) => {
+/* ---------- NEW: Validate promo code (no auth required) ---------- */
+/* GET /validate-promo?code=FRIENDS21  -> { valid, id, percent_off, amount_off, currency, reason? } */
+app.get('/validate-promo', async (req, res) => {
   try {
-    const now = Date.now();
-    if (pricesCache && now - pricesCacheAt < PRICES_TTL_MS) {
-      return res.json(pricesCache);
+    const code = (req.query.code || '').trim();
+    if (!code) return res.status(400).json({ valid: false, reason: 'missing_code' });
+
+    const list = await stripe.promotionCodes.list({
+      code,
+      active: true,
+      limit: 1,
+      expand: ['data.coupon'],
+    });
+
+    if (!list.data.length) {
+      return res.json({ valid: false, reason: 'not_found' });
     }
 
-    const [m, a] = await Promise.all([
-      stripe.prices.retrieve(process.env.STRIPE_MONTHLY_PRICE_ID),
-      stripe.prices.retrieve(process.env.STRIPE_ANNUAL_PRICE_ID),
-    ]);
+    const promo = list.data[0];
+    const coupon = promo.coupon;
 
-    const payload = {
-      monthly: {
-        id: m.id,
-        unit_amount: m.unit_amount,
-        currency: m.currency,
-        interval: m.recurring?.interval || null,
-      },
-      annual: {
-        id: a.id,
-        unit_amount: a.unit_amount,
-        currency: a.currency,
-        interval: a.recurring?.interval || null,
-      }
-    };
-    pricesCache = payload;
-    pricesCacheAt = now;
-    res.json(payload);
+    // Basic sanity checks
+    if (promo.max_redemptions && promo.times_redeemed >= promo.max_redemptions) {
+      return res.json({ valid: false, reason: 'maxed_out' });
+    }
+    if (coupon && coupon.valid === false) {
+      return res.json({ valid: false, reason: 'coupon_invalid' });
+    }
+
+    return res.json({
+      valid: true,
+      id: promo.id,
+      percent_off: coupon?.percent_off ?? null,
+      amount_off: coupon?.amount_off ?? null,
+      currency: coupon?.currency ?? null,
+    });
   } catch (e) {
-    console.error('Error fetching Stripe prices:', e);
-    res.status(500).json({ error: 'Unable to fetch prices' });
+    console.error('validate-promo error:', e);
+    res.status(500).json({ valid: false, reason: 'server_error', message: e.message });
   }
 });
 
-/* ---------- Create Checkout Session (supports promo codes) ---------- */
+/* ---------- Create Checkout Session (auth required) ---------- */
 app.post('/create-checkout-session', authenticate, async (req, res) => {
   try {
-    const {
-      plan,                 // "monthly" | "annual"
-      priceId: clientPriceId,
-      promoCode,            // optional string like "FRIENDS20"
-      allowPromotionCodes,  // optional boolean
-    } = req.body || {};
+    const { plan, priceId: clientPriceId, promoCode } = req.body;
 
     // Choose price ID (client override or env)
     let priceId = null;
@@ -244,43 +191,32 @@ app.post('/create-checkout-session', authenticate, async (req, res) => {
       return res.status(400).json({ error: 'Invalid plan/price' });
     }
 
-    // ✅ Sanity check: ensure the price exists in THIS key’s mode (TEST vs LIVE)
+    // Sanity check: ensure the price exists in THIS key’s mode (TEST vs LIVE)
     await stripe.prices.retrieve(priceId);
 
-    const params = {
+    // Optional: attach a valid promotion_code if provided
+    let discounts;
+    if (promoCode && typeof promoCode === 'string') {
+      try {
+        const pcs = await stripe.promotionCodes.list({ code: promoCode.trim(), active: true, limit: 1 });
+        if (pcs.data[0]) discounts = [{ promotion_code: pcs.data[0].id }];
+      } catch (e) {
+        console.warn('Promo code supplied but not usable:', promoCode, e.message);
+      }
+    }
+
+    const session = await stripe.checkout.sessions.create({
       mode: 'subscription',
       line_items: [{ price: priceId, quantity: 1 }],
+      discounts, // may be undefined
       subscription_data: { trial_period_days: 0 },
       success_url: `${FRONTEND_URL}/premium?payment_success=true`,
       cancel_url: `${FRONTEND_URL}/premium?payment_cancelled=true`,
       client_reference_id: req.user.uid,
       metadata: { plan: plan || 'unknown', userId: req.user.uid }
-    };
+    });
 
-        // ✅ Always show the "Add promotion code" input in Stripe Checkout
-    allow_promotion_codes: true,
-  };
-
-    // Allow user-entered promotion code, if provided
-    if (promoCode && String(promoCode).trim()) {
-      const list = await stripe.promotionCodes.list({
-        code: String(promoCode).trim(),
-        active: true,
-        limit: 1
-      });
-      if (!list.data[0]) {
-        return res.status(400).json({ error: 'Invalid or inactive promo code.' });
-      }
-      params.discounts = [{ promotion_code: list.data[0].id }];
-    } else if (allowPromotionCodes === true) {
-      // Or allow users to enter a code at Checkout
-      params.allow_promotion_codes = true;
-    }
-
-    const session = await stripe.checkout.sessions.create(params);
-
-    // Prefer returning the URL (more robust with strict CSP)
-    return res.json({ id: session.id, url: session.url, sessionId: session.id });
+    return res.json({ sessionId: session.id });
   } catch (error) {
     const mode = (process.env.STRIPE_SECRET_KEY || '').includes('_test_') ? 'TEST' : 'LIVE';
     console.error('Checkout error:', error.message, `(API mode: ${mode})`);
@@ -288,7 +224,7 @@ app.post('/create-checkout-session', authenticate, async (req, res) => {
   }
 });
 
-/* ---------- Handlers (Firestore) ---------- */
+/* ---------- Handlers ---------- */
 async function handlePaymentSuccess(session) {
   const userId = session.client_reference_id;
   const plan = session.metadata?.plan || 'unknown';
@@ -304,7 +240,7 @@ async function handlePaymentSuccess(session) {
 
 async function handleSubscriptionRenewal(invoice) {
   const customerId = invoice.customer;
-  const snap = await db.collection('users').where('stripeCustomerId','==',customerId).limit(1).get();
+  const snap = await db.collection('users').where('stripeCustomerId', '==', customerId).limit(1).get();
   if (!snap.empty) {
     const userId = snap.docs[0].id;
     await db.collection('users').doc(userId).set({
@@ -316,7 +252,7 @@ async function handleSubscriptionRenewal(invoice) {
 async function handleSubscriptionUpdated(subscription) {
   const customerId = subscription.customer;
   const active = subscription.status === 'active' || subscription.status === 'trialing';
-  const snap = await db.collection('users').where('stripeCustomerId','==',customerId).limit(1).get();
+  const snap = await db.collection('users').where('stripeCustomerId', '==', customerId).limit(1).get();
   if (!snap.empty) {
     const userId = snap.docs[0].id;
     await db.collection('users').doc(userId).set({
@@ -329,7 +265,7 @@ async function handleSubscriptionUpdated(subscription) {
 
 async function handleSubscriptionCancelled(subscription) {
   const customerId = subscription.customer;
-  const snap = await db.collection('users').where('stripeCustomerId','==',customerId).limit(1).get();
+  const snap = await db.collection('users').where('stripeCustomerId', '==', customerId).limit(1).get();
   if (!snap.empty) {
     const userId = snap.docs[0].id;
     await db.collection('users').doc(userId).set({
