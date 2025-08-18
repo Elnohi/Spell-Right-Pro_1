@@ -2,6 +2,7 @@
 
 require('dotenv').config();
 const express = require('express');
+const cors = require('cors');
 const admin = require('firebase-admin');
 const Stripe = require('stripe');
 
@@ -9,18 +10,17 @@ const app = express();
 app.disable('x-powered-by');
 
 /* ---------- CORS (strict, with proper preflight) ---------- */
-const FRONTEND_URL = (process.env.FRONTEND_URL || '').replace(/\/+$/, '');
-if (!FRONTEND_URL) throw new Error('Missing env var FRONTEND_URL');
+const FRONTEND_URL = String(process.env.FRONTEND_URL || '').replace(/\/+$/, '');
+const allowedHosts = [];
+try { if (FRONTEND_URL) allowedHosts.push(new URL(FRONTEND_URL).host); } catch {}
 
-const allowedHosts = [new URL(FRONTEND_URL).host];
-// also allow Netlify previews and localhost during dev
-const extraHosts = ['localhost:5173', 'localhost:3000'];
+const extraHosts = ['localhost:5173','localhost:3000']; // dev
 
 function isOriginAllowed(origin) {
-  if (!origin) return true; // same-origin or non-browser client
+  if (!origin) return true; // curl / same-origin
   try {
     const u = new URL(origin);
-    if (u.protocol !== 'https:' && !/^localhost(:\d+)?$/.test(u.host)) return false;
+    if (!/^https?:$/.test(u.protocol)) return false;
     if (allowedHosts.includes(u.host)) return true;
     if (/\.netlify\.app$/i.test(u.host)) return true;
     if (extraHosts.includes(u.host)) return true;
@@ -37,30 +37,15 @@ app.use((req, res, next) => {
   if (allowed && origin) {
     res.setHeader('Access-Control-Allow-Origin', origin);
     res.setHeader('Vary', 'Origin');
+    res.setHeader('Access-Control-Allow-Credentials', 'true');
     res.setHeader('Access-Control-Allow-Methods', 'GET,POST,OPTIONS');
-    res.setHeader(
-      'Access-Control-Allow-Headers',
-      req.headers['access-control-request-headers'] || 'Authorization, Content-Type'
-    );
+    const reqHdrs = req.headers['access-control-request-headers'];
+    res.setHeader('Access-Control-Allow-Headers', reqHdrs || 'Authorization, Content-Type');
     res.setHeader('Access-Control-Max-Age', '86400');
   }
-  if (req.method === 'OPTIONS') return res.sendStatus(allowed ? 204 : 403);
-  next();
-});
 
-// Public prices endpoint for the UI
-app.get('/prices', async (_req, res) => {
-  try {
-    const m = await stripe.prices.retrieve(process.env.STRIPE_MONTHLY_PRICE_ID);
-    const a = await stripe.prices.retrieve(process.env.STRIPE_ANNUAL_PRICE_ID);
-    res.json({
-      monthly: { amount: m.unit_amount || 0, currency: m.currency || 'cad' },
-      annual:  { amount: a.unit_amount || 0, currency: a.currency || 'cad' }
-    });
-  } catch (e) {
-    console.error('GET /prices error:', e.message);
-    res.status(500).json({ error: 'Unable to load prices' });
-  }
+  if (req.method === 'OPTIONS') return res.sendStatus(allowed ? 204 : 403);
+  return next();
 });
 
 /* ---------- Env validation ---------- */
@@ -78,7 +63,7 @@ if (missing.length) throw new Error(`Missing env vars: ${missing.join(', ')}`);
 /* ---------- Stripe & Firebase ---------- */
 const stripe = Stripe(process.env.STRIPE_SECRET_KEY, { apiVersion: '2023-10-16' });
 
-// Firebase Admin (service account can be raw JSON or base64)
+// Firebase Service Account (JSON or base64)
 let serviceAccount;
 try {
   const raw = process.env.FIREBASE_SERVICE_ACCOUNT_JSON || '';
@@ -94,29 +79,36 @@ const db = admin.firestore();
 /* ---------- Health ---------- */
 app.get('/health', (_req, res) => res.json({ ok: true }));
 
-/* ---------- Public price endpoint (for Premium page) ---------- */
-app.get('/prices', async (_req, res) => {
-  try {
-    const monthly = await stripe.prices.retrieve(process.env.STRIPE_MONTHLY_PRICE_ID);
-    const annual  = await stripe.prices.retrieve(process.env.STRIPE_ANNUAL_PRICE_ID);
+/* ---------- Webhook (raw body) ---------- */
+app.post('/stripe-webhook', express.raw({ type: 'application/json' }), async (req, res) => {
+  const sig = req.headers['stripe-signature'];
+  const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET;
 
-    res.json({
-      monthly: {
-        id: monthly.id,
-        unit_amount: monthly.unit_amount,
-        currency: monthly.currency,
-        interval: monthly.recurring?.interval,
-      },
-      annual: {
-        id: annual.id,
-        unit_amount: annual.unit_amount,
-        currency: annual.currency,
-        interval: annual.recurring?.interval,
-      }
-    });
-  } catch (e) {
-    console.error('GET /prices failed:', e);
-    res.status(500).json({ error: 'Could not load prices' });
+  let event;
+  try {
+    event = stripe.webhooks.constructEvent(req.body, sig, endpointSecret);
+  } catch (err) {
+    console.error('Webhook signature verification failed:', err.message);
+    return res.status(400).send(`Webhook Error: ${err.message}`);
+  }
+
+  try {
+    switch (event.type) {
+      case 'checkout.session.completed':
+        await handlePaymentSuccess(event.data.object); break;
+      case 'invoice.paid':
+      case 'invoice.payment_succeeded':
+        await handleSubscriptionRenewal(event.data.object); break;
+      case 'customer.subscription.updated':
+        await handleSubscriptionUpdated(event.data.object); break;
+      case 'customer.subscription.deleted':
+        await handleSubscriptionCancelled(event.data.object); break;
+      default: break;
+    }
+    res.json({ received: true });
+  } catch (err) {
+    console.error('Webhook handler error:', err);
+    res.status(500).json({ error: err.message });
   }
 });
 
@@ -136,11 +128,58 @@ async function authenticate(req, res, next) {
   }
 }
 
-/* ---------- Create Checkout Session ---------- */
+/* ---------- Tiny in-memory cache for /prices ---------- */
+let pricesCache = null;
+let pricesCacheAt = 0;
+const PRICES_TTL_MS = 10 * 60 * 1000;
+
+/* ---------- GET /prices  (for displaying amounts on the page) ---------- */
+app.get('/prices', async (_req, res) => {
+  try {
+    const now = Date.now();
+    if (pricesCache && now - pricesCacheAt < PRICES_TTL_MS) {
+      return res.json(pricesCache);
+    }
+
+    const [m, a] = await Promise.all([
+      stripe.prices.retrieve(process.env.STRIPE_MONTHLY_PRICE_ID),
+      stripe.prices.retrieve(process.env.STRIPE_ANNUAL_PRICE_ID),
+    ]);
+
+    const payload = {
+      monthly: {
+        id: m.id,
+        unit_amount: m.unit_amount,
+        currency: m.currency,
+        interval: m.recurring?.interval || null,
+      },
+      annual: {
+        id: a.id,
+        unit_amount: a.unit_amount,
+        currency: a.currency,
+        interval: a.recurring?.interval || null,
+      }
+    };
+    pricesCache = payload;
+    pricesCacheAt = now;
+    res.json(payload);
+  } catch (e) {
+    console.error('Error fetching Stripe prices:', e);
+    res.status(500).json({ error: 'Unable to fetch prices' });
+  }
+});
+
+/* ---------- Create Checkout Session (supports promo codes) ---------- */
 app.post('/create-checkout-session', authenticate, async (req, res) => {
   try {
-    const { plan, priceId: clientPriceId, promoCode } = req.body;
+    const {
+      plan,                 // "monthly" | "annual"
+      priceId: clientPriceId,
+      promoCode,            // optional string like "FRIENDS20"
+      allowPromotionCodes,  // optional boolean
+    } = req.body || {};
 
+    // Choose price ID (client override or env)
     let priceId = null;
     if (typeof clientPriceId === 'string' && /^price_/.test(clientPriceId)) {
       priceId = clientPriceId;
@@ -152,75 +191,47 @@ app.post('/create-checkout-session', authenticate, async (req, res) => {
       return res.status(400).json({ error: 'Invalid plan/price' });
     }
 
-    // Sanity check the price belongs to your account & mode.
+    // ✅ Sanity check: ensure the price exists in THIS key’s mode (TEST vs LIVE)
     await stripe.prices.retrieve(priceId);
 
-    // Try to look up the promotion code if the user typed one.
-    let discounts;
-    if (promoCode && promoCode.trim()) {
-      try {
-        const list = await stripe.promotionCodes.list({ code: promoCode.trim(), limit: 1 });
-        if (list.data[0]?.id) {
-          discounts = [{ promotion_code: list.data[0].id }];
-        }
-      } catch (_) {
-        // invalid/expired code — just ignore; user can re-try on Checkout page as well
-      }
-    }
-
-    const session = await stripe.checkout.sessions.create({
+    const params = {
       mode: 'subscription',
       line_items: [{ price: priceId, quantity: 1 }],
       subscription_data: { trial_period_days: 0 },
       success_url: `${FRONTEND_URL}/premium?payment_success=true`,
       cancel_url: `${FRONTEND_URL}/premium?payment_cancelled=true`,
       client_reference_id: req.user.uid,
-      metadata: { plan: plan || 'unknown', userId: req.user.uid },
-      allow_promotion_codes: true,       // <— shows the “Add promotion code” box
-      discounts                          // <— pre-applies if you found a matching code
-    });
+      metadata: { plan: plan || 'unknown', userId: req.user.uid }
+    };
 
-    res.json({ sessionId: session.id });
+    // Allow user-entered promotion code, if provided
+    if (promoCode && String(promoCode).trim()) {
+      const list = await stripe.promotionCodes.list({
+        code: String(promoCode).trim(),
+        active: true,
+        limit: 1
+      });
+      if (!list.data[0]) {
+        return res.status(400).json({ error: 'Invalid or inactive promo code.' });
+      }
+      params.discounts = [{ promotion_code: list.data[0].id }];
+    } else if (allowPromotionCodes === true) {
+      // Or allow users to enter a code at Checkout
+      params.allow_promotion_codes = true;
+    }
+
+    const session = await stripe.checkout.sessions.create(params);
+
+    // Prefer returning the URL (more robust with strict CSP)
+    return res.json({ id: session.id, url: session.url, sessionId: session.id });
   } catch (error) {
     const mode = (process.env.STRIPE_SECRET_KEY || '').includes('_test_') ? 'TEST' : 'LIVE';
     console.error('Checkout error:', error.message, `(API mode: ${mode})`);
-    res.status(400).json({ error: `${error.message} (API mode: ${mode})` });
+    return res.status(400).json({ error: `${error.message} (API mode: ${mode})` });
   }
 });
 
-/* ---------- Stripe Webhook (raw body) ---------- */
-app.post('/stripe-webhook', express.raw({ type: 'application/json' }), async (req, res) => {
-  const sig = req.headers['stripe-signature'];
-  let event;
-  try {
-    event = stripe.webhooks.constructEvent(req.body, sig, process.env.STRIPE_WEBHOOK_SECRET);
-  } catch (err) {
-    console.error('Webhook signature verification failed:', err.message);
-    return res.status(400).send(`Webhook Error: ${err.message}`);
-  }
-
-  try {
-    switch (event.type) {
-      case 'checkout.session.completed':
-        await handlePaymentSuccess(event.data.object); break;
-      case 'invoice.paid':
-      case 'invoice.payment_succeeded':
-        await handleSubscriptionRenewal(event.data.object); break;
-      case 'customer.subscription.updated':
-        await handleSubscriptionUpdated(event.data.object); break;
-      case 'customer.subscription.deleted':
-        await handleSubscriptionCancelled(event.data.object); break;
-      default:
-        break;
-    }
-    res.json({ received: true });
-  } catch (err) {
-    console.error('Webhook handler error:', err);
-    res.status(500).json({ error: err.message });
-  }
-});
-
-/* ---------- Handlers ---------- */
+/* ---------- Handlers (Firestore) ---------- */
 async function handlePaymentSuccess(session) {
   const userId = session.client_reference_id;
   const plan = session.metadata?.plan || 'unknown';
@@ -233,6 +244,7 @@ async function handlePaymentSuccess(session) {
   }, { merge: true });
   console.log(`Premium activated for user: ${userId} (${plan})`);
 }
+
 async function handleSubscriptionRenewal(invoice) {
   const customerId = invoice.customer;
   const snap = await db.collection('users').where('stripeCustomerId','==',customerId).limit(1).get();
@@ -243,6 +255,7 @@ async function handleSubscriptionRenewal(invoice) {
     }, { merge: true });
   }
 }
+
 async function handleSubscriptionUpdated(subscription) {
   const customerId = subscription.customer;
   const active = subscription.status === 'active' || subscription.status === 'trialing';
@@ -256,6 +269,7 @@ async function handleSubscriptionUpdated(subscription) {
     }, { merge: true });
   }
 }
+
 async function handleSubscriptionCancelled(subscription) {
   const customerId = subscription.customer;
   const snap = await db.collection('users').where('stripeCustomerId','==',customerId).limit(1).get();
