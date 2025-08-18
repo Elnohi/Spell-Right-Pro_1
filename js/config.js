@@ -12,7 +12,8 @@ window.firebaseConfig = {
 };
 
 // 2) Backend + ads
-window.appConfig.apiBaseUrl = "https://spellrightpro-api-798456641137.us-central1.run.app";
+window.appConfig = {
+  apiBaseUrl: "https://spellrightpro-api-798456641137.us-central1.run.app",
   trialDays: 0,
   adClient: "ca-pub-7632930282249669"
 };
