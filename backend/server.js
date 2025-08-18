@@ -115,29 +115,56 @@ app.post('/stripe-webhook', express.raw({ type: 'application/json' }), async (re
 /* ---------- JSON for other routes ---------- */
 app.use(express.json());
 
-// --- validate promo code (public) ---
+// Validate a promotion code for a specific price
 app.get('/validate-promo', async (req, res) => {
   try {
-    const code = String(req.query.code || '').trim();
-    if (!code) return res.status(400).json({ error: 'Missing code' });
+    const { code, priceId } = req.query;
+    if (!code) return res.status(400).json({ valid: false, error: 'Missing code' });
+    if (!priceId) return res.status(400).json({ valid: false, error: 'Missing priceId' });
 
-    const list = await stripe.promotionCodes.list({ code, active: true, limit: 1 });
-    const pc = list.data[0];
-    if (!pc) return res.status(404).json({ valid: false });
+    // Look up the price to know product & currency
+    const price = await stripe.prices.retrieve(priceId);
+    const productId = typeof price.product === 'string' ? price.product : price.product.id;
+    const priceCurrency = price.currency; // e.g., 'cad'
 
-    const c = pc.coupon;
-    res.json({
-      valid: true,
-      code: pc.code,
-      percent_off: c.percent_off || null,
-      amount_off: c.amount_off || null,
-      currency: c.currency || null,
-      duration: c.duration,              // once | repeating | forever
-      duration_in_months: c.duration_in_months || null,
+    // Find the promotion code in the current (live/test) environment
+    const pcList = await stripe.promotionCodes.list({
+      code,
+      active: true,
+      limit: 1,
+      expand: ['data.coupon.applies_to']
     });
-  } catch (e) {
-    console.error('validate-promo error:', e);
-    res.status(500).json({ error: 'Unable to validate promo' });
+
+    const pc = pcList.data[0];
+    if (!pc) return res.json({ valid: false });
+
+    const coupon = pc.coupon;
+
+    // If coupon is restricted to products, ensure it applies to this price’s product
+    if (coupon.applies_to && Array.isArray(coupon.applies_to.products) &&
+        coupon.applies_to.products.length > 0 &&
+        !coupon.applies_to.products.includes(productId)) {
+      return res.json({ valid: false });
+    }
+
+    // If it's an amount_off coupon, currency must match the price currency
+    if (coupon.amount_off && coupon.currency &&
+        coupon.currency.toLowerCase() !== priceCurrency.toLowerCase()) {
+      return res.json({ valid: false });
+    }
+
+    // Looks good
+    return res.json({
+      valid: true,
+      percent_off: coupon.percent_off || null,
+      amount_off: coupon.amount_off || null,
+      currency: coupon.currency || priceCurrency,
+      promoId: pc.id,
+      couponId: coupon.id
+    });
+  } catch (err) {
+    console.error('validate-promo error:', err);
+    return res.status(200).json({ valid: false }); // keep frontend calm
   }
 });
 
