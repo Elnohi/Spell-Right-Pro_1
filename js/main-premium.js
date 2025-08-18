@@ -228,22 +228,28 @@ function money(cents, currency) {
   }
 }
 
+// ---- Live price loader for the Premium upsell ----
 async function loadLivePrices() {
   const base = (window.appConfig && window.appConfig.apiBaseUrl) || '';
   if (!base) return;
-  const res = await fetch(`${base}/prices`, { method: 'GET' });
-  if (!res.ok) return;
-  const { monthly, annual } = await res.json();
 
-  if (monthly?.amount && monthly?.currency) {
-    document.getElementById('price-monthly').textContent = money(monthly.amount, monthly.currency);
-  }
-  if (annual?.amount && annual?.currency) {
-    document.getElementById('price-annual').textContent = money(annual.amount, annual.currency);
-  }
-  if (monthly?.amount && annual?.amount && annual?.currency) {
-    const save = (monthly.amount * 12) - annual.amount;
-    document.getElementById('annual-savings').textContent = save > 0 ? `Save ${money(save, annual.currency)} / year` : '';
+  try {
+    const res = await fetch(`${base}/prices`, { headers: { 'X-Requested-With': 'fetch' } });
+    if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
+    const data = await res.json();
+
+    const fmt = (amt, cur) => new Intl.NumberFormat(undefined, {
+      style: 'currency',
+      currency: (cur || 'usd').toUpperCase(),
+      maximumFractionDigits: 2
+    }).format((amt || 0) / 100);
+
+    const m = document.getElementById('price-monthly-amount');
+    const a = document.getElementById('price-annual-amount');
+    if (m && data.monthly) m.textContent = fmt(data.monthly.unit_amount, data.monthly.currency);
+    if (a && data.annual)  a.textContent = fmt(data.annual.unit_amount,  data.annual.currency);
+  } catch (e) {
+    console.warn('loadLivePrices failed:', e);
   }
 }
 
@@ -251,13 +257,16 @@ async function initiatePayment(planType) {
   if (!currentUser) { showAlert('Please log in first.', 'error'); return; }
 
   const normalizedPlan = (planType || '').trim().toLowerCase();
-  if (!/^(monthly|annual)$/.test(normalizedPlan)) { showAlert(`Unknown plan: ${normalizedPlan}`, 'error'); return; }
+  const priceId = priceMap[normalizedPlan];
+  if (!priceId) { showAlert(`Unknown plan: ${normalizedPlan}`, 'error'); return; }
 
   const base = (window.appConfig && window.appConfig.apiBaseUrl) || '';
   if (!base) { showAlert('Backend URL missing in config.js', 'error'); return; }
 
   try {
     const idToken = await currentUser.getIdToken();
+    const promo = document.getElementById('promo-input')?.value.trim();
+
     const res = await fetch(`${base}/create-checkout-session`, {
       method: 'POST',
       headers: {
@@ -266,21 +275,19 @@ async function initiatePayment(planType) {
       },
       body: JSON.stringify({
         plan: normalizedPlan,
+        priceId,
         userId: currentUser.uid,
-        sessionId
+        sessionId,
+        promoCode: promo || undefined // <-- pass promo if present
       })
     });
 
     const data = await res.json().catch(() => ({}));
     if (!res.ok) throw new Error(data.error || `${res.status} ${res.statusText}`);
 
-    if (data.url) { window.location.href = data.url; return; }
-    if (data.sessionId) {
-      if (!stripe) initStripe();
-      const { error } = await stripe.redirectToCheckout({ sessionId: data.sessionId });
-      if (error) throw error;
-      return;
-    }
+    if (!stripe) initStripe();
+    if (data.url)      { window.location.href = data.url; return; }
+    if (data.sessionId){ const { error } = await stripe.redirectToCheckout({ sessionId: data.sessionId }); if (error) throw error; return; }
     throw new Error('Invalid server response (expected `url` or `sessionId`).');
   } catch (err) {
     console.error('Payment initiation error:', err);
@@ -292,6 +299,7 @@ async function initiatePayment(planType) {
 function showPremiumUpsell() {
   trainerArea.classList.remove('hidden');
   summaryArea.classList.add('hidden');
+
   trainerArea.innerHTML = `
     <div class="premium-upsell">
       <div class="premium-header">
@@ -299,25 +307,38 @@ function showPremiumUpsell() {
         <h2>Upgrade to Premium</h2>
         <p>Unlock all features and unlimited practice</p>
       </div>
+
       <div class="pricing-options">
         <div class="pricing-option">
           <h3>Monthly</h3>
-          <div class="price"><span id="price-monthly">—</span><span class="per">/mo</span></div>
+          <div class="price">
+            <span id="price-monthly-amount" class="skeleton">—</span><span>/mo</span>
+          </div>
           <button id="monthly-btn" class="btn btn-primary">Subscribe</button>
         </div>
+
         <div class="pricing-option recommended">
           <div class="badge">Best Value</div>
           <h3>Annual</h3>
-          <div class="price"><span id="price-annual">—</span><span class="per">/yr</span></div>
-          <div class="savings" id="annual-savings"></div>
+          <div class="price">
+            <span id="price-annual-amount" class="skeleton">—</span><span>/yr</span>
+          </div>
           <button id="annual-btn" class="btn btn-primary">Subscribe</button>
         </div>
       </div>
+
+      <div class="promo-row" style="margin-top:.75rem">
+        <input id="promo-input" class="form-control" placeholder="Promo code (optional)">
+      </div>
+
       <p style="margin-top:.5rem;color:var(--gray)">You’ll be redirected to secure Stripe Checkout.</p>
     </div>`;
+
   document.getElementById('monthly-btn')?.addEventListener('click', () => initiatePayment('monthly'));
   document.getElementById('annual-btn')?.addEventListener('click', () => initiatePayment('annual'));
-  loadLivePrices().catch(console.warn);
+
+  // Fill price amounts right away
+  loadLivePrices();
 }
 
 /* ==================== UTILITIES (alerts) ==================== */
@@ -597,6 +618,7 @@ function summaryFor(listWords, answers, scoreVal){
 
 /* ==================== HELPERS ==================== */
 function shuffle(arr){ const a=arr.slice(); for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
+
 
 
 
