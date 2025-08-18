@@ -28,8 +28,8 @@
   <!-- Stripe -->
   <script src="https://js.stripe.com/v3/" defer></script>
 
-  <!-- Main premium app (cache-busted) -->
-  <script src="/js/main-premium.js?v=2025-08-18" defer></script>
+  <!-- Main premium app -->
+  <script src="/js/main-premium.js?v=2025-08-18-1" defer></script>
 
   <!-- Register SW at root -->
   <script>
@@ -39,6 +39,13 @@
       });
     }
   </script>
+
+  <style>
+    /* tiny skeleton so the amounts don’t flash empty */
+    .skeleton { display:inline-block; min-width:3ch; }
+    .promo-row { display:flex; gap:.5rem; }
+    .promo-row input { flex:1; }
+  </style>
 </head>
 <body>
   <noscript>
@@ -67,6 +74,8 @@
 
     <section id="premium-app" class="training-card hidden">
       <h2 id="app-title" class="card-title">Premium</h2>
+
+      <!-- This gets filled by main-premium.js -> showPremiumUpsell() / renderExamUI() -->
       <div id="exam-ui"></div>
       <div id="trainer-area" class="hidden"></div>
       <div id="summary-area" class="hidden"></div>
@@ -76,10 +85,10 @@
 
   <footer class="container" style="margin-top:2rem;">
     <p>
-      <a href="/terms.html">Terms of Service</a>
+      <a href="/tos.html">Terms of Service</a>
       <a href="/privacy.html">Privacy Policy</a>
       <a href="/refunds.html">Refund Policy</a>
-      <a href="/support.html">Contact Support</a>
+      <a href="/contact.html">Contact Support</a>
     </p>
     <p>© 2025 SpellRightPro. All rights reserved.</p>
   </footer>
