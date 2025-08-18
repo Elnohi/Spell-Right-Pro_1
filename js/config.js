@@ -20,7 +20,7 @@ window.appConfig = {
 
 // 3) Stripe publishable key (must match live/test of your backend)
 window.stripeConfig = {
-  publicKey: "pk_test_51RuKs1El99zwdEZrhrRFzKg7B0Y73rtLGHkZL20V7LHwE3jCJpnTXofp09GYg2reRdirJTXsGyvqRPixdCxraFhF00ZkCTNE4Z"
+  publicKey: "pk_live_51RuKs1El99zwdEZr9wjVF3EhADOk4c9x8JjvjPLH8Y16cCPwykZRFVtC1Fr0hSJesStbqcvfvvNOy4NHRaV0GPvg004IIcPfC8"
 };
 
 // 4) Initialize Firebase (compat) once
