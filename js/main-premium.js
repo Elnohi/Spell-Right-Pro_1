@@ -334,62 +334,59 @@
   }
 
   /* ==================== PAYMENTS ==================== */
-  async function initiatePayment(planType, opts = {}) {
-    if (!currentUser) { showAlert('Please log in first.', 'error'); return; }
+async function initiatePayment(planType, opts = {}) {
+  if (!currentUser) { showAlert('Please log in first.', 'error'); return; }
 
-    const normalizedPlan = (planType || '').trim().toLowerCase();
-    const priceId = window.priceMap[normalizedPlan];
-    if (!priceId) { showAlert(`Unknown plan: ${normalizedPlan}`, 'error'); return; }
+  const normalizedPlan = (planType || '').trim().toLowerCase();
+  const priceId = window.priceMap[normalizedPlan];
+  if (!priceId) { showAlert(`Unknown plan: ${normalizedPlan}`, 'error'); return; }
 
-    const base = (window.appConfig && window.appConfig.apiBaseUrl) || '';
-    if (!base) { showAlert('Backend URL missing in config.js', 'error'); return; }
+  const base = (window.appConfig && window.appConfig.apiBaseUrl) || '';
+  if (!base) { showAlert('Backend URL missing in config.js', 'error'); return; }
 
-    const promoInput = document.getElementById('promoInput');
-    const promoCode  = (opts.promoCode || (promoInput ? promoInput.value.trim() : '')) || '';
+  const promoInput = document.getElementById('promoInput');
+  const promoCode  = (opts.promoCode || (promoInput ? promoInput.value.trim() : '')) || '';
 
-    // 3c) tiny UX: lock the clicked button and show a gentle state
-    const triggerBtn = opts.trigger || null;
-    const origHTML   = triggerBtn ? triggerBtn.innerHTML : null;
-    if (triggerBtn) { triggerBtn.disabled = true; triggerBtn.innerHTML = 'Redirecting…'; }
+  const triggerBtn = opts.trigger || null;
+  const origHTML   = triggerBtn ? triggerBtn.innerHTML : null;
+  if (triggerBtn) { triggerBtn.disabled = true; triggerBtn.innerHTML = 'Redirecting…'; }
 
-    try {
-      const idToken = await currentUser.getIdToken();
-      const res = await fetch(`${base}/create-checkout-session`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${idToken}`
-        },
-        body: JSON.stringify({
-          plan: normalizedPlan,
-          priceId,
-          userId: currentUser.uid,
-          sessionId,
-          // Pass promo info; backend will honor if valid
-          promoCode: promoCode || undefined,
-          allowPromotionCodes: promoCode ? undefined : true
-        })
-      });
+  try {
+    const idToken = await currentUser.getIdToken();
+    const res = await fetch(`${base}/create-checkout-session`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${idToken}`
+      },
+      body: JSON.stringify({
+        plan: normalizedPlan,
+        priceId,
+        userId: currentUser.uid,
+        sessionId,
+        promoCode: promoCode || undefined,
+        allowPromotionCodes: promoCode ? undefined : true
+      })
+    });
 
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(data.error || `${res.status} ${res.statusText}`);
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.error || `${res.status} ${res.statusText}`);
 
-      if (data.url) { window.location.href = data.url; return; }
-
-      if (data.sessionId) {
-        if (!stripe) initStripe();
-        const { error } = await stripe.redirectToCheckout({ sessionId: data.sessionId });
-        if (error) throw error;
-        return;
-      }
-      throw new Error('Invalid server response (expected `url` or `sessionId`).');
-    } catch (err) {
-      console.error('Payment initiation error:', err);
-      showAlert(`Payment failed: ${err.message}`, 'error', 6000);
-    } finally {
-      if (triggerBtn) { triggerBtn.disabled = false; triggerBtn.innerHTML = origHTML; }
+    if (data.url) { window.location.href = data.url; return; }
+    if (data.sessionId) {
+      if (!stripe) initStripe();
+      const { error } = await stripe.redirectToCheckout({ sessionId: data.sessionId });
+      if (error) throw error;
+      return;
     }
+    throw new Error('Invalid server response (expected `url` or `sessionId`).');
+  } catch (err) {
+    console.error('Payment initiation error:', err);
+    showAlert(`Payment failed: ${err.message}`, 'error', 6000);
+  } finally {
+    if (triggerBtn) { triggerBtn.disabled = false; triggerBtn.innerHTML = origHTML; }
   }
+}
 
   /* ==================== UPSELL ==================== */
   async function showPremiumUpsell() {
@@ -766,3 +763,4 @@
   function shuffle(arr){ const a=arr.slice(); for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
 
 })();
+
