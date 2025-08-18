@@ -2,7 +2,6 @@
 
 require('dotenv').config();
 const express = require('express');
-const cors = require('cors');
 const admin = require('firebase-admin');
 const Stripe = require('stripe');
 
@@ -11,9 +10,8 @@ app.disable('x-powered-by');
 
 /* ---------- CORS (strict, with proper preflight) ---------- */
 const FRONTEND_URL = (process.env.FRONTEND_URL || '').replace(/\/+$/, '');
-if (!FRONTEND_URL) {
-  throw new Error('Missing env var FRONTEND_URL');
-}
+if (!FRONTEND_URL) throw new Error('Missing env var FRONTEND_URL');
+
 const allowedHosts = [new URL(FRONTEND_URL).host];
 const extraHosts = ['localhost:5173', 'localhost:3000']; // dev allowance
 
@@ -80,6 +78,19 @@ try {
 admin.initializeApp({ credential: admin.credential.cert(serviceAccount) });
 const db = admin.firestore();
 
+/* ---------- Utilities ---------- */
+function slimPrice(p) {
+  return {
+    id: p.id,
+    currency: p.currency,
+    unit_amount: p.unit_amount,
+    recurring_interval: p.recurring?.interval || null,
+    product: p.product,
+    active: p.active,
+    nickname: p.nickname || null,
+  };
+}
+
 /* ---------- Health ---------- */
 app.get('/health', (_req, res) => res.json({ ok: true }));
 
@@ -132,9 +143,21 @@ async function authenticate(req, res, next) {
   }
 }
 
-// --- ADD NEAR YOUR OTHER ROUTES ----
+/* ---------- Prices (public) ---------- */
+app.get('/prices', async (_req, res) => {
+  try {
+    const [m, a] = await Promise.all([
+      stripe.prices.retrieve(process.env.STRIPE_MONTHLY_PRICE_ID),
+      stripe.prices.retrieve(process.env.STRIPE_ANNUAL_PRICE_ID),
+    ]);
+    res.json({ monthly: slimPrice(m), annual: slimPrice(a) });
+  } catch (e) {
+    console.error('prices error:', e);
+    res.status(500).json({ error: 'prices_failed', message: e.message });
+  }
+});
 
-// Shared handler so we can mount multiple paths
+/* ---------- Validate promo (public) ---------- */
 async function validatePromoHandler(req, res) {
   try {
     const code = (req.query.code || '').trim();
@@ -161,7 +184,8 @@ async function validatePromoHandler(req, res) {
 
     return res.json({
       valid: true,
-      id: promo.id,
+      promotion_code_id: promo.id,
+      coupon_id: coupon?.id ?? null,
       percent_off: coupon?.percent_off ?? null,
       amount_off: coupon?.amount_off ?? null,
       currency: coupon?.currency ?? null,
@@ -172,50 +196,8 @@ async function validatePromoHandler(req, res) {
   }
 }
 
-// Mount on a few common paths so 404s are unlikely
+// Mount on a few common paths to avoid 404s from earlier links
 app.get(['/validate-promo', '/promo/validate', '/api/validate-promo', '/api/promo/validate'], validatePromoHandler);
-
-/* ---------- NEW: Validate promo code (no auth required) ---------- */
-/* GET /validate-promo?code=FRIENDS21  -> { valid, id, percent_off, amount_off, currency, reason? } */
-app.get('/validate-promo', async (req, res) => {
-  try {
-    const code = (req.query.code || '').trim();
-    if (!code) return res.status(400).json({ valid: false, reason: 'missing_code' });
-
-    const list = await stripe.promotionCodes.list({
-      code,
-      active: true,
-      limit: 1,
-      expand: ['data.coupon'],
-    });
-
-    if (!list.data.length) {
-      return res.json({ valid: false, reason: 'not_found' });
-    }
-
-    const promo = list.data[0];
-    const coupon = promo.coupon;
-
-    // Basic sanity checks
-    if (promo.max_redemptions && promo.times_redeemed >= promo.max_redemptions) {
-      return res.json({ valid: false, reason: 'maxed_out' });
-    }
-    if (coupon && coupon.valid === false) {
-      return res.json({ valid: false, reason: 'coupon_invalid' });
-    }
-
-    return res.json({
-      valid: true,
-      id: promo.id,
-      percent_off: coupon?.percent_off ?? null,
-      amount_off: coupon?.amount_off ?? null,
-      currency: coupon?.currency ?? null,
-    });
-  } catch (e) {
-    console.error('validate-promo error:', e);
-    res.status(500).json({ valid: false, reason: 'server_error', message: e.message });
-  }
-});
 
 /* ---------- Create Checkout Session (auth required) ---------- */
 app.post('/create-checkout-session', authenticate, async (req, res) => {
@@ -234,10 +216,10 @@ app.post('/create-checkout-session', authenticate, async (req, res) => {
       return res.status(400).json({ error: 'Invalid plan/price' });
     }
 
-    // Sanity check: ensure the price exists in THIS key’s mode (TEST vs LIVE)
+    // Sanity check price exists for this key's mode (TEST/LIVE)
     await stripe.prices.retrieve(priceId);
 
-    // Optional: attach a valid promotion_code if provided
+    // Optional: apply a promotion code if one was validated client-side
     let discounts;
     if (promoCode && typeof promoCode === 'string') {
       try {
@@ -252,6 +234,9 @@ app.post('/create-checkout-session', authenticate, async (req, res) => {
       mode: 'subscription',
       line_items: [{ price: priceId, quantity: 1 }],
       discounts, // may be undefined
+      // also allow entering codes directly on the Stripe page
+      allow_promotion_codes: true,
+
       subscription_data: { trial_period_days: 0 },
       success_url: `${FRONTEND_URL}/premium?payment_success=true`,
       cancel_url: `${FRONTEND_URL}/premium?payment_cancelled=true`,
@@ -267,7 +252,7 @@ app.post('/create-checkout-session', authenticate, async (req, res) => {
   }
 });
 
-/* ---------- Handlers ---------- */
+/* ---------- Webhook handlers ---------- */
 async function handlePaymentSuccess(session) {
   const userId = session.client_reference_id;
   const plan = session.metadata?.plan || 'unknown';
