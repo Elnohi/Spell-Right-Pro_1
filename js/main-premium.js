@@ -21,8 +21,6 @@
   let stripe = null;
 
   // Pricing + IDs (keep on window so they’re always defined)
-  // NOTE: These must match Stripe price IDs (test OR live).
-  // You already set these values previously—keep them in sync.
   window.priceMap = {
     monthly: 'price_1RwpZXEl99zwdEZrXA9Cetiy',
     annual:  'price_1RwpaNEl99zwdEZrDAeJ4V4e'
@@ -53,8 +51,6 @@
     initAuthState();
     loadVoices();
     checkUrlForPaymentStatus();
-    // Show the upsell skeleton immediately (already in HTML)
-    // We’ll replace it once we know premium status.
   });
 
   /* ==================== STRIPE ==================== */
@@ -249,7 +245,6 @@
     try {
       return new Intl.NumberFormat(locale, { style: 'currency', currency }).format((cents || 0) / 100);
     } catch {
-      // Fallback show raw dollars
       return `$${((cents || 0) / 100).toFixed(2)}`;
     }
   }
@@ -317,27 +312,26 @@
     }
   }
 
-  // ---- Promo helpers ----
-async function validatePromoInline(code) {
-  const base = (window.appConfig && window.appConfig.apiBaseUrl) || '';
-  if (!base || !code) return { valid: false };
+  // ---- Promo helpers (3a) inline validation) ----
+  async function validatePromoInline(code) {
+    const base = (window.appConfig && window.appConfig.apiBaseUrl) || '';
+    if (!base || !code) return { valid: false };
 
-  try {
-    const r = await fetch(`${base}/validate-promo?code=${encodeURIComponent(code)}`);
-    if (!r.ok) return { valid: false };
-    const j = await r.json();
-    return j; // { valid, percent_off, amount_off, currency, ... }
-  } catch (_) {
-    return { valid: false };
+    try {
+      const r = await fetch(`${base}/validate-promo?code=${encodeURIComponent(code)}`);
+      if (!r.ok) return { valid: false };
+      const j = await r.json();
+      return j; // { valid, percent_off, amount_off, currency, ... }
+    } catch (_) {
+      return { valid: false };
+    }
   }
-}
-
-function showPromoMessage(msg, ok=true) {
-  const el = document.getElementById('promo-help');
-  if (!el) return;
-  el.textContent = msg || '';
-  el.style.color = ok ? 'var(--success, #198754)' : 'var(--danger, #dc3545)';
-}
+  function showPromoMessage(msg, ok = true) {
+    const el = document.getElementById('promo-help');
+    if (!el) return;
+    el.textContent = msg || '';
+    el.style.color = ok ? 'var(--success, #198754)' : 'var(--danger, #dc3545)';
+  }
 
   /* ==================== PAYMENTS ==================== */
   async function initiatePayment(planType, opts = {}) {
@@ -353,6 +347,11 @@ function showPromoMessage(msg, ok=true) {
     const promoInput = document.getElementById('promoInput');
     const promoCode  = (opts.promoCode || (promoInput ? promoInput.value.trim() : '')) || '';
 
+    // 3c) tiny UX: lock the clicked button and show a gentle state
+    const triggerBtn = opts.trigger || null;
+    const origHTML   = triggerBtn ? triggerBtn.innerHTML : null;
+    if (triggerBtn) { triggerBtn.disabled = true; triggerBtn.innerHTML = 'Redirecting…'; }
+
     try {
       const idToken = await currentUser.getIdToken();
       const res = await fetch(`${base}/create-checkout-session`, {
@@ -366,7 +365,7 @@ function showPromoMessage(msg, ok=true) {
           priceId,
           userId: currentUser.uid,
           sessionId,
-          // These are harmless if backend ignores them.
+          // Pass promo info; backend will honor if valid
           promoCode: promoCode || undefined,
           allowPromotionCodes: promoCode ? undefined : true
         })
@@ -387,6 +386,8 @@ function showPromoMessage(msg, ok=true) {
     } catch (err) {
       console.error('Payment initiation error:', err);
       showAlert(`Payment failed: ${err.message}`, 'error', 6000);
+    } finally {
+      if (triggerBtn) { triggerBtn.disabled = false; triggerBtn.innerHTML = origHTML; }
     }
   }
 
@@ -395,7 +396,7 @@ function showPromoMessage(msg, ok=true) {
     trainerArea.classList.add('hidden');
     summaryArea.classList.add('hidden');
 
-    // Build UI (we’ll fill prices after)
+    // Build UI (disabled buttons first – 3b)
     examUI.innerHTML = `
       <div class="premium-upsell">
         <div class="premium-header">
@@ -407,30 +408,66 @@ function showPromoMessage(msg, ok=true) {
         <div class="pricing-options">
           <div class="pricing-option">
             <h3>Monthly</h3>
-            <div class="price"><span id="price-monthly-amt">—/mo</span></div>
-            <button id="monthly-btn" class="btn btn-primary">Subscribe</button>
+            <div class="price"><span id="price-monthly-amt" aria-live="polite">—/mo</span></div>
+            <button id="monthly-btn" class="btn btn-primary" disabled>Subscribe</button>
           </div>
           <div class="pricing-option recommended">
             <div class="badge">Best Value</div>
             <h3>Annual</h3>
-            <div class="price"><span id="price-annual-amt">—/yr</span></div>
-            <button id="annual-btn" class="btn btn-primary">Subscribe</button>
+            <div class="price"><span id="price-annual-amt" aria-live="polite">—/yr</span></div>
+            <button id="annual-btn" class="btn btn-primary" disabled>Subscribe</button>
           </div>
         </div>
 
         <div class="promo-row" style="margin-top:10px;">
           <input id="promoInput" class="form-control" placeholder="Enter promo code (optional)" autocomplete="off">
         </div>
+        <small id="promo-help" class="promo-help" aria-live="polite"></small>
 
         <p style="margin-top:.5rem;color:var(--gray)">You’ll be redirected to secure Stripe Checkout.</p>
       </div>
     `;
 
-    // Fill prices (from backend /prices or fallback)
+    // Fill prices; once painted, enable buttons (3b)
     try { await paintPriceLabels(); } catch (e) { console.debug('Price paint skipped:', e); }
+    const monthlyBtn = document.getElementById('monthly-btn');
+    const annualBtn  = document.getElementById('annual-btn');
+    [monthlyBtn, annualBtn].forEach(b => b && (b.disabled = false));
 
-    document.getElementById('monthly-btn')?.addEventListener('click', () => initiatePayment('monthly'));
-    document.getElementById('annual-btn')?.addEventListener('click',  () => initiatePayment('annual'));
+    // Promo inline validation (3a)
+    const promoInput = document.getElementById('promoInput');
+    let promoTimer = null;
+    promoInput?.addEventListener('input', () => {
+      clearTimeout(promoTimer);
+      const code = promoInput.value.trim();
+      if (!code) { showPromoMessage(''); return; }
+      promoTimer = setTimeout(async () => {
+        const r = await validatePromoInline(code);
+        if (r.valid) {
+          const msg = r.percent_off
+            ? `Promo applied: ${r.percent_off}% off at checkout.`
+            : r.amount_off
+              ? `Promo applied: ${formatAmount(r.amount_off, r.currency || 'CAD')} off at checkout.`
+              : 'Promo code accepted; discount will apply at checkout.';
+          showPromoMessage(msg, true);
+        } else {
+          showPromoMessage('Promo code not valid.', false);
+        }
+      }, 350);
+    });
+
+    // Enter on promo -> click Monthly by default
+    promoInput?.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') { e.preventDefault(); monthlyBtn?.click(); }
+    });
+
+    // Subscribe handlers: pass clicked button + promo
+    monthlyBtn?.addEventListener('click', (e) =>
+      initiatePayment('monthly', { trigger: e.currentTarget })
+    );
+    annualBtn?.addEventListener('click', (e)  =>
+      initiatePayment('annual',  { trigger: e.currentTarget })
+    );
   }
 
   /* ==================== UTILITIES ==================== */
@@ -729,4 +766,3 @@ function showPromoMessage(msg, ok=true) {
   function shuffle(arr){ const a=arr.slice(); for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
 
 })();
-
