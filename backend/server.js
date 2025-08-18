@@ -152,7 +152,6 @@ app.post('/create-checkout-session', authenticate, async (req, res) => {
   try {
     const { plan, priceId: clientPriceId } = req.body;
 
-    // Choose price ID (client override or env)
     let priceId = null;
     if (typeof clientPriceId === 'string' && /^price_/.test(clientPriceId)) {
       priceId = clientPriceId;
@@ -164,15 +163,19 @@ app.post('/create-checkout-session', authenticate, async (req, res) => {
       return res.status(400).json({ error: 'Invalid plan/price' });
     }
 
-    // Sanity check: ensure price exists in THIS key’s mode (Test/Live)
+    // Optional sanity check
     await stripe.prices.retrieve(priceId);
 
     const session = await stripe.checkout.sessions.create({
       mode: 'subscription',
       line_items: [{ price: priceId, quantity: 1 }],
       subscription_data: { trial_period_days: 0 },
-      success_url: `${FRONTEND_ORIGIN}/premium?payment_success=true`,
-      cancel_url: `${FRONTEND_ORIGIN}/premium?payment_cancelled=true`,
+
+      // 👇 Add this line (shows “Add promotion code” on Checkout)
+      allow_promotion_codes: true,
+
+      success_url: `${FRONTEND_URL}/premium?payment_success=true`,
+      cancel_url: `${FRONTEND_URL}/premium?payment_cancelled=true`,
       client_reference_id: req.user.uid,
       metadata: { plan: plan || 'unknown', userId: req.user.uid }
     });
