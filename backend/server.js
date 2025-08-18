@@ -132,6 +132,49 @@ async function authenticate(req, res, next) {
   }
 }
 
+// --- ADD NEAR YOUR OTHER ROUTES ----
+
+// Shared handler so we can mount multiple paths
+async function validatePromoHandler(req, res) {
+  try {
+    const code = (req.query.code || '').trim();
+    if (!code) return res.status(400).json({ valid: false, reason: 'missing_code' });
+
+    const list = await stripe.promotionCodes.list({
+      code,
+      active: true,
+      limit: 1,
+      expand: ['data.coupon'],
+    });
+
+    if (!list.data.length) return res.json({ valid: false, reason: 'not_found' });
+
+    const promo = list.data[0];
+    const coupon = promo.coupon;
+
+    if (promo.max_redemptions && promo.times_redeemed >= promo.max_redemptions) {
+      return res.json({ valid: false, reason: 'maxed_out' });
+    }
+    if (coupon && coupon.valid === false) {
+      return res.json({ valid: false, reason: 'coupon_invalid' });
+    }
+
+    return res.json({
+      valid: true,
+      id: promo.id,
+      percent_off: coupon?.percent_off ?? null,
+      amount_off: coupon?.amount_off ?? null,
+      currency: coupon?.currency ?? null,
+    });
+  } catch (e) {
+    console.error('validate-promo error:', e);
+    res.status(500).json({ valid: false, reason: 'server_error', message: e.message });
+  }
+}
+
+// Mount on a few common paths so 404s are unlikely
+app.get(['/validate-promo', '/promo/validate', '/api/validate-promo', '/api/promo/validate'], validatePromoHandler);
+
 /* ---------- NEW: Validate promo code (no auth required) ---------- */
 /* GET /validate-promo?code=FRIENDS21  -> { valid, id, percent_off, amount_off, currency, reason? } */
 app.get('/validate-promo', async (req, res) => {
