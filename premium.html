@@ -6,6 +6,11 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <base href="/" />
 
+  <!-- Performance hints -->
+  <link rel="preconnect" href="https://js.stripe.com" />
+  <link rel="preconnect" href="https://www.gstatic.com" />
+  <link rel="preconnect" href="https://www.googleapis.com" />
+
   <!-- Styles -->
   <link rel="stylesheet" href="/css/styles.css">
   <link rel="stylesheet" href="/css/premium.css">
@@ -28,7 +33,7 @@
   <!-- Stripe -->
   <script src="https://js.stripe.com/v3/" defer></script>
 
-  <!-- Main premium app -->
+  <!-- Main premium app (cache-busted) -->
   <script src="/js/main-premium.js?v=2025-08-18-1" defer></script>
 
   <!-- Register SW at root -->
@@ -41,10 +46,16 @@
   </script>
 
   <style>
-    /* tiny skeleton so the amounts don’t flash empty */
-    .skeleton { display:inline-block; min-width:3ch; }
-    .promo-row { display:flex; gap:.5rem; }
-    .promo-row input { flex:1; }
+    /* Minimal placeholder so the page never looks empty while JS loads */
+    .skeleton-line{height:12px;border-radius:6px;background:linear-gradient(90deg,
+      rgba(0,0,0,.08) 25%, rgba(0,0,0,.14) 37%, rgba(0,0,0,.08) 63%);
+      background-size:400% 100%; animation:skeleton 1.2s ease-in-out infinite}
+    .skeleton-block{border:1px solid var(--border,#e6e6e6);border-radius:12px;padding:16px}
+    @keyframes skeleton{0%{background-position:100% 0}100%{background-position:0 0}}
+    .loader-wrap{display:grid;gap:10px}
+    .loader-title{width:180px;height:18px}
+    .loader-line{width:100%}
+    .loader-btn{width:160px;height:36px;border-radius:8px}
   </style>
 </head>
 <body>
@@ -75,10 +86,23 @@
     <section id="premium-app" class="training-card hidden">
       <h2 id="app-title" class="card-title">Premium</h2>
 
-      <!-- This gets filled by main-premium.js -> showPremiumUpsell() / renderExamUI() -->
-      <div id="exam-ui"></div>
+      <!-- Placeholder shown immediately; replaced by JS when ready -->
+      <div id="exam-ui">
+        <div class="skeleton-block" role="status" aria-live="polite" aria-busy="true">
+          <div class="loader-wrap">
+            <div class="skeleton-line loader-title"></div>
+            <div class="skeleton-line loader-line"></div>
+            <div class="skeleton-line loader-line"></div>
+            <div class="skeleton-line loader-btn" style="margin-top:6px;"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- JS will toggle these on demand -->
       <div id="trainer-area" class="hidden"></div>
       <div id="summary-area" class="hidden"></div>
+
+      <!-- If user is not premium, ads may show; JS disables them for premium -->
       <div class="ad-container" style="margin-top:1rem;"></div>
     </section>
   </main>
