@@ -115,6 +115,32 @@ app.post('/stripe-webhook', express.raw({ type: 'application/json' }), async (re
 /* ---------- JSON for other routes ---------- */
 app.use(express.json());
 
+// --- validate promo code (public) ---
+app.get('/validate-promo', async (req, res) => {
+  try {
+    const code = String(req.query.code || '').trim();
+    if (!code) return res.status(400).json({ error: 'Missing code' });
+
+    const list = await stripe.promotionCodes.list({ code, active: true, limit: 1 });
+    const pc = list.data[0];
+    if (!pc) return res.status(404).json({ valid: false });
+
+    const c = pc.coupon;
+    res.json({
+      valid: true,
+      code: pc.code,
+      percent_off: c.percent_off || null,
+      amount_off: c.amount_off || null,
+      currency: c.currency || null,
+      duration: c.duration,              // once | repeating | forever
+      duration_in_months: c.duration_in_months || null,
+    });
+  } catch (e) {
+    console.error('validate-promo error:', e);
+    res.status(500).json({ error: 'Unable to validate promo' });
+  }
+});
+
 /* ---------- Auth (Firebase ID token) ---------- */
 async function authenticate(req, res, next) {
   const authHeader = req.headers.authorization || '';
