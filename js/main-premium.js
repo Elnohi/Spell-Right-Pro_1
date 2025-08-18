@@ -317,6 +317,28 @@
     }
   }
 
+  // ---- Promo helpers ----
+async function validatePromoInline(code) {
+  const base = (window.appConfig && window.appConfig.apiBaseUrl) || '';
+  if (!base || !code) return { valid: false };
+
+  try {
+    const r = await fetch(`${base}/validate-promo?code=${encodeURIComponent(code)}`);
+    if (!r.ok) return { valid: false };
+    const j = await r.json();
+    return j; // { valid, percent_off, amount_off, currency, ... }
+  } catch (_) {
+    return { valid: false };
+  }
+}
+
+function showPromoMessage(msg, ok=true) {
+  const el = document.getElementById('promo-help');
+  if (!el) return;
+  el.textContent = msg || '';
+  el.style.color = ok ? 'var(--success, #198754)' : 'var(--danger, #dc3545)';
+}
+
   /* ==================== PAYMENTS ==================== */
   async function initiatePayment(planType, opts = {}) {
     if (!currentUser) { showAlert('Please log in first.', 'error'); return; }
@@ -707,3 +729,4 @@
   function shuffle(arr){ const a=arr.slice(); for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
 
 })();
+
