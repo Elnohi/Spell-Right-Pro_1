@@ -1,5 +1,3 @@
-// main-premium.js — Premium app (no trial) + Stripe checkout
-
 /* ==================== GLOBAL STATE ==================== */
 let currentUser = null;
 let premiumUser = false;
@@ -16,7 +14,6 @@ let flaggedWordsStore = JSON.parse(localStorage.getItem('flaggedWords') || '[]')
 
 const sessionId = 'sess_' + Math.random().toString(36).slice(2, 9);
 let stripe = null;
-let autoCheckoutAttempted = false;
 
 /* ==================== DOM REFS ==================== */
 const authArea       = document.getElementById('auth-area');
@@ -40,7 +37,7 @@ document.addEventListener('DOMContentLoaded', () => {
 function initStripe() {
   if (!window.Stripe) { console.warn('Stripe.js not loaded yet.'); return; }
   const key = (window.stripeConfig && window.stripeConfig.publicKey) || '';
-  if (!/^pk_test_51RuKs1El99zwdEZrhrRFzKg7B0Y73rtLGHkZL20V7LHwE3jCJpnTXofp09GYg2reRdirJTXsGyvqRPixdCxraFhF00ZkCTNE4Z/.test(key)) {
+  if (!key || !/^pk_/.test(key)) {
     console.warn('Stripe publishable key missing/invalid.');
     return;
   }
@@ -172,20 +169,12 @@ function initAuthState() {
     await ensureUserDoc(user);
     await checkPremiumStatus();
     renderAuthLoggedIn();
-
-    // new code
-if (premiumUser) {
-  renderExamUI();
-} else {
-  showPremiumUpsell();
-
-  // Optional: only auto-start if explicitly requested, e.g. /premium?plan=monthly
-  const p = new URLSearchParams(location.search).get('plan');
-  if (p === 'monthly' || p === 'annual') {
-    initiatePayment(p).catch(console.error);
-  }
-}
-});
+    if (premiumUser) {
+      renderExamUI();
+    } else {
+      showPremiumUpsell(); // ► No auto-redirect; user chooses Monthly/Annual
+    }
+  });
 }
 
 function renderAuthLoggedOut() {
@@ -224,23 +213,45 @@ async function handleSignup() {
   try {
     const cred = await firebase.auth().createUserWithEmailAndPassword(email, password);
     await ensureUserDoc(cred.user);
-    showAlert('Account created. Redirecting to checkout…', 'success', 2500);
+    showAlert('Account created. You can now subscribe.', 'success', 2500);
   } catch (e) { showAlert(e.message, 'error'); }
 }
 function handleLogout() { firebase.auth().signOut(); }
 
-/* ==================== PAYMENTS (single, correct version) ==================== */
-const priceMap = {
-  monthly: 'price_1RwpZXEl99zwdEZrXA9Cetiy', // CAD 7.99
-  annual:  'price_1RwpaNEl99zwdEZrDAeJ4V4e'  // CAD 79.99
-};
+/* ==================== PAYMENTS ==================== */
+function money(cents, currency) {
+  try {
+    return new Intl.NumberFormat(undefined, { style: 'currency', currency: currency.toUpperCase() })
+      .format((cents || 0) / 100);
+  } catch {
+    return `$${(cents || 0) / 100}`;
+  }
+}
+
+async function loadLivePrices() {
+  const base = (window.appConfig && window.appConfig.apiBaseUrl) || '';
+  if (!base) return;
+  const res = await fetch(`${base}/prices`, { method: 'GET' });
+  if (!res.ok) return;
+  const { monthly, annual } = await res.json();
+
+  if (monthly?.amount && monthly?.currency) {
+    document.getElementById('price-monthly').textContent = money(monthly.amount, monthly.currency);
+  }
+  if (annual?.amount && annual?.currency) {
+    document.getElementById('price-annual').textContent = money(annual.amount, annual.currency);
+  }
+  if (monthly?.amount && annual?.amount && annual?.currency) {
+    const save = (monthly.amount * 12) - annual.amount;
+    document.getElementById('annual-savings').textContent = save > 0 ? `Save ${money(save, annual.currency)} / year` : '';
+  }
+}
 
 async function initiatePayment(planType) {
   if (!currentUser) { showAlert('Please log in first.', 'error'); return; }
 
   const normalizedPlan = (planType || '').trim().toLowerCase();
-  const priceId = priceMap[normalizedPlan];
-  if (!priceId) { showAlert(`Unknown plan: ${normalizedPlan}`, 'error'); return; }
+  if (!/^(monthly|annual)$/.test(normalizedPlan)) { showAlert(`Unknown plan: ${normalizedPlan}`, 'error'); return; }
 
   const base = (window.appConfig && window.appConfig.apiBaseUrl) || '';
   if (!base) { showAlert('Backend URL missing in config.js', 'error'); return; }
@@ -255,7 +266,6 @@ async function initiatePayment(planType) {
       },
       body: JSON.stringify({
         plan: normalizedPlan,
-        priceId,       // backend now accepts this too (see server.js)
         userId: currentUser.uid,
         sessionId
       })
@@ -292,14 +302,14 @@ function showPremiumUpsell() {
       <div class="pricing-options">
         <div class="pricing-option">
           <h3>Monthly</h3>
-          <div class="price">$7.99/mo</div>
+          <div class="price"><span id="price-monthly">—</span><span class="per">/mo</span></div>
           <button id="monthly-btn" class="btn btn-primary">Subscribe</button>
         </div>
         <div class="pricing-option recommended">
           <div class="badge">Best Value</div>
           <h3>Annual</h3>
-          <div class="price">$79.99/yr</div>
-          <div class="savings">Save 15%</div>
+          <div class="price"><span id="price-annual">—</span><span class="per">/yr</span></div>
+          <div class="savings" id="annual-savings"></div>
           <button id="annual-btn" class="btn btn-primary">Subscribe</button>
         </div>
       </div>
@@ -307,28 +317,10 @@ function showPremiumUpsell() {
     </div>`;
   document.getElementById('monthly-btn')?.addEventListener('click', () => initiatePayment('monthly'));
   document.getElementById('annual-btn')?.addEventListener('click', () => initiatePayment('annual'));
-  loadAutoAdsOnce();
+  loadLivePrices().catch(console.warn);
 }
 
-/* ==================== UTILITIES ==================== */
-function isTypingField(el){ if(!el) return false; const t=(el.tagName||'').toLowerCase(); return t==='input'||t==='textarea'||el.isContentEditable===true; }
-function processWordList(text){
-  return [...new Set(String(text||'').replace(/\r/g,'').split(/[\n,;|\/\-–—\t]+/).map(w=>w.trim()).filter(w=>w&&w.length>1))];
-}
-function toggleFlagWord(word, options={}) {
-  if (!word) return;
-  const idx = flaggedWordsStore.indexOf(word);
-  if (idx === -1) flaggedWordsStore.push(word); else flaggedWordsStore.splice(idx,1);
-  localStorage.setItem('flaggedWords', JSON.stringify(flaggedWordsStore));
-  if (options.updateUI !== false) {
-    const flagBtn = document.getElementById('flagWordBtn');
-    if (flagBtn) {
-      const active = flaggedWordsStore.includes(word);
-      flagBtn.classList.toggle('active', active);
-      flagBtn.innerHTML = active ? '<i class="fas fa-flag"></i> Flagged' : '<i class="far fa-flag"></i> Flag';
-    }
-  }
-}
+/* ==================== UTILITIES (alerts) ==================== */
 function showAlert(message, type='error', duration=3000) {
   const fn = (window && window.showAlert) || null;
   if (fn && fn !== showAlert && typeof fn === 'function') return fn(message, type, duration);
@@ -605,6 +597,7 @@ function summaryFor(listWords, answers, scoreVal){
 
 /* ==================== HELPERS ==================== */
 function shuffle(arr){ const a=arr.slice(); for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
+
 
 
 
