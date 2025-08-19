@@ -314,25 +314,25 @@
 
   // ---- Promo helpers (3a) inline validation) ----
   async function validatePromoInline(code) {
-    const base = (window.appConfig && window.appConfig.apiBaseUrl) || '';
-    if (!base || !code) return { valid: false };
+  const base = (window.appConfig && window.appConfig.apiBaseUrl) || '';
+  if (!base || !code) return { valid: false, message: 'Please enter a promo code' };
 
-    try {
-      const r = await fetch(`${base}/validate-promo?code=${encodeURIComponent(code)}`);
-      if (!r.ok) return { valid: false };
-      const j = await r.json();
-      return j; // { valid, percent_off, amount_off, currency, ... }
-    } catch (_) {
-      return { valid: false };
-    }
+  try {
+    const r = await fetch(`${base}/validate-promo?code=${encodeURIComponent(code)}`);
+    if (!r.ok) return { valid: false, message: 'Error validating code' };
+    const j = await r.json();
+    return j;
+  } catch (_) {
+    return { valid: false, message: 'Network error - please try again' };
   }
-  function showPromoMessage(msg, ok = true) {
-    const el = document.getElementById('promo-help');
-    if (!el) return;
-    el.textContent = msg || '';
-    el.style.color = ok ? 'var(--success, #198754)' : 'var(--danger, #dc3545)';
-  }
-
+}
+function showPromoMessage(msg, ok = true) {
+  const el = document.getElementById('promo-help');
+  if (!el) return;
+  el.textContent = msg || '';
+  el.style.color = ok ? 'var(--success, #198754)' : 'var(--danger, #dc3545)';
+  el.style.fontWeight = ok ? 'normal' : 'bold';
+}
   /* ==================== PAYMENTS ==================== */
 async function initiatePayment(planType, opts = {}) {
   if (!currentUser) { showAlert('Please log in first.', 'error'); return; }
@@ -435,23 +435,27 @@ async function initiatePayment(planType, opts = {}) {
     const promoInput = document.getElementById('promoInput');
     let promoTimer = null;
     promoInput?.addEventListener('input', () => {
-      clearTimeout(promoTimer);
-      const code = promoInput.value.trim();
-      if (!code) { showPromoMessage(''); return; }
-      promoTimer = setTimeout(async () => {
-        const r = await validatePromoInline(code);
-        if (r.valid) {
-          const msg = r.percent_off
-            ? `Promo applied: ${r.percent_off}% off at checkout.`
-            : r.amount_off
-              ? `Promo applied: ${formatAmount(r.amount_off, r.currency || 'CAD')} off at checkout.`
-              : 'Promo code accepted; discount will apply at checkout.';
-          showPromoMessage(msg, true);
-        } else {
-          showPromoMessage('Promo code not valid.', false);
-        }
-      }, 350);
-    });
+  clearTimeout(promoTimer);
+  const code = promoInput.value.trim();
+  if (!code) { 
+    showPromoMessage(''); 
+    return; 
+  }
+  promoTimer = setTimeout(async () => {
+    const r = await validatePromoInline(code);
+    showPromoMessage(r.message || '', r.valid);
+    
+    if (r.valid) {
+      // Optional: Highlight discount details
+      const discountMsg = r.percent_off 
+        ? `${r.percent_off}% discount will apply`
+        : r.amount_off 
+          ? `${formatAmount(r.amount_off, r.currency || 'CAD')} off at checkout`
+          : 'Discount will apply at checkout';
+      showPromoMessage(`${discountMsg}`, true);
+    }
+  }, 350);
+});
 
     // Enter on promo -> click Monthly by default
     promoInput?.addEventListener('keydown', (e) => {
@@ -763,4 +767,5 @@ async function initiatePayment(planType, opts = {}) {
   function shuffle(arr){ const a=arr.slice(); for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
 
 })();
+
 
