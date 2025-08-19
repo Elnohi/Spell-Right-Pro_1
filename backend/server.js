@@ -161,8 +161,9 @@ app.get('/prices', async (_req, res) => {
 async function validatePromoHandler(req, res) {
   try {
     const code = (req.query.code || '').trim();
-    if (!code) return res.status(400).json({ valid: false, reason: 'missing_code' });
+    if (!code) return res.status(400).json({ valid: false, reason: 'missing_code', message: 'Please enter a promo code' });
 
+    // Check active codes first
     const list = await stripe.promotionCodes.list({
       code,
       active: true,
@@ -170,16 +171,56 @@ async function validatePromoHandler(req, res) {
       expand: ['data.coupon'],
     });
 
-    if (!list.data.length) return res.json({ valid: false, reason: 'not_found' });
+    if (!list.data.length) {
+      // Check if code exists but is inactive
+      const inactiveList = await stripe.promotionCodes.list({
+        code,
+        active: false,
+        limit: 1,
+      });
+      
+      if (inactiveList.data.length) {
+        return res.json({ 
+          valid: false, 
+          reason: 'code_inactive',
+          message: 'This promo code is no longer active'
+        });
+      }
+      return res.json({ 
+        valid: false, 
+        reason: 'not_found',
+        message: 'Promo code not found'
+      });
+    }
 
     const promo = list.data[0];
     const coupon = promo.coupon;
 
-    if (promo.max_redemptions && promo.times_redeemed >= promo.max_redemptions) {
-      return res.json({ valid: false, reason: 'maxed_out' });
+    // Check expiration
+    if (coupon?.redeem_by && coupon.redeem_by < Math.floor(Date.now() / 1000)) {
+      return res.json({ 
+        valid: false, 
+        reason: 'expired',
+        message: 'This promo code has expired'
+      });
     }
+
+    // Check max redemptions
+    if (promo.max_redemptions && promo.times_redeemed >= promo.max_redemptions) {
+      return res.json({ 
+        valid: false, 
+        reason: 'maxed_out',
+        message: 'This promo code has reached its maximum redemptions'
+      });
+    }
+
+    // Check coupon validity
     if (coupon && coupon.valid === false) {
-      return res.json({ valid: false, reason: 'coupon_invalid' });
+      return res.json({ 
+        valid: false, 
+        reason: 'coupon_invalid',
+        message: 'This promo code is no longer valid'
+      });
     }
 
     return res.json({
@@ -189,10 +230,15 @@ async function validatePromoHandler(req, res) {
       percent_off: coupon?.percent_off ?? null,
       amount_off: coupon?.amount_off ?? null,
       currency: coupon?.currency ?? null,
+      message: 'Promo code applied successfully'
     });
   } catch (e) {
     console.error('validate-promo error:', e);
-    res.status(500).json({ valid: false, reason: 'server_error', message: e.message });
+    res.status(500).json({ 
+      valid: false, 
+      reason: 'server_error', 
+      message: 'Error validating promo code' 
+    });
   }
 }
 
