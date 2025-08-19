@@ -160,8 +160,16 @@ app.get('/prices', async (_req, res) => {
 /* ---------- Validate promo (public) ---------- */
 async function validatePromoHandler(req, res) {
   try {
-    const code = (req.query.code || '').trim();
-    if (!code) return res.status(400).json({ valid: false, reason: 'missing_code', message: 'Please enter a promo code' });
+    const code = (req.query.code || '').trim().toUpperCase(); // Normalize case
+    if (!code || code.length > 20) {
+      return res.status(400).json({ 
+        valid: false, 
+        reason: 'invalid_format', 
+        message: 'Please enter a valid promo code' 
+      });
+    }
+
+    console.log('Validating promo:', code, 'for origin:', req.headers.origin);
 
     // Check active codes first
     const list = await stripe.promotionCodes.list({
@@ -223,6 +231,8 @@ async function validatePromoHandler(req, res) {
       });
     }
 
+    console.log('Promo code valid:', code, 'Discount:', coupon?.percent_off || coupon?.amount_off);
+
     return res.json({
       valid: true,
       promotion_code_id: promo.id,
@@ -233,7 +243,7 @@ async function validatePromoHandler(req, res) {
       message: 'Promo code applied successfully'
     });
   } catch (e) {
-    console.error('validate-promo error:', e);
+    console.error('validate-promo error:', e.type || 'Unknown', e.code || 'No code', e.message);
     res.status(500).json({ 
       valid: false, 
       reason: 'server_error', 
@@ -269,7 +279,11 @@ app.post('/create-checkout-session', authenticate, async (req, res) => {
     let discounts;
     if (promoCode && typeof promoCode === 'string') {
       try {
-        const pcs = await stripe.promotionCodes.list({ code: promoCode.trim(), active: true, limit: 1 });
+        const pcs = await stripe.promotionCodes.list({ 
+          code: promoCode.trim(), 
+          active: true, 
+          limit: 1 
+        });
         if (pcs.data[0]) discounts = [{ promotion_code: pcs.data[0].id }];
       } catch (e) {
         console.warn('Promo code supplied but not usable:', promoCode, e.message);
