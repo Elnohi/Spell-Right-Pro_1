@@ -22,8 +22,8 @@
 
   // Pricing + IDs (keep on window so they're always defined)
   window.priceMap = {
-    monthly: 'price_1RxJvfEl99zwdEZrdDtZ5q3t',
-    annual:  'price_1RxK5tEl99zwdEZrNGVlVhYH'
+    monthly: 'price_1RwpZXEl99zwdEZrXA9Cetiy',
+    annual:  'price_1RwpaNEl99zwdEZrDAeJ4V4e'
   };
 
   // Optional client-side display fallback (set in config.js if you want)
@@ -594,6 +594,7 @@
     showTypedWord();
     setTimeout(() => speakOut(words[currentIndex], 0.95, focusAnswer), 250);
   }
+
   function showTypedWord() {
     if (currentIndex >= words.length) return endSessionTyped();
     const w = words[currentIndex];
@@ -613,13 +614,14 @@
           <i class="fas fa-arrow-left"></i> Previous
         </button>
         <button id="next-btn" class="btn btn-secondary"><i class="fas fa-arrow-right"></i> Next</button>
-        <button id='check-btn' class="btn btn-primary"><i class="fas fa-check"></i> Check</button>
+        <button id="check-btn" class="btn btn-primary"><i class="fas fa-check"></i> Check</button>
         <button id="flagWordBtn" class="btn-icon ${flaggedWordsStore.includes(w)?'active':''}" title="Flag">
           <i class="${flaggedWordsStore.includes(w)?'fas':'far'} fa-flag"></i>
         </button>
       </div>
       <div id="feedback" class="feedback" aria-live="assertive"></div>
     `;
+
     document.getElementById('repeat-btn')?.addEventListener('click', () => speakOut(w, 0.95, focusAnswer));
     document.getElementById('prev-btn')?.addEventListener('click', prevTyped);
     document.getElementById('next-btn')?.addEventListener('click', nextTyped);
@@ -628,29 +630,72 @@
 
     const input = document.getElementById('user-input');
     input?.addEventListener('keypress', e => { if (e.key === 'Enter') checkTypedAnswer(w); });
-    document.addEventListener('keydown', typedShortcuts, { once:true });
+    document.addEventListener('keydown', typedShortcuts);
     focusAnswer();
   }
+
   function typedShortcuts(e){
     if (isTypingField(document.activeElement)) return;
-    if (e.code==='Space' || e.key===' ') { e.preventDefault(); speakOut(words[currentIndex],0.95,focusAnswer); }
+    if (e.code==='Space' || e.key===' ') { 
+      e.preventDefault(); 
+      speakOut(words[currentIndex],0.95,focusAnswer); 
+    }
     if (e.key==='ArrowLeft' && currentIndex>0) prevTyped();
     if (e.key==='ArrowRight') nextTyped();
   }
-  function focusAnswer(){ const input=document.getElementById('user-input'); if (input){ input.focus(); input.select(); } }
+
+  function focusAnswer(){ 
+    const input=document.getElementById('user-input'); 
+    if (input){ 
+      input.focus(); 
+      input.select(); 
+    } 
+  }
+
   function checkTypedAnswer(correctWord){
     const input = document.getElementById('user-input');
     const ans = (input?.value || '').trim();
     if (!ans) { showAlert("Please type the word first!", 'error'); return; }
     userAnswers[currentIndex] = ans;
     const feedback = document.getElementById('feedback');
-    if (ans.toLowerCase() === correctWord.toLowerCase()) { feedback.textContent="✓ Correct!"; feedback.className="feedback correct"; score++; }
-    else { feedback.textContent=`✗ Incorrect. The correct spelling was: ${correctWord}`; feedback.className="feedback incorrect"; }
-    setTimeout(nextTyped, 900);
+    if (ans.toLowerCase() === correctWord.toLowerCase()) { 
+      feedback.textContent="✓ Correct!"; 
+      feedback.className="feedback correct"; 
+      score++; 
+    } else { 
+      feedback.textContent=`✗ Incorrect. The correct spelling was: ${correctWord}`; 
+      feedback.className="feedback incorrect"; 
+    }
+    
+    // Remove the old event listener before adding a new one
+    document.removeEventListener('keydown', typedShortcuts);
+    
+    setTimeout(() => {
+      nextTyped();
+      // Re-add the event listener for the next word
+      document.addEventListener('keydown', typedShortcuts);
+    }, 900);
   }
-  function nextTyped(){ if (currentIndex < words.length - 1) { currentIndex++; showTypedWord(); } else endSessionTyped(); }
-  function prevTyped(){ if (currentIndex > 0) { currentIndex--; showTypedWord(); } }
-  function endSessionTyped(){ summaryFor(words, userAnswers, score); }
+
+  function nextTyped(){ 
+    if (currentIndex < words.length - 1) { 
+      currentIndex++; 
+      showTypedWord(); 
+    } else {
+      endSessionTyped();
+    }
+  }
+
+  function prevTyped(){ 
+    if (currentIndex > 0) { 
+      currentIndex--; 
+      showTypedWord(); 
+    } 
+  }
+
+  function endSessionTyped(){ 
+    summaryFor(words, userAnswers, score); 
+  }
 
   /* ==================== CUSTOM (typed) ==================== */
   function startCustomPractice(){
@@ -698,7 +743,7 @@
     document.getElementById('repeat-btn')?.addEventListener('click', playBeePrompt);
     document.getElementById('next-btn')?.addEventListener('click', ()=>{ currentIndex++; showBeeWord(); playBeePrompt(); });
     document.getElementById('flag-btn')?.addEventListener('click', ()=>toggleFlagWord(w));
-    document.addEventListener('keydown', beeShortcuts, { once:true });
+    document.addEventListener('keydown', beeShortcuts);
     updateSpellingVisual("● ● ●");
   }
   function beeShortcuts(e){ if (e.key===' ') { e.preventDefault(); playBeePrompt(); } if (e.key==='ArrowLeft'&&currentIndex>0){ currentIndex--; showBeeWord(); playBeePrompt(); } if (e.key==='ArrowRight'){ currentIndex++; showBeeWord(); playBeePrompt(); } }
