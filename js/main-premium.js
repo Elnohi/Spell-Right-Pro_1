@@ -22,8 +22,8 @@
 
   // Pricing + IDs (keep on window so they're always defined)
   window.priceMap = {
-    monthly: 'price_1RwpZXEl99zwdEZrXA9Cetiy',
-    annual:  'price_1RwpaNEl99zwdEZrDAeJ4V4e'
+    monthly: 'price_1RxJvfEl99zwdEZrdDtZ5q3t',
+    annual:  'price_1RxK5tEl99zwdEZrNGVlVhYH'
   };
 
   // Optional client-side display fallback (set in config.js if you want)
@@ -814,3 +814,4 @@
   function shuffle(arr){ const a=arr.slice(); for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
 
 })();
+
