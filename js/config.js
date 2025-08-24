@@ -1,6 +1,6 @@
-// js/config.js  (pure JS file – no <script> tags)
+// js/config.js  (pure JS – include via <script src="js/config.js"></script>)
 
-// 1) Firebase web config (public)
+// 1) Firebase (public)
 window.firebaseConfig = {
   apiKey: "AIzaSyCZ-rAPnRgVjSRFOFvbiQlowE6A3RVvwWo",
   authDomain: "spellrightpro-firebase.firebaseapp.com",
@@ -11,19 +11,20 @@ window.firebaseConfig = {
   measurementId: "G-H09MF13297"
 };
 
-// 2) Backend + ads
+// 2) Backend + Ads
 window.appConfig = {
+  // Cloud Run base (no trailing slash)
   apiBaseUrl: "https://spellrightpro-api-798456641137.us-central1.run.app",
   trialDays: 0,
   adClient: "ca-pub-7632930282249669"
 };
 
-// 3) Stripe publishable key (must match live/test of your backend)
+// 3) Stripe publishable key (use matching LIVE/TEST to backend)
 window.stripeConfig = {
   publicKey: "pk_live_51RuKs1El99zwdEZr9wjVF3EhADOk4c9x8JjvjPLH8Y16cCPwykZRFVtC1Fr0hSJesStbqcvfvvNOy4NHRaV0GPvg004IIcPfC8"
 };
 
-// 4) Initialize Firebase (compat) once
+// 4) Initialize Firebase (compat)
 (function initFirebase() {
   try {
     if (!firebase?.apps?.length) firebase.initializeApp(window.firebaseConfig);
