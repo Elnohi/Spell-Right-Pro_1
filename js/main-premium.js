@@ -20,7 +20,7 @@
   const sessionId = 'sess_' + Math.random().toString(36).slice(2, 9);
   let stripe = null;
 
-  // Pricing + IDs (keep on window so they’re always defined)
+  // Pricing + IDs (keep on window so they're always defined)
   window.priceMap = {
     monthly: 'price_1RxJvfEl99zwdEZrdDtZ5q3t',
     annual:  'price_1RxK5tEl99zwdEZrNGVlVhYH'
@@ -193,7 +193,7 @@
       if (premiumUser) {
         renderExamUI();
       } else {
-        showPremiumUpsell(); // no more auto-redirect to monthly
+        showPremiumUpsell(); // no auto-redirect; show upsell
       }
     });
   }
@@ -312,25 +312,55 @@
     }
   }
 
-  // ---- Promo helpers (3a) inline validation) ----
+  // ---- helper: safely get ID token (used for promo validation) ----
+  async function getIdTokenSafe() {
+    try {
+      if (!currentUser) return null;
+      return await currentUser.getIdToken();
+    } catch { return null; }
+  }
+
+  // ---- Promo helpers: non-blocking inline validation ----
   async function validatePromoInline(code) {
     const base = (window.appConfig && window.appConfig.apiBaseUrl) || '';
-    if (!base || !code) return { valid: false };
+    const raw  = (code || '').trim();
+    if (!raw) return { valid: false, message: 'Please enter a promo code', code: '' };
+
+    // Normalize: uppercase & no spaces
+    const normalized = raw.replace(/\s+/g, '').toUpperCase();
+
+    // If no backend, don’t block — let Stripe check at checkout
+    if (!base) {
+      return { valid: null, message: 'We’ll check this code at checkout.', code: normalized };
+    }
 
     try {
-      const r = await fetch(`${base}/validate-promo?code=${encodeURIComponent(code)}`);
-      if (!r.ok) return { valid: false };
+      const headers = {};
+      const idToken = await getIdTokenSafe();
+      if (idToken) headers['Authorization'] = `Bearer ${idToken}`;
+
+      const r = await fetch(`${base}/validate-promo?code=${encodeURIComponent(normalized)}`, { headers });
+
+      // If your API isn’t implemented yet (404, 501…), treat as “unknown but allowed”
+      if (!r.ok) {
+        let msg = 'We’ll check this code at checkout.';
+        try { const j = await r.json(); if (j && j.error) msg = j.error; } catch {}
+        return { valid: null, message: msg, code: normalized };
+      }
+
       const j = await r.json();
-      return j; // { valid, percent_off, amount_off, currency, ... }
+      return { ...(j || {}), code: normalized };
     } catch (_) {
-      return { valid: false };
+      return { valid: null, message: 'We’ll check this code at checkout.', code: normalized };
     }
   }
+
   function showPromoMessage(msg, ok = true) {
     const el = document.getElementById('promo-help');
     if (!el) return;
     el.textContent = msg || '';
     el.style.color = ok ? 'var(--success, #198754)' : 'var(--danger, #dc3545)';
+    el.style.fontWeight = ok ? 'normal' : 'bold';
   }
 
   /* ==================== PAYMENTS ==================== */
@@ -344,10 +374,10 @@
     const base = (window.appConfig && window.appConfig.apiBaseUrl) || '';
     if (!base) { showAlert('Backend URL missing in config.js', 'error'); return; }
 
-    const promoInput = document.getElementById('promoInput');
-    const promoCode  = (opts.promoCode || (promoInput ? promoInput.value.trim() : '')) || '';
+    // Prefer explicit promoCode from caller; fallback to input if not provided
+    const rawPromo = (opts.promoCode || document.getElementById('promoInput')?.value || '').trim();
+    const promoCode = rawPromo ? rawPromo.replace(/\s+/g, '').toUpperCase() : '';
 
-    // 3c) tiny UX: lock the clicked button and show a gentle state
     const triggerBtn = opts.trigger || null;
     const origHTML   = triggerBtn ? triggerBtn.innerHTML : null;
     if (triggerBtn) { triggerBtn.disabled = true; triggerBtn.innerHTML = 'Redirecting…'; }
@@ -365,7 +395,7 @@
           priceId,
           userId: currentUser.uid,
           sessionId,
-          // Pass promo info; backend will honor if valid
+          // If a code is present, send it; otherwise allow general codes at Stripe
           promoCode: promoCode || undefined,
           allowPromotionCodes: promoCode ? undefined : true
         })
@@ -375,7 +405,6 @@
       if (!res.ok) throw new Error(data.error || `${res.status} ${res.statusText}`);
 
       if (data.url) { window.location.href = data.url; return; }
-
       if (data.sessionId) {
         if (!stripe) initStripe();
         const { error } = await stripe.redirectToCheckout({ sessionId: data.sessionId });
@@ -396,7 +425,6 @@
     trainerArea.classList.add('hidden');
     summaryArea.classList.add('hidden');
 
-    // Build UI (disabled buttons first – 3b)
     examUI.innerHTML = `
       <div class="premium-upsell">
         <div class="premium-header">
@@ -424,50 +452,71 @@
         </div>
         <small id="promo-help" class="promo-help" aria-live="polite"></small>
 
-        <p style="margin-top:.5rem;color:var(--gray)">You’ll be redirected to secure Stripe Checkout.</p>
+        <p style="margin-top:.5rem;color:var(--gray)">You'll be redirected to secure Stripe Checkout.</p>
       </div>
     `;
 
-    // Fill prices; once painted, enable buttons (3b)
-    try { await paintPriceLabels(); } catch (e) { console.debug('Price paint skipped:', e); }
+    // Fill prices; once painted, enable buttons
+    try { await paintPriceLabels(); } catch {}
     const monthlyBtn = document.getElementById('monthly-btn');
     const annualBtn  = document.getElementById('annual-btn');
     [monthlyBtn, annualBtn].forEach(b => b && (b.disabled = false));
 
-    // Promo inline validation (3a)
     const promoInput = document.getElementById('promoInput');
     let promoTimer = null;
+
+    const currentPromo = () =>
+      (promoInput?.value || '').trim().replace(/\s+/g, '').toUpperCase();
+
+    // Non-blocking inline feedback
     promoInput?.addEventListener('input', () => {
       clearTimeout(promoTimer);
-      const code = promoInput.value.trim();
+      const code = currentPromo();
       if (!code) { showPromoMessage(''); return; }
       promoTimer = setTimeout(async () => {
         const r = await validatePromoInline(code);
-        if (r.valid) {
-          const msg = r.percent_off
-            ? `Promo applied: ${r.percent_off}% off at checkout.`
+        if (r.valid === true) {
+          const discountMsg = r.percent_off
+            ? `${r.percent_off}% discount will apply`
             : r.amount_off
-              ? `Promo applied: ${formatAmount(r.amount_off, r.currency || 'CAD')} off at checkout.`
-              : 'Promo code accepted; discount will apply at checkout.';
-          showPromoMessage(msg, true);
+              ? `${formatAmount(r.amount_off, r.currency || 'CAD')} off at checkout`
+              : 'Discount will apply at checkout';
+          showPromoMessage(discountMsg, true);
+        } else if (r.valid === false) {
+          showPromoMessage(r.message || 'Invalid code', false);
         } else {
-          showPromoMessage('Promo code not valid.', false);
+          // valid === null (unknown) — still OK to proceed
+          showPromoMessage(r.message || 'We’ll check this code at checkout.', true);
         }
       }, 350);
     });
 
-    // Enter on promo -> click Monthly by default
     promoInput?.addEventListener('keydown', (e) => {
       if (e.key === 'Enter') { e.preventDefault(); monthlyBtn?.click(); }
     });
 
-    // Subscribe handlers: pass clicked button + promo
-    monthlyBtn?.addEventListener('click', (e) =>
-      initiatePayment('monthly', { trigger: e.currentTarget })
-    );
-    annualBtn?.addEventListener('click', (e)  =>
-      initiatePayment('annual',  { trigger: e.currentTarget })
-    );
+    // Subscribe handlers: only block on explicit invalid
+    monthlyBtn?.addEventListener('click', async (e) => {
+      const code = currentPromo();
+      if (code) {
+        const r = await validatePromoInline(code);
+        if (r.valid === false) { showPromoMessage(r.message || 'Invalid code', false); return; }
+        await initiatePayment('monthly', { trigger: e.currentTarget, promoCode: r.code || code });
+      } else {
+        await initiatePayment('monthly', { trigger: e.currentTarget });
+      }
+    });
+
+    annualBtn?.addEventListener('click', async (e) => {
+      const code = currentPromo();
+      if (code) {
+        const r = await validatePromoInline(code);
+        if (r.valid === false) { showPromoMessage(r.message || 'Invalid code', false); return; }
+        await initiatePayment('annual', { trigger: e.currentTarget, promoCode: r.code || code });
+      } else {
+        await initiatePayment('annual', { trigger: e.currentTarget });
+      }
+    });
   }
 
   /* ==================== UTILITIES ==================== */
@@ -591,6 +640,7 @@
     showTypedWord();
     setTimeout(() => speakOut(words[currentIndex], 0.95, focusAnswer), 250);
   }
+
   function showTypedWord() {
     if (currentIndex >= words.length) return endSessionTyped();
     const w = words[currentIndex];
@@ -617,6 +667,7 @@
       </div>
       <div id="feedback" class="feedback" aria-live="assertive"></div>
     `;
+
     document.getElementById('repeat-btn')?.addEventListener('click', () => speakOut(w, 0.95, focusAnswer));
     document.getElementById('prev-btn')?.addEventListener('click', prevTyped);
     document.getElementById('next-btn')?.addEventListener('click', nextTyped);
@@ -625,29 +676,72 @@
 
     const input = document.getElementById('user-input');
     input?.addEventListener('keypress', e => { if (e.key === 'Enter') checkTypedAnswer(w); });
-    document.addEventListener('keydown', typedShortcuts, { once:true });
+    document.addEventListener('keydown', typedShortcuts);
     focusAnswer();
   }
+
   function typedShortcuts(e){
     if (isTypingField(document.activeElement)) return;
-    if (e.code==='Space' || e.key===' ') { e.preventDefault(); speakOut(words[currentIndex],0.95,focusAnswer); }
+    if (e.code==='Space' || e.key===' ') { 
+      e.preventDefault(); 
+      speakOut(words[currentIndex],0.95,focusAnswer); 
+    }
     if (e.key==='ArrowLeft' && currentIndex>0) prevTyped();
     if (e.key==='ArrowRight') nextTyped();
   }
-  function focusAnswer(){ const input=document.getElementById('user-input'); if (input){ input.focus(); input.select(); } }
+
+  function focusAnswer(){ 
+    const input=document.getElementById('user-input'); 
+    if (input){ 
+      input.focus(); 
+      input.select(); 
+    } 
+  }
+
   function checkTypedAnswer(correctWord){
     const input = document.getElementById('user-input');
     const ans = (input?.value || '').trim();
     if (!ans) { showAlert("Please type the word first!", 'error'); return; }
     userAnswers[currentIndex] = ans;
     const feedback = document.getElementById('feedback');
-    if (ans.toLowerCase() === correctWord.toLowerCase()) { feedback.textContent="✓ Correct!"; feedback.className="feedback correct"; score++; }
-    else { feedback.textContent=`✗ Incorrect. The correct spelling was: ${correctWord}`; feedback.className="feedback incorrect"; }
-    setTimeout(nextTyped, 900);
+    if (ans.toLowerCase() === correctWord.toLowerCase()) { 
+      feedback.textContent="✓ Correct!"; 
+      feedback.className="feedback correct"; 
+      score++; 
+    } else { 
+      feedback.textContent=`✗ Incorrect. The correct spelling was: ${correctWord}`; 
+      feedback.className="feedback incorrect"; 
+    }
+    
+    // Remove the old event listener before adding a new one
+    document.removeEventListener('keydown', typedShortcuts);
+    
+    setTimeout(() => {
+      nextTyped();
+      // Re-add the event listener for the next word
+      document.addEventListener('keydown', typedShortcuts);
+    }, 900);
   }
-  function nextTyped(){ if (currentIndex < words.length - 1) { currentIndex++; showTypedWord(); } else endSessionTyped(); }
-  function prevTyped(){ if (currentIndex > 0) { currentIndex--; showTypedWord(); } }
-  function endSessionTyped(){ summaryFor(words, userAnswers, score); }
+
+  function nextTyped(){ 
+    if (currentIndex < words.length - 1) { 
+      currentIndex++; 
+      showTypedWord(); 
+    } else {
+      endSessionTyped();
+    }
+  }
+
+  function prevTyped(){ 
+    if (currentIndex > 0) { 
+      currentIndex--; 
+      showTypedWord(); 
+    } 
+  }
+
+  function endSessionTyped(){ 
+    summaryFor(words, userAnswers, score); 
+  }
 
   /* ==================== CUSTOM (typed) ==================== */
   function startCustomPractice(){
@@ -695,7 +789,7 @@
     document.getElementById('repeat-btn')?.addEventListener('click', playBeePrompt);
     document.getElementById('next-btn')?.addEventListener('click', ()=>{ currentIndex++; showBeeWord(); playBeePrompt(); });
     document.getElementById('flag-btn')?.addEventListener('click', ()=>toggleFlagWord(w));
-    document.addEventListener('keydown', beeShortcuts, { once:true });
+    document.addEventListener('keydown', beeShortcuts);
     updateSpellingVisual("● ● ●");
   }
   function beeShortcuts(e){ if (e.key===' ') { e.preventDefault(); playBeePrompt(); } if (e.key==='ArrowLeft'&&currentIndex>0){ currentIndex--; showBeeWord(); playBeePrompt(); } if (e.key==='ArrowRight'){ currentIndex++; showBeeWord(); playBeePrompt(); } }
@@ -766,4 +860,3 @@
   function shuffle(arr){ const a=arr.slice(); for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
 
 })();
-
