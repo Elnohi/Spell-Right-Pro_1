@@ -22,8 +22,8 @@
 
   // Pricing + IDs (keep on window so they’re always defined)
   window.priceMap = {
-    monthly: 'price_1RxJvfEl99zwdEZrdDtZ5q3t',
-    annual:  'price_1RxK5tEl99zwdEZrNGVlVhYH'
+    monthly: 'price_1RwpZXEl99zwdEZrXA9Cetiy',
+    annual:  'price_1RwpaNEl99zwdEZrDAeJ4V4e'
   };
 
   // Optional client-side display fallback (set in config.js if you want)
@@ -314,79 +314,82 @@
 
   // ---- Promo helpers (3a) inline validation) ----
   async function validatePromoInline(code) {
-  const base = (window.appConfig && window.appConfig.apiBaseUrl) || '';
-  if (!base || !code) return { valid: false, message: 'Please enter a promo code' };
+    const base = (window.appConfig && window.appConfig.apiBaseUrl) || '';
+    if (!base || !code) return { valid: false };
 
-  try {
-    const r = await fetch(`${base}/validate-promo?code=${encodeURIComponent(code)}`);
-    if (!r.ok) return { valid: false, message: 'Error validating code' };
-    const j = await r.json();
-    return j;
-  } catch (_) {
-    return { valid: false, message: 'Network error - please try again' };
-  }
-}
-function showPromoMessage(msg, ok = true) {
-  const el = document.getElementById('promo-help');
-  if (!el) return;
-  el.textContent = msg || '';
-  el.style.color = ok ? 'var(--success, #198754)' : 'var(--danger, #dc3545)';
-  el.style.fontWeight = ok ? 'normal' : 'bold';
-}
-  /* ==================== PAYMENTS ==================== */
-async function initiatePayment(planType, opts = {}) {
-  if (!currentUser) { showAlert('Please log in first.', 'error'); return; }
-
-  const normalizedPlan = (planType || '').trim().toLowerCase();
-  const priceId = window.priceMap[normalizedPlan];
-  if (!priceId) { showAlert(`Unknown plan: ${normalizedPlan}`, 'error'); return; }
-
-  const base = (window.appConfig && window.appConfig.apiBaseUrl) || '';
-  if (!base) { showAlert('Backend URL missing in config.js', 'error'); return; }
-
-  const promoInput = document.getElementById('promoInput');
-  const promoCode  = (opts.promoCode || (promoInput ? promoInput.value.trim() : '')) || '';
-
-  const triggerBtn = opts.trigger || null;
-  const origHTML   = triggerBtn ? triggerBtn.innerHTML : null;
-  if (triggerBtn) { triggerBtn.disabled = true; triggerBtn.innerHTML = 'Redirecting…'; }
-
-  try {
-    const idToken = await currentUser.getIdToken();
-    const res = await fetch(`${base}/create-checkout-session`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${idToken}`
-      },
-      body: JSON.stringify({
-        plan: normalizedPlan,
-        priceId,
-        userId: currentUser.uid,
-        sessionId,
-        promoCode: promoCode || undefined,
-        allowPromotionCodes: promoCode ? undefined : true
-      })
-    });
-
-    const data = await res.json().catch(() => ({}));
-    if (!res.ok) throw new Error(data.error || `${res.status} ${res.statusText}`);
-
-    if (data.url) { window.location.href = data.url; return; }
-    if (data.sessionId) {
-      if (!stripe) initStripe();
-      const { error } = await stripe.redirectToCheckout({ sessionId: data.sessionId });
-      if (error) throw error;
-      return;
+    try {
+      const r = await fetch(`${base}/validate-promo?code=${encodeURIComponent(code)}`);
+      if (!r.ok) return { valid: false };
+      const j = await r.json();
+      return j; // { valid, percent_off, amount_off, currency, ... }
+    } catch (_) {
+      return { valid: false };
     }
-    throw new Error('Invalid server response (expected `url` or `sessionId`).');
-  } catch (err) {
-    console.error('Payment initiation error:', err);
-    showAlert(`Payment failed: ${err.message}`, 'error', 6000);
-  } finally {
-    if (triggerBtn) { triggerBtn.disabled = false; triggerBtn.innerHTML = origHTML; }
   }
-}
+  function showPromoMessage(msg, ok = true) {
+    const el = document.getElementById('promo-help');
+    if (!el) return;
+    el.textContent = msg || '';
+    el.style.color = ok ? 'var(--success, #198754)' : 'var(--danger, #dc3545)';
+  }
+
+  /* ==================== PAYMENTS ==================== */
+  async function initiatePayment(planType, opts = {}) {
+    if (!currentUser) { showAlert('Please log in first.', 'error'); return; }
+
+    const normalizedPlan = (planType || '').trim().toLowerCase();
+    const priceId = window.priceMap[normalizedPlan];
+    if (!priceId) { showAlert(`Unknown plan: ${normalizedPlan}`, 'error'); return; }
+
+    const base = (window.appConfig && window.appConfig.apiBaseUrl) || '';
+    if (!base) { showAlert('Backend URL missing in config.js', 'error'); return; }
+
+    const promoInput = document.getElementById('promoInput');
+    const promoCode  = (opts.promoCode || (promoInput ? promoInput.value.trim() : '')) || '';
+
+    // 3c) tiny UX: lock the clicked button and show a gentle state
+    const triggerBtn = opts.trigger || null;
+    const origHTML   = triggerBtn ? triggerBtn.innerHTML : null;
+    if (triggerBtn) { triggerBtn.disabled = true; triggerBtn.innerHTML = 'Redirecting…'; }
+
+    try {
+      const idToken = await currentUser.getIdToken();
+      const res = await fetch(`${base}/create-checkout-session`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${idToken}`
+        },
+        body: JSON.stringify({
+          plan: normalizedPlan,
+          priceId,
+          userId: currentUser.uid,
+          sessionId,
+          // Pass promo info; backend will honor if valid
+          promoCode: promoCode || undefined,
+          allowPromotionCodes: promoCode ? undefined : true
+        })
+      });
+
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || `${res.status} ${res.statusText}`);
+
+      if (data.url) { window.location.href = data.url; return; }
+
+      if (data.sessionId) {
+        if (!stripe) initStripe();
+        const { error } = await stripe.redirectToCheckout({ sessionId: data.sessionId });
+        if (error) throw error;
+        return;
+      }
+      throw new Error('Invalid server response (expected `url` or `sessionId`).');
+    } catch (err) {
+      console.error('Payment initiation error:', err);
+      showAlert(`Payment failed: ${err.message}`, 'error', 6000);
+    } finally {
+      if (triggerBtn) { triggerBtn.disabled = false; triggerBtn.innerHTML = origHTML; }
+    }
+  }
 
   /* ==================== UPSELL ==================== */
   async function showPremiumUpsell() {
@@ -435,27 +438,23 @@ async function initiatePayment(planType, opts = {}) {
     const promoInput = document.getElementById('promoInput');
     let promoTimer = null;
     promoInput?.addEventListener('input', () => {
-  clearTimeout(promoTimer);
-  const code = promoInput.value.trim();
-  if (!code) { 
-    showPromoMessage(''); 
-    return; 
-  }
-  promoTimer = setTimeout(async () => {
-    const r = await validatePromoInline(code);
-    showPromoMessage(r.message || '', r.valid);
-    
-    if (r.valid) {
-      // Optional: Highlight discount details
-      const discountMsg = r.percent_off 
-        ? `${r.percent_off}% discount will apply`
-        : r.amount_off 
-          ? `${formatAmount(r.amount_off, r.currency || 'CAD')} off at checkout`
-          : 'Discount will apply at checkout';
-      showPromoMessage(`${discountMsg}`, true);
-    }
-  }, 350);
-});
+      clearTimeout(promoTimer);
+      const code = promoInput.value.trim();
+      if (!code) { showPromoMessage(''); return; }
+      promoTimer = setTimeout(async () => {
+        const r = await validatePromoInline(code);
+        if (r.valid) {
+          const msg = r.percent_off
+            ? `Promo applied: ${r.percent_off}% off at checkout.`
+            : r.amount_off
+              ? `Promo applied: ${formatAmount(r.amount_off, r.currency || 'CAD')} off at checkout.`
+              : 'Promo code accepted; discount will apply at checkout.';
+          showPromoMessage(msg, true);
+        } else {
+          showPromoMessage('Promo code not valid.', false);
+        }
+      }, 350);
+    });
 
     // Enter on promo -> click Monthly by default
     promoInput?.addEventListener('keydown', (e) => {
