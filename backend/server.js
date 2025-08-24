@@ -169,8 +169,6 @@ async function validatePromoHandler(req, res) {
       });
     }
 
-    console.log('Validating promo:', code, 'for origin:', req.headers.origin);
-
     // Check active codes first
     const list = await stripe.promotionCodes.list({
       code,
@@ -230,8 +228,6 @@ async function validatePromoHandler(req, res) {
         message: 'This promo code is no longer valid'
       });
     }
-
-    console.log('Promo code valid:', code, 'Discount:', coupon?.percent_off || coupon?.amount_off);
 
     return res.json({
       valid: true,
@@ -294,7 +290,6 @@ app.post('/create-checkout-session', authenticate, async (req, res) => {
       mode: 'subscription',
       line_items: [{ price: priceId, quantity: 1 }],
       discounts, // may be undefined
-      // also allow entering codes directly on the Stripe page
       allow_promotion_codes: true,
 
       subscription_data: { trial_period_days: 0 },
