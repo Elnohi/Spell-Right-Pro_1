@@ -1,4 +1,3 @@
-<script>
 /* ==================== SpellRightPro Premium — streamlined, patched ==================== */
 (function () {
   'use strict';
@@ -106,7 +105,7 @@
     });
   }
 
-  /* ==================== SPEECH ==================== */
+  /* ==================== SPEECH (TTS) ==================== */
   function initSpeech() {
     if (!('speechSynthesis' in window)) return;
     const onReady = () => { window.speechSynthesis.onvoiceschanged = null; };
@@ -306,8 +305,8 @@
       if (!v.valid) showPromoMessage(v.message || 'Invalid promo code', false);
       else {
         const desc = v.percent_off ? `${v.percent_off}% off will apply`
-                   : v.amount_off  ? `${formatAmount(v.amount_off, v.currency||'CAD')} off will apply`
-                   : 'Discount will apply at checkout';
+                 : v.amount_off  ? `${formatAmount(v.amount_off, v.currency||'CAD')} off will apply`
+                 : 'Discount will apply at checkout';
         showPromoMessage(desc, true);
       }
     }
@@ -350,7 +349,7 @@
     }
   }
 
-  /* ==================== UPSWLL ==================== */
+  /* ==================== UPSELL ==================== */
   async function showPremiumUpsell() {
     resetEnvironment(); // kill any leftover listeners/audio/recognition
     trainerArea.classList.add('hidden');
@@ -497,7 +496,7 @@
       <div class="input-group">
         <select id="exam-type" class="form-control">
           <option value="OET">OET Spelling</option>
-          <option value="Bee">Spelling Bee</option>
+          <option value="Bee">Spelling Bee (Voice)</option>
           <option value="Custom">Custom Words</option>
         </select>
         <select id="accent-select" class="form-control" style="max-width:150px;">
@@ -657,6 +656,23 @@
   }
 
   /* ==================== Bee (voice) ==================== */
+
+  // robust mapping for spoken letter names -> letters (handles en-US/en-GB variants)
+  const LETTER_ALIASES = {
+    a:['a','ay','eh','ae'], b:['b','bee','be'], c:['c','see','sea','cee'],
+    d:['d','dee','de'], e:['e','ee'], f:['f','ef','eff'],
+    g:['g','gee','ji'], h:['h','aitch'],
+    i:['i','eye','aye'],
+    j:['j','jay'], k:['k','kay'], l:['l','el','ell'], m:['m','em','emm'],
+    n:['n','en','enn'], o:['o','oh'], p:['p','pee','pea'],
+    q:['q','cue','queue'], r:['r','ar'], s:['s','es','ess'],
+    t:['t','tee','tea'], u:['u','you','yew'], v:['v','vee'],
+    w:['w','doubleu'], x:['x','ex'], y:['y','why','wye'],
+    z:['z','zee','zed']
+  };
+  const ALIAS_TO_LETTER = new Map();
+  Object.entries(LETTER_ALIASES).forEach(([letter, aliases]) => aliases.forEach(a => ALIAS_TO_LETTER.set(a, letter)));
+
   function startBee(){
     resetEnvironment();
     // Bee must use *non-medical* default list unless user loaded a custom list explicitly
@@ -747,11 +763,41 @@
 
   function normalizeSpelling(s){ 
     if(!s) return "";
-    let t=s.toLowerCase().trim();
-    t=t.replace(/[^a-z\s]/g,' ').replace(/\s+/g,' ').trim();
-    const tokens=t.split(' ');
-    if(tokens.length>1){ const letters=tokens.map(x=>x[0]).join(''); if(letters.length>1) return letters; }
-    return t.replace(/\s/g,''); 
+    // normalize
+    let t = s.toLowerCase().trim()
+      .replace(/[^a-z\s-]/g,' ')     // remove punctuation/numbers
+      .replace(/-/g,' ')             // treat hyphens as spaces
+      .replace(/\s+/g,' ').trim();
+
+    const tokens = t.split(' ');
+    let out = '';
+
+    for (let i=0; i<tokens.length; i++){
+      const tok = tokens[i];
+
+      // special case: "double you"/"double u" => 'w'
+      const next = tokens[i+1] || '';
+      if (tok === 'double' && (next === 'you' || next === 'yew' || next === 'u')){
+        out += 'w'; i++; continue;
+      }
+
+      // direct alias mapping
+      const mapped = ALIAS_TO_LETTER.get(tok);
+      if (mapped) { out += mapped; continue; }
+
+      // single letters spoken as characters
+      if (tok.length === 1 && /[a-z]/.test(tok)) { out += tok; continue; }
+
+      // ignore fillers like "the", "letter"
+      if (tok === 'the' || tok === 'letter') continue;
+
+      // as a last resort, keep first char if word looks like a letter-name ("cee", "dee", etc.)
+      if (tok.length >= 2 && ALIAS_TO_LETTER.has(tok)) { out += ALIAS_TO_LETTER.get(tok); }
+    }
+
+    // fallback to the raw compacted text if mapping produced nothing
+    if (!out && t) out = t.replace(/\s/g,'');
+    return out;
   }
 
   function updateSpellingVisual(t=""){ const el=document.getElementById('spelling-visual'); if(el) el.textContent=t; }
@@ -803,5 +849,4 @@
     }
   }
 
-})(); 
-</script>
+})();
