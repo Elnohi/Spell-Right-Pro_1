@@ -14,9 +14,9 @@ window.appConfig = {
   trialDays: 0,
 
   // Where Stripe should send users after checkout
-  // (Use https://yourdomain/premium.html?payment_success=1 for success)
-  successUrl: "https://yourdomain.com/premium.html?payment_success=1",
-  cancelUrl:  "https://yourdomain.com/premium.html"
+  // (The backend enforces this; these are for reference/other flows)
+  successUrl: "https://spellrightpro.org/premium.html?payment_success=1",
+  cancelUrl:  "https://spellrightpro.org/premium.html"
 };
 
 window.stripeConfig = {
