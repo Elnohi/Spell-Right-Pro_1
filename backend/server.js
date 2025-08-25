@@ -63,6 +63,10 @@ if (missing.length) {
   throw new Error(`Missing env vars: ${missing.join(', ')}`);
 }
 
+// Optional path overrides (default to the concrete file we actually ship)
+const SUCCESS_PATH = process.env.SUCCESS_PATH || '/premium.html?payment_success=true';
+const CANCEL_PATH  = process.env.CANCEL_PATH  || '/premium.html?payment_cancelled=true';
+
 /* ---------- Stripe & Firebase ---------- */
 const stripe = Stripe(process.env.STRIPE_SECRET_KEY, { apiVersion: '2023-10-16' });
 
@@ -293,8 +297,11 @@ app.post('/create-checkout-session', authenticate, async (req, res) => {
       allow_promotion_codes: true,
 
       subscription_data: { trial_period_days: 0 },
-      success_url: `${FRONTEND_URL}/premium?payment_success=true`,
-      cancel_url: `${FRONTEND_URL}/premium?payment_cancelled=true`,
+
+      // Use explicit file path; allow override with env if you prefer /premium
+      success_url: `${FRONTEND_URL}${SUCCESS_PATH}`,
+      cancel_url:  `${FRONTEND_URL}${CANCEL_PATH}`,
+
       client_reference_id: req.user.uid,
       metadata: { plan: plan || 'unknown', userId: req.user.uid }
     });
