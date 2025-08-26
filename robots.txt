@@ -3,4 +3,4 @@ Allow: /
 Disallow: /admin/
 Disallow: /private/
 
-Sitemap: https://yourdomain.com/sitemap.xml
+Sitemap: https://spellrightpro.org/sitemap.xml
