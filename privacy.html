@@ -2,53 +2,77 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Privacy Policy – SpellRightPro</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Privacy Policy — SpellRightPro</title>
   <link rel="icon" href="/assets/logo.png">
   <link rel="stylesheet" href="/css/styles.css">
-  <link rel="stylesheet" href="/css/premium.css">
+  <style>
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; line-height: 1.6; }
+    .container { max-width: 860px; margin: 32px auto; padding: 0 16px; }
+    h1, h2 { line-height: 1.25; }
+    .muted { color: #666; }
+    nav a { color: #0b5ed7; text-decoration: none; }
+    nav a:hover { text-decoration: underline; }
+    .card { background: #fff; border: 1px solid #e7e7e7; border-radius: 12px; padding: 20px; }
+  </style>
 </head>
-<body class="container" style="max-width: 900px;">
-  <h1>Privacy Policy</h1>
-  <p><strong>Effective date:</strong> {{YYYY-MM-DD}}</p>
+<body>
+  <div class="container">
+    <nav style="margin-bottom: 16px;"><a href="/">← Back to Home</a></nav>
+    <div class="card">
+      <h1>Privacy Policy</h1>
+      <p class="muted">Last updated: 25 Aug 2025</p>
 
-  <h2>1. What we collect</h2>
-  <ul>
-    <li><strong>Account data:</strong> Email address and auth metadata (via Firebase Auth).</li>
-    <li><strong>Subscription data:</strong> Premium status and Stripe customer/subscription IDs (stored in Firestore).</li>
-    <li><strong>Payment processing:</strong> Handled by Stripe. We do not store full card numbers.</li>
-    <li><strong>Usage data:</strong> Basic analytics and server logs (e.g., Cloud Run request logs).</li>
-    <li><strong>Local device data:</strong> Your flagged words and settings may be stored locally in your browser (localStorage).</li>
-  </ul>
+      <p>SpellRightPro (“we”, “us”, or “our”) respects your privacy. This policy explains what we collect, why, and how we handle it.</p>
 
-  <h2>2. How we use data</h2>
-  <p>To operate the app, authenticate users, enable subscriptions, troubleshoot, and improve the service.</p>
+      <h2>Information we collect</h2>
+      <ul>
+        <li><strong>Account info:</strong> Email address and authentication data via Firebase.</li>
+        <li><strong>Usage data:</strong> Basic analytics (e.g., pages visited, device info) to improve the product.</li>
+        <li><strong>Payment data:</strong> Managed by Stripe. We do not store full card details on our servers.</li>
+        <li><strong>Content you provide:</strong> Word lists you upload or type for practice.</li>
+      </ul>
 
-  <h2>3. Sharing</h2>
-  <p>We share data with service providers only as needed to run the app (e.g., Firebase, Stripe). We do not sell personal data.</p>
+      <h2>How we use data</h2>
+      <ul>
+        <li>Provide and improve SpellRightPro features.</li>
+        <li>Authenticate users and manage subscriptions.</li>
+        <li>Detect abuse and keep the service secure.</li>
+        <li>Communicate service updates and support responses.</li>
+      </ul>
 
-  <h2>4. Security</h2>
-  <p>We use industry-standard security and rely on providers like Google Firebase and Stripe for secure authentication and payments.</p>
+      <h2>Data processors</h2>
+      <p>We use reputable third-party processors, including:</p>
+      <ul>
+        <li>Google Firebase (authentication, database, analytics)</li>
+        <li>Stripe (payments & subscriptions)</li>
+        <li>Netlify (hosting)</li>
+        <li>Google AdSense (ads on freemium pages only)</li>
+      </ul>
 
-  <h2>5. Retention</h2>
-  <p>We retain account and subscription records while your account is active and as required for tax, accounting, and legal obligations.</p>
+      <h2>Retention</h2>
+      <p>We retain account and subscription records for as long as your account is active and as required by law. You may request deletion of your account data (subject to legal/contractual limits).</p>
 
-  <h2>6. Your choices</h2>
-  <ul>
-    <li>Access/update your account via the app.</li>
-    <li>Cancel your subscription anytime; access remains through period end.</li>
-    <li>Request deletion of your account by contacting support. Some records may be retained as required by law.</li>
-  </ul>
+      <h2>Security</h2>
+      <p>We take reasonable technical and organizational measures to protect your information. No method of transmission or storage is 100% secure.</p>
 
-  <h2>7. Children</h2>
-  <p>The service is not intended for children under 13 (or the applicable minimum age in your region).</p>
+      <h2>Your choices</h2>
+      <ul>
+        <li>Access/update your account information in the app.</li>
+        <li>Request deletion of your account and data.</li>
+        <li>Opt out of non-essential communications.</li>
+      </ul>
 
-  <h2>8. Changes</h2>
-  <p>We may update this policy; the date above reflects the latest version.</p>
+      <h2>Children’s privacy</h2>
+      <p>SpellRightPro is not directed to children under 13. If you believe a child provided us personal data, contact us and we will take appropriate action.</p>
 
-  <h2>9. Contact</h2>
-  <p>Privacy questions or requests: <a href="/contact">Contact support</a>.</p>
+      <h2>Changes to this policy</h2>
+      <p>We may update this policy. We’ll post the new version here and update the “Last updated” date.</p>
 
-  <p style="margin-top:2rem"><a href="/">← Back to Home</a></p>
+      <h2>Contact</h2>
+      <p>Questions or requests? Visit <a href="/contact.html">Contact Support</a>.</p>
+    </div>
+    <p style="margin-top: 24px;" class="muted">© 2025 SpellRightPro</p>
+  </div>
 </body>
 </html>
