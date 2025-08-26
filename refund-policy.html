@@ -2,67 +2,44 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Refund Policy – SpellRightPro</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Refund Policy — SpellRightPro</title>
   <link rel="icon" href="/assets/logo.png">
   <link rel="stylesheet" href="/css/styles.css">
-  <link rel="stylesheet" href="/css/premium.css">
-  <meta name="robots" content="noindex,follow">
   <style>
-    .page { max-width: 900px; margin: 2rem auto; }
-    h1, h2 { margin-top: 1.25rem; }
-    .note { background: #f7f7ff; border: 1px solid #e6e6ff; padding: .75rem 1rem; border-radius: .5rem; }
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; line-height: 1.6; }
+    .container { max-width: 860px; margin: 32px auto; padding: 0 16px; }
+    h1, h2 { line-height: 1.25; }
+    .muted { color: #666; }
+    nav a { color: #0b5ed7; text-decoration: none; }
+    nav a:hover { text-decoration: underline; }
+    .card { background: #fff; border: 1px solid #e7e7e7; border-radius: 12px; padding: 20px; }
   </style>
 </head>
-<body class="container">
-  <main class="page">
-    <h1>Refund Policy</h1>
-    <p><strong>Effective date:</strong> {{YYYY-MM-DD}}</p>
+<body>
+  <div class="container">
+    <nav style="margin-bottom: 16px;"><a href="/">← Back to Home</a></nav>
+    <div class="card">
+      <h1>Refund Policy</h1>
+      <p class="muted">Last updated: 25 Aug 2025</p>
 
-    <div class="note">
-      This policy applies to purchases made directly at SpellRightPro using Stripe.
+      <h2>Subscriptions</h2>
+      <p>SpellRightPro Premium is a subscription billed in advance (monthly or annually). You may cancel any time from the Manage Billing page or by contacting support. When canceled, your access remains active until the end of the current billing period.</p>
+
+      <h2>Refunds</h2>
+      <ul>
+        <li><strong>First-time purchases:</strong> If Premium hasn’t been meaningfully used, you may request a refund within 7 days of purchase.</li>
+        <li><strong>Renewals:</strong> Refunds for renewals are generally not issued once the period starts. We’ll review exceptional cases (accidental renewal, duplicate charge, etc.).</li>
+        <li><strong>Technical issues:</strong> If you experience a service problem that we can’t resolve promptly, we’ll offer a prorated or full refund depending on impact.</li>
+      </ul>
+
+      <h2>How to request</h2>
+      <p>Contact us via <a href="/contact.html">Contact Support</a> with your account email and reason. Most refunds are processed by Stripe to your original payment method within 5–10 business days after approval.</p>
+
+      <h2>Changes</h2>
+      <p>We may revise this policy. We’ll post updates here with a new “Last updated” date.</p>
     </div>
-
-    <h2>Subscriptions are Non-Refundable</h2>
-    <p>
-      All subscription payments (monthly and annual) are <strong>non-refundable</strong> and
-      <strong>non-prorated</strong> once a billing period begins, to the fullest extent permitted by law.
-      Cancelling a subscription stops future renewals; you’ll continue to have access until the end of the
-      current billing period.
-    </p>
-
-    <h2>Annual Plan</h2>
-    <p>
-      Annual subscriptions are charged up front and are <strong>not eligible for refunds</strong>, including
-      partial refunds for unused time, after the charge has been captured.
-    </p>
-
-    <h2>Free Trials & Promotions</h2>
-    <p>
-      If a free trial is offered, you won’t be charged until the trial ends. To avoid charges, cancel before the
-      trial period expires. Once the trial converts to a paid subscription, charges are non-refundable.
-    </p>
-
-    <h2>Duplicate/Unauthorized Charges</h2>
-    <p>
-      If you believe you were charged in error (e.g., duplicate transaction or unauthorized use), please
-      <a href="/contact">contact support</a> within 7 days and include your account email, charge date, and amount.
-      We’ll investigate and correct any processing mistakes as required by applicable law.
-    </p>
-
-    <h2>How to Cancel</h2>
-    <p>
-      You can cancel at any time from your account’s billing section (or by requesting a cancellation via
-      <a href="/contact">support</a>). Cancellation takes effect at the end of the current billing period.
-    </p>
-
-    <h2>Legal</h2>
-    <p>
-      Nothing in this policy limits rights that cannot be waived under applicable consumer laws. Where required
-      by law, we will provide appropriate remedies.
-    </p>
-
-    <p style="margin-top:2rem"><a href="/">← Back to Home</a></p>
-  </main>
+    <p style="margin-top: 24px;" class="muted">© 2025 SpellRightPro</p>
+  </div>
 </body>
 </html>
