@@ -23,7 +23,7 @@
   <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-analytics-compat.js"></script>
 
-  <!-- Config MUST load before anything that uses it (cache-busted) -->
+  <!-- Config MUST load before anything that uses it -->
   <script src="/js/config.js?v=2025-08-25"></script>
 
   <!-- Helpers / data -->
@@ -33,7 +33,7 @@
   <!-- Stripe -->
   <script src="https://js.stripe.com/v3/" defer></script>
 
-  <!-- Main premium app (cache-busted) -->
+  <!-- Main premium app -->
   <script src="/js/main-premium.js?v=2025-08-25-1" defer></script>
 
   <!-- Register SW at root -->
@@ -46,7 +46,6 @@
   </script>
 
   <style>
-    /* Minimal placeholder so the page never looks empty while JS loads */
     .skeleton-line{height:12px;border-radius:6px;background:linear-gradient(90deg,
       rgba(0,0,0,.08) 25%, rgba(0,0,0,.14) 37%, rgba(0,0,0,.08) 63%);
       background-size:400% 100%; animation:skeleton 1.2s ease-in-out infinite}
@@ -86,7 +85,6 @@
     <section id="premium-app" class="training-card hidden">
       <h2 id="app-title" class="card-title">Premium</h2>
 
-      <!-- Placeholder shown immediately; replaced by JS when ready -->
       <div id="exam-ui">
         <div class="skeleton-block" role="status" aria-live="polite" aria-busy="true">
           <div class="loader-wrap">
@@ -98,21 +96,20 @@
         </div>
       </div>
 
-      <!-- JS will toggle these on demand -->
       <div id="trainer-area" class="hidden"></div>
       <div id="summary-area" class="hidden"></div>
 
-      <!-- If user is not premium, ads may show; JS disables them for premium -->
       <div class="ad-container" style="margin-top:1rem;"></div>
     </section>
   </main>
 
+  <!-- Unified footer with absolute URLs -->
   <footer class="container" style="margin-top:2rem;">
     <p>
-      <a href="/tos.html">Terms of Service</a>
-      <a href="/privacy.html">Privacy Policy</a>
-      <a href="/refunds.html">Refund Policy</a>
-      <a href="/contact.html">Contact Support</a>
+      <a href="https://spellrightpro.org/terms.html">Terms of Service</a>
+      <a href="https://spellrightpro.org/privacy.html">Privacy Policy</a>
+      <a href="https://spellrightpro.org/refund-policy.html">Refund Policy</a>
+      <a href="https://spellrightpro.org/contact.html">Contact Support</a>
     </p>
     <p>© 2025 SpellRightPro. All rights reserved.</p>
   </footer>
