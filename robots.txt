@@ -1,6 +1,1 @@
-User-agent: *
-Allow: /
-Disallow: /admin/
-Disallow: /private/
 
-Sitemap: https://spellrightpro.org/sitemap.xml
