@@ -15,6 +15,18 @@
   <link rel="apple-touch-icon" href="/assets/icons/icon-192x192.png" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css"/>
 
+  <style>
+    /* Tiny helper style so the Home button always looks good */
+    .home-btn {
+      display:inline-flex; align-items:center; gap:.5rem;
+      padding:.55rem .9rem; border:1px solid var(--border,#dcdcdc);
+      border-radius:10px; background:#fff; color:#1f1f1f; text-decoration:none;
+    }
+    .home-btn:hover { background:#f6f6f6; }
+    .home-row { display:flex; justify-content:flex-end; margin:10px 0 4px; }
+    @media (max-width:640px){ .home-row{justify-content:flex-start;} }
+  </style>
+
   <script>
     // Inject an inline ad INTO the summary area when it appears
     (function () {
@@ -42,7 +54,6 @@
         if (!target) return;
 
         var obs = new MutationObserver(function () {
-          // If summary becomes visible or gains content, try inserting ad
           var isHidden = target.classList.contains('hidden');
           if (!isHidden && target.childElementCount > 0) insertSummaryAd();
         });
@@ -71,6 +82,13 @@
   </header>
 
   <main class="container training-card">
+    <!-- Back to Home button -->
+    <div class="home-row">
+      <a class="home-btn" href="https://spellrightpro.org/">
+        <i class="fas fa-home"></i> Home
+      </a>
+    </div>
+
     <!-- Mode selector -->
     <div class="mode-selector">
       <button id="practice-mode-btn" class="btn-mode active" aria-pressed="true">
