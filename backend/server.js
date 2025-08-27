@@ -8,54 +8,45 @@ const Stripe = require('stripe');
 const app = express();
 app.disable('x-powered-by');
 
-/* ---------- CORS (strict, supports www + apex + dev + Netlify) ---------- */
+/* ---------- CORS (strict, dynamic, with preflight) ---------- */
 const FRONTEND_URL = (process.env.FRONTEND_URL || '').replace(/\/+$/, '');
 if (!FRONTEND_URL) throw new Error('Missing env var FRONTEND_URL');
 
-const primary = new URL(FRONTEND_URL).host;
+const extraHosts = (process.env.EXTRA_FRONTEND_HOSTS || '')
+  .split(',')
+  .map(s => s.trim())
+  .filter(Boolean);
 
-// make sure both apex and www work regardless of which you set in FRONTEND_URL
-function bothHosts(host) {
-  return host.startsWith('www.') ? [host, host.slice(4)] : [host, `www.${host}`];
-}
-const allowedHosts = new Set([
-  ...bothHosts(primary),
-  'localhost:5173',
-  'localhost:3000'
-]);
+const primaryHost = new URL(FRONTEND_URL).host;
+const allowedHosts = new Set([primaryHost, ...extraHosts]);
 
-function isOriginAllowed(origin) {
-  if (!origin) return true; // same-origin / non-browser
-  try {
-    const u = new URL(origin);
-    if (!/^https?:$/i.test(u.protocol)) return false;
-    // allow exact hosts we listed, and any Netlify preview
-    return allowedHosts.has(u.host) || /\.netlify\.app$/i.test(u.host);
-  } catch {
-    return false;
-  }
-}
-
-app.use((req, res, next) => {
+function corsMiddleware(req, res, next) {
   const origin = req.headers.origin;
-  const allowed = isOriginAllowed(origin);
-
-  if (allowed && origin) {
-    // echo the origin so preflight passes on strict browsers
-    res.setHeader('Access-Control-Allow-Origin', origin);
-    res.setHeader('Vary', 'Origin');
-    res.setHeader('Access-Control-Allow-Credentials', 'true');
-    res.setHeader('Access-Control-Allow-Methods', 'GET,POST,OPTIONS');
-    const reqHdrs = req.headers['access-control-request-headers'];
-    res.setHeader('Access-Control-Allow-Headers', reqHdrs || 'Authorization, Content-Type');
-    res.setHeader('Access-Control-Max-Age', '86400');
+  if (origin) {
+    try {
+      const host = new URL(origin).host;
+      if (allowedHosts.has(host) || /\.netlify\.app$/i.test(host)) {
+        res.setHeader('Access-Control-Allow-Origin', origin);
+        res.setHeader('Vary', 'Origin');
+        res.setHeader('Access-Control-Allow-Credentials', 'true');
+        res.setHeader(
+          'Access-Control-Allow-Headers',
+          'Authorization, Content-Type, X-Requested-With'
+        );
+        res.setHeader(
+          'Access-Control-Allow-Methods',
+          'GET,POST,OPTIONS'
+        );
+      }
+    } catch {}
   }
-
   if (req.method === 'OPTIONS') {
-    return res.sendStatus(allowed ? 204 : 403);
+    res.status(204).end(); // preflight ok, no body
+    return;
   }
-  return next();
-});
+  next();
+}
+app.use(corsMiddleware);
 
 /* ---------- Env validation ---------- */
 const REQUIRED = [
