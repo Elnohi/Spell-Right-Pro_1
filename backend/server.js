@@ -8,22 +8,29 @@ const Stripe = require('stripe');
 const app = express();
 app.disable('x-powered-by');
 
-/* ---------- CORS (strict, with proper preflight) ---------- */
+/* ---------- CORS (strict, supports www + apex + dev + Netlify) ---------- */
 const FRONTEND_URL = (process.env.FRONTEND_URL || '').replace(/\/+$/, '');
 if (!FRONTEND_URL) throw new Error('Missing env var FRONTEND_URL');
 
-const allowedHosts = [new URL(FRONTEND_URL).host];
-const extraHosts = ['localhost:5173', 'localhost:3000']; // dev allowance
+const primary = new URL(FRONTEND_URL).host;
+
+// make sure both apex and www work regardless of which you set in FRONTEND_URL
+function bothHosts(host) {
+  return host.startsWith('www.') ? [host, host.slice(4)] : [host, `www.${host}`];
+}
+const allowedHosts = new Set([
+  ...bothHosts(primary),
+  'localhost:5173',
+  'localhost:3000'
+]);
 
 function isOriginAllowed(origin) {
-  if (!origin) return true; // non-browser or same-origin
+  if (!origin) return true; // same-origin / non-browser
   try {
     const u = new URL(origin);
     if (!/^https?:$/i.test(u.protocol)) return false;
-    if (allowedHosts.includes(u.host)) return true;
-    if (/\.netlify\.app$/i.test(u.host)) return true;
-    if (extraHosts.includes(u.host)) return true;
-    return false;
+    // allow exact hosts we listed, and any Netlify preview
+    return allowedHosts.has(u.host) || /\.netlify\.app$/i.test(u.host);
   } catch {
     return false;
   }
@@ -34,6 +41,7 @@ app.use((req, res, next) => {
   const allowed = isOriginAllowed(origin);
 
   if (allowed && origin) {
+    // echo the origin so preflight passes on strict browsers
     res.setHeader('Access-Control-Allow-Origin', origin);
     res.setHeader('Vary', 'Origin');
     res.setHeader('Access-Control-Allow-Credentials', 'true');
@@ -166,10 +174,10 @@ async function validatePromoHandler(req, res) {
   try {
     const code = (req.query.code || '').trim().toUpperCase(); // Normalize case
     if (!code || code.length > 20) {
-      return res.status(400).json({ 
-        valid: false, 
-        reason: 'invalid_format', 
-        message: 'Please enter a valid promo code' 
+      return res.status(400).json({
+        valid: false,
+        reason: 'invalid_format',
+        message: 'Please enter a valid promo code'
       });
     }
 
@@ -188,16 +196,16 @@ async function validatePromoHandler(req, res) {
         active: false,
         limit: 1,
       });
-      
+
       if (inactiveList.data.length) {
-        return res.json({ 
-          valid: false, 
+        return res.json({
+          valid: false,
           reason: 'code_inactive',
           message: 'This promo code is no longer active'
         });
       }
-      return res.json({ 
-        valid: false, 
+      return res.json({
+        valid: false,
         reason: 'not_found',
         message: 'Promo code not found'
       });
@@ -208,8 +216,8 @@ async function validatePromoHandler(req, res) {
 
     // Check expiration
     if (coupon?.redeem_by && coupon.redeem_by < Math.floor(Date.now() / 1000)) {
-      return res.json({ 
-        valid: false, 
+      return res.json({
+        valid: false,
         reason: 'expired',
         message: 'This promo code has expired'
       });
@@ -217,8 +225,8 @@ async function validatePromoHandler(req, res) {
 
     // Check max redemptions
     if (promo.max_redemptions && promo.times_redeemed >= promo.max_redemptions) {
-      return res.json({ 
-        valid: false, 
+      return res.json({
+        valid: false,
         reason: 'maxed_out',
         message: 'This promo code has reached its maximum redemptions'
       });
@@ -226,8 +234,8 @@ async function validatePromoHandler(req, res) {
 
     // Check coupon validity
     if (coupon && coupon.valid === false) {
-      return res.json({ 
-        valid: false, 
+      return res.json({
+        valid: false,
         reason: 'coupon_invalid',
         message: 'This promo code is no longer valid'
       });
@@ -244,10 +252,10 @@ async function validatePromoHandler(req, res) {
     });
   } catch (e) {
     console.error('validate-promo error:', e.type || 'Unknown', e.code || 'No code', e.message);
-    res.status(500).json({ 
-      valid: false, 
-      reason: 'server_error', 
-      message: 'Error validating promo code' 
+    res.status(500).json({
+      valid: false,
+      reason: 'server_error',
+      message: 'Error validating promo code'
     });
   }
 }
@@ -279,10 +287,10 @@ app.post('/create-checkout-session', authenticate, async (req, res) => {
     let discounts;
     if (promoCode && typeof promoCode === 'string') {
       try {
-        const pcs = await stripe.promotionCodes.list({ 
-          code: promoCode.trim(), 
-          active: true, 
-          limit: 1 
+        const pcs = await stripe.promotionCodes.list({
+          code: promoCode.trim(),
+          active: true,
+          limit: 1
         });
         if (pcs.data[0]) discounts = [{ promotion_code: pcs.data[0].id }];
       } catch (e) {
@@ -298,7 +306,6 @@ app.post('/create-checkout-session', authenticate, async (req, res) => {
 
       subscription_data: { trial_period_days: 0 },
 
-      // Use explicit file path; allow override with env if you prefer /premium
       success_url: `${FRONTEND_URL}${SUCCESS_PATH}`,
       cancel_url:  `${FRONTEND_URL}${CANCEL_PATH}`,
 
@@ -369,5 +376,5 @@ async function handleSubscriptionCancelled(subscription) {
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`Backend running on port ${PORT}`);
-  console.log(`Allowed frontend: ${FRONTEND_URL}`);
+  console.log(`Allowed frontend base: ${FRONTEND_URL}`);
 });
