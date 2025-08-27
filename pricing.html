@@ -1,48 +1,72 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
   <title>SpellRightPro - Pricing</title>
-  <!-- Reuse your existing CSS/JS links -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+
+  <!-- Base (keeps asset links stable) -->
+  <base href="/" />
+
+  <!-- Minimal variables + shared classes so styles work standalone -->
   <style>
-    /* Pricing-specific styles */
-    .pricing-hero {
-      text-align: center;
-      padding: 40px 0;
+    :root{
+      --primary:#098cfb;
+      --light:#fff; --light-gray:#f3f4f6;
+      --border:#e5e7eb; --gray:#6b7280;
     }
-    .toggle-container {
-      margin: 20px auto;
-      display: flex;
-      justify-content: center;
-    }
-    .toggle-btn {
-      padding: 10px 20px;
-      background: var(--light-gray);
-      border: none;
-      cursor: pointer;
-    }
-    .toggle-btn.active {
-      background: var(--primary);
-      color: white;
-    }
+    body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;color:#111;background:#fafafa}
+    .navbar{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;background:#fff;border-bottom:1px solid var(--border)}
+    .brand{display:flex;align-items:center;gap:10px;font-weight:700}
+    .brand img{height:34px}
+
+    .pricing-container{max-width:980px;margin:40px auto;padding:0 16px}
+    .pricing-hero{text-align:center;padding:24px 0}
+    .toggle-container{margin:16px auto;display:flex;justify-content:center;gap:6px}
+    .toggle-btn{padding:10px 20px;background:var(--light-gray);border:1px solid var(--border);cursor:pointer;border-radius:10px}
+    .toggle-btn.active{background:var(--primary);color:#fff;border-color:var(--primary)}
+
+    .pricing-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:18px;margin:18px 0 28px}
+    .pricing-card{background:#fff;border:1px solid var(--border);border-radius:14px;padding:18px 16px;box-shadow:0 1px 6px rgba(0,0,0,.04)}
+    .pricing-card.featured{border-color:var(--primary);box-shadow:0 8px 34px rgba(9,140,251,.12)}
+    .badge{display:inline-block;background:var(--primary);color:#fff;font-size:.85rem;padding:2px 8px;border-radius:8px;margin-bottom:8px}
+    .price{font-size:2rem;font-weight:800;margin:6px 0 14px}
+    .price small{font-size:.9rem;font-weight:600;color:var(--gray)}
+    .hidden{display:none}
+
+    .btn{display:inline-block;padding:10px 16px;border-radius:10px;text-decoration:none}
+    .btn-primary{background:var(--primary);color:#fff}
+    .btn-outline{border:1px solid var(--primary);color:var(--primary);background:#fff}
+
+    footer{margin:24px auto 28px;text-align:center;color:#888}
+    footer a{color:#098cfb;margin:0 6px;text-decoration:none}
+    footer a:hover{text-decoration:underline}
   </style>
+
+  <link rel="icon" href="/assets/logo.png">
 </head>
 <body>
-  <nav><!-- Reuse your navbar --></nav>
+  <!-- Simple navbar -->
+  <nav class="navbar">
+    <div class="brand">
+      <img src="/assets/logo.png" alt="SpellRightPro Logo">
+      <span>SpellRightPro</span>
+    </div>
+  </nav>
 
   <main class="pricing-container">
     <div class="pricing-hero">
       <h1>Choose Your Plan</h1>
-      <div class="toggle-container">
-        <button class="toggle-btn active" data-plan="monthly">Monthly</button>
-        <button class="toggle-btn" data-plan="annual">Annual (Save 20%)</button>
+      <div class="toggle-container" role="tablist" aria-label="Billing period">
+        <button class="toggle-btn active" data-plan="monthly" aria-selected="true">Monthly</button>
+        <button class="toggle-btn" data-plan="annual" aria-selected="false">Annual (Save 20%)</button>
       </div>
     </div>
 
     <div class="pricing-grid">
       <!-- Free Tier -->
-      <div class="pricing-card">
-        <h3>Free</h3>
+      <div class="pricing-card" aria-labelledby="free-title">
+        <h3 id="free-title">Free</h3>
         <div class="price">$0<small>/forever</small></div>
         <ul>
           <li>✓ Basic OET/Bee practice</li>
@@ -50,13 +74,13 @@
           <li>✗ With ads</li>
           <li>✗ No progress tracking</li>
         </ul>
-        <a href="freemium-oet.html" class="btn btn-outline">Start Free</a>
+        <a href="https://spellrightpro.org/freemium-oet.html" class="btn btn-outline">Start Free</a>
       </div>
 
       <!-- Premium Tier -->
-      <div class="pricing-card featured">
+      <div class="pricing-card featured" aria-labelledby="premium-title">
         <div class="badge">Most Popular</div>
-        <h3>Premium</h3>
+        <h3 id="premium-title">Premium</h3>
         <div class="price monthly-price">$9<small>/month</small></div>
         <div class="price annual-price hidden">$7<small>/month ($84 billed annually)</small></div>
         <ul>
@@ -65,19 +89,32 @@
           <li>✓ Ad-free experience</li>
           <li>✓ Detailed progress tracking</li>
         </ul>
-        <a href="#payment" class="btn btn-primary">Get Premium</a>
+        <a href="https://spellrightpro.org/premium.html" class="btn btn-primary">Get Premium</a>
       </div>
     </div>
+
+    <!-- Footer with absolute legal links -->
+    <footer>
+      © 2025 SpellRightPro ·
+      <a href="https://spellrightpro.org/terms.html">Terms</a> ·
+      <a href="https://spellrightpro.org/privacy.html">Privacy</a> ·
+      <a href="https://spellrightpro.org/refund-policy.html">Refunds</a> ·
+      <a href="https://spellrightpro.org/contact.html">Contact</a>
+    </footer>
   </main>
 
   <script>
     // Plan toggling
     document.querySelectorAll('.toggle-btn').forEach(btn => {
       btn.addEventListener('click', () => {
-        document.querySelectorAll('.toggle-btn').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.toggle-btn').forEach(b => {
+          b.classList.remove('active');
+          b.setAttribute('aria-selected','false');
+        });
         btn.classList.add('active');
-        
-        if(btn.dataset.plan === 'annual') {
+        btn.setAttribute('aria-selected','true');
+
+        if (btn.dataset.plan === 'annual') {
           document.querySelector('.monthly-price').classList.add('hidden');
           document.querySelector('.annual-price').classList.remove('hidden');
         } else {
