@@ -1,4 +1,4 @@
-/* ==================== SpellRightPro Premium — streamlined, patched ==================== */
+/* ==================== SpellRightPro Premium — streamlined, patched (ads gated by premium) ==================== */
 (function () {
   'use strict';
 
@@ -52,8 +52,8 @@
   document.addEventListener('DOMContentLoaded', () => {
     initStripe();
     initDarkMode();
-    initAuthState();
     initSpeech();
+    initAuthState();       // auth + premium + ads gating
     checkUrlForPaymentStatus();
   });
 
@@ -65,17 +65,20 @@
     stripe = Stripe(key);
   }
 
-  /* ==================== ADS: hide when premium ==================== */
+  /* ==================== ADS: load for non-premium, hide for premium ==================== */
   function loadAutoAdsOnce() {
     if (window.__adsLoaded) return;
     const client = (window.appConfig && window.appConfig.adClient) || 'ca-pub-7632930282249669';
+    if (!client) { console.warn('[Ads] Missing ad client'); return; }
     const s = document.createElement('script');
     s.async = true;
     s.id = 'auto-ads-script';
-    s.src = `https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${client}`;
+    s.dataset.srp = 'adsense';
+    s.src = `https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${encodeURIComponent(client)}`;
     s.crossOrigin = 'anonymous';
     document.head.appendChild(s);
     window.__adsLoaded = true;
+    console.log('[Ads] Auto Ads enabled for non-premium user.');
   }
   function disableAutoAdsNow() {
     try { window.adsbygoogle = window.adsbygoogle || []; window.adsbygoogle.pauseAdRequests = 1; } catch(_) {}
@@ -89,6 +92,7 @@
       document.head.appendChild(st);
     }
     document.querySelectorAll('.ad-container').forEach(el => el.style.display = 'none');
+    console.log('[Ads] Suppressed for premium user.');
   }
 
   /* ==================== THEME ==================== */
@@ -156,16 +160,40 @@
     if (Object.keys(updates).length) await ref.set(updates, { merge: true });
   }
 
+  // NEW: check Stripe subscription in Firestore (customers/{uid}/subscriptions)
+  async function hasStripePremium(uid) {
+    try {
+      const db = firebase.firestore();
+      const snap = await db.collection('customers').doc(uid)
+        .collection('subscriptions')
+        .where('status', 'in', ['active','trialing'])
+        .limit(1)
+        .get();
+      return !snap.empty;
+    } catch (e) {
+      console.warn('[Premium] Stripe check failed:', e);
+      return false;
+    }
+  }
+
   async function checkPremiumStatus() {
     if (!currentUser) return false;
     try {
-      const snap = await firebase.firestore().collection('users').doc(currentUser.uid).get();
-      const data = snap.exists ? snap.data() : {};
-      premiumUser = !!data?.isPremium;
+      const userDoc = await firebase.firestore().collection('users').doc(currentUser.uid).get();
+      const userData = userDoc.exists ? userDoc.data() : {};
+      const flagPremium = !!userData?.isPremium;
+
+      const stripePremium = await hasStripePremium(currentUser.uid);
+
+      premiumUser = flagPremium || stripePremium;
+
       if (premiumUser) disableAutoAdsNow(); else loadAutoAdsOnce();
+
       return premiumUser;
     } catch (e) {
       console.error('Premium check error:', e);
+      // Fail-open for revenue unless you prefer strict: set to disableAutoAdsNow() instead.
+      loadAutoAdsOnce();
       return false;
     }
   }
@@ -173,13 +201,18 @@
   function initAuthState() {
     firebase.auth().onAuthStateChanged(async (user) => {
       currentUser = user;
+
+      // Signed-out visitors: show ads
       if (!user) {
         renderAuthLoggedOut();
         loadAutoAdsOnce();
         return;
       }
+
+      // Signed-in: ensure profile, then determine premium + ads
       await ensureUserDoc(user);
       await checkPremiumStatus();
+
       renderAuthLoggedIn();
 
       if (premiumUser) {
