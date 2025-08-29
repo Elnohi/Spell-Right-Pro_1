@@ -203,11 +203,33 @@
     }
   </style>
 
-    <!-- Firebase (compat) -->
-  <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-analytics-compat.js"></script>
+  <!-- Firebase (compat) -->
+<script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-analytics-compat.js"></script>
+
+<!-- your config MUST come next -->
+<script src="/js/config.js"></script>
+
+<!-- initialize BEFORE other deferred scripts -->
+<script>
+  (function () {
+    if (!window.appConfig || !window.appConfig.firebaseConfig) {
+      console.error('firebaseConfig missing from config.js');
+      return;
+    }
+    if (!firebase.apps.length) {
+      firebase.initializeApp(window.appConfig.firebaseConfig);
+    }
+    // optional:
+    try { firebase.analytics(); } catch(_) {}
+  })();
+</script>
+
+<!-- now your page scripts can run safely -->
+<script src="/js/common.js" defer></script>
+<script src="/js/main-freemium-oet.js" defer></script>
   
 </head>
 <body>
