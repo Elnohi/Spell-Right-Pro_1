@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>SpellRightPro – OET (Free)</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <base href="/" />
+
+  <!-- AdSense Auto Ads (load exactly once per page) -->
+  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7632930282249669" crossorigin="anonymous"></script>
+
+  <!-- Styles & Icons -->
+  <link rel="stylesheet" href="/css/styles.css" />
+  <link rel="icon" href="/assets/logo.png" />
+  <link rel="apple-touch-icon" href="/assets/icons/icon-192x192.png" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css"/>
+
+ <!-- Firebase (compat) -->
+<script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-analytics-compat.js"></script>
+
+<!-- your config MUST come next -->
+<script src="/js/config.js"></script>
+
+<!-- initialize BEFORE other deferred scripts -->
+<script>
+  (function () {
+    if (!window.appConfig || !window.appConfig.firebaseConfig) {
+      console.error('firebaseConfig missing from config.js');
+      return;
+    }
+    if (!firebase.apps.length) {
+      firebase.initializeApp(window.appConfig.firebaseConfig);
+    }
+    // optional:
+    try { firebase.analytics(); } catch(_) {}
+  })();
+</script>
+
+<!-- now your page scripts can run safely -->
+<script src="/js/common.js" defer></script>
+<script src="/js/main-freemium-oet.js" defer></script>
+
+  <style>
+    /* Tiny helper style so the Home button always looks good */
+    .home-btn {
+      display:inline-flex; align-items:center; gap:.5rem;
+      padding:.55rem .9rem; border:1px solid var(--border,#dcdcdc);
+      border-radius:10px; background:#fff; color:#1f1f1f; text-decoration:none;
+    }
+    .home-btn:hover { background:#f6f6f6; }
+    .home-row { display:flex; justify-content:flex-end; margin:10px 0 4px; }
+    @media (max-width:640px){ .home-row{justify-content:flex-start;} }
+  </style>
+
+  <script>
+    // Inject an inline ad INTO the summary area when it appears
+    (function () {
+      function insertSummaryAd() {
+        try {
+          var summary = document.getElementById('summary-area');
+          if (!summary) return;
+          if (summary.dataset.adInjected === '1') return; // already inserted
+
+          var wrapper = document.createElement('div');
+          wrapper.className = 'ad-container';
+          wrapper.style.margin = '16px auto';
+          wrapper.style.textAlign = 'center';
+          wrapper.innerHTML = '<ins class="adsbygoogle" style="display:block" data-ad-client="ca-pub-7632930282249669" data-ad-slot="1234567890" data-ad-format="auto" data-full-width-responsive="true"></ins>';
+
+          summary.appendChild(wrapper);
+          (window.adsbygoogle = window.adsbygoogle || []).push({});
+          summary.dataset.adInjected = '1';
+        } catch(e) { /* non-fatal */ }
+      }
+
+      // Observe when #summary-area content changes or becomes visible
+      document.addEventListener('DOMContentLoaded', function () {
+        var target = document.getElementById('summary-area');
+        if (!target) return;
+
+        var obs = new MutationObserver(function () {
+          var isHidden = target.classList.contains('hidden');
+          if (!isHidden && target.childElementCount > 0) insertSummaryAd();
+        });
+        obs.observe(target, { childList: true, subtree: true, attributes: true, attributeFilter: ['class'] });
+
+        // Fallback: try once after a short delay
+        setTimeout(insertSummaryAd, 2000);
+      });
+    })();
+  </script>
+</head>
+<body>
+  <header class="navbar">
+    <div class="brand">
+      <img src="/assets/logo.png" class="logo" alt="SpellRightPro logo" />
+      <div>
+        <span>SpellRightPro</span>
+        <span class="subtitle">Freemium OET</span>
+      </div>
+    </div>
+    <div class="nav-actions">
+      <button id="dark-mode-toggle" class="btn-icon" title="Toggle theme" aria-label="Toggle theme">
+        <i class="fas fa-moon"></i>
+      </button>
+    </div>
+  </header>
+
+  <main class="container training-card">
+    <!-- Back to Home button -->
+    <div class="home-row">
+      <a class="home-btn" href="https://spellrightpro.org/">
+        <i class="fas fa-home"></i> Home
+      </a>
+    </div>
+
+    <!-- Mode selector -->
+    <div class="mode-selector">
+      <button id="practice-mode-btn" class="btn-mode active" aria-pressed="true">
+        <i class="fas fa-graduation-cap"></i> Practice
+      </button>
+      <button id="test-mode-btn" class="btn-mode" aria-pressed="false">
+        <i class="fas fa-clipboard-check"></i> Test
+      </button>
+    </div>
+
+    <!-- Accent picker -->
+    <div class="accent-picker" role="group" aria-label="Accent">
+      <button type="button" data-accent="en-US" class="active" aria-pressed="true">
+        <span class="flag-icon">🇺🇸</span> American
+      </button>
+      <button type="button" data-accent="en-GB" aria-pressed="false">
+        <span class="flag-icon">🇬🇧</span> British
+      </button>
+      <button type="button" data-accent="en-AU" aria-pressed="false">
+        <span class="flag-icon">🇦🇺</span> Australian
+      </button>
+    </div>
+
+    <!-- Custom words -->
+    <div class="custom-words-section">
+      <label class="section-label" for="custom-words">Custom words (one list/day):</label>
+      <textarea id="custom-words" placeholder="Enter words (phrases allowed). Separate with new lines, commas, semicolons, or pipes."></textarea>
+
+      <div class="file-upload">
+        <label class="btn-upload" for="file-input">
+          <i class="fas fa-file-upload"></i> Upload .txt/.csv
+        </label>
+        <input id="file-input" type="file" accept=".txt,.csv" />
+      </div>
+
+      <button id="add-custom-btn" class="btn-primary">
+        <i class="fas fa-plus-circle"></i> Use This List
+      </button>
+    </div>
+
+    <!-- Start -->
+    <button id="start-btn" class="btn-start">
+      <i class="fas fa-play"></i> Start Session
+    </button>
+
+    <!-- Trainer + Summary -->
+    <div id="trainer-area" class="hidden"></div>
+    <div id="summary-area" class="hidden"></div>
+  </main>
+
+  <!-- Unified footer with absolute URLs -->
+  <footer class="container" style="margin-top:2rem;">
+    <p>
+      <a href="https://spellrightpro.org/terms.html">Terms of Service</a>
+      <a href="https://spellrightpro.org/privacy.html">Privacy Policy</a>
+      <a href="https://spellrightpro.org/refund-policy.html">Refund Policy</a>
+      <a href="https://spellrightpro.org/contact.html">Contact Support</a>
+    </p>
+    <p>© 2025 SpellRightPro. All rights reserved.</p>
+  </footer>
+
+<!-- Data -->
+<script src="/js/oet_word_list.js"></script>
+
+<!-- Service Worker registration -->
+<script>
+  if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
+    navigator.serviceWorker.register('/sw.js').catch(console.warn);
+  }
+</script>
+</body>
+</html>
