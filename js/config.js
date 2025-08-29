@@ -1,52 +1,52 @@
-// js/config.js
-// ------------------------------
-// Frontend runtime configuration
-// ------------------------------
+// /js/config.js
+// Frontend runtime configuration (Firebase + app settings)
 
-// ===== 1) Firebase (REQUIRED) =====
-// Uses your production client keys you shared earlier.
-window.firebaseConfig = {
-  apiKey: "AIzaSyCZ-rAPnRgVjSRFOFvbiQlowE6A3RVvwWo",
-  authDomain: "spellrightpro-firebase.firebaseapp.com",
-  projectId: "spellrightpro-firebase",
-  storageBucket: "spellrightpro-firebase.firebasestorage.app",
-  messagingSenderId: "798456641137",
-  appId: "1:798456641137:web:5c6d79db5bf49d04928dd0",
-  measurementId: "G-H09MF13297"
-};
+(function (w) {
+  // --- Your Firebase project config (public; safe to ship) ---
+  // (values copied from your working premium page)
+  const firebaseConfig = {
+    apiKey: "AIzaSyCz-rAPnRgVjSRFOfvbqibloWEd63ARVVwo",
+    authDomain: "spellrightpro-firebase.firebaseapp.com",
+    projectId: "spellrightpro-firebase",
+    // storageBucket is not used by the app; keep if you need Storage later.
+    storageBucket: "spellrightpro-firebase.appspot.com",
+    messagingSenderId: "798456641137",
+    appId: "1:798456641137:web:5c6d79db55bf49d04928dd",
+    measurementId: "G-H09MF13297"
+  };
 
-// Initialize the default Firebase app once.
-(function initFirebaseOnce() {
-  try {
-    if (window.firebase && (!firebase.apps || !firebase.apps.length)) {
-      firebase.initializeApp(window.firebaseConfig);
-      // Analytics is optional; ignore if not enabled
-      try { firebase.analytics(); } catch (_) {}
+  // Expose so other scripts can see it
+  w.firebaseConfig = firebaseConfig;
+
+  // Initialize Firebase exactly once.
+  function initFirebaseOnce() {
+    try {
+      if (w.firebase && !firebase.apps?.length) {
+        firebase.initializeApp(firebaseConfig);
+        try { firebase.analytics && firebase.analytics(); } catch (_) {}
+      }
+    } catch (e) {
+      // Do not crash the page if analytics or anything else throws
+      console.warn("[config] Firebase init failed:", e);
     }
-  } catch (e) {
-    // Surface a console hint but don't crash the app
-    console.error("Firebase init failed:", e);
   }
-})();
 
+  // Run immediately if Firebase SDK is already on the page;
+  // otherwise common.js will call it.
+  if (w.firebase) initFirebaseOnce();
+  w.__initFirebaseOnce = initFirebaseOnce;
 
-// ===== 2) App / Ads / Stripe settings =====
-window.appConfig = {
-  // Cloud Run base (no trailing slash)
- apiBaseUrl: "https://spellrightpro-api-798456641137.us-central1.run.app",
+  // ---- App settings your pages already read ----
+  w.appConfig = {
+    // Your Cloud Run backend (no trailing slash)
+    apiBaseUrl: "https://spellrightpro-api-798456641137.us-central1.run.app",
 
-  // AdSense client (freemium only; premium hides ads)
-  adClient: "ca-pub-7632930282249669",
+    // AdSense client (used only for freemium)
+    adClient: "ca-pub-7632930282249669",
 
-  // Optional trial days (server may ignore/override)
-  trialDays: 0,
-
-  // Reference URLs (server controls actual Checkout redirect)
-  successUrl: "https://spellrightpro.org/premium.html?payment_success=1",
-  cancelUrl:  "https://spellrightpro.org/premium.html"
-};
-
-// Stripe publishable key (TEST in dev, LIVE in prod)
-window.stripeConfig = {
-  publicKey: "pk_live_51RuKs1El99zwdEZr9wjVF3EhADOk4c9x8JjvjPLH8Y16cCPwykZRFVtC1Fr0hSJesStbqcvfvvNOy4NHRaV0GPvg004IIcPfC8"
-};
+    // Stripe publishable key is loaded elsewhere; keeping slot if needed
+    stripe: {
+      publishableKey: (w.stripeConfig && w.stripeConfig.publicKey) || ""
+    }
+  };
+})(window);
