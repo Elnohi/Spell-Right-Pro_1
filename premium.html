@@ -3,80 +3,95 @@
 <head>
   <meta charset="utf-8" />
   <title>SpellRightPro Premium</title>
-  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <base href="/" />
 
   <!-- Preconnects -->
   <link rel="preconnect" href="https://js.stripe.com" />
   <link rel="preconnect" href="https://www.gstatic.com" />
   <link rel="preconnect" href="https://www.googleapis.com" />
 
-  <!-- Firebase compat (NO defer) -->
+  <!-- Styles -->
+  <link rel="stylesheet" href="/css/styles.css" />
+  <link rel="stylesheet" href="/css/premium.css" />
+  <link rel="icon" href="/assets/logo.png" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+
+  <!-- Firebase (compat) — NO defer -->
   <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-analytics-compat.js"></script>
 
-  <!-- Config (NO defer) -->
+  <!-- Config -->
   <script src="/js/config.js?v=2025-08-29"></script>
 
-  <!-- Initialize Firebase immediately (NO defer) -->
+  <!-- Initialize Firebase -->
   <script>
-    (function () {
-      const cfg = window.appConfig && window.appConfig.firebaseConfig;
-      if (!cfg) { console.error('firebaseConfig missing from config.js'); return; }
-      if (!firebase.apps.length) {
-        firebase.initializeApp(cfg);
-        try { firebase.analytics(); } catch(_) {}
-      }
-    })();
+  (function () {
+    const cfg = window.appConfig && window.appConfig.firebaseConfig;
+    if (!cfg) { console.error('firebaseConfig missing from config.js'); return; }
+    if (!firebase.apps.length) {
+      firebase.initializeApp(cfg);
+      try { firebase.analytics(); } catch(_){}
+    }
+  })();
   </script>
 
-  <!-- Styles -->
-  <link rel="stylesheet" href="/css/styles.css">
-  <link rel="stylesheet" href="/css/premium.css">
-  <link rel="icon" href="/assets/logo.png">
-
-  <!-- Stripe (defer) -->
+  <!-- Stripe -->
   <script src="https://js.stripe.com/v3/" defer></script>
 
-  <!-- Helpers / data (defer) -->
+  <!-- Helpers / data -->
   <script src="/js/common.js?v=2025-08-29" defer></script>
   <script src="/js/oet_word_list.js?v=2025-08-29" defer></script>
 
-  <!-- Main premium app (defer) -->
+  <!-- Main premium app -->
   <script src="/js/main-premium.js?v=2025-08-29" defer></script>
+
+  <style>
+    .container{max-width:980px;margin:0 auto;padding:16px}
+    .navbar{display:flex;align-items:center;justify-content:space-between;padding:10px 16px;border-bottom:1px solid #e5e7eb}
+    .brand{display:flex;gap:10px;align-items:center}
+    .brand .logo{width:32px;height:32px}
+    .hidden{display:none}
+  </style>
 </head>
 <body>
-  <!-- header/navbar ... -->
+  <header class="navbar">
+    <div class="brand">
+      <img src="/assets/logo.png" class="logo" alt="SpellRightPro Logo" />
+      <strong>SpellRightPro — Premium</strong>
+    </div>
+    <a class="home-btn" href="/"><i class="fas fa-home"></i> Home</a>
+  </header>
 
   <main class="container">
-    <!-- auth area + premium app -->
     <div id="auth-area"></div>
-    <section id="premium-app" class="training-card hidden">
-      <h2 id="app-title">Premium</h2>
+
+    <section id="premium-app" class="training-card hidden" style="margin-top:12px;">
+      <h2 id="app-title" class="card-title">Premium</h2>
       <div id="exam-ui"></div>
       <div id="trainer-area" class="hidden"></div>
       <div id="summary-area" class="hidden"></div>
     </section>
   </main>
 
-  <!-- Conditional Google Auto Ads (hide for Premium users) -->
-  <script>
-    // Simple readiness helper
-    function waitForFirebaseAppReady(timeoutMs = 3000) {
-      return new Promise(res => {
-        const start = Date.now();
-        (function tick(){
-          if (window.firebase && firebase.apps.length) return res(true);
-          if (Date.now() - start > timeoutMs) return res(false);
-          setTimeout(tick, 50);
-        })();
-      });
-    }
+  <footer class="container" style="margin-top:2rem;">
+    <p>
+      <a href="https://spellrightpro.org/terms.html">Terms of Service</a>
+      <a href="https://spellrightpro.org/privacy.html">Privacy Policy</a>
+      <a href="https://spellrightpro.org/refund-policy.html">Refund Policy</a>
+      <a href="https://spellrightpro.org/contact.html">Contact Support</a>
+    </p>
+    <p>© 2025 SpellRightPro. All rights reserved.</p>
+  </footer>
 
-    function injectAutoAdsScript() {
-      const client = (window.appConfig && window.appConfig.adClient) || 'ca-pub-7632930282249669';
+  <!-- Conditional Auto Ads: load only for NON-premium users -->
+  <script>
+  (async function initConditionalAds() {
+    function injectAutoAds() {
       if (document.getElementById('auto-ads-script')) return;
+      const client = (window.appConfig && window.appConfig.adClient) || 'ca-pub-7632930282249669';
       const s = document.createElement('script');
       s.id = 'auto-ads-script';
       s.async = true;
@@ -84,48 +99,47 @@
       s.src = 'https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=' + client;
       document.head.appendChild(s);
     }
+    function wait(ms){ return new Promise(r=>setTimeout(r,ms)); }
 
-    (async function initConditionalAds() {
-      const ready = await waitForFirebaseAppReady();
-      if (!ready) { injectAutoAdsScript(); return; }
+    // Ensure Firebase is up
+    for (let i=0;i<40;i++) { // ~2s max
+      if (window.firebase && firebase.apps.length) break;
+      await wait(50);
+    }
+    if (!window.firebase || !firebase.apps.length) { injectAutoAds(); return; }
 
-      try {
-        // Ensure app is initialized with the same key used everywhere else
-        if (!firebase.apps.length && window.appConfig?.firebaseConfig) {
-          firebase.initializeApp(window.appConfig.firebaseConfig);
-        }
-
-        const user = firebase.auth().currentUser;
-        if (!user) { injectAutoAdsScript(); return; }
-
-        const uid = user.uid;
-        // Read premium flag OR active subscription (rules must allow read)
-        const userDoc = await firebase.firestore().collection('users').doc(uid).get();
-        const isPremiumFlag = !!(userDoc.exists && userDoc.data()?.isPremium);
-
-        let hasSub = false;
-        try {
-          const subSnap = await firebase.firestore()
-            .collection('customers').doc(uid)
-            .collection('subscriptions')
-            .where('status', 'in', ['active','trialing'])
-            .limit(1).get();
-          hasSub = !subSnap.empty;
-        } catch(_) {}
-
-        if (!(isPremiumFlag || hasSub)) {
-          injectAutoAdsScript(); // non-premium → load auto ads
-        } else {
-          // premium → hide any ad containers just in case
-          const st = document.createElement('style');
-          st.textContent = '.google-auto-placed, ins.adsbygoogle, .ad-container{display:none!important}';
-          document.head.appendChild(st);
-        }
-      } catch (e) {
-        console.warn('[Premium] Stripe check failed:', e);
-        injectAutoAdsScript(); // fail open to ads for non-premium
+    try {
+      let user = firebase.auth().currentUser;
+      if (!user) {
+        injectAutoAds();
+        return;
       }
-    })();
+      const uid = user.uid;
+
+      // Check premium flag and subscription
+      const userDoc = await firebase.firestore().collection('users').doc(uid).get();
+      const isFlag = !!(userDoc.exists && userDoc.data()?.isPremium);
+      let hasSub = false;
+      try {
+        const subSnap = await firebase.firestore()
+          .collection('customers').doc(uid)
+          .collection('subscriptions')
+          .where('status','in',['active','trialing'])
+          .limit(1).get();
+        hasSub = !subSnap.empty;
+      } catch(_) {}
+
+      if (!(isFlag || hasSub)) injectAutoAds();
+      else {
+        const st = document.createElement('style');
+        st.textContent = '.google-auto-placed, ins.adsbygoogle, .ad-container{display:none!important}';
+        document.head.appendChild(st);
+      }
+    } catch (e) {
+      console.warn('[Premium] premium check failed:', e?.message || e);
+      injectAutoAds(); // fail-open for non-premium
+    }
+  })();
   </script>
 
   <!-- Service Worker -->
