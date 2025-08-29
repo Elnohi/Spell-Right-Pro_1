@@ -3,43 +3,95 @@
 <head>
   <meta charset="utf-8" />
   <title>SpellRightPro — Practice Smarter. Spell Better.</title>
-  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
 
-  <!-- Firebase compat (NO defer) -->
+  <link rel="stylesheet" href="/css/styles.css" />
+  <link rel="icon" href="/assets/logo.png" />
+  <link rel="apple-touch-icon" href="/assets/icons/icon-192x192.png" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+
+  <!-- Google AdSense Auto Ads (safe on landing) -->
+  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7632930282249669" crossorigin="anonymous"></script>
+
+  <!-- Firebase (compat) — NO defer -->
   <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-analytics-compat.js"></script>
 
-  <!-- Config (NO defer) -->
+  <!-- Config -->
   <script src="/js/config.js?v=2025-08-29"></script>
 
-  <!-- Initialize Firebase immediately (NO defer) -->
+  <!-- Initialize Firebase -->
   <script>
-    (function () {
-      const cfg = window.appConfig && window.appConfig.firebaseConfig;
-      if (!cfg) { console.error('firebaseConfig missing from config.js'); return; }
-      if (!firebase.apps.length) {
-        firebase.initializeApp(cfg);
-        try { firebase.analytics(); } catch(_) {}
-      }
-    })();
+  (function () {
+    const cfg = window.appConfig && window.appConfig.firebaseConfig;
+    if (!cfg) { console.error('firebaseConfig missing from config.js'); return; }
+    if (!firebase.apps.length) {
+      firebase.initializeApp(cfg);
+      try { firebase.analytics(); } catch(_){}
+    }
+  })();
   </script>
 
-  <link rel="stylesheet" href="/css/styles.css">
-  <link rel="icon" href="/assets/logo.png">
+  <style>
+    .container{max-width:1000px;margin:0 auto;padding:20px}
+    .hero{display:grid;grid-template-columns:1.2fr .8fr;gap:24px;align-items:center}
+    .hero h1{font-size:2.1rem;margin:.25rem 0}
+    .cta-row{display:flex;gap:12px;flex-wrap:wrap;margin:14px 0}
+    .cta{display:inline-flex;gap:.5rem;align-items:center;padding:.75rem 1rem;border-radius:10px;border:1px solid #dcdcdc;background:#fff;text-decoration:none}
+    .cta.primary{background:#2563eb;color:#fff;border-color:#1e40af}
+    .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px;margin-top:24px}
+    .card{border:1px solid #e5e7eb;border-radius:12px;padding:16px;background:#fff}
+    .footer{border-top:1px solid #e5e7eb;margin-top:32px;padding-top:12px}
+  </style>
 </head>
 <body>
-  <!-- Landing hero etc. -->
-  <header>…</header>
-  <main>
-    <!-- CTA buttons to /freemium-oet and /freemium-bee -->
-  </main>
-  <footer>…</footer>
+  <main class="container">
+    <section class="hero">
+      <div>
+        <img src="/assets/logo.png" alt="SpellRightPro" style="width:40px;height:40px;vertical-align:middle">
+        <h1>Practice Smarter. Spell Better.</h1>
+        <p>For Students • Spelling Bee • OET Candidates</p>
+        <div class="cta-row">
+          <a class="cta primary" href="/freemium-oet"><i class="fas fa-stethoscope"></i> OET Trainer (Free)</a>
+          <a class="cta primary" href="/freemium-bee"><i class="fas fa-microphone"></i> Spelling Bee (Free)</a>
+          <a class="cta" href="/premium"><i class="fas fa-crown"></i> Premium Edition</a>
+        </div>
+      </div>
+      <div>
+        <img src="/assets/cover-illustration.png" alt="Practice Illustration" style="width:100%;max-width:460px">
+      </div>
+    </section>
 
-  <!-- Minimal landing logic (if you need any) -->
+    <section class="cards">
+      <div class="card">
+        <h3>OET Medical Trainer</h3>
+        <p>Spelling practice with real OET medical vocabulary, typed answer mode, and results review.</p>
+      </div>
+      <div class="card">
+        <h3>Spelling Bee (Voice)</h3>
+        <p>Speak the spelling letter-by-letter, with robust letter-name understanding (en-US/en-GB/en-AU).</p>
+      </div>
+      <div class="card">
+        <h3>Premium</h3>
+        <p>Unlimited lists & uploads • Progress history • No ads • Priority support.</p>
+      </div>
+    </section>
+
+    <section class="footer">
+      <p>
+        <a href="https://spellrightpro.org/terms.html">Terms</a> ·
+        <a href="https://spellrightpro.org/privacy.html">Privacy</a> ·
+        <a href="https://spellrightpro.org/refund-policy.html">Refund</a> ·
+        <a href="https://spellrightpro.org/contact.html">Contact</a>
+      </p>
+      <p>© 2025 SpellRightPro</p>
+    </section>
+  </main>
+
+  <!-- If you have landing-page JS, include it; otherwise common.js is enough -->
   <script src="/js/common.js?v=2025-08-29" defer></script>
-  <script src="/js/main-index.js?v=2025-08-29" defer></script>
 
   <!-- Service Worker -->
   <script>
