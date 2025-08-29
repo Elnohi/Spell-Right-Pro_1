@@ -1,4 +1,7 @@
-/* common.js - Browser global version (no exports, no Firebase init) */
+/* common.js
+if (!firebase.apps.length && window.appConfig?.firebaseConfig) {
+  firebase.initializeApp(window.appConfig.firebaseConfig);
+}
 (function () {
   'use strict';
 
