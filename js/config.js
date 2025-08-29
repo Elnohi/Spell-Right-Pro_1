@@ -33,7 +33,7 @@ window.firebaseConfig = {
 // ===== 2) App / Ads / Stripe settings =====
 window.appConfig = {
   // Cloud Run base (no trailing slash)
-  apiBaseUrl: "https://spellrightpro-api-798456641137.us-central1.run.app",
+ apiBaseUrl: "https://spellrightpro-api-798456641137.us-central1.run.app",
 
   // AdSense client (freemium only; premium hides ads)
   adClient: "ca-pub-7632930282249669",
