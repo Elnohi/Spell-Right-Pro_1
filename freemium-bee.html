@@ -2,63 +2,111 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <title>SpellRightPro — Freemium Bee</title>
-  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>SpellRightPro — Spelling Bee (Free)</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <base href="/" />
 
-  <!-- Firebase compat (NO defer) -->
+  <!-- Styles & Icons -->
+  <link rel="stylesheet" href="/css/styles.css" />
+  <link rel="icon" href="/assets/logo.png" />
+  <link rel="apple-touch-icon" href="/assets/icons/icon-192x192.png" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+
+  <!-- Google AdSense Auto Ads -->
+  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7632930282249669" crossorigin="anonymous"></script>
+
+  <!-- Firebase (compat) — NO defer -->
   <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-analytics-compat.js"></script>
 
-  <!-- Config (NO defer) -->
+  <!-- Config -->
   <script src="/js/config.js?v=2025-08-29"></script>
 
-  <!-- Initialize Firebase immediately (NO defer) -->
+  <!-- Initialize Firebase -->
   <script>
-    (function () {
-      const cfg = window.appConfig && window.appConfig.firebaseConfig;
-      if (!cfg) { console.error('firebaseConfig missing from config.js'); return; }
-      if (!firebase.apps.length) {
-        firebase.initializeApp(cfg);
-        try { firebase.analytics(); } catch(_) {}
-      }
-    })();
+  (function () {
+    const cfg = window.appConfig && window.appConfig.firebaseConfig;
+    if (!cfg) { console.error('firebaseConfig missing from config.js'); return; }
+    if (!firebase.apps.length) {
+      firebase.initializeApp(cfg);
+      try { firebase.analytics(); } catch(_){}
+    }
+  })();
   </script>
 
-  <link rel="stylesheet" href="/css/styles.css">
-  <link rel="icon" href="/assets/logo.png">
+  <style>
+    .container{max-width:960px;margin:0 auto;padding:16px}
+    .navbar{display:flex;align-items:center;justify-content:space-between;padding:10px 16px;border-bottom:1px solid #e5e7eb}
+    .brand{display:flex;gap:10px;align-items:center}
+    .brand .logo{width:32px;height:32px}
+    .card-title{font-size:1.25rem;margin:0 0 8px}
+    .hidden{display:none}
+    .home-btn{display:inline-flex;align-items:center;gap:.5rem;padding:.55rem .9rem;border:1px solid #dcdcdc;border-radius:10px;background:#fff;cursor:pointer}
+  </style>
 </head>
 <body>
-  <!-- your Bee markup ... -->
-  <main id="app">
-    <section id="summary-area" class="hidden"></section>
+  <header class="navbar">
+    <div class="brand">
+      <img src="/assets/logo.png" class="logo" alt="SpellRightPro Logo" />
+      <strong>SpellRightPro — Spelling Bee (Free)</strong>
+    </div>
+    <a class="home-btn" href="/"><i class="fas fa-home"></i> Home</a>
+  </header>
+
+  <main class="container">
+    <section id="bee-free-app" class="training-card">
+      <h2 class="card-title">Spelling Bee (Voice) — Freemium</h2>
+
+      <!-- Mode & accent controls rendered by your app -->
+      <div id="exam-ui"></div>
+
+      <!-- Bee trainer UI renders here -->
+      <div id="trainer-area" class="hidden"></div>
+
+      <!-- Summary (for optional ad) -->
+      <div id="summary-area" class="hidden"></div>
+    </section>
   </main>
 
-  <!-- Inline ad injector -->
+  <footer class="container" style="margin-top:2rem;">
+    <p>
+      <a href="https://spellrightpro.org/terms.html">Terms of Service</a>
+      <a href="https://spellrightpro.org/privacy.html">Privacy Policy</a>
+      <a href="https://spellrightpro.org/refund-policy.html">Refund Policy</a>
+      <a href="https://spellrightpro.org/contact.html">Contact Support</a>
+    </p>
+    <p>© 2025 SpellRightPro. All rights reserved.</p>
+  </footer>
+
+  <!-- Inline summary ad (optional) -->
   <script>
-    (function injectSummaryAd() {
-      const area = document.getElementById('summary-area');
-      const client = (window.appConfig && window.appConfig.adClient) || 'ca-pub-7632930282249669';
-      const obs = new MutationObserver(() => {
-        if (!area.classList.contains('hidden') && !area.dataset.adInjected) {
-          const wrapper = document.createElement('div');
-          wrapper.style.marginTop = '12px';
-          wrapper.innerHTML =
-            '<ins class="adsbygoogle" style="display:block" ' +
-            'data-ad-client="'+client+'" data-ad-slot="YOUR_REAL_SLOT_ID" ' +
-            'data-ad-format="auto" data-full-width-responsive="true"></ins>';
-          area.appendChild(wrapper);
-          try { (window.adsbygoogle = window.adsbygoogle || []).push({}); } catch(_){}
-          area.dataset.adInjected = '1';
-          obs.disconnect();
-        }
-      });
-      obs.observe(area, { attributes:true, attributeFilter:['class'] });
-    })();
+  (function injectSummaryAd() {
+    const area = document.getElementById('summary-area');
+    if (!area) return;
+    const client = (window.appConfig && window.appConfig.adClient) || 'ca-pub-7632930282249669';
+    const obs = new MutationObserver(() => {
+      if (!area.classList.contains('hidden') && !area.dataset.adInjected) {
+        const wrapper = document.createElement('div');
+        wrapper.className = 'ad-container';
+        wrapper.style.margin = '16px auto';
+        wrapper.style.textAlign = 'center';
+        wrapper.innerHTML =
+          '<ins class="adsbygoogle" style="display:block" ' +
+          'data-ad-client="'+client+'" data-ad-slot="YOUR_REAL_SLOT_ID" ' +
+          'data-ad-format="auto" data-full-width-responsive="true"></ins>';
+        area.appendChild(wrapper);
+        try { (window.adsbygoogle = window.adsbygoogle || []).push({}); } catch(_){}
+        area.dataset.adInjected = '1';
+        obs.disconnect();
+      }
+    });
+    obs.observe(area, { attributes:true, attributeFilter:['class'] });
+  })();
   </script>
 
-  <!-- Helpers & App -->
+  <!-- Helpers & App (Bee only) -->
   <script src="/js/common.js?v=2025-08-29"></script>
   <script src="/js/main-freemium-bee.js?v=2025-08-29"></script>
 
