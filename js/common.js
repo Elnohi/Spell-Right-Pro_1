@@ -1,7 +1,15 @@
-/* common.js
-if (!firebase.apps.length && window.appConfig?.firebaseConfig) {
-  firebase.initializeApp(window.appConfig.firebaseConfig);
+/* common.js */
+// Ensure Firebase is initialized (no layout/logic changes)
+try {
+  if (window.__initFirebaseOnce) {
+    __initFirebaseOnce();  // from config.js
+  } else if (window.firebase && window.firebaseConfig && !firebase.apps?.length) {
+    firebase.initializeApp(window.firebaseConfig);
+  }
+} catch (e) {
+  console.warn("[common] Firebase guard:", e);
 }
+
 (function () {
   'use strict';
 
