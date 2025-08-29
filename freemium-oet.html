@@ -178,18 +178,14 @@
     <p>© 2025 SpellRightPro. All rights reserved.</p>
   </footer>
 
-  <!-- Data (must load before the app) -->
-  <script src="/js/oet_word_list.js"></script>
-  <!-- Helpers -->
-  <script src="/js/common.js"></script>
-  <!-- App -->
-  <script src="/js/main-freemium-oet.js"></script>
+<!-- Data -->
+<script src="/js/oet_word_list.js"></script>
 
-  <!-- Service Worker registration -->
-  <script>
-    if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
-      navigator.serviceWorker.register('/sw.js').catch(console.warn);
-    }
-  </script>
+<!-- Service Worker registration -->
+<script>
+  if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
+    navigator.serviceWorker.register('/sw.js').catch(console.warn);
+  }
+</script>
 </body>
 </html>
