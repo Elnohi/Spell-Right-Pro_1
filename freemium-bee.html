@@ -15,6 +15,29 @@
   <link rel="apple-touch-icon" href="/assets/icons/icon-192x192.png" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css"/>
 
+  <!-- Firebase (compat) -->
+<script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-analytics-compat.js"></script>
+
+<!-- Your config MUST come next -->
+<script src="/js/config.js"></script>
+
+<!-- Initialize BEFORE other page scripts -->
+<script>
+  (function () {
+    if (!window.appConfig || !window.appConfig.firebaseConfig) {
+      console.error('firebaseConfig missing from config.js');
+      return;
+    }
+    if (!firebase.apps.length) {
+      firebase.initializeApp(window.appConfig.firebaseConfig);
+    }
+    try { firebase.analytics(); } catch(_) {}
+  })();
+</script>
+
   <script>
     // Inject an inline ad INTO the summary area when it appears
     (function () {
