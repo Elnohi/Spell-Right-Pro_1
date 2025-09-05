@@ -2,104 +2,112 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>SpellRightPro Premium</title>
-  <link rel="stylesheet" href="css/premium.css" />
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
-  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <base href="/" />
 
-  <!-- (Optional) AdSense: automatically hidden once logged in or premium -->
-  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7632930282249669" crossorigin="anonymous"></script>
+  <link rel="preconnect" href="https://js.stripe.com" />
+  <link rel="preconnect" href="https://www.gstatic.com" />
+  <link rel="preconnect" href="https://www.googleapis.com" />
+
+  <link rel="stylesheet" href="/css/styles.css">
+  <link rel="stylesheet" href="/css/premium.css">
+  <link rel="icon" href="/assets/logo.png">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+  <!-- Firebase (compat) -->
+  <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-analytics-compat.js"></script>
+
+  <!-- Config MUST load before anything that uses it (cache-busted) -->
+  <script src="/js/config.js?v=2025-08-25"></script>
+
+  <!-- Helpers / data -->
+  <script src="/js/common.js" defer></script>
+  <script src="/js/oet_word_list.js" defer></script>
+
+  <!-- Stripe -->
+  <script src="https://js.stripe.com/v3/" defer></script>
+
+  <!-- Main premium app (cache-busted) -->
+  <script src="/js/main-premium.js?v=2025-09-05"></script>
+
+  <script>
+    if ("serviceWorker" in navigator) {
+      addEventListener("load", () => {
+        navigator.serviceWorker.register("/sw.js", { scope: "/" }).catch(console.warn);
+      });
+    }
+  </script>
+
   <style>
-    .ad-container{margin:1rem auto;text-align:center;max-width:728px}
-    body.logged-in .ad-container{display:none}
-    .hidden{display:none}
-    .tabs{display:flex;gap:.5rem;flex-wrap:wrap;margin:10px 0}
-    .tab-btn{padding:.5rem .8rem;border:1px solid var(--border,#e5e6ea);border-radius:8px;background:#fff;cursor:pointer}
-    .tab-btn.active{background:#0a84ff;color:#fff;border-color:#0a84ff}
-    .kpi{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px;margin:10px 0}
-    .kpi .card{padding:12px;border:1px solid var(--border,#e5e6ea);border-radius:12px;background:#fff}
-    table{width:100%;border-collapse:collapse}
-    th,td{padding:8px;border-bottom:1px solid #eee;text-align:left}
-    .badge{display:inline-block;padding:.15rem .45rem;border-radius:6px;background:#eef;border:1px solid #dde;font-size:.8rem}
+    .skeleton-line{height:12px;border-radius:6px;background:linear-gradient(90deg,
+      rgba(0,0,0,.08) 25%, rgba(0,0,0,.14) 37%, rgba(0,0,0,.08) 63%);
+      background-size:400% 100%; animation:skeleton 1.2s ease-in-out infinite}
+    .skeleton-block{border:1px solid var(--border,#e6e6e6);border-radius:12px;padding:16px}
+    @keyframes skeleton{0%{background-position:100% 0}100%{background-position:0 0}}
+    .loader-wrap{display:grid;gap:10px}
+    .loader-title{width:180px;height:18px}
+    .loader-line{width:100%}
+    .loader-btn{width:160px;height:36px;border-radius:8px}
   </style>
 </head>
 <body>
-  <!-- Ad (hidden after login or if premium) -->
-  <div class="ad-container">
-    <ins class="adsbygoogle"
-         style="display:block"
-         data-ad-client="ca-pub-7632930282249669"
-         data-ad-slot="6355416638"
-         data-ad-format="auto"
-         data-full-width-responsive="true"></ins>
-    <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
-  </div>
+  <noscript>
+    <div style="padding:1rem;background:#fee;border:1px solid #f99;margin:1rem">
+      JavaScript is required to use Premium.
+    </div>
+  </noscript>
 
-  <div class="container">
-    <nav class="navbar">
-      <div class="brand">
-        <img src="assets/logo.png" alt="Logo">
-        <span>SpellRightPro <small>Premium</small></span>
+  <header class="navbar">
+    <div class="brand">
+      <img src="/assets/logo.png" alt="SpellRightPro Logo" class="logo">
+      <div>
+        <span>SpellRightPro</span>
+        <span class="subtitle">Premium</span>
       </div>
-      <button id="dark-mode-toggle" class="btn btn-icon"><i class="fas fa-moon"></i></button>
-    </nav>
+    </div>
+    <div class="nav-actions">
+      <button id="dark-mode-toggle" class="btn-icon" title="Toggle theme">
+        <i class="fas fa-moon"></i>
+      </button>
+    </div>
+  </header>
 
-    <div class="card"><div id="auth-area"></div></div>
+  <main class="container">
+    <div id="auth-area"></div>
 
-    <div id="premium-app" class="card hidden">
-      <div class="card-header"><h2 id="app-title">Premium Trainer</h2></div>
+    <section id="premium-app" class="training-card hidden">
+      <h2 id="app-title" class="card-title">Premium</h2>
 
-      <!-- App tabs -->
-      <div class="tabs">
-        <button id="tab-train" class="tab-btn active"><i class="fas fa-play"></i> Train</button>
-        <button id="tab-progress" class="tab-btn"><i class="fas fa-chart-line"></i> Progress</button>
-      </div>
-
-      <!-- TRAIN -->
-      <section id="pane-train">
-        <div id="exam-ui"></div>
-        <div id="trainer-area"></div>
-        <div id="summary-area"></div>
-      </section>
-
-      <!-- PROGRESS -->
-      <section id="pane-progress" class="hidden">
-        <div id="progress-area" class="card">
-          <h3>Your Progress</h3>
-          <div class="kpi">
-            <div class="card"><div>Total Words Practiced</div><strong id="kpi-total">—</strong></div>
-            <div class="card"><div>Overall Accuracy</div><strong id="kpi-acc">—</strong></div>
-            <div class="card"><div>Active Streak</div><strong id="kpi-streak">—</strong></div>
-            <div class="card"><div>Last Practice</div><strong id="kpi-last">—</strong></div>
-          </div>
-
-          <h4>Top Words to Review <span class="badge">Smart list</span></h4>
-          <p style="margin-top:-6px;color:#667">Based on accuracy, recency, and mistakes.</p>
-          <div style="margin:.5rem 0;">
-            <button id="btn-start-smart" class="btn btn-primary"><i class="fas fa-bolt"></i> Start Smart Review</button>
-          </div>
-
-          <div id="weak-table-wrap" class="card" style="margin-top:10px;">
-            <table>
-              <thead><tr><th>Word</th><th>Accuracy</th><th>Seen</th><th>Last Seen</th></tr></thead>
-              <tbody id="weak-tbody"><tr><td colspan="4">Loading…</td></tr></tbody>
-            </table>
+      <div id="exam-ui">
+        <div class="skeleton-block" role="status" aria-live="polite" aria-busy="true">
+          <div class="loader-wrap">
+            <div class="skeleton-line loader-title"></div>
+            <div class="skeleton-line loader-line"></div>
+            <div class="skeleton-line loader-line"></div>
+            <div class="skeleton-line loader-btn" style="margin-top:6px;"></div>
           </div>
         </div>
-      </section>
-    </div>
-  </div>
+      </div>
 
-  <!-- Firebase SDKs -->
-  <script src="https://www.gstatic.com/firebasejs/10.4.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.4.0/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.4.0/firebase-firestore-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.4.0/firebase-analytics-compat.js"></script>
+      <div id="trainer-area" class="hidden"></div>
+      <div id="summary-area" class="hidden"></div>
 
-  <!-- Config and App Logic -->
-  <script src="js/config.js"></script>
-  <script src="js/oet_word_list.js"></script>
-  <script src="js/main-premium.js"></script>
+      <div class="ad-container" style="margin-top:1rem;"></div>
+    </section>
+  </main>
+
+  <footer class="container" style="margin-top:2rem;">
+    <p>
+      <a href="/tos.html">Terms of Service</a>
+      <a href="/privacy.html">Privacy Policy</a>
+      <a href="/refunds.html">Refund Policy</a>
+      <a href="/contact.html">Contact Support</a>
+    </p>
+    <p>© 2025 SpellRightPro. All rights reserved.</p>
+  </footer>
 </body>
 </html>
