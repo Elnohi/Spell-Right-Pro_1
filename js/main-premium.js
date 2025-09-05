@@ -1,462 +1,773 @@
-/* SpellRightPro Premium – Progress Tracking + Smart Review
-   - Requires: firebase compat SDKs + config.js (db, auth)
-   - Uses: users/{uid}/wordStats/{word} docs to store per-word stats
-*/
+/* ==================== SpellRightPro Premium — streamlined, patched ==================== */
 (function () {
   'use strict';
 
-  // ===== Globals =====
+  // -------------------- GLOBAL STATE --------------------
   let currentUser = null;
-  let isPremium = false;
+  let premiumUser = false;
 
-  // training state
-  let examType = 'OET';     // OET | Bee | Custom | Smart
-  let sessionMode = 'practice';
-  let accent = 'en-US';
-  let words = [];
-  let idx = 0;
+  let examType = "OET";          // "OET" | "Bee" | "Custom"
+  let accent   = "en-US";        // "en-US" | "en-GB" | "en-AU"
+  let sessionMode = "practice";  // "practice" | "test"
+
+  let words = [];                // per-session working list
+  let currentIndex = 0;
   let score = 0;
-  let answers = [];
+  let userAnswers = [];
+
+  const sessionId = 'sess_' + Math.random().toString(36).slice(2, 9);
+  const flaggedWordsStore = JSON.parse(localStorage.getItem('flaggedWords') || '[]');
+
+  // Non-medical Bee sample list
+  const DEFAULT_BEE_WORDS = [
+    "accommodate","belligerent","conscientious","disastrous","embarrass","foreign","guarantee",
+    "harass","interrupt","jealous","knowledge","liaison","millennium","necessary","occasionally",
+    "possession","questionnaire","rhythm","separate","tomorrow","unforeseen","vacuum","withhold","yacht"
+  ];
 
   // DOM
-  const authArea    = document.getElementById('auth-area');
-  const premiumApp  = document.getElementById('premium-app');
-  const appTitle    = document.getElementById('app-title');
-  const examUI      = document.getElementById('exam-ui');
-  const trainer     = document.getElementById('trainer-area');
-  const summary     = document.getElementById('summary-area');
-  const darkToggle  = document.getElementById('dark-mode-toggle');
+  const authArea       = document.getElementById('auth-area');
+  const premiumApp     = document.getElementById('premium-app');
+  const examUI         = document.getElementById('exam-ui');
+  const trainerArea    = document.getElementById('trainer-area');
+  const summaryArea    = document.getElementById('summary-area');
+  const appTitle       = document.getElementById('app-title');
+  const darkModeToggle = document.getElementById('dark-mode-toggle');
 
-  const tabTrain    = document.getElementById('tab-train');
-  const tabProgress = document.getElementById('tab-progress');
-  const paneTrain   = document.getElementById('pane-train');
-  const paneProg    = document.getElementById('pane-progress');
+  // Stripe
+  let stripe = null;
+  window.priceMap = {
+    monthly: 'price_1RxJvfEl99zwdEZrdDtZ5q3t',
+    annual:  'price_1RxK5tEl99zwdEZrNGVlVhYH'
+  };
+  let cachedDisplayPrices = null;
 
-  // ===== Init =====
+  // -------------------- INIT --------------------
   document.addEventListener('DOMContentLoaded', () => {
-    initDark();
-    initAuth();
-    window.speechSynthesis?.getVoices(); // warm voices
+    initStripe();
+    initDarkMode();
+    initSpeech();
+    initAuthState();
+    checkUrlForPaymentStatus();
   });
 
-  function initDark() {
+  function initStripe() {
+    if (!window.Stripe) return;
+    const key = (window.stripeConfig && window.stripeConfig.publicKey) || '';
+    if (!/^pk_(test|live)_/.test(key)) return;
+    stripe = Stripe(key);
+  }
+
+  // -------------------- ADS --------------------
+  function loadAutoAdsOnce() {
+    if (window.__adsLoaded) return;
+    const client = (window.appConfig && window.appConfig.adClient) || 'ca-pub-7632930282249669';
+    if (!client) return;
+    const s = document.createElement('script');
+    s.async = true;
+    s.id = 'auto-ads-script';
+    s.src = `https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${encodeURIComponent(client)}`;
+    s.crossOrigin = 'anonymous';
+    document.head.appendChild(s);
+    window.__adsLoaded = true;
+  }
+  function disableAutoAdsNow() {
+    try { window.adsbygoogle = window.adsbygoogle || []; window.adsbygoogle.pauseAdRequests = 1; } catch(_) {}
+    if (!document.getElementById('premium-no-ads-style')) {
+      const st = document.createElement('style');
+      st.id = 'premium-no-ads-style';
+      st.textContent = `
+        .google-auto-placed, ins.adsbygoogle, .ad-container { display:none!important; }
+        [id^="google_ads_iframe_"], #google_vignette, #google_anchor_container { display:none!important; visibility:hidden!important; }
+      `;
+      document.head.appendChild(st);
+    }
+    document.querySelectorAll('.ad-container').forEach(el => el.style.display = 'none');
+  }
+
+  // -------------------- THEME --------------------
+  function initDarkMode() {
     const saved = localStorage.getItem('premium_darkMode') === 'true';
     document.body.classList.toggle('dark-mode', saved);
-    const icon = darkToggle?.querySelector('i');
+    const icon = darkModeToggle?.querySelector('i');
     if (icon) icon.className = saved ? 'fas fa-sun' : 'fas fa-moon';
-    darkToggle?.addEventListener('click', () => {
-      const on = document.body.classList.toggle('dark-mode');
-      localStorage.setItem('premium_darkMode', on);
-      const i = darkToggle.querySelector('i');
-      if (i) i.className = on ? 'fas fa-sun' : 'fas fa-moon';
+    darkModeToggle?.addEventListener('click', () => {
+      const isDark = document.body.classList.toggle('dark-mode');
+      localStorage.setItem('premium_darkMode', isDark);
+      const i = darkModeToggle.querySelector('i');
+      if (i) i.className = isDark ? 'fas fa-sun' : 'fas fa-moon';
     });
   }
 
-  function initAuth() {
-    firebase.auth().onAuthStateChanged(async (u) => {
-      currentUser = u;
-      if (!u) {
-        renderLoggedOut();
-        return;
-      }
-      await ensureUserDoc(u);
-      isPremium = await readPremiumFlag(u.uid);
-      renderLoggedIn();
-      bindTabs();
-      if (isPremium) renderTrainUI(); else showUpsell();
-    });
+  // -------------------- SPEECH --------------------
+  function initSpeech() {
+    if (!('speechSynthesis' in window)) return;
+    const onReady = () => { window.speechSynthesis.onvoiceschanged = null; };
+    if (window.speechSynthesis.getVoices().length) onReady();
+    else window.speechSynthesis.onvoiceschanged = onReady;
+  }
+  function speak(text, rate = 0.95, onEnd) {
+    if (!('speechSynthesis' in window)) return;
+    window.speechSynthesis.cancel();
+    const u = new SpeechSynthesisUtterance(String(text || ''));
+    u.lang = accent; u.rate = rate;
+    const voices = window.speechSynthesis.getVoices();
+    const v = voices.find(x => x.lang === accent) || voices.find(x => x.lang.startsWith(accent.split('-')[0]));
+    if (v) u.voice = v;
+    if (typeof onEnd === 'function') u.onend = onEnd;
+    window.speechSynthesis.speak(u);
+  }
+  function stopSpeech() { try { window.speechSynthesis?.cancel(); } catch(_) {} }
+
+  // -------------------- URL payment flag --------------------
+  function checkUrlForPaymentStatus() {
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.has('payment_success')) {
+      try { disableAutoAdsNow(); } catch(_) {}
+      toast('🎉 Premium subscription activated!', 'success');
+      window.history.replaceState({}, '', window.location.pathname);
+      setTimeout(() => location.reload(), 300);
+    }
   }
 
-  function renderLoggedOut() {
-    authArea.innerHTML = `
-      <div class="auth-form">
-        <input id="email" class="form-control" type="email" placeholder="Email">
-        <input id="password" class="form-control" type="password" placeholder="Password">
-        <button id="login-btn"  class="btn btn-primary">Login</button>
-        <button id="signup-btn" class="btn btn-outline">Sign Up</button>
-        <p style="margin-top:.5rem;color:#777">Premium access requires an account.</p>
-      </div>`;
-    document.getElementById('login-btn').onclick = async () => {
-      const e = document.getElementById('email').value.trim();
-      const p = document.getElementById('password').value;
-      try { await firebase.auth().signInWithEmailAndPassword(e, p); }
-      catch (err) { alert(err.message); }
-    };
-    document.getElementById('signup-btn').onclick = async () => {
-      const e = document.getElementById('email').value.trim();
-      const p = document.getElementById('password').value;
-      try {
-        const cred = await firebase.auth().createUserWithEmailAndPassword(e, p);
-        await ensureUserDoc(cred.user);
-        alert('Account created. Ask support to enable Premium after payment.');
-      } catch (err) { alert(err.message); }
-    };
-    premiumApp.classList.add('hidden');
-    document.body.classList.remove('logged-in');
-  }
-
-  function renderLoggedIn() {
-    document.body.classList.add('logged-in');
-    premiumApp.classList.remove('hidden');
-    authArea.innerHTML = `
-      <div class="user-info">
-        <span>${currentUser?.email || ''}</span>
-        ${isPremium ? '<span class="premium-badge"><i class="fas fa-crown"></i> Premium</span>' : ''}
-        <button id="logout-btn" class="btn btn-sm btn-outline"><i class="fas fa-sign-out-alt"></i> Logout</button>
-      </div>`;
-    document.getElementById('logout-btn').onclick = () => firebase.auth().signOut();
-  }
-
+  // -------------------- FIREBASE / PREMIUM --------------------
   async function ensureUserDoc(user) {
-    const ref = db.collection('users').doc(user.uid);
-    const snap = await ref.get();
+    const ref = firebase.firestore().collection('users').doc(user.uid);
+    const snap = await ref.get().catch(() => null);
+    if (!snap) return;
     if (!snap.exists) {
       await ref.set({
         email: user.email || '',
         isPremium: false,
-        createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+        createdAt: firebase.firestore.FieldValue.serverTimestamp()
       }, { merge: true });
+      return;
+    }
+    const data = snap.data() || {};
+    const updates = {};
+    if (typeof data.isPremium !== 'boolean') updates.isPremium = false;
+    if (!data.email) updates.email = user.email || '';
+    if (Object.keys(updates).length) await ref.set(updates, { merge: true });
+  }
+
+  async function hasStripePremium(uid) {
+    try {
+      const db = firebase.firestore();
+      const snap = await db.collection('customers').doc(uid)
+        .collection('subscriptions')
+        .where('status', 'in', ['active','trialing'])
+        .limit(1)
+        .get();
+      return !snap.empty;
+    } catch {
+      return false;
     }
   }
-  async function readPremiumFlag(uid) {
+
+  async function checkPremiumStatus() {
+    if (!currentUser) return false;
     try {
-      const snap = await db.collection('users').doc(uid).get();
-      return !!snap.data()?.isPremium;
-    } catch { return false; }
+      const userDoc = await firebase.firestore().collection('users').doc(currentUser.uid).get();
+      const flagPremium = !!(userDoc.exists && userDoc.data()?.isPremium);
+      const stripePremium = await hasStripePremium(currentUser.uid);
+      premiumUser = flagPremium || stripePremium;
+      if (premiumUser) disableAutoAdsNow(); else loadAutoAdsOnce();
+      return premiumUser;
+    } catch {
+      loadAutoAdsOnce();
+      return false;
+    }
   }
 
-  // ===== Tabs =====
-  function bindTabs() {
-    tabTrain.onclick = () => {
-      tabTrain.classList.add('active'); tabProgress.classList.remove('active');
-      paneTrain.classList.remove('hidden'); paneProg.classList.add('hidden');
-    };
-    tabProgress.onclick = async () => {
-      tabProgress.classList.add('active'); tabTrain.classList.remove('active');
-      paneProg.classList.remove('hidden'); paneTrain.classList.add('hidden');
-      await loadProgress();
-    };
-  }
-
-  // ===== Upsell for non-premium =====
-  function showUpsell() {
-    appTitle.textContent = 'Premium Required';
-    examUI.innerHTML = `
-      <div class="premium-upsell">
-        <h3><i class="fas fa-crown"></i> Upgrade to Premium</h3>
-        <p>Track your progress, get smart review lists, remove limits & ads.</p>
-        <p><a class="btn btn-primary" href="pricing.html">Upgrade Now</a></p>
-      </div>`;
-    trainer.innerHTML = '';
-    summary.innerHTML = '';
-  }
-
-  // ===== TRAIN UI =====
-  function renderTrainUI() {
-    appTitle.textContent = 'Premium Trainer';
-    examUI.innerHTML = `
-      <div class="mode-selector" style="display:flex;gap:.5rem;flex-wrap:wrap">
-        <button id="btn-oet"     class="btn btn-secondary">OET Practice</button>
-        <button id="btn-bee"     class="btn btn-secondary">Spelling Bee</button>
-        <button id="btn-custom"  class="btn btn-secondary">Custom List</button>
-        <button id="btn-smart"   class="btn btn-primary"><i class="fas fa-bolt"></i> Smart Review</button>
-      </div>
-
-      <div style="margin-top:10px;display:flex;gap:.5rem;flex-wrap:wrap">
-        <select id="accent" class="form-control" style="max-width:180px">
-          <option value="en-US">American</option>
-          <option value="en-GB">British</option>
-          <option value="en-AU">Australian</option>
-        </select>
-        <select id="mode" class="form-control" style="max-width:180px">
-          <option value="practice">Practice</option>
-          <option value="test">Test</option>
-        </select>
-      </div>
-
-      <div id="custom-wrap" style="margin-top:10px">
-        <textarea id="custom-words" class="form-control" rows="3" placeholder="Custom words (comma/newline separated)"></textarea>
-      </div>
-    `;
-
-    document.getElementById('accent').value = accent;
-    document.getElementById('mode').value = sessionMode;
-
-    document.getElementById('accent').onchange = (e)=> accent = e.target.value;
-    document.getElementById('mode').onchange   = (e)=> sessionMode = e.target.value;
-
-    document.getElementById('btn-oet').onclick = startOET;
-    document.getElementById('btn-bee').onclick = startBee;
-    document.getElementById('btn-custom').onclick = startCustom;
-    document.getElementById('btn-smart').onclick  = startSmartReview;
-  }
-
-  // ====== SPEECH ======
-  function speak(text, rate=0.95, cb) {
-    if (!('speechSynthesis' in window)) return cb?.();
-    window.speechSynthesis.cancel();
-    const u = new SpeechSynthesisUtterance(text);
-    u.lang = accent; u.rate = rate;
-    const vs = window.speechSynthesis.getVoices();
-    const v = vs.find(x=>x.lang===accent) || vs.find(x=>x.lang?.startsWith(accent.split('-')[0]));
-    if (v) u.voice = v;
-    u.onend = ()=> cb?.();
-    window.speechSynthesis.speak(u);
-  }
-
-  // ====== WORD STATS (Firestore) ======
-  async function recordResult(word, correct) {
-    if (!currentUser || !word) return;
-    const ref = db.collection('users').doc(currentUser.uid)
-                 .collection('wordStats').doc(word.toLowerCase());
-    await db.runTransaction(async (tr) => {
-      const snap = await tr.get(ref);
-      const now = Date.now();
-      if (!snap.exists) {
-        tr.set(ref, {
-          word: word.toLowerCase(),
-          seen: 1,
-          correct: correct ? 1 : 0,
-          lastSeen: now,
-          streak: correct ? 1 : 0,
-          wrongStreak: correct ? 0 : 1,
-          accuracy: correct ? 100 : 0
-        });
-      } else {
-        const d = snap.data();
-        const seen = (d.seen||0)+1;
-        const corr = (d.correct||0) + (correct?1:0);
-        const streak = correct ? (d.streak||0)+1 : 0;
-        const wrongStreak = correct ? 0 : (d.wrongStreak||0)+1;
-        const acc = Math.round((corr/seen)*100);
-        tr.update(ref, { seen, correct: corr, lastSeen: now, streak, wrongStreak, accuracy: acc });
+  function initAuthState() {
+    firebase.auth().onAuthStateChanged(async (user) => {
+      currentUser = user;
+      if (!user) {
+        renderAuthLoggedOut();
+        loadAutoAdsOnce();
+        return;
       }
+      await ensureUserDoc(user);
+      await checkPremiumStatus();
+      renderAuthLoggedIn();
+      if (premiumUser) renderExamUI(); else showPremiumUpsell();
     });
   }
 
-  async function fetchWeakWords(limit=25) {
-    if (!currentUser) return [];
-    // grab lowest-accuracy words first; then those not seen recently
-    const q = await db.collection('users').doc(currentUser.uid)
-      .collection('wordStats').orderBy('accuracy', 'asc').limit(limit*2).get();
-    const rows = q.docs.map(d => d.data());
-    // Lightweight score: lower accuracy + long time since seen
-    const now = Date.now();
-    rows.forEach(r => r._score = (100 - (r.accuracy||0)) + Math.min(50, Math.floor((now - (r.lastSeen||0))/86400000)));
-    rows.sort((a,b)=> b._score - a._score);
-    const out = rows.slice(0, limit).map(r => r.word);
+  function renderAuthLoggedOut() {
+    authArea.innerHTML = `
+      <div class="auth-form">
+        <input type="email" id="email" placeholder="Email" class="form-control">
+        <input type="password" id="password" placeholder="Password" class="form-control">
+        <button id="login-btn"  class="btn btn-primary">Login</button>
+        <button id="signup-btn" class="btn btn-outline">Sign Up</button>
+      </div>`;
+    document.getElementById('login-btn')?.addEventListener('click', async () => {
+      const email = document.getElementById('email')?.value || '';
+      const pass  = document.getElementById('password')?.value || '';
+      try { await firebase.auth().signInWithEmailAndPassword(email, pass); }
+      catch (e) { toast(e.message, 'error'); }
+    });
+    document.getElementById('signup-btn')?.addEventListener('click', async () => {
+      const email = document.getElementById('email')?.value || '';
+      const pass  = document.getElementById('password')?.value || '';
+      try {
+        const cred = await firebase.auth().createUserWithEmailAndPassword(email, pass);
+        await ensureUserDoc(cred.user);
+        toast('Account created. You can upgrade to Premium any time.', 'success');
+      } catch (e) { toast(e.message, 'error'); }
+    });
+    premiumApp.classList.add('hidden');
+  }
+
+  function renderAuthLoggedIn() {
+    authArea.innerHTML = `
+      <div class="user-info">
+        <span>${currentUser?.email || ''}</span>
+        ${premiumUser ? '<span class="premium-badge"><i class="fas fa-crown"></i> Premium</span>' : ''}
+        <button id="logout-btn" class="btn btn-sm btn-outline"><i class="fas fa-sign-out-alt"></i> Logout</button>
+      </div>`;
+    document.getElementById('logout-btn')?.addEventListener('click', () => firebase.auth().signOut());
+    premiumApp.classList.remove('hidden');
+  }
+
+  // -------------------- Prices / Promo --------------------
+  function formatAmount(cents, currency = 'CAD', locale = 'en-CA') {
+    try { return new Intl.NumberFormat(locale, { style: 'currency', currency }).format((cents || 0) / 100); }
+    catch { return `$${((cents || 0) / 100).toFixed(2)}`; }
+  }
+  async function fetchDisplayPrices() {
+    if (cachedDisplayPrices) return cachedDisplayPrices;
+    const base = (window.appConfig && window.appConfig.apiBaseUrl) || '';
+    if (base) {
+      try {
+        const res = await fetch(`${base}/prices`);
+        if (res.ok) {
+          const data = await res.json();
+          if (data?.monthly?.unit_amount != null && data?.annual?.unit_amount != null) {
+            cachedDisplayPrices = data; return cachedDisplayPrices;
+          }
+        }
+      } catch {}
+    }
+    cachedDisplayPrices = {
+      monthly: { unit_amount: null, currency: 'CAD', interval: 'month' },
+      annual:  { unit_amount: null, currency: 'CAD', interval: 'year' }
+    };
+    return cachedDisplayPrices;
+  }
+  async function paintPriceLabels() {
+    const p = await fetchDisplayPrices();
+    const m = document.getElementById('price-monthly-amt');
+    const a = document.getElementById('price-annual-amt');
+    if (m) m.textContent = p.monthly.unit_amount != null ? `${formatAmount(p.monthly.unit_amount, p.monthly.currency)}/mo` : '—/mo';
+    if (a) a.textContent = p.annual.unit_amount  != null ? `${formatAmount(p.annual.unit_amount,  p.annual.currency)}/yr` : '—/yr';
+  }
+  async function validatePromoInline(code) {
+    const base = (window.appConfig && window.appConfig.apiBaseUrl) || '';
+    if (!base || !code) return { valid: false, message: 'Enter a promo code (optional)' };
+    try {
+      const r = await fetch(`${base}/validate-promo?code=${encodeURIComponent(code)}`);
+      if (!r.ok) return { valid: false, message: 'Promo not recognized' };
+      const j = await r.json();
+      return j; // {valid, percent_off?, amount_off?, currency?, message?}
+    } catch { return { valid: false, message: 'Network error while validating' }; }
+  }
+  function showPromoMessage(msg, ok = true) {
+    const el = document.getElementById('promo-help');
+    if (!el) return;
+    el.textContent = msg || '';
+    el.style.color = ok ? 'var(--success,#198754)' : 'var(--danger,#dc3545)';
+    el.style.fontWeight = ok ? 'normal' : 'bold';
+  }
+  async function initiatePayment(planType, opts = {}) {
+    if (!currentUser) { toast('Please log in first.', 'error'); return; }
+    const plan = String(planType || '').toLowerCase();
+    const priceId = window.priceMap[plan];
+    if (!priceId) { toast(`Unknown plan: ${plan}`, 'error'); return; }
+
+    const base = (window.appConfig && window.appConfig.apiBaseUrl) || '';
+    if (!base) { toast('Backend URL missing in config.js (window.appConfig.apiBaseUrl)', 'error'); return; }
+
+    const promoInput = document.getElementById('promoInput');
+    const promoCode  = (opts.promoCode || promoInput?.value || '').trim();
+
+    if (promoCode) {
+      const v = await validatePromoInline(promoCode);
+      if (!v.valid) showPromoMessage(v.message || 'Invalid promo code', false);
+      else {
+        const desc = v.percent_off ? `${v.percent_off}% off will apply`
+                 : v.amount_off  ? `${formatAmount(v.amount_off, v.currency||'CAD')} off will apply`
+                 : 'Discount will apply at checkout';
+        showPromoMessage(desc, true);
+      }
+    }
+
+    const triggerBtn = opts.trigger || null;
+    const prevHTML   = triggerBtn ? triggerBtn.innerHTML : '';
+    if (triggerBtn) { triggerBtn.disabled = true; triggerBtn.innerHTML = 'Redirecting…'; }
+
+    try {
+      const idToken = await currentUser.getIdToken();
+      const res = await fetch(`${base}/create-checkout-session`, {
+        method : 'POST',
+        headers: { 'Content-Type':'application/json', 'Authorization':`Bearer ${idToken}` },
+        body   : JSON.stringify({
+          plan,
+          priceId,
+          userId: currentUser.uid,
+          sessionId,
+          promoCode: promoCode || undefined,
+          allowPromotionCodes: promoCode ? undefined : true
+        })
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || `${res.status} ${res.statusText}`);
+
+      if (data.url) { window.location.href = data.url; return; }
+      if (data.sessionId) {
+        if (!stripe) initStripe();
+        const { error } = await stripe.redirectToCheckout({ sessionId: data.sessionId });
+        if (error) throw error;
+        return;
+      }
+      throw new Error('Invalid response from server');
+    } catch (err) {
+      toast(`Payment failed: ${err.message}`, 'error', 6000);
+    } finally {
+      if (triggerBtn) { triggerBtn.disabled = false; triggerBtn.innerHTML = prevHTML; }
+    }
+  }
+
+  // -------------------- UPSELL --------------------
+  async function showPremiumUpsell() {
+    resetEnvironment();
+    trainerArea.classList.add('hidden');
+    summaryArea.classList.add('hidden');
+
+    examUI.innerHTML = `
+      <div class="premium-upsell">
+        <div class="premium-header">
+          <i class="fas fa-crown"></i>
+          <h2>Upgrade to Premium</h2>
+          <p>Unlock OET, Bee, Custom lists, history & more.</p>
+        </div>
+
+        <div class="pricing-options">
+          <div class="pricing-option">
+            <h3>Monthly</h3>
+            <div class="price"><span id="price-monthly-amt">—/mo</span></div>
+            <button id="monthly-btn" class="btn btn-primary" disabled>Subscribe</button>
+          </div>
+          <div class="pricing-option recommended">
+            <div class="badge">Best Value</div>
+            <h3>Annual</h3>
+            <div class="price"><span id="price-annual-amt">—/yr</span></div>
+            <button id="annual-btn" class="btn btn-primary" disabled>Subscribe</button>
+          </div>
+        </div>
+
+        <div class="promo-row" style="margin-top:10px;">
+          <input id="promoInput" class="form-control" placeholder="Enter promo code (optional)" autocomplete="off">
+        </div>
+        <small id="promo-help" class="promo-help" aria-live="polite"></small>
+
+        <p style="margin-top:.5rem;color:var(--gray)">You’ll be redirected to secure Stripe Checkout.</p>
+      </div>
+    `;
+
+    try { await paintPriceLabels(); } catch {}
+    const monthlyBtn = document.getElementById('monthly-btn');
+    const annualBtn  = document.getElementById('annual-btn');
+    [monthlyBtn, annualBtn].forEach(b => b && (b.disabled = false));
+
+    const promoInput = document.getElementById('promoInput');
+    let promoTimer = null;
+    promoInput?.addEventListener('input', () => {
+      clearTimeout(promoTimer);
+      const code = promoInput.value.trim();
+      if (!code) { showPromoMessage(''); return; }
+      promoTimer = setTimeout(async () => {
+        const r = await validatePromoInline(code);
+        if (r.valid) {
+          const msg = r.percent_off ? `${r.percent_off}% discount will apply`
+                   : r.amount_off  ? `${formatAmount(r.amount_off, r.currency||'CAD')} off will apply`
+                   : 'Discount will apply at checkout';
+          showPromoMessage(msg, true);
+        } else {
+          showPromoMessage(r.message || 'Invalid promo code', false);
+        }
+      }, 300);
+    });
+    promoInput?.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); monthlyBtn?.click(); }});
+    monthlyBtn?.addEventListener('click', (e) => initiatePayment('monthly', { trigger: e.currentTarget }));
+    annualBtn ?.addEventListener('click', (e) => initiatePayment('annual',  { trigger: e.currentTarget }));
+  }
+
+  // -------------------- Utilities --------------------
+  function toast(message, type='error') { console[type === 'error' ? 'error' : 'log'](message); }
+  function processWordList(text) {
+    return [...new Set(String(text||'').replace(/\r/g,'').split(/[\n,;|\/\-–—\t]+/)
+      .map(w=>w.trim()).filter(w=>w && w.length>1))];
+  }
+  function toggleFlagWord(word) {
+    if (!word) return;
+    const idx = flaggedWordsStore.indexOf(word);
+    if (idx === -1) flaggedWordsStore.push(word); else flaggedWordsStore.splice(idx,1);
+    localStorage.setItem('flaggedWords', JSON.stringify(flaggedWordsStore));
+  }
+  function shuffle(arr){ const a=arr.slice(); for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
+
+  // -------------------- Global cleanup (prevents stuck/loop bugs) --------------------
+  let typedShortcutHandler = null;
+  let beeShortcutHandler   = null;
+  let recognition = null;
+  let autoAdvanceTimer = null;
+
+  function stopRecognition() {
+    if (recognition) {
+      try { recognition.onresult=null; recognition.onerror=null; recognition.onend=null; recognition.abort(); } catch(_) {}
+      recognition = null;
+    }
+    clearTimeout(autoAdvanceTimer);
+  }
+  function resetEnvironment() {
+    stopSpeech();
+    stopRecognition();
+    if (typedShortcutHandler) { document.removeEventListener('keydown', typedShortcutHandler); typedShortcutHandler = null; }
+    if (beeShortcutHandler)   { document.removeEventListener('keydown', beeShortcutHandler);   beeShortcutHandler   = null; }
+  }
+
+  // -------------------- Exam UI scaffold --------------------
+  function renderExamUI() {
+    resetEnvironment();
+    summaryArea.innerHTML = '';
+    trainerArea.innerHTML = '';
+    trainerArea.classList.add('hidden');
+    summaryArea.classList.add('hidden');
+
+    const uploadAreaHTML = `
+      <textarea id="custom-words" class="form-control" rows="3"
+        placeholder="Enter words (comma/newline separated), or leave blank to use default list."></textarea>
+      <input type="file" id="word-file" accept=".txt,.csv" class="form-control" style="margin-top:5px;">
+      <button id="add-custom-btn" class="btn btn-info" style="margin-top:7px;">
+        <i class="fas fa-plus-circle"></i> Use This List
+      </button>
+      <div id="upload-info" class="upload-info" style="margin-top:6px;font-size:0.95em;color:var(--gray);"></div>
+    `;
+
+    examUI.innerHTML = `
+      <div class="mode-selector">
+        <button id="practice-mode-btn" class="mode-btn ${sessionMode==='practice'?'selected':''}">
+          <i class="fas fa-graduation-cap"></i> Practice Mode
+        </button>
+        <button id="test-mode-btn" class="mode-btn ${sessionMode==='test'?'selected':''}">
+          <i class="fas fa-clipboard-check"></i> Test Mode
+        </button>
+      </div>
+
+      <div class="input-group">
+        <select id="exam-type" class="form-control">
+          <option value="OET">OET Spelling</option>
+          <option value="Bee">Spelling Bee (Voice)</option>
+          <option value="Custom">Custom Words</option>
+        </select>
+        <select id="accent-select" class="form-control" style="max-width:150px;">
+          <option value="en-US">American English</option>
+          <option value="en-GB">British English</option>
+          <option value="en-AU">Australian English</option>
+        </select>
+      </div>
+
+      <div id="custom-upload-area">${uploadAreaHTML}</div>
+
+      <button id="start-btn" class="btn btn-primary" style="margin-top:15px;">
+        <i class="fas fa-play"></i> Start Session
+      </button>
+    `;
+
+    document.getElementById('exam-type').value = examType;
+    document.getElementById('accent-select').value = accent;
+
+    document.getElementById('exam-type').onchange = e => {
+      examType = e.target.value;
+      appTitle.textContent = examType === 'OET' ? 'OET Spelling Practice'
+                          : examType === 'Bee' ? 'Spelling Bee (Voice)'
+                          : 'Custom Spelling Practice';
+    };
+    document.getElementById('accent-select').onchange = e => { accent = e.target.value; };
+
+    document.getElementById('practice-mode-btn').onclick = () => { sessionMode = 'practice'; renderExamUI(); };
+    document.getElementById('test-mode-btn').onclick    = () => { sessionMode = 'test';     renderExamUI(); };
+
+    document.getElementById('word-file')?.addEventListener('change', e => {
+      const file = e.target.files[0]; if (!file) return;
+      const reader = new FileReader();
+      reader.onload = evt => {
+        const list = processWordList(String(evt.target.result||'')); words = list.slice();
+        document.getElementById('upload-info').textContent = `Loaded ${list.length} words from file.`;
+      };
+      reader.readAsText(file);
+    });
+    document.getElementById('add-custom-btn')?.addEventListener('click', () => {
+      const list = processWordList(document.getElementById('custom-words')?.value || '');
+      if (!list.length) { toast("Please enter some words first!", 'error'); return; }
+      words = list.slice();
+      document.getElementById('upload-info').textContent = `Using ${list.length} custom words.`;
+    });
+
+    document.getElementById('start-btn').onclick = () => {
+      summaryArea.innerHTML = "";
+      trainerArea.classList.remove('hidden');
+      summaryArea.classList.add('hidden');
+      resetEnvironment();
+      if (examType === "OET") startOET();
+      else if (examType === "Bee") startBee();
+      else startCustomPractice();
+    };
+  }
+
+  // -------------------- OET (typed) --------------------
+  function startOET() {
+    resetEnvironment();
+    const baseList = Array.isArray(window.oetWords) ? window.oetWords.slice() : [];
+    if (!baseList.length) { toast("OET word list is empty.", 'error'); return; }
+    words = sessionMode === 'test' ? shuffle(baseList).slice(0, 24) : baseList.slice();
+    currentIndex = 0; score = 0; userAnswers = [];
+    appTitle.textContent = "OET Spelling Practice";
+    showTypedWord();
+    setTimeout(() => speak(words[currentIndex], 0.95, focusAnswer), 200);
+  }
+
+  function showTypedWord() {
+    if (currentIndex >= words.length) return endSessionTyped();
+    const w = words[currentIndex];
+    trainerArea.innerHTML = `
+      <div class="word-progress">Word ${currentIndex + 1} of ${words.length}</div>
+      <div class="word-audio-feedback">
+        <button id="repeat-btn" class="btn btn-icon" title="Repeat word"><i class="fas fa-redo"></i></button>
+      </div>
+      <div class="input-wrapper">
+        <input type="text" id="user-input" class="form-control"
+          placeholder="Type what you heard..." autofocus value="${userAnswers[currentIndex] || ''}">
+      </div>
+      <div class="button-group">
+        <button id="prev-btn" class="btn btn-secondary" ${currentIndex===0?"disabled":""}><i class="fas fa-arrow-left"></i> Previous</button>
+        <button id="next-btn" class="btn btn-secondary"><i class="fas fa-arrow-right"></i> Next</button>
+        <button id="check-btn" class="btn btn-primary"><i class="fas fa-check"></i> Check</button>
+        <button id="flag-btn" class="btn btn-outline btn-sm"><i class="far fa-flag"></i> Flag</button>
+      </div>
+      <div id="feedback" class="feedback" aria-live="assertive"></div>
+    `;
+
+    document.getElementById('repeat-btn')?.addEventListener('click', () => speak(w, 0.95, focusAnswer));
+    document.getElementById('prev-btn')?.addEventListener('click', prevTyped);
+    document.getElementById('next-btn')?.addEventListener('click', nextTyped);
+    document.getElementById('check-btn')?.addEventListener('click', () => checkTypedAnswer(w));
+    document.getElementById('flag-btn') ?.addEventListener('click', () => toggleFlagWord(w));
+
+    const input = document.getElementById('user-input');
+    input?.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); checkTypedAnswer(w); } });
+
+    if (typedShortcutHandler) document.removeEventListener('keydown', typedShortcutHandler);
+    typedShortcutHandler = (e) => {
+      if (['INPUT','TEXTAREA'].includes(document.activeElement?.tagName)) return;
+      if (e.key === ' ') { e.preventDefault(); speak(w, 0.95, focusAnswer); }
+      if (e.key === 'ArrowLeft' && currentIndex > 0) prevTyped();
+      if (e.key === 'ArrowRight') nextTyped();
+    };
+    document.addEventListener('keydown', typedShortcutHandler);
+
+    focusAnswer();
+  }
+  function focusAnswer(){ const input=document.getElementById('user-input'); if (input){ input.focus(); input.select(); } }
+  function checkTypedAnswer(correctWord){
+    const input = document.getElementById('user-input');
+    const ans = (input?.value || '').trim();
+    if (!ans) { toast("Please type the word first!", 'error'); return; }
+    userAnswers[currentIndex] = ans;
+    const fb = document.getElementById('feedback');
+    if (ans.toLowerCase() === correctWord.toLowerCase()) { fb.textContent="✓ Correct!"; fb.className="feedback correct"; score++; }
+    else { fb.textContent=`✗ Incorrect. The correct spelling was: ${correctWord}`; fb.className="feedback incorrect"; }
+    setTimeout(nextTyped, 900);
+  }
+  function nextTyped(){ 
+    if (currentIndex < words.length - 1) { currentIndex++; showTypedWord(); setTimeout(()=>speak(words[currentIndex],0.95,focusAnswer), 150); }
+    else endSessionTyped();
+  }
+  function prevTyped(){ 
+    if (currentIndex > 0) { currentIndex--; showTypedWord(); setTimeout(()=>speak(words[currentIndex],0.95,focusAnswer), 150); }
+  }
+  function endSessionTyped(){ summaryFor(words, userAnswers, score); }
+
+  // -------------------- Custom (typed) --------------------
+  function startCustomPractice(){
+    resetEnvironment();
+    if (!words || !words.length) {
+      const list = processWordList(document.getElementById('custom-words')?.value || '');
+      words = list.slice();
+    }
+    if (!words.length) { toast("No custom words loaded.", 'error'); return; }
+    if (sessionMode === 'test') words = shuffle(words).slice(0, 24);
+    currentIndex = 0; score = 0; userAnswers = [];
+    appTitle.textContent = "Custom Spelling Practice";
+    showTypedWord();
+    setTimeout(()=>speak(words[currentIndex],0.95,focusAnswer),150);
+  }
+
+  // -------------------- Bee (voice) --------------------
+  const LETTER_ALIASES = {
+    a:['a','ay','eh','ae'], b:['b','bee','be'], c:['c','see','sea','cee'],
+    d:['d','dee','de'], e:['e','ee'], f:['f','ef','eff'],
+    g:['g','gee','ji'], h:['h','aitch'],
+    i:['i','eye','aye'],
+    j:['j','jay'], k:['k','kay'], l:['l','el','ell'], m:['m','em','emm'],
+    n:['n','en','enn'], o:['o','oh'], p:['p','pee','pea'],
+    q:['q','cue','queue'], r:['r','ar'], s:['s','es','ess'],
+    t:['t','tee','tea'], u:['u','you','yew'], v:['v','vee'],
+    w:['w','doubleu'], x:['x','ex'], y:['y','why','wye'],
+    z:['z','zee','zed']
+  };
+  const ALIAS_TO_LETTER = new Map(); Object.entries(LETTER_ALIASES).forEach(([L, arr]) => arr.forEach(a => ALIAS_TO_LETTER.set(a, L)));
+
+  function startBee(){
+    resetEnvironment();
+    const baseList = (words && words.length) ? words.slice() : DEFAULT_BEE_WORDS.slice();
+    words = sessionMode === 'test' ? shuffle(baseList).slice(0, 24) : baseList.slice();
+    currentIndex = 0; score = 0; userAnswers = [];
+    appTitle.textContent="Spelling Bee (Voice)";
+    showBeeWord();
+    setTimeout(()=>playBeePrompt(), 150);
+  }
+  function playBeePrompt(){
+    if (currentIndex>=words.length) return endSessionBee();
+    const w = words[currentIndex];
+    stopRecognition();
+    speak(w, 0.9, () => setTimeout(()=>startRecognition(w), 200));
+  }
+  function showBeeWord(){
+    if (currentIndex>=words.length) return endSessionBee();
+    const w=words[currentIndex];
+    trainerArea.innerHTML = `
+      <div class="word-progress">Word ${currentIndex + 1} of ${words.length}</div>
+      <div id="spelling-visual" aria-live="polite"></div>
+      <div id="auto-recording-info"><i class="fas fa-info-circle"></i> Speak the spelling after the word is pronounced</div>
+      <div class="button-group">
+        <button id="prev-btn" class="btn btn-secondary" ${currentIndex===0?'disabled':''}><i class="fas fa-arrow-left"></i> Previous</button>
+        <button id="repeat-btn" class="btn btn-secondary"><i class="fas fa-redo"></i> Repeat Word</button>
+        <button id="next-btn" class="btn btn-secondary"><i class="fas fa-arrow-right"></i> Skip</button>
+        <button id="flag-btn" class="btn btn-outline btn-sm"><i class="far fa-flag"></i> Flag</button>
+      </div>
+      <div id="mic-feedback" class="feedback" aria-live="assertive"></div>
+    `;
+    document.getElementById('prev-btn') ?.addEventListener('click', ()=>{ if (currentIndex>0){ currentIndex--; showBeeWord(); playBeePrompt(); }});
+    document.getElementById('repeat-btn')?.addEventListener('click', playBeePrompt);
+    document.getElementById('next-btn')  ?.addEventListener('click', ()=>{ currentIndex++; showBeeWord(); playBeePrompt(); });
+    document.getElementById('flag-btn')  ?.addEventListener('click', ()=>toggleFlagWord(w));
+
+    if (beeShortcutHandler) document.removeEventListener('keydown', beeShortcutHandler);
+    beeShortcutHandler = (e) => {
+      if (['INPUT','TEXTAREA'].includes(document.activeElement?.tagName)) return;
+      if (e.key === ' ') { e.preventDefault(); playBeePrompt(); }
+      if (e.key === 'ArrowLeft' && currentIndex>0) { currentIndex--; showBeeWord(); playBeePrompt(); }
+      if (e.key === 'ArrowRight') { currentIndex++; showBeeWord(); playBeePrompt(); }
+    };
+    document.addEventListener('keydown', beeShortcutHandler);
+
+    setMicFeedback(""); updateSpellingVisual("● ● ●");
+  }
+  function startRecognition(targetWord){
+    const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+    if (!SR) { setMicFeedback("Speech recognition not supported in this browser.","error"); return; }
+    stopRecognition();
+    recognition = new SR(); recognition.lang=accent; recognition.interimResults=false; recognition.maxAlternatives=5;
+    let gotResult=false;
+    recognition.onresult=e=>{ gotResult=true; const best = e.results[0][0]?.transcript || ''; handleBeeResult(best,targetWord); };
+    recognition.onerror=e=>{ setMicFeedback(`Mic error: ${e.error}`,'error'); scheduleAutoAdvance(); };
+    recognition.onend=()=>{ if (!gotResult){ setMicFeedback("No speech detected. Try again or press Repeat.", 'error'); scheduleAutoAdvance(); } };
+    try { recognition.start(); setMicFeedback("Listening... spell the letters clearly.", 'info'); updateSpellingVisual("● ● ●"); }
+    catch{ scheduleAutoAdvance(); }
+  }
+  function scheduleAutoAdvance(ms=1400){
+    clearTimeout(autoAdvanceTimer);
+    autoAdvanceTimer=setTimeout(()=>{ 
+      currentIndex++; 
+      if (currentIndex>=words.length) endSessionBee(); 
+      else { showBeeWord(); playBeePrompt(); } 
+    }, ms);
+  }
+  function handleBeeResult(transcript,targetWord){
+    const normalized = normalizeSpelling(transcript);
+    userAnswers[currentIndex] = normalized;
+    const correct=targetWord.toLowerCase();
+    if (normalized===correct){ setMicFeedback("✓ Correct!", 'success'); score++; }
+    else { setMicFeedback(`✗ Incorrect. You said: "${normalized}" — Correct: ${targetWord}`, 'error'); }
+    scheduleAutoAdvance();
+  }
+  function normalizeSpelling(s){ 
+    if(!s) return "";
+    let t = s.toLowerCase().trim()
+      .replace(/[^a-z\s-]/g,' ')
+      .replace(/-/g,' ')
+      .replace(/\s+/g,' ').trim();
+    const tokens = t.split(' ');
+    let out = '';
+    for (let i=0; i<tokens.length; i++){
+      const tok = tokens[i];
+      const next = tokens[i+1] || '';
+      if (tok === 'double' && (next === 'you' || next === 'yew' || next === 'u')){ out += 'w'; i++; continue; }
+      const mapped = ALIAS_TO_LETTER.get(tok);
+      if (mapped) { out += mapped; continue; }
+      if (tok.length === 1 && /[a-z]/.test(tok)) { out += tok; continue; }
+      if (tok === 'the' || tok === 'letter') continue;
+      if (tok.length >= 2 && ALIAS_TO_LETTER.has(tok)) { out += ALIAS_TO_LETTER.get(tok); }
+    }
+    if (!out && t) out = t.replace(/\s/g,'');
     return out;
   }
+  function updateSpellingVisual(t=""){ const el=document.getElementById('spelling-visual'); if(el) el.textContent=t; }
+  function setMicFeedback(msg,type='info'){ const el=document.getElementById('mic-feedback'); if(!el) return; el.textContent=msg; el.className=`feedback ${type==='error'?'incorrect':(type==='success'?'correct':'')}`; }
+  function endSessionBee(){ stopRecognition(); summaryFor(words,userAnswers,score); }
 
-  // ====== TRAINERS (typed & voice) ======
-  function startOET() {
-    examType = 'OET'; answers=[]; score=0; idx=0;
-    words = Array.isArray(window.oetWords) ? window.oetWords.slice() : [];
-    if (!words.length) { alert('OET list missing.'); return; }
-    if (sessionMode==='test') shuffleInPlace(words, 24);
-    appTitle.textContent = 'OET Spelling Practice';
-    showTypedWord();
-  }
+  // -------------------- Summary --------------------
+  function summaryFor(listWords, answers, scoreVal){
+    trainerArea.classList.add('hidden');
+    summaryArea.classList.remove('hidden');
 
-  function startCustom() {
-    examType = 'Custom'; answers=[]; score=0; idx=0;
-    const raw = document.getElementById('custom-words').value || '';
-    words = splitWords(raw);
-    if (!words.length) { alert('Enter custom words first.'); return; }
-    if (sessionMode==='test') shuffleInPlace(words, 24);
-    appTitle.textContent = 'Custom Spelling Practice';
-    showTypedWord();
-  }
+    const correct = listWords.filter((w,i)=>(answers[i]||'').toLowerCase()===String(w).toLowerCase());
+    const wrong   = listWords.filter((w,i)=>(answers[i]||'').toLowerCase()!==String(w).toLowerCase());
+    const flagged = listWords.filter(w=>flaggedWordsStore.includes(w));
+    const percent = listWords.length? Math.round((scoreVal/listWords.length)*100) : 0;
+    const list = (arr)=> arr.length ? `<ul>${arr.map(w=>`<li>${w}</li>`).join('')}</ul>` : '<em>None</em>';
 
-  const BEE_WORDS = ["accommodate","belligerent","conscientious","disastrous","embarrass","foreign","guarantee","harass","interrupt","jealous","knowledge","liaison","millennium","necessary","occasionally","possession","questionnaire","rhythm","separate","tomorrow","unforeseen","vacuum","withhold","yacht"];
-  let recog=null, autoNext=null;
-
-  function startBee() {
-    examType = 'Bee'; answers=[]; score=0; idx=0;
-    words = BEE_WORDS.slice();
-    if (sessionMode==='test') shuffleInPlace(words, 24);
-    appTitle.textContent = 'Spelling Bee (Voice)';
-    showBeeWord();
-    setTimeout(()=> speak(words[idx], 0.9, startRecognition), 250);
-  }
-
-  // ====== Smart Review ======
-  async function startSmartReview() {
-    examType = 'Smart'; answers=[]; score=0; idx=0;
-    const pool = await fetchWeakWords(25);
-    if (!pool.length) { alert('No practice history yet. Train first!'); return; }
-    words = pool;
-    appTitle.textContent = 'Smart Review';
-    showTypedWord();
-  }
-
-  // ====== Typed UI (OET/Custom/Smart) ======
-  function showTypedWord() {
-    if (idx >= words.length) return finishSession();
-    const w = words[idx];
-
-    trainer.innerHTML = `
-      <div class="word-progress">Word ${idx+1} of ${words.length}</div>
-      <div class="word-audio-feedback"><button id="btn-repeat" class="btn btn-icon"><i class="fas fa-volume-up"></i></button></div>
-      <div class="input-wrapper"><input id="answer" class="form-control" placeholder="Type what you heard…" autocomplete="off"></div>
-      <div class="button-group" style="display:flex;gap:.5rem;flex-wrap:wrap;margin-top:8px">
-        <button id="btn-prev" class="btn btn-secondary" ${idx===0?'disabled':''}><i class="fas fa-arrow-left"></i> Prev</button>
-        <button id="btn-next" class="btn btn-secondary"><i class="fas fa-arrow-right"></i> Skip</button>
-        <button id="btn-check" class="btn btn-primary"><i class="fas fa-check"></i> Check</button>
+    summaryArea.innerHTML = `
+      <div class="summary-header">
+        <h2>Session Results</h2>
+        <div class="score-display">${scoreVal}/${listWords.length} (${percent}%)</div>
       </div>
-      <div id="fb" class="feedback" aria-live="polite"></div>
-    `;
-
-    document.getElementById('btn-repeat').onclick = ()=> speak(w, 0.95, focusAnswer);
-    document.getElementById('btn-prev').onclick   = ()=> { if (idx>0){ idx--; showTypedWord(); } };
-    document.getElementById('btn-next').onclick   = ()=> { idx++; showTypedWord(); };
-    document.getElementById('btn-check').onclick  = ()=> checkTyped(w);
-
-    const input = document.getElementById('answer');
-    input.addEventListener('keydown', (e)=> { if (e.key==='Enter') checkTyped(w); });
-    speak(w, 0.95, focusAnswer);
-  }
-  function focusAnswer(){ const el=document.getElementById('answer'); if(el){ el.focus(); el.select(); } }
-
-  function checkTyped(correct) {
-    const val = (document.getElementById('answer').value || '').trim();
-    if (!val) return;
-    answers[idx] = val;
-    const ok = val.toLowerCase() === correct.toLowerCase();
-    const fb  = document.getElementById('fb');
-    fb.textContent = ok ? '✓ Correct!' : `✗ Incorrect. Answer: ${correct}`;
-    fb.className   = `feedback ${ok?'correct':'incorrect'}`;
-    if (ok) score++;
-    recordResult(correct, ok).catch(()=>{});
-    setTimeout(()=> { idx++; (idx>=words.length) ? finishSession() : showTypedWord(); }, 900);
-  }
-
-  // ====== Bee (voice) ======
-  function showBeeWord(){
-    if (idx>=words.length) return finishSession();
-    const w = words[idx];
-    trainer.innerHTML = `
-      <div class="word-progress">Word ${idx+1} of ${words.length}</div>
-      <div id="spelling-visual" class="badge" style="margin-bottom:8px">Say letters clearly after the word</div>
-      <div class="button-group" style="display:flex;gap:.5rem;flex-wrap:wrap">
-        <button id="btn-prev" class="btn btn-secondary" ${idx===0?'disabled':''}><i class="fas fa-arrow-left"></i> Prev</button>
-        <button id="btn-repeat" class="btn btn-secondary"><i class="fas fa-redo"></i> Repeat</button>
-        <button id="btn-skip" class="btn btn-secondary"><i class="fas fa-arrow-right"></i> Skip</button>
+      <div class="results-grid" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px;margin-top:10px;">
+        <div class="results-card correct"><h3><i class="fas fa-check-circle"></i> Correct</h3>${list(correct)}</div>
+        <div class="results-card incorrect"><h3><i class="fas fa-times-circle"></i> Needs Practice</h3>${list(wrong)}</div>
+        <div class="results-card"><h3><i class="far fa-flag"></i> Flagged</h3>${list(flagged)}</div>
       </div>
-      <div id="micfb" class="feedback" aria-live="polite"></div>
-    `;
-    document.getElementById('btn-prev').onclick   = ()=> { if(idx>0){ idx--; showBeeWord(); setTimeout(()=> speak(words[idx],0.9,startRecognition),150); } };
-    document.getElementById('btn-repeat').onclick = ()=> speak(w, 0.9, startRecognition);
-    document.getElementById('btn-skip').onclick   = ()=> { idx++; showBeeWord(); setTimeout(()=> speak(words[idx]||'',0.9,startRecognition),150); };
-  }
-
-  function startRecognition(){
-    if (!('webkitSpeechRecognition' in window || 'SpeechRecognition' in window)) {
-      const el = document.getElementById('micfb'); if (el){ el.textContent='Speech recognition not supported.'; el.className='feedback incorrect'; }
-      return;
-    }
-    stopRecognition();
-    const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
-    recog = new SR(); recog.lang=accent; recog.interimResults=false; recog.maxAlternatives=5;
-    let got=false;
-    recog.onresult = (e)=>{
-      got=true;
-      const best = e.results[0][0]?.transcript || '';
-      handleBee(best, words[idx]);
-    };
-    recog.onerror = (e)=> { setMic(`Mic error: ${e.error}`, true); scheduleNext(); };
-    recog.onend   = ()=> { if(!got){ setMic('No speech detected. Try again or tap Repeat.', true); scheduleNext(); } };
-    try { recog.start(); setMic('Listening…'); } catch {}
-  }
-  function stopRecognition(){ try{ recog?.abort(); }catch{} recog=null; clearTimeout(autoNext); }
-  function setMic(msg, err=false){ const m=document.getElementById('micfb'); if(!m) return; m.textContent=msg; m.className=`feedback ${err?'incorrect':''}`; }
-  function scheduleNext(ms=1200){ clearTimeout(autoNext); autoNext=setTimeout(()=>{ idx++; (idx>=words.length)?finishSession(): (showBeeWord(), setTimeout(()=> speak(words[idx],0.9,startRecognition),150)); }, ms); }
-
-  function handleBee(raw, target){
-    const said = normalizeSpelling(raw);
-    const ok = said === target.toLowerCase();
-    if (ok) score++;
-    recordResult(target, ok).catch(()=>{});
-    setMic(ok ? '✓ Correct!' : `✗ You said “${said}”. Correct: ${target}`, !ok);
-    scheduleNext();
-  }
-  function normalizeSpelling(s){
-    let t = (s||'').toLowerCase().replace(/[^a-z\s]/g,' ').replace(/\s+/g,' ').trim();
-    const tokens = t.split(' ');
-    if (tokens.length>1) { return tokens.map(x=>x[0]).join(''); }
-    return t.replace(/\s/g,'');
-  }
-
-  // ====== Summary ======
-  function finishSession(){
-    trainer.innerHTML = '';
-    const pct = words.length ? Math.round((score/words.length)*100) : 0;
-    const wrong = words.filter((w,i)=> (answers[i]||'').toLowerCase() !== w.toLowerCase());
-    const right = words.filter((w,i)=> (answers[i]||'').toLowerCase() === w.toLowerCase());
-    summary.innerHTML = `
-      <div class="card-header"><h3>Results</h3><div class="score-display">${score}/${words.length} (${pct}%)</div></div>
-      <div class="results-grid" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px">
-        <div class="card"><h4>Correct</h4>${list(right)}</div>
-        <div class="card"><h4>Needs Practice</h4>${list(wrong)}</div>
-      </div>
-      <div style="margin-top:10px;display:flex;gap:.5rem;flex-wrap:wrap">
-        <button id="btn-review-wrong" class="btn btn-primary" ${wrong.length?'':'disabled'}>Review Incorrect</button>
-        <button id="btn-new" class="btn btn-secondary">New Session</button>
+      <div class="summary-actions" style="margin-top:12px;display:flex;gap:.5rem;flex-wrap:wrap;">
+        <button id="review-wrong-btn" class="btn btn-primary" ${wrong.length?'':'disabled'}><i class="fas fa-undo"></i> Review Incorrect</button>
+        <button id="review-flagged-btn" class="btn btn-secondary" ${flagged.length?'':'disabled'}><i class="fas fa-flag"></i> Review Flagged</button>
+        <button id="restart-btn" class="btn btn-secondary"><i class="fas fa-sync-alt"></i> Restart Session</button>
+        <button id="new-list-btn" class="btn btn-secondary"><i class="fas fa-list"></i> Change Word List</button>
       </div>`;
-    document.getElementById('btn-review-wrong').onclick = ()=> { if (!wrong.length) return; words = wrong.slice(); idx=0; score=0; answers=[]; examType==='Bee' ? (showBeeWord(), setTimeout(()=> speak(words[idx],0.9,startRecognition),150)) : showTypedWord(); };
-    document.getElementById('btn-new').onclick = ()=> renderTrainUI();
-  }
-  function list(arr){ return arr.length ? `<ul>${arr.map(w=>`<li>${w}</li>`).join('')}</ul>` : '<em>None</em>'; }
 
-  // ====== Progress Pane ======
-  async function loadProgress(){
-    if (!currentUser) return;
+    document.getElementById('review-wrong-btn') ?.addEventListener('click', ()=>{ if(!wrong.length) return; words=wrong.slice(); restartTypedOrBee(); });
+    document.getElementById('review-flagged-btn')?.addEventListener('click', ()=>{ if(!flagged.length) return; words=flagged.slice(); restartTypedOrBee(); });
+    document.getElementById('restart-btn')       ?.addEventListener('click', ()=>{ words=listWords.slice(); restartTypedOrBee(); });
+    document.getElementById('new-list-btn')      ?.addEventListener('click', ()=>{ summaryArea.classList.add('hidden'); trainerArea.classList.add('hidden'); });
 
-    // KPIs
-    const statsSnap = await db.collection('users').doc(currentUser.uid).collection('wordStats').get();
-    const rows = statsSnap.docs.map(d=>d.data());
-    const totalSeen = rows.reduce((s,r)=> s + (r.seen||0), 0);
-    const totalCorrect = rows.reduce((s,r)=> s + (r.correct||0), 0);
-    const overallAcc = totalSeen ? Math.round((totalCorrect/totalSeen)*100) : 0;
-    const lastSeen = rows.reduce((m,r)=> Math.max(m, r.lastSeen||0), 0);
-    const longestStreak = rows.reduce((m,r)=> Math.max(m, r.streak||0), 0);
-
-    document.getElementById('kpi-total').textContent  = totalSeen || '0';
-    document.getElementById('kpi-acc').textContent    = totalSeen ? (overallAcc + '%') : '—';
-    document.getElementById('kpi-streak').textContent = longestStreak || 0;
-    document.getElementById('kpi-last').textContent   = lastSeen ? new Date(lastSeen).toLocaleString() : '—';
-
-    // Weak words table (smart list)
-    const weak = await fetchWeakWords(15);
-    const map = Object.fromEntries(rows.map(r=>[r.word, r]));
-    const tbody = document.getElementById('weak-tbody');
-    if (!weak.length) {
-      tbody.innerHTML = `<tr><td colspan="4">No history yet. Do a training session first.</td></tr>`;
-      document.getElementById('btn-start-smart').onclick = ()=> alert('Practice first to build a smart list.');
-      return;
+    function restartTypedOrBee(){
+      currentIndex=0; score=0; userAnswers=[];
+      summaryArea.classList.add('hidden'); trainerArea.classList.remove('hidden');
+      if (examType==='Bee') { showBeeWord(); setTimeout(()=>playBeePrompt(),200); }
+      else { showTypedWord(); setTimeout(()=>speak(words[currentIndex],0.95,focusAnswer),200); }
     }
-    tbody.innerHTML = weak.map(w=>{
-      const r = map[w] || {};
-      return `<tr>
-        <td>${w}</td>
-        <td>${(r.accuracy ?? 0)}%</td>
-        <td>${r.seen ?? 0}</td>
-        <td>${r.lastSeen ? new Date(r.lastSeen).toLocaleDateString() : '—'}</td>
-      </tr>`;
-    }).join('');
-
-    // Start Smart Review button
-    document.getElementById('btn-start-smart').onclick = startSmartReview;
-  }
-
-  // ===== Helpers =====
-  function splitWords(text){
-    return [...new Set(String(text||'').replace(/\r/g,'').split(/[\n,;,|\/\t,\s]+/).map(w=>w.trim()).filter(w=>w.length>1))];
-  }
-  function shuffleInPlace(arr, takeCount){
-    // Fisher-Yates
-    for(let i=arr.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [arr[i],arr[j]]=[arr[j],arr[i]]; }
-    if (takeCount && arr.length>takeCount) arr.length = takeCount;
   }
 
 })();
