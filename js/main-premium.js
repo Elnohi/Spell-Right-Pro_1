@@ -1,4 +1,4 @@
-/* ==================== SpellRightPro Premium — streamlined, patched ==================== */
+/* ==================== SpellRightPro Premium — streamlined + Progress & Smart Review ==================== */
 (function () {
   'use strict';
 
@@ -6,9 +6,10 @@
   let currentUser = null;
   let premiumUser = false;
 
-  let examType = "OET";          // "OET" | "Bee" | "Custom"
+  // Added: "Review" mode (smart spaced repetition)
+  let examType = "OET";          // "OET" | "Bee" | "Custom" | "Review"
   let accent   = "en-US";        // "en-US" | "en-GB" | "en-AU"
-  let sessionMode = "practice";  // "practice" | "test"
+  let sessionMode = "practice";  // "practice" | "test"  (kept for OET/Custom/Bee)
 
   let words = [];                // per-session working list
   let currentIndex = 0;
@@ -24,6 +25,9 @@
     "harass","interrupt","jealous","knowledge","liaison","millennium","necessary","occasionally",
     "possession","questionnaire","rhythm","separate","tomorrow","unforeseen","vacuum","withhold","yacht"
   ];
+
+  // Leitner spacing (days) for Smart Review
+  const BOX_INTERVALS = { 1: 1, 2: 2, 3: 4, 4: 7, 5: 14 };
 
   // DOM
   const authArea       = document.getElementById('auth-area');
@@ -350,7 +354,7 @@
         <div class="premium-header">
           <i class="fas fa-crown"></i>
           <h2>Upgrade to Premium</h2>
-          <p>Unlock OET, Bee, Custom lists, history & more.</p>
+          <p>Unlock OET, Bee, Custom lists, history & Smart Review.</p>
         </div>
 
         <div class="pricing-options">
@@ -417,8 +421,9 @@
     localStorage.setItem('flaggedWords', JSON.stringify(flaggedWordsStore));
   }
   function shuffle(arr){ const a=arr.slice(); for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
+  const nowTs = () => Date.now();
 
-  // -------------------- Global cleanup (prevents stuck/loop bugs) --------------------
+  // -------------------- Global cleanup --------------------
   let typedShortcutHandler = null;
   let beeShortcutHandler   = null;
   let recognition = null;
@@ -436,6 +441,86 @@
     stopRecognition();
     if (typedShortcutHandler) { document.removeEventListener('keydown', typedShortcutHandler); typedShortcutHandler = null; }
     if (beeShortcutHandler)   { document.removeEventListener('keydown', beeShortcutHandler);   beeShortcutHandler   = null; }
+  }
+
+  // -------------------- Progress storage (Firestore) --------------------
+  const db = () => firebase.firestore();
+  const userWordsCol = () => db().collection('users').doc(currentUser.uid).collection('words');
+  const userSessionsCol = () => db().collection('users').doc(currentUser.uid).collection('sessions');
+
+  function keyForWord(w){ return String(w||'').trim().toLowerCase(); }
+  function nextDueFromBox(box){
+    const days = BOX_INTERVALS[box] || 1;
+    return new Date(nowTs() + days*24*60*60*1000);
+  }
+
+  async function persistSessionLog(mode, list, scoreVal, startTime){
+    if (!currentUser) return;
+    try {
+      await userSessionsCol().add({
+        sessionId,
+        mode,
+        totalWords: list.length,
+        score: scoreVal,
+        accuracy: list.length ? Math.round((scoreVal / list.length) * 100) : 0,
+        startedAt: new Date(startTime || Date.now()),
+        endedAt: new Date(),
+        timestamp: firebase.firestore.FieldValue.serverTimestamp()
+      });
+    } catch(e){ console.warn('session log failed', e); }
+  }
+
+  async function updateWordStat(word, isCorrect){
+    if (!currentUser || !word) return;
+    const id = keyForWord(word);
+    const ref = userWordsCol().doc(id);
+    try {
+      await db().runTransaction(async (tx) => {
+        const snap = await tx.get(ref);
+        const now = new Date();
+        if (!snap.exists){
+          const box = isCorrect ? 2 : 1;
+          tx.set(ref, {
+            word: word,
+            attempts: 1,
+            correct: isCorrect ? 1 : 0,
+            streak:  isCorrect ? 1 : 0,
+            box,
+            nextDue: nextDueFromBox(box),
+            lastSeen: now,
+            lastResult: isCorrect ? 'correct' : 'incorrect',
+          }, { merge: true });
+        } else {
+          const d = snap.data();
+          const attempts = (d.attempts||0)+1;
+          const correct   = (d.correct||0)+(isCorrect?1:0);
+          const streak    = isCorrect ? (d.streak||0)+1 : 0;
+          let box         = d.box || 1;
+          if (isCorrect) box = Math.min(5, box + 1); else box = 1;
+          tx.set(ref, {
+            attempts, correct, streak, box,
+            nextDue: nextDueFromBox(box),
+            lastSeen: now,
+            lastResult: isCorrect ? 'correct' : 'incorrect'
+          }, { merge: true });
+        }
+      });
+    } catch(e){ console.warn('updateWordStat failed', e); }
+  }
+
+  async function fetchReviewQueue(limit=30){
+    if (!currentUser) return [];
+    try {
+      const q = await userWordsCol()
+        .where('nextDue','<=', new Date())
+        .orderBy('nextDue','asc')
+        .limit(limit)
+        .get();
+      if (q.empty) return [];
+      const arr = [];
+      q.forEach(doc => { const w = doc.data()?.word; if (w) arr.push(w); });
+      return arr;
+    } catch(e){ console.warn('fetchReviewQueue failed', e); return []; }
   }
 
   // -------------------- Exam UI scaffold --------------------
@@ -459,10 +544,13 @@
     examUI.innerHTML = `
       <div class="mode-selector">
         <button id="practice-mode-btn" class="mode-btn ${sessionMode==='practice'?'selected':''}">
-          <i class="fas fa-graduation-cap"></i> Practice Mode
+          <i class="fas fa-graduation-cap"></i> Practice
         </button>
         <button id="test-mode-btn" class="mode-btn ${sessionMode==='test'?'selected':''}">
-          <i class="fas fa-clipboard-check"></i> Test Mode
+          <i class="fas fa-clipboard-check"></i> Test
+        </button>
+        <button id="review-mode-btn" class="mode-btn ${examType==='Review'?'selected':''}">
+          <i class="fas fa-rotate"></i> Smart Review
         </button>
       </div>
 
@@ -471,6 +559,7 @@
           <option value="OET">OET Spelling</option>
           <option value="Bee">Spelling Bee (Voice)</option>
           <option value="Custom">Custom Words</option>
+          <option value="Review">Smart Review</option>
         </select>
         <select id="accent-select" class="form-control" style="max-width:150px;">
           <option value="en-US">American English</option>
@@ -491,14 +580,17 @@
 
     document.getElementById('exam-type').onchange = e => {
       examType = e.target.value;
-      appTitle.textContent = examType === 'OET' ? 'OET Spelling Practice'
-                          : examType === 'Bee' ? 'Spelling Bee (Voice)'
-                          : 'Custom Spelling Practice';
+      appTitle.textContent =
+        examType === 'OET'    ? 'OET Spelling Practice' :
+        examType === 'Bee'    ? 'Spelling Bee (Voice)' :
+        examType === 'Custom' ? 'Custom Spelling Practice' :
+                                 'Smart Review';
     };
     document.getElementById('accent-select').onchange = e => { accent = e.target.value; };
 
-    document.getElementById('practice-mode-btn').onclick = () => { sessionMode = 'practice'; renderExamUI(); };
-    document.getElementById('test-mode-btn').onclick    = () => { sessionMode = 'test';     renderExamUI(); };
+    document.getElementById('practice-mode-btn').onclick = () => { sessionMode = 'practice'; if(examType!=='Review') renderExamUI(); };
+    document.getElementById('test-mode-btn').onclick    = () => { sessionMode = 'test';     if(examType!=='Review') renderExamUI(); };
+    document.getElementById('review-mode-btn').onclick  = () => { examType = 'Review'; renderExamUI(); };
 
     document.getElementById('word-file')?.addEventListener('change', e => {
       const file = e.target.files[0]; if (!file) return;
@@ -516,14 +608,16 @@
       document.getElementById('upload-info').textContent = `Using ${list.length} custom words.`;
     });
 
-    document.getElementById('start-btn').onclick = () => {
+    document.getElementById('start-btn').onclick = async () => {
       summaryArea.innerHTML = "";
       trainerArea.classList.remove('hidden');
       summaryArea.classList.add('hidden');
       resetEnvironment();
+
       if (examType === "OET") startOET();
       else if (examType === "Bee") startBee();
-      else startCustomPractice();
+      else if (examType === "Custom") startCustomPractice();
+      else startSmartReview();
     };
   }
 
@@ -535,9 +629,12 @@
     words = sessionMode === 'test' ? shuffle(baseList).slice(0, 24) : baseList.slice();
     currentIndex = 0; score = 0; userAnswers = [];
     appTitle.textContent = "OET Spelling Practice";
+    sessionStartTime = Date.now();
     showTypedWord();
     setTimeout(() => speak(words[currentIndex], 0.95, focusAnswer), 200);
   }
+
+  let sessionStartTime = Date.now();
 
   function showTypedWord() {
     if (currentIndex >= words.length) return endSessionTyped();
@@ -581,14 +678,17 @@
     focusAnswer();
   }
   function focusAnswer(){ const input=document.getElementById('user-input'); if (input){ input.focus(); input.select(); } }
-  function checkTypedAnswer(correctWord){
+  async function checkTypedAnswer(correctWord){
     const input = document.getElementById('user-input');
     const ans = (input?.value || '').trim();
     if (!ans) { toast("Please type the word first!", 'error'); return; }
     userAnswers[currentIndex] = ans;
     const fb = document.getElementById('feedback');
-    if (ans.toLowerCase() === correctWord.toLowerCase()) { fb.textContent="✓ Correct!"; fb.className="feedback correct"; score++; }
+    const isCorrect = ans.toLowerCase() === correctWord.toLowerCase();
+    if (isCorrect) { fb.textContent="✓ Correct!"; fb.className="feedback correct"; score++; }
     else { fb.textContent=`✗ Incorrect. The correct spelling was: ${correctWord}`; fb.className="feedback incorrect"; }
+    // persist progress
+    updateWordStat(correctWord, isCorrect);
     setTimeout(nextTyped, 900);
   }
   function nextTyped(){ 
@@ -598,7 +698,10 @@
   function prevTyped(){ 
     if (currentIndex > 0) { currentIndex--; showTypedWord(); setTimeout(()=>speak(words[currentIndex],0.95,focusAnswer), 150); }
   }
-  function endSessionTyped(){ summaryFor(words, userAnswers, score); }
+  async function endSessionTyped(){ 
+    summaryFor(words, userAnswers, score); 
+    persistSessionLog(examType, words, score, sessionStartTime);
+  }
 
   // -------------------- Custom (typed) --------------------
   function startCustomPractice(){
@@ -611,6 +714,36 @@
     if (sessionMode === 'test') words = shuffle(words).slice(0, 24);
     currentIndex = 0; score = 0; userAnswers = [];
     appTitle.textContent = "Custom Spelling Practice";
+    sessionStartTime = Date.now();
+    showTypedWord();
+    setTimeout(()=>speak(words[currentIndex],0.95,focusAnswer),150);
+  }
+
+  // -------------------- Smart Review (typed) --------------------
+  async function startSmartReview(){
+    resetEnvironment();
+    appTitle.textContent = "Smart Review";
+    sessionStartTime = Date.now();
+
+    const due = await fetchReviewQueue(30);
+    if (!due.length) {
+      trainerArea.innerHTML = `
+        <div class="skeleton-block">
+          <h3>No words are due right now 🎉</h3>
+          <p>Do a short OET or Custom session to seed your progress, then come back.</p>
+          <div style="display:flex;gap:8px;margin-top:10px;">
+            <button id="seed-oet" class="btn btn-secondary">Practice OET</button>
+            <button id="seed-custom" class="btn btn-secondary">Use Custom List</button>
+          </div>
+        </div>`;
+      document.getElementById('seed-oet')?.addEventListener('click', ()=>{ examType='OET'; renderExamUI(); });
+      document.getElementById('seed-custom')?.addEventListener('click', ()=>{ examType='Custom'; renderExamUI(); });
+      return;
+    }
+
+    // Use the due list as our session words
+    words = due.slice();
+    currentIndex = 0; score = 0; userAnswers = [];
     showTypedWord();
     setTimeout(()=>speak(words[currentIndex],0.95,focusAnswer),150);
   }
@@ -636,6 +769,7 @@
     words = sessionMode === 'test' ? shuffle(baseList).slice(0, 24) : baseList.slice();
     currentIndex = 0; score = 0; userAnswers = [];
     appTitle.textContent="Spelling Bee (Voice)";
+    sessionStartTime = Date.now();
     showBeeWord();
     setTimeout(()=>playBeePrompt(), 150);
   }
@@ -700,8 +834,10 @@
     const normalized = normalizeSpelling(transcript);
     userAnswers[currentIndex] = normalized;
     const correct=targetWord.toLowerCase();
-    if (normalized===correct){ setMicFeedback("✓ Correct!", 'success'); score++; }
+    const isCorrect = (normalized===correct);
+    if (isCorrect){ setMicFeedback("✓ Correct!", 'success'); score++; }
     else { setMicFeedback(`✗ Incorrect. You said: "${normalized}" — Correct: ${targetWord}`, 'error'); }
+    updateWordStat(targetWord, isCorrect);
     scheduleAutoAdvance();
   }
   function normalizeSpelling(s){ 
@@ -727,7 +863,11 @@
   }
   function updateSpellingVisual(t=""){ const el=document.getElementById('spelling-visual'); if(el) el.textContent=t; }
   function setMicFeedback(msg,type='info'){ const el=document.getElementById('mic-feedback'); if(!el) return; el.textContent=msg; el.className=`feedback ${type==='error'?'incorrect':(type==='success'?'correct':'')}`; }
-  function endSessionBee(){ stopRecognition(); summaryFor(words,userAnswers,score); }
+  async function endSessionBee(){ 
+    stopRecognition(); 
+    summaryFor(words,userAnswers,score); 
+    persistSessionLog('Bee', words, score, sessionStartTime);
+  }
 
   // -------------------- Summary --------------------
   function summaryFor(listWords, answers, scoreVal){
