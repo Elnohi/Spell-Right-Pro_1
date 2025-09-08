@@ -23,7 +23,8 @@
   <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-analytics-compat.js"></script>
 
-  <!-- Config MUST load before anything that uses it -->
+  <!-- Config MUST load before anything that uses it.
+       Expected to define: window.appConfig = { adClient: "ca-pub-xxxxxxxxxxxxxxxx", ... } -->
   <script src="/js/config.js?v=2025-08-25"></script>
 
   <!-- Helpers / data -->
@@ -99,6 +100,7 @@
       <div id="trainer-area" class="hidden"></div>
       <div id="summary-area" class="hidden"></div>
 
+      <!-- Optional fixed slot area for non-auto ads (kept for future use) -->
       <div class="ad-container" style="margin-top:1rem;"></div>
     </section>
   </main>
@@ -113,5 +115,123 @@
     </p>
     <p>© 2025 SpellRightPro. All rights reserved.</p>
   </footer>
+
+  <!-- ============================================================
+       Conditional AdSense loader:
+       - Loads Auto Ads ONLY if user is NOT premium.
+       - Premium detection checks both:
+           1) users/{uid} doc fields: isPremium=true OR plan==='premium' OR entitlement==='premium'
+           2) customers/{uid}/subscriptions where status in ['active','trialing']
+       - If signed out => ads are allowed.
+       - If detection fails after a short delay => default to showing ads.
+       ============================================================ -->
+  <script>
+    (function () {
+      const AD_CLIENT = (window.appConfig && window.appConfig.adClient) || "";
+      if (!AD_CLIENT) {
+        console.warn("[Ads] No adClient set in appConfig; skipping AdSense.");
+        return;
+      }
+
+      function injectAutoAdsScript() {
+        if (document.querySelector('script[data-srp="adsense"]')) return;
+        const s = document.createElement("script");
+        s.async = true;
+        s.dataset.srp = "adsense";
+        s.src = "https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=" + encodeURIComponent(AD_CLIENT);
+        s.crossOrigin = "anonymous";
+        document.head.appendChild(s);
+        console.log("[Ads] Auto Ads enabled for non-premium user.");
+      }
+
+      function checkStripeSubscriptions(db, uid) {
+        // customers/{uid}/subscriptions with status active/trialing
+        return db.collection("customers").doc(uid).collection("subscriptions")
+          .where("status", "in", ["active", "trialing"])
+          .limit(1).get()
+          .then(q => !q.empty); // true => has premium sub
+      }
+
+      function checkUserDocPremium(db, uid) {
+        return db.collection("users").doc(uid).get().then(snap => {
+          if (!snap.exists) return false;
+          const d = snap.data() || {};
+          return !!(d.isPremium || d.plan === "premium" || d.entitlement === "premium");
+        });
+      }
+
+      async function evaluateAndMaybeShowAds(user) {
+        // If signed out: show ads
+        if (!user) {
+          injectAutoAdsScript();
+          return;
+        }
+
+        try {
+          const db = firebase.firestore();
+          const hasUsersDocPremium = await checkUserDocPremium(db, user.uid);
+          if (hasUsersDocPremium) {
+            console.log("[Ads] Premium user via users doc → no ads.");
+            return;
+          }
+
+          const hasStripePremium = await checkStripeSubscriptions(db, user.uid);
+          if (hasStripePremium) {
+            console.log("[Ads] Premium user via Stripe sub → no ads.");
+            return;
+          }
+
+          // Not premium → load ads
+          injectAutoAdsScript();
+        } catch (e) {
+          console.warn("[Ads] Premium check failed; loading ads as fallback.", e);
+          injectAutoAdsScript();
+        }
+      }
+
+      function waitForFirebaseAppReady(maxMs = 5000) {
+        return new Promise(resolve => {
+          const start = Date.now();
+          (function poll() {
+            const ready = (window.firebase && typeof firebase.auth === "function");
+            if (ready || Date.now() - start > maxMs) return resolve(!!ready);
+            setTimeout(poll, 100);
+          })();
+        });
+      }
+
+      (async function initConditionalAds() {
+        const ready = await waitForFirebaseAppReady();
+        // If Firebase not ready, fall back after timeout: show ads to avoid lost revenue
+        if (!ready) {
+          console.warn("[Ads] Firebase not ready after timeout; loading ads.");
+          injectAutoAdsScript();
+          return;
+        }
+
+        try {
+          // If no app initialized yet but global firebaseConfig exists, initialize it.
+         if (firebase.apps.length === 0 && window.appConfig?.firebaseConfig) {
+  firebase.initializeApp(window.appConfig.firebaseConfig);
+}
+        } catch (e) {
+          console.warn("[Ads] Firebase init check error:", e);
+        }
+
+        // Listen to auth state and decide
+        let decided = false;
+        const decideOnce = (u) => {
+          if (decided) return;
+          decided = true;
+          evaluateAndMaybeShowAds(u);
+        };
+
+        firebase.auth().onAuthStateChanged(user => decideOnce(user));
+
+        // Absolute fallback: if auth never fires (rare), decide after 3s as signed-out
+        setTimeout(() => decideOnce(firebase.auth().currentUser || null), 3000);
+      })();
+    })();
+  </script>
 </body>
 </html>
