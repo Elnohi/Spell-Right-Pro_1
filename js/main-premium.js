@@ -591,6 +591,19 @@
     };
   }
 
+  /* ========== Small helper for visual ✔ / ✖ next to the speaker button ========== */
+  function setWordStatus(type) {
+    const el = document.getElementById('word-status');
+    if (!el) return;
+    if (type === 'correct') {
+      el.innerHTML = '<i class="fas fa-check-circle" style="color:var(--success,#198754)"></i>';
+    } else if (type === 'incorrect') {
+      el.innerHTML = '<i class="fas fa-times-circle" style="color:var(--danger,#dc3545)"></i>';
+    } else {
+      el.innerHTML = '';
+    }
+  }
+
   /* ==================== OET (typed) ==================== */
   function startOET() {
     resetEnvironment();
@@ -606,13 +619,16 @@
     setTimeout(() => speak(words[currentIndex], 0.95, focusAnswer), 200);
   }
 
+  // PATCHED renderer (adds #word-status + keeps shortcuts tidy)
   function showTypedWord() {
     if (currentIndex >= words.length) return endSessionTyped();
     const w = words[currentIndex];
+
     trainerArea.innerHTML = `
       <div class="word-progress">Word ${currentIndex + 1} of ${words.length}</div>
       <div class="word-audio-feedback">
         <button id="repeat-btn" class="btn btn-icon" title="Repeat word"><i class="fas fa-redo"></i></button>
+        <span id="word-status" aria-hidden="true" style="margin-left:8px;"></span>
       </div>
       <div class="input-wrapper">
         <input type="text" id="user-input" class="form-control"
@@ -624,7 +640,7 @@
         <button id="check-btn" class="btn btn-primary"><i class="fas fa-check"></i> Check</button>
         <button id="flag-btn" class="btn btn-outline btn-sm"><i class="far fa-flag"></i> Flag</button>
       </div>
-      <div id="feedback" class="feedback" aria-live="assertive"></div>
+      <div id="feedback" class="feedback" aria-live="polite"></div>
     `;
 
     document.getElementById('repeat-btn')?.addEventListener('click', () => speak(w, 0.95, focusAnswer));
@@ -646,20 +662,36 @@
     };
     document.addEventListener('keydown', typedShortcutHandler);
 
+    setWordStatus(null);
     focusAnswer();
   }
 
   function focusAnswer(){ const input=document.getElementById('user-input'); if (input){ input.focus(); input.select(); } }
 
+  // PATCHED checker (adds visual ✔ / ✖, green/red input, short delay)
   function checkTypedAnswer(correctWord){
     const input = document.getElementById('user-input');
-    const ans = (input?.value || '').trim();
+    const fb    = document.getElementById('feedback');
+    const ans   = (input?.value || '').trim();
+
     if (!ans) { toast("Please type the word first!", 'error'); return; }
+
     userAnswers[currentIndex] = ans;
-    const fb = document.getElementById('feedback');
-    if (ans.toLowerCase() === correctWord.toLowerCase()) { fb.textContent="✓ Correct!"; fb.className="feedback correct"; score++; }
-    else { fb.textContent=`✗ Incorrect. The correct spelling was: ${correctWord}`; fb.className="feedback incorrect"; }
-    setTimeout(nextTyped, 900);
+
+    input.classList.remove('correct-input','incorrect-input');
+
+    if (ans.toLowerCase() === correctWord.toLowerCase()) {
+      score++;
+      setWordStatus('correct');
+      input.classList.add('correct-input');
+      if (fb) { fb.textContent = "✓ Correct!"; fb.className = "feedback correct"; }
+    } else {
+      setWordStatus('incorrect');
+      input.classList.add('incorrect-input');
+      if (fb) { fb.textContent = `✗ Incorrect. The correct spelling was: ${correctWord}`; fb.className = "feedback incorrect"; }
+    }
+
+    setTimeout(nextTyped, 1000);
   }
 
   function nextTyped(){ 
