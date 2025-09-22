@@ -1,46 +1,46 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>SpellRightPro Premium – School</title>
-  <link rel="stylesheet" href="premium.css"/>
-  <script src="config.js" defer></script>
-  <script src="main-premium.js" defer></script>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>SpellRightPro Premium – School</title>
+<link rel="stylesheet" href="premium.css"/>
+<script src="config.js" defer></script>
+<script src="main-premium.js" defer></script>
 </head>
 <body>
-  <header>
-    <img src="logo.png" alt="SpellRightPro Logo" class="logo"/>
-    <h1>SpellRightPro Premium</h1>
-  </header>
+<header>
+  <img src="logo.png" alt="SpellRightPro Logo" class="logo"/>
+  <h1>SpellRightPro Premium</h1>
+</header>
 
-  <main>
-    <section class="modes">
-      <h2>Choose Your Mode</h2>
-      <div class="mode-list">
-        <button id="oetMode">OET</button>
-        <button id="beeMode">Spelling Bee</button>
-        <button id="schoolMode">School</button>
-      </div>
-    </section>
+<main>
+  <section class="modes">
+    <h2>Choose Your Mode</h2>
+    <div class="mode-list">
+      <button id="oetMode">OET</button>
+      <button id="beeMode">Spelling Bee</button>
+      <button id="schoolMode">School</button>
+    </div>
+  </section>
 
-    <section id="practiceSection" class="hidden">
-      <h2 id="practiceTitle">Practice</h2>
-      <div id="wordArea"></div>
-      <input type="text" id="wordInput" placeholder="Type the spelling..."/>
-      <button id="submitWord">Submit</button>
-      <button id="skipWord">Skip</button>
-    </section>
+  <section id="practiceSection" class="hidden">
+    <h2 id="practiceTitle">Practice</h2>
+    <div id="wordArea"></div>
+    <input type="text" id="wordInput" placeholder="Type the spelling..."/>
+    <button id="submitWord">Submit</button>
+    <button id="skipWord">Skip</button>
+  </section>
 
-    <section id="uploadSection" class="hidden">
-      <h3>Upload School Word List</h3>
-      <input type="file" id="fileUpload" accept=".txt,.json,.docx,.pdf"/>
-    </section>
+  <section id="uploadSection" class="hidden">
+    <h3>Upload School Word List</h3>
+    <input type="file" id="fileUpload" accept=".txt,.json,.docx,.pdf"/>
+  </section>
 
-    <section id="summarySection" class="hidden">
-      <h2>Session Summary</h2>
-      <div id="summaryContent"></div>
-    </section>
-  </main>
+  <section id="summarySection" class="hidden">
+    <h2>Session Summary</h2>
+    <div id="summaryContent"></div>
+  </section>
+</main>
 </body>
 </html>
