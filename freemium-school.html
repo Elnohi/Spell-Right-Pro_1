@@ -1,30 +1,157 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8"/>
+  <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>SpellRightPro Freemium – School</title>
-  <link rel="stylesheet" href="styles.css"/>
-  <script src="main-freemium-school.js" defer></script>
+  <title>SpellRightPro (School - Freemium)</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="css/styles.css" />
+  <!-- Google AdSense -->
+  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7632930282249669"
+     crossorigin="anonymous"></script>
+  <style>
+    .ad-container {
+      margin: 1.5rem auto;
+      padding: 0;
+      text-align: center;
+      max-width: 728px;
+      overflow: hidden;
+    }
+    .ad-container.header-ad { margin-bottom: 0.5rem; }
+    .ad-container.footer-ad { margin-top: 1.5rem; }
+    .ad-label {
+      font-size: 0.75rem;
+      color: var(--gray);
+      letter-spacing: 0.04em;
+      margin-bottom: 0.25rem;
+      text-transform: uppercase;
+    }
+    /* Summary ad container inside summary-area */
+    .summary-ad-container { margin-top: 1rem; }
+  </style>
 </head>
 <body>
-  <header>
-    <img src="logo.png" alt="SpellRightPro Logo" class="logo"/>
-    <h1>SpellRightPro – School (Freemium)</h1>
-  </header>
-
-  <main>
-    <section id="practiceSection">
-      <h2>School Word Practice</h2>
-      <div id="adsenseTop"><!-- AdSense Placeholder --></div>
-      <button id="startBtn">Start Practice</button>
-      <div id="wordArea" class="hidden">
-        <input type="text" id="wordInput" placeholder="Type the spelling..."/>
-        <button id="submitWord">Submit</button>
-        <button id="skipWord">Skip</button>
+  <nav class="navbar">
+    <div class="brand">
+      <img src="assets/logo.png" alt="SpellRightPro Logo" class="logo"/>
+      <div>
+        <span>SpellRightPro</span>
+        <span class="subtitle">School Trainer</span>
       </div>
-      <div id="adsenseBottom"><!-- AdSense Placeholder --></div>
+    </div>
+    <div class="nav-actions">
+      <button class="btn-secondary" onclick="location.href='index.html'">
+        <i class="fas fa-home"></i> Home
+      </button>
+      <a class="btn-primary" href="premium.html">
+        <i class="fas fa-crown"></i> Upgrade to Premium
+      </a>
+    </div>
+  </nav>
+
+  <!-- Header Ad -->
+  <div class="ad-container header-ad">
+    <div class="ad-label">Advertisement</div>
+    <ins class="adsbygoogle"
+         style="display:block"
+         data-ad-client="ca-pub-7632930282249669"
+         data-ad-slot="YOUR_HEADER_SLOT"
+         data-ad-format="auto"
+         data-full-width-responsive="true"></ins>
+    <script>
+         (adsbygoogle = window.adsbygoogle || []).push({});
+    </script>
+  </div>
+
+  <main class="container">
+    <section class="card">
+      <header class="card-header">
+        <h1><i class="fas fa-school"></i> School Word Practice</h1>
+        <div class="accent-picker" aria-label="Select Accent">
+          <button data-accent="en-US" class="active" aria-label="American English (en-US)">🇺🇸</button>
+          <button data-accent="en-GB" aria-label="British English (en-GB)">🇬🇧</button>
+          <button data-accent="en-AU" aria-label="Australian English (en-AU)">🇦🇺</button>
+        </div>
+      </header>
+
+      <div class="mode-switch">
+        <button id="practice-mode-btn" class="btn-primary"><i class="fas fa-book"></i> Practice</button>
+        <button id="test-mode-btn" class="btn-secondary"><i class="fas fa-spell-check"></i> Test (24 words)</button>
+        <button id="mode-switch-btn" class="btn-tertiary"><i class="fas fa-random"></i> Switch Mode</button>
+      </div>
+
+      <!-- Practice Area (Ad-Free Zone) -->
+      <div id="trainer-area" class="hidden"></div>
+
+      <div id="summary-area" class="summary-area hidden"></div>
+
+      <div class="custom-words-section">
+        <label class="section-label">Custom Words</label>
+        <textarea id="custom-words" placeholder="Type or paste words (comma separated)"></textarea>
+        <div class="file-upload">
+          <label for="file-input" class="btn-upload">
+            <i class="fas fa-file-upload"></i> Upload Word List
+          </label>
+          <input type="file" id="file-input" accept=".txt,.pdf,.docx"/>
+        </div>
+        <button id="add-custom-btn" class="btn-primary">
+          <i class="fas fa-plus"></i> Add Words
+        </button>
+      </div>
+
+      <div class="controls">
+        <button id="start-btn" class="btn-primary">
+          <i class="fas fa-play"></i> Start Session
+        </button>
+      </div>
     </section>
   </main>
+
+  <!-- Footer Ad (Outside main content area) -->
+  <div class="ad-container footer-ad">
+    <div class="ad-label">Advertisement</div>
+    <ins class="adsbygoogle"
+         style="display:block"
+         data-ad-client="ca-pub-7632930282249669"
+         data-ad-slot="YOUR_FOOTER_SLOT"
+         data-ad-format="auto"
+         data-full-width-responsive="true"></ins>
+    <script>
+         (adsbygoogle = window.adsbygoogle || []).push({});
+    </script>
+  </div>
+
+  <!-- Summary Ad injector (same pattern as OET) -->
+  <script>
+    function insertSummaryAd() {
+      const summaryArea = document.getElementById('summary-area');
+      if (!summaryArea) return;
+      const old = summaryArea.querySelector('.summary-ad-container');
+      if (old) old.remove();
+      const wrap = document.createElement('div');
+      wrap.className = 'summary-ad-container ad-container';
+      wrap.innerHTML = `
+        <div class="ad-label">Advertisement</div>
+        <ins class="adsbygoogle"
+             style="display:block"
+             data-ad-client="ca-pub-7632930282249669"
+             data-ad-slot="YOUR_SCHOOL_SUMMARY_SLOT"
+             data-ad-format="auto"
+             data-full-width-responsive="true"></ins>
+      `;
+      summaryArea.appendChild(wrap);
+      (adsbygoogle = window.adsbygoogle || []).push({});
+    }
+    window.insertSummaryAd = insertSummaryAd;
+  </script>
+
+  <!-- Firebase (match your other freemium pages) -->
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-analytics.js"></script>
+
+  <!-- App scripts -->
+  <script src="js/main-freemium-school.js"></script>
 </body>
 </html>
