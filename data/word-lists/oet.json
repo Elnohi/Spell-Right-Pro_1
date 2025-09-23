@@ -1,12 +1,24 @@
-[
-  "Scalp",
-  "Eczema",
-  "Osteoarthritis",
-  "Atrial fibrillation",
-  "Fatigue",
-  "Constipation",
-  "Bruising",
-  "Lying down",
-  "Autism",
-  "Insomnia"
-]
+{
+  "words": [
+    "auscultation",
+    "bronchodilator",
+    "contraindication",
+    "dehydration",
+    "diagnosis",
+    "electrocardiogram",
+    "endoscopy",
+    "hypertension",
+    "intravenous",
+    "laryngoscopy",
+    "nebulizer",
+    "palpation",
+    "phlebitis",
+    "radiography",
+    "tachycardia",
+    "ultrasound",
+    "vasoconstrictor",
+    "wheezing",
+    "anaphylaxis",
+    "analgesic"
+  ]
+}
