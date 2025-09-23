@@ -4,154 +4,84 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>SpellRightPro (School - Freemium)</title>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <link rel="stylesheet" href="css/styles.css" />
-  <!-- Google AdSense -->
-  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7632930282249669"
-     crossorigin="anonymous"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"/>
+  <!-- AdSense (client matches your site) -->
+  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7632930282249669" crossorigin="anonymous"></script>
   <style>
-    .ad-container {
-      margin: 1.5rem auto;
-      padding: 0;
-      text-align: center;
-      max-width: 728px;
-      overflow: hidden;
-    }
-    .ad-container.header-ad { margin-bottom: 0.5rem; }
-    .ad-container.footer-ad { margin-top: 1.5rem; }
-    .ad-label {
-      font-size: 0.75rem;
-      color: var(--gray);
-      letter-spacing: 0.04em;
-      margin-bottom: 0.25rem;
-      text-transform: uppercase;
-    }
-    /* Summary ad container inside summary-area */
-    .summary-ad-container { margin-top: 1rem; }
+    .container{max-width:980px;margin:0 auto;padding:1rem}
+    .card{background:#fff;border:1px solid #e6e8eb;border-radius:12px;padding:1rem}
+    .header{display:flex;justify-content:space-between;align-items:center;gap:1rem;margin-bottom:.5rem}
+    .lifetime{font-size:.9rem;color:#555}
+    .big-input{display:flex;gap:.5rem;align-items:center;margin-top:.75rem}
+    .big-input input{flex:1;height:52px;font-size:1.1rem;border:2px solid #8ab4f8;border-radius:10px;padding:0 12px;outline:none}
+    .big-input input:focus{box-shadow:0 0 0 3px rgba(67,97,238,.2)}
+    .ad-container{text-align:center;margin:1rem auto;max-width:728px}
+    .summary-area{margin-top:1rem}
+    .flag-row{margin-top:.5rem}
+    .btn{padding:.55rem .9rem;border-radius:10px;border:1px solid #e6e8eb;background:#f6f7f9;cursor:pointer}
+    .btn.primary{background:#4361ee;color:#fff;border-color:#4361ee}
+    .btn.secondary{background:#eef2f7}
+    .btn-icon{width:40px;height:40px;border-radius:10px;border:1px solid #e6e8eb;background:#fff;display:grid;place-items:center;cursor:pointer}
   </style>
 </head>
 <body>
-  <nav class="navbar">
-    <div class="brand">
-      <img src="assets/logo.png" alt="SpellRightPro Logo" class="logo"/>
+  <nav class="navbar" style="display:flex;justify-content:space-between;align-items:center;padding:.75rem 1rem;border-bottom:1px solid #e6e8eb;background:#fff">
+    <div class="brand" style="display:flex;gap:.6rem;align-items:center">
+      <img src="assets/logo.png" alt="SpellRightPro Logo" style="width:40px;height:40px;object-fit:contain"/>
       <div>
-        <span>SpellRightPro</span>
-        <span class="subtitle">School Trainer</span>
+        <strong>SpellRightPro</strong>
+        <div style="font-size:.85rem;color:#777;margin-top:-2px">School Trainer</div>
       </div>
     </div>
-    <div class="nav-actions">
-      <button class="btn-secondary" onclick="location.href='index.html'">
-        <i class="fas fa-home"></i> Home
-      </button>
-      <a class="btn-primary" href="premium.html">
-        <i class="fas fa-crown"></i> Upgrade to Premium
-      </a>
+    <div class="nav-actions" style="display:flex;gap:.5rem">
+      <a class="btn" href="index.html"><i class="fa fa-home"></i> Home</a>
+      <a class="btn primary" href="premium.html"><i class="fa fa-crown"></i> Upgrade</a>
     </div>
   </nav>
 
-  <!-- Header Ad -->
-  <div class="ad-container header-ad">
-    <div class="ad-label">Advertisement</div>
-    <ins class="adsbygoogle"
-         style="display:block"
-         data-ad-client="ca-pub-7632930282249669"
-         data-ad-slot="YOUR_HEADER_SLOT"
-         data-ad-format="auto"
-         data-full-width-responsive="true"></ins>
-    <script>
-         (adsbygoogle = window.adsbygoogle || []).push({});
-    </script>
+  <div class="ad-container">
+    <ins class="adsbygoogle" style="display:block" data-ad-client="ca-pub-7632930282249669" data-ad-slot="YOUR_HEADER_SLOT" data-ad-format="auto" data-full-width-responsive="true"></ins>
+    <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
   </div>
 
   <main class="container">
     <section class="card">
-      <header class="card-header">
-        <h1><i class="fas fa-school"></i> School Word Practice</h1>
-        <div class="accent-picker" aria-label="Select Accent">
-          <button data-accent="en-US" class="active" aria-label="American English (en-US)">🇺🇸</button>
-          <button data-accent="en-GB" aria-label="British English (en-GB)">🇬🇧</button>
-          <button data-accent="en-AU" aria-label="Australian English (en-AU)">🇦🇺</button>
+      <div class="header">
+        <h1><i class="fa fa-school"></i> School Word Practice</h1>
+        <div class="lifetime">
+          Lifetime: <span id="lifetime-correct">0</span> correct /
+          <span id="lifetime-attempts">0</span> attempts
         </div>
-      </header>
-
-      <div class="mode-switch">
-        <button id="practice-mode-btn" class="btn-primary"><i class="fas fa-book"></i> Practice</button>
-        <button id="test-mode-btn" class="btn-secondary"><i class="fas fa-spell-check"></i> Test (24 words)</button>
-        <button id="mode-switch-btn" class="btn-tertiary"><i class="fas fa-random"></i> Switch Mode</button>
       </div>
 
-      <!-- Practice Area (Ad-Free Zone) -->
-      <div id="trainer-area" class="hidden"></div>
+      <div style="display:flex;gap:.5rem;margin-bottom:.5rem">
+        <button data-accent="en-US" class="btn primary" id="accent-us">🇺🇸 en-US</button>
+        <button data-accent="en-GB" class="btn" id="accent-gb">🇬🇧 en-GB</button>
+        <button data-accent="en-AU" class="btn" id="accent-au">🇦🇺 en-AU</button>
+      </div>
 
+      <div id="trainer-area" class="hidden"></div>
       <div id="summary-area" class="summary-area hidden"></div>
 
-      <div class="custom-words-section">
-        <label class="section-label">Custom Words</label>
-        <textarea id="custom-words" placeholder="Type or paste words (comma separated)"></textarea>
-        <div class="file-upload">
-          <label for="file-input" class="btn-upload">
-            <i class="fas fa-file-upload"></i> Upload Word List
-          </label>
-          <input type="file" id="file-input" accept=".txt,.pdf,.docx"/>
+      <div class="card" style="margin-top:.75rem">
+        <label class="section-label"><strong>Custom Words (Freemium: one list per day, still capped at 10 words total per day)</strong></label>
+        <textarea id="custom-words" placeholder="Type or paste words (comma separated)" style="width:100%;min-height:100px"></textarea>
+        <div style="display:flex;gap:.5rem;align-items:center;margin-top:.5rem">
+          <label for="file-input" class="btn"><i class="fa fa-file-upload"></i> Upload Word List</label>
+          <input type="file" id="file-input" accept=".txt,.pdf,.docx" style="display:none"/>
+          <button id="add-custom-btn" class="btn primary"><i class="fa fa-plus"></i> Add Words</button>
+          <button id="start-btn" class="btn primary"><i class="fa fa-play"></i> Start Session</button>
         </div>
-        <button id="add-custom-btn" class="btn-primary">
-          <i class="fas fa-plus"></i> Add Words
-        </button>
-      </div>
-
-      <div class="controls">
-        <button id="start-btn" class="btn-primary">
-          <i class="fas fa-play"></i> Start Session
-        </button>
       </div>
     </section>
   </main>
 
-  <!-- Footer Ad (Outside main content area) -->
-  <div class="ad-container footer-ad">
-    <div class="ad-label">Advertisement</div>
-    <ins class="adsbygoogle"
-         style="display:block"
-         data-ad-client="ca-pub-7632930282249669"
-         data-ad-slot="YOUR_FOOTER_SLOT"
-         data-ad-format="auto"
-         data-full-width-responsive="true"></ins>
-    <script>
-         (adsbygoogle = window.adsbygoogle || []).push({});
-    </script>
+  <div class="ad-container">
+    <ins class="adsbygoogle" style="display:block" data-ad-client="ca-pub-7632930282249669" data-ad-slot="YOUR_FOOTER_SLOT" data-ad-format="auto" data-full-width-responsive="true"></ins>
+    <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
   </div>
 
-  <!-- Summary Ad injector (same pattern as OET) -->
-  <script>
-    function insertSummaryAd() {
-      const summaryArea = document.getElementById('summary-area');
-      if (!summaryArea) return;
-      const old = summaryArea.querySelector('.summary-ad-container');
-      if (old) old.remove();
-      const wrap = document.createElement('div');
-      wrap.className = 'summary-ad-container ad-container';
-      wrap.innerHTML = `
-        <div class="ad-label">Advertisement</div>
-        <ins class="adsbygoogle"
-             style="display:block"
-             data-ad-client="ca-pub-7632930282249669"
-             data-ad-slot="YOUR_SCHOOL_SUMMARY_SLOT"
-             data-ad-format="auto"
-             data-full-width-responsive="true"></ins>
-      `;
-      summaryArea.appendChild(wrap);
-      (adsbygoogle = window.adsbygoogle || []).push({});
-    }
-    window.insertSummaryAd = insertSummaryAd;
-  </script>
-
-  <!-- Firebase (match your other freemium pages) -->
-  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-analytics.js"></script>
-
-  <!-- App scripts -->
   <script src="js/main-freemium-school.js"></script>
 </body>
 </html>
