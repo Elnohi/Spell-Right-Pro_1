@@ -4,14 +4,15 @@
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>SpellRightPro</title>
-  <link rel="stylesheet" href="css/styles.css"/>
+
+  <link rel="icon" href="/assets/logo.png">
+  <link rel="stylesheet" href="/css/styles.css"/>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"/>
+
   <style>
-    :root{
-      --primary:#4361ee; --text:#222; --muted:#f4f6f8; --border:#e6e8eb; --surface:#fff;
-      --promo:#0f9d58;
-    }
-    body{font-family:system-ui,Segoe UI,Roboto,Arial,sans-serif;background:#fafbfc;color:var(--text);margin:0}
+    :root{ --primary:#4361ee; --text:#222; --border:#e6e8eb; --surface:#fff; --promo:#0f9d58; }
+    *{box-sizing:border-box}
+    body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;background:#fafbfc;color:var(--text)}
     .nav{display:flex;justify-content:space-between;align-items:center;padding:14px 18px;background:#fff;border-bottom:1px solid var(--border)}
     .brand{display:flex;gap:10px;align-items:center}
     .brand img{width:40px;height:40px}
@@ -24,6 +25,14 @@
     .links a:hover{border-color:#cbd2d9}
     .premium{background:var(--primary);color:#fff;border-color:var(--primary)}
     footer{margin:28px 0 18px;text-align:center;color:#666;font-size:.9rem}
+
+    /* Promo banner */
+    .promo{border:1px solid #d7f1e3;background:#ecfff6;border-radius:14px;padding:14px;display:flex;gap:12px;align-items:center;margin-bottom:16px}
+    .promo .badge{background:var(--promo);color:#fff;border-radius:999px;padding:6px 10px;font-weight:700;font-size:.85rem}
+    .promo .title{font-weight:800}
+    .promo .timer{margin-left:auto;font-variant-numeric:tabular-nums}
+    .promo .cta a{background:var(--promo);color:#fff;border-radius:10px;padding:8px 12px;text-decoration:none;border:1px solid #0a7f46}
+
     /* Contact modal */
     .modal{position:fixed;inset:0;background:rgba(0,0,0,.5);display:none;align-items:center;justify-content:center;z-index:1000}
     .modal.active{display:flex}
@@ -34,20 +43,12 @@
     .field input,.field textarea{border:1px solid var(--border);border-radius:8px;padding:10px}
     .btn{padding:10px 14px;border-radius:10px;border:1px solid var(--border);cursor:pointer}
     .btn.primary{background:var(--primary);color:#fff;border-color:var(--primary)}
-    /* Promo banner */
-    .promo{border:1px solid #d7f1e3;background:#ecfff6;border-radius:14px;padding:14px;display:flex;gap:12px;align-items:center;margin-bottom:16px}
-    .promo .badge{background:var(--promo);color:#fff;border-radius:999px;padding:6px 10px;font-weight:700;font-size:.85rem}
-    .promo .title{font-weight:800}
-    .promo .timer{margin-left:auto;font-feature-settings:"tnum";font-variant-numeric:tabular-nums}
-    .promo .cta{margin-left:8px}
-    .promo .cta a{background:var(--promo);color:#fff;border-radius:10px;padding:8px 12px;text-decoration:none;border:1px solid #0a7f46}
-    .promo small{display:block;color:#2e7d32;margin-top:2px}
   </style>
 </head>
 <body>
   <nav class="nav">
     <div class="brand">
-      <img src="assets/logo.png" alt="SpellRightPro Logo"/><span class="name">SpellRightPro</span>
+      <img src="/assets/logo.png" alt="SpellRightPro Logo"/><span class="name">SpellRightPro</span>
     </div>
     <div class="actions">
       <a id="contact-link" href="#"><i class="fa-regular fa-envelope"></i> Contact Us</a>
@@ -62,22 +63,22 @@
         <div class="title">Limited-time Back-to-School Sale</div>
         <small>Use code <strong id="promo-code-badge">BACK2SCHOOL70</strong> at checkout.</small>
       </div>
-      <div class="timer" id="promo-timer">10d 00:00:00</div>
-      <div class="cta"><a id="promo-upgrade-link" href="premium.html">Upgrade now</a></div>
+      <div class="timer">Ends in <span id="promo-timer">10d 00:00:00</span></div>
+      <div class="cta"><a id="promo-upgrade-link" href="/premium.html">Upgrade now</a></div>
     </div>
 
     <div class="card">
       <h1>Choose Your Mode</h1>
       <div class="links">
-        <a href="freemium-oet.html">OET Trainer (Freemium)</a>
-        <a href="freemium-bee.html">Spelling Bee (Freemium)</a>
-        <a href="freemium-school.html">School Mode (Freemium)</a>
-        <a href="premium.html" class="premium"><i class="fa-solid fa-crown"></i> Premium Edition</a>
+        <a href="/freemium-oet.html">OET Trainer (Freemium)</a>
+        <a href="/freemium-bee.html">Spelling Bee (Freemium)</a>
+        <a href="/freemium-school.html">School Mode (Freemium)</a>
+        <a href="/premium.html" class="premium"><i class="fa-solid fa-crown"></i> Premium Edition</a>
       </div>
     </div>
   </div>
 
-  <footer>© SpellRightPro</footer>
+  <footer>© 2025 SpellRightPro</footer>
 
   <!-- Contact Modal -->
   <div id="contact-modal" class="modal" aria-hidden="true" role="dialog">
@@ -86,7 +87,8 @@
         <h3>Contact Us</h3>
         <button class="close close-modal" aria-label="Close">&times;</button>
       </header>
-      <form action="https://formspree.io/f/your-id" method="POST">
+      <!-- Formspree example; replace with your own endpoint if you already use one -->
+      <form action="https://formspree.io/f/xzbnzyae" method="POST">
         <div class="field"><label>Name</label><input type="text" name="name" required/></div>
         <div class="field"><label>Email</label><input type="email" name="email" required/></div>
         <div class="field"><label>Message</label><textarea name="message" rows="5" required></textarea></div>
@@ -96,7 +98,8 @@
   </div>
 
   <!-- Promo module (shared) -->
-  <script src="js/promo.js"></script>
+  <script src="/js/promo.js" defer></script>
+
   <script>
     // Contact modal (guarded)
     document.addEventListener('DOMContentLoaded', function () {
