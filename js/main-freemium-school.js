@@ -1,4 +1,4 @@
-// Freemium School Mode — default school.json + merge custom; lifetime stats; 10/day cap
+// Freemium School Mode — styled to your CSS; default school.json + merge custom; lifetime stats; 10/day
 document.addEventListener('DOMContentLoaded', () => {
   const trainerArea = document.getElementById('trainer-area');
   const summaryArea = document.getElementById('summary-area');
@@ -6,211 +6,202 @@ document.addEventListener('DOMContentLoaded', () => {
   const fileInput = document.getElementById('file-input');
   const customInput = document.getElementById('custom-words');
   const startBtn = document.getElementById('start-btn');
-  const accentButtons = [document.getElementById('accent-us'), document.getElementById('accent-gb'), document.getElementById('accent-au')];
 
-  const lifetimeAttemptsEl = document.getElementById('lifetime-attempts');
-  const lifetimeCorrectEl  = document.getElementById('lifetime-correct');
-
-  // ---- Lifetime stats helpers ----
-  function getLS(k, def=0){ try{ return parseInt(localStorage.getItem(k)||def,10);}catch{ return def; } }
-  function setLS(k, v){ try{ localStorage.setItem(k, String(v)); }catch{} }
-  function incLS(k, by){ setLS(k, getLS(k,0)+by); }
-  function refreshLifetime(){
-    lifetimeAttemptsEl.textContent = getLS('srp_school_attempts', 0);
-    lifetimeCorrectEl.textContent  = getLS('srp_school_correct', 0);
-  }
-  refreshLifetime();
-
-  // ---- Daily cap (10 words) ----
-  const FREEMIUM_MAX = 10;
-  function dayKey(){
-    const d = new Date();
-    return `srp_daily_words_School_${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
-  }
-  function usedToday(){ return getLS(dayKey(), 0); }
-  function setUsedToday(n){ setLS(dayKey(), n); }
-  function capForToday(list){
-    const used = usedToday();
-    if (used >= FREEMIUM_MAX) { alert(`Freemium limit reached: ${FREEMIUM_MAX} words today. Come back tomorrow or upgrade to Premium.`); return []; }
-    const remain = FREEMIUM_MAX - used;
-    return list.length > remain ? list.slice(0, remain) : list;
-  }
-
-  // ---- Accent / TTS ----
+  // Accent
   let accent = 'en-US';
-  let synth = window.speechSynthesis;
-  function speak(word){
-    try{
-      synth && synth.cancel();
-      const u = new SpeechSynthesisUtterance(word);
-      u.lang = accent;
-      (synth||window.speechSynthesis).speak(u);
-    }catch(e){}
-  }
-  accentButtons.forEach(btn=>{
-    if(!btn) return;
-    btn.addEventListener('click', ()=>{
-      accentButtons.forEach(b=>b && b.classList.remove('primary'));
-      btn.classList.add('primary');
+  ['accent-us','accent-gb','accent-au'].forEach(id => {
+    const btn = document.getElementById(id);
+    btn?.addEventListener('click', () => {
+      document.querySelectorAll('.accent-picker button').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
       accent = btn.dataset.accent || 'en-US';
     });
   });
 
-  // ---- Word sources ----
-  let baseSchoolWords = [];
-  let customWords = [];
+  // Lifetime stats
+  const triesEl = document.getElementById('lifetime-attempts');
+  const corrEl  = document.getElementById('lifetime-correct');
+  const getN  = (k,d=0)=>{ try{return parseInt(localStorage.getItem(k)||d,10);}catch{return d;} };
+  const setN  = (k,v)=>{ try{localStorage.setItem(k,String(v));}catch{} };
+  const incN  = (k,by)=> setN(k, getN(k,0)+by);
+  function refreshLifetime(){ triesEl.textContent=getN('srp_school_attempts',0); corrEl.textContent=getN('srp_school_correct',0); }
+  refreshLifetime();
+
+  // 10/day cap
+  const MAX = 10;
+  const dayKey = ()=> {
+    const d=new Date(); return `srp_daily_words_School_${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+  };
+  const usedToday  = ()=> getN(dayKey(),0);
+  const setUsed    = n => setN(dayKey(), n);
+  const capToday   = list => {
+    const used = usedToday();
+    if (used >= MAX) { alert(`Freemium limit reached: ${MAX} words today.`); return []; }
+    const remain = MAX - used;
+    return list.length > remain ? list.slice(0, remain) : list;
+  };
+
+  // TTS
+  function speak(word){
+    try{
+      const s = window.speechSynthesis;
+      s && s.cancel();
+      const u = new SpeechSynthesisUtterance(word);
+      u.lang = accent;
+      (s||window.speechSynthesis).speak(u);
+    }catch(e){}
+  }
+
+  // Base sample list (always used)
+  let sample = [];
   (async ()=>{
     try{
       const res = await fetch('school.json', {cache:'no-cache'});
       const data = await res.json();
-      baseSchoolWords = Array.isArray(data?.words) ? data.words.filter(Boolean) : [];
-    }catch(e){ console.warn('Could not load school.json', e); }
+      sample = Array.isArray(data?.words) ? data.words.filter(Boolean) : [];
+    }catch(e){ console.warn('school.json load failed', e); }
   })();
 
-  // ---- Session state ----
-  let words = [];
-  let i = 0;
-  let correct = 0;
-  let attempts = 0;
-  let answers = [];
-  let sessionActive = false;
-
-  // ---- UI helpers ----
-  function showTrainer(){
-    summaryArea.classList.add('hidden');
-    trainerArea.classList.remove('hidden');
-    renderQuestion();
-  }
-  function showSummary(){
-    trainerArea.classList.add('hidden');
-    summaryArea.classList.remove('hidden');
-  }
-  function renderQuestion(){
-    if (i >= words.length) return endSession();
-    const w = words[i];
-    trainerArea.innerHTML = `
-      <div style="display:flex;justify-content:space-between;align-items:center;gap:.5rem">
-        <button class="btn-icon" id="hear"><i class="fa fa-volume-up"></i></button>
-        <div>Word ${i+1}/${words.length}</div>
-      </div>
-      <div class="big-input">
-        <label for="answer" style="font-weight:600;margin-right:6px">Type here:</label>
-        <input id="answer" type="text" placeholder="Type the spelling and press Enter" autocomplete="off"/>
-        <button class="btn primary" id="submit"><i class="fa fa-check"></i></button>
-        <button class="btn" id="skip"><i class="fa fa-forward"></i></button>
-      </div>
-      <div class="flag-row"><button class="btn" id="flag"><i class="fa fa-flag"></i> Flag</button></div>
-    `;
-    document.getElementById('hear')?.addEventListener('click', ()=>speak(w));
-    document.getElementById('submit')?.addEventListener('click', submit);
-    document.getElementById('skip')?.addEventListener('click', ()=>{ answers.push(''); i++; renderQuestion(); });
-    const input = document.getElementById('answer');
-    input?.focus();
-    input?.addEventListener('keydown', (e)=>{ if(e.key==='Enter') submit(); });
-    speak(w);
-  }
-
-  function submit(){
-    const input = (document.getElementById('answer')?.value||'').trim();
-    const w = (words[i]||'').trim();
-    attempts++;
-    if (input.toLowerCase() === w.toLowerCase()) correct++;
-    answers.push(input);
-    i++;
-    renderQuestion();
-  }
-
-  function endSession(){
-    sessionActive = false;
-    // lifetime update
-    incLS('srp_school_attempts', attempts);
-    incLS('srp_school_correct',  correct);
-    refreshLifetime();
-
-    setUsedToday(usedToday() + words.length);
-
-    const percent = words.length ? Math.round(correct/words.length*100) : 0;
-    const wrong = words.filter((w, idx)=> (answers[idx]||'').toLowerCase() !== w.toLowerCase());
-    summaryArea.innerHTML = `
-      <div class="card">
-        <h2>Session Results</h2>
-        <div style="font-weight:700;margin:.25rem 0">${correct}/${words.length} (${percent}%)</div>
-        <div class="results-grid" style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.75rem">
-          <div class="results-card" style="border:1px solid #e6e8eb;border-radius:10px;padding:.75rem">
-            <h3>Correct</h3>
-            <div>${words.filter((w,idx)=> (answers[idx]||'').toLowerCase()===w.toLowerCase()).map(w=>`<span class="word-item" style="display:inline-block;margin:2px;padding:.25rem .5rem;background:#eef2f7;border-radius:6px">${w}</span>`).join('')}</div>
-          </div>
-          <div class="results-card" style="border:1px solid #e6e8eb;border-radius:10px;padding:.75rem">
-            <h3>Needs Practice</h3>
-            <div>${wrong.map(w=>`<span class="word-item" style="display:inline-block;margin:2px;padding:.25rem .5rem;background:#fff3cd;border:1px solid #ffe69c;border-radius:6px">${w}</span>`).join('')}</div>
-          </div>
-        </div>
-        <div style="margin-top:.75rem;display:flex;gap:.5rem">
-          <button id="restart" class="btn primary"><i class="fa fa-redo"></i> Restart</button>
-          <button id="newlist" class="btn"><i class="fa fa-sync"></i> New List</button>
-        </div>
-      </div>
-    `;
-    showSummary();
-    document.getElementById('restart')?.addEventListener('click', startSession);
-    document.getElementById('newlist')?.addEventListener('click', ()=>{ words=[]; i=0; attempts=0; correct=0; answers=[]; summaryArea.classList.add('hidden'); });
-    // Summary Ad (if present across site)
-    if (window.insertSummaryAd) window.insertSummaryAd();
-  }
-
-  // ---- Build list and start ----
-  function startSession(){
-    // Always start from sample school.json, then merge custom if present
-    const base = baseSchoolWords.slice();
-    const merged = mergeUnique(base, customWords);
-    let sessionWords = capForToday(merged);
-    if (!sessionWords.length) { alert('No words available for today.'); return; }
-    words = sessionWords;
-    i=0; attempts=0; correct=0; answers=[];
-    sessionActive = true;
-    showTrainer();
-  }
-
-  // ---- Custom handling (still “one list per day”) ----
-  function todayStr(){ return new Date().toISOString().slice(0,10); }
-  function canAddCustomToday(){
-    const last = localStorage.getItem('school_custom_date');
-    return last !== todayStr();
-  }
-  function markCustomUsed(){ localStorage.setItem('school_custom_date', todayStr()); }
+  // Custom once per day (still merged with sample)
+  const today = ()=> new Date().toISOString().slice(0,10);
+  const canAddCustom = ()=> localStorage.getItem('school_custom_date') !== today();
+  const markCustom   = ()=> localStorage.setItem('school_custom_date', today());
+  let custom = [];
 
   addCustomBtn?.addEventListener('click', ()=>{
-    if (!canAddCustomToday()) { alert('Freemium allows one custom list per day.'); return; }
+    if (!canAddCustom()) return alert('Freemium allows one custom list per day.');
     const raw = (customInput.value||'').trim();
-    if (!raw) { alert('Enter some words first.'); return; }
+    if (!raw) return alert('Enter some words first.');
     const parsed = raw.split(/[\s,;]+/).map(w=>w.trim()).filter(Boolean);
-    customWords = mergeUnique(customWords, parsed);
-    markCustomUsed();
-    customInput.value = '';
+    custom = mergeUnique(custom, parsed);
+    markCustom();
+    customInput.value='';
     alert(`Added ${parsed.length} custom words. These will be merged with the sample list.`);
   });
 
   fileInput?.addEventListener('change', (e)=>{
-    if (!canAddCustomToday()) { alert('Freemium allows one custom list per day.'); e.target.value=''; return; }
+    if (!canAddCustom()) { alert('Freemium allows one custom list per day.'); e.target.value=''; return; }
     const f = e.target.files[0]; if (!f) return;
-    const reader = new FileReader();
-    reader.onload = ()=>{
-      const text = reader.result || '';
-      const parsed = text.split(/\r?\n|,|;|\t/).map(w=>w.trim()).filter(Boolean);
-      customWords = mergeUnique(customWords, parsed);
-      markCustomUsed();
+    const r = new FileReader();
+    r.onload = ()=>{
+      const parsed = String(r.result||'').split(/\r?\n|,|;|\t/).map(w=>w.trim()).filter(Boolean);
+      custom = mergeUnique(custom, parsed);
+      markCustom();
       alert(`Uploaded ${parsed.length} custom words. They will be merged with the sample list.`);
     };
-    reader.readAsText(f);
+    r.readAsText(f);
   });
 
+  // Session
+  let words=[], i=0, correct=0, attempts=0, answers=[];
   startBtn?.addEventListener('click', startSession);
 
-  // ---- Utils ----
+  function startSession(){
+    // Always start from SAMPLE, then merge custom
+    const base = sample.slice();
+    const merged = mergeUnique(base, custom);
+    words = capToday(merged);
+    if (!words.length) return;
+    i=0; correct=0; attempts=0; answers=[];
+    summaryArea.classList.add('hidden');
+    trainerArea.classList.remove('hidden');
+    renderQ();
+  }
+
+  function renderQ(){
+    if (i>=words.length) return endSession();
+    const w = words[i];
+    trainerArea.innerHTML = `
+      <div class="word-progress">Word ${i+1}/${words.length}</div>
+      <div class="input-group fade-in">
+        <input id="answer" type="text" class="form-control" placeholder="Type the spelling and press Enter" autocomplete="off"/>
+      </div>
+      <div class="button-group">
+        <button id="hear" class="btn-secondary"><i class="fa fa-volume-up"></i> Hear Word</button>
+        <button id="submit" class="btn-primary"><i class="fa fa-check"></i> Submit</button>
+        <button id="skip" class="btn-secondary"><i class="fa fa-forward"></i> Skip</button>
+        <button id="flag" class="btn-secondary"><i class="fa fa-flag"></i> Flag</button>
+      </div>
+      <div id="feedback" class="feedback" aria-live="polite"></div>
+    `;
+    document.getElementById('answer')?.focus();
+    document.getElementById('answer')?.addEventListener('keydown', e => { if (e.key==='Enter') submit(); });
+    document.getElementById('submit')?.addEventListener('click', submit);
+    document.getElementById('skip')?.addEventListener('click', ()=>{ answers.push(''); i++; renderQ(); });
+    document.getElementById('hear')?.addEventListener('click', ()=> speak(w));
+    document.getElementById('flag')?.addEventListener('click', ()=> alert(`Flagged: ${w}`));
+    speak(w);
+  }
+
+  function submit(){
+    const inputEl = document.getElementById('answer');
+    const fb = document.getElementById('feedback');
+    const input = (inputEl?.value||'').trim();
+    const w = (words[i]||'').trim();
+    attempts++;
+    if (input.toLowerCase() === w.toLowerCase()) {
+      correct++;
+      inputEl?.classList.remove('incorrect-answer');
+      inputEl?.classList.add('correct-answer');
+      fb?.classList.remove('incorrect'); fb?.classList.add('correct'); if (fb) fb.textContent = 'Correct!';
+      setTimeout(()=>{ i++; renderQ(); }, 400);
+    } else {
+      inputEl?.classList.remove('correct-answer');
+      inputEl?.classList.add('incorrect-answer');
+      fb?.classList.remove('correct'); fb?.classList.add('incorrect'); if (fb) fb.textContent = `Incorrect. Correct spelling: ${w}`;
+      setTimeout(()=>{ i++; renderQ(); }, 700);
+    }
+  }
+
+  function endSession(){
+    // lifetime
+    incN('srp_school_attempts', attempts);
+    incN('srp_school_correct',  correct);
+    refreshLifetime();
+
+    setUsed(usedToday() + words.length);
+
+    const pct = words.length ? Math.round(correct/words.length*100) : 0;
+    const wrong = words.filter((w,idx)=> (answers[idx]||'').toLowerCase() !== w.toLowerCase());
+    summaryArea.innerHTML = `
+      <div class="summary-header">
+        <h2>Session Results</h2>
+        <div class="score-display">${correct}/${words.length}</div>
+        <div class="score-percent">${pct}%</div>
+      </div>
+      <div class="results-grid">
+        <div class="results-card correct">
+          <h3><i class="fa fa-check-circle"></i> Correct</h3>
+          <div class="score-number">${correct}</div>
+          <div class="word-list">
+            ${words.filter((w,idx)=> (answers[idx]||'').toLowerCase()===w.toLowerCase()).map(w=>`<div class="word-item">${w}</div>`).join('')}
+          </div>
+        </div>
+        <div class="results-card incorrect">
+          <h3><i class="fa fa-times-circle"></i> Needs Practice</h3>
+          <div class="score-number">${wrong.length}</div>
+          <div class="word-list">
+            ${wrong.map(w=>`<div class="word-item">${w}</div>`).join('')}
+          </div>
+        </div>
+      </div>
+      <div class="summary-actions">
+        <button id="restart" class="btn-secondary"><i class="fa fa-redo"></i> Restart</button>
+        <button id="newlist" class="btn-secondary"><i class="fa fa-sync"></i> New List</button>
+      </div>
+    `;
+    trainerArea.classList.add('hidden');
+    summaryArea.classList.remove('hidden');
+    document.getElementById('restart')?.addEventListener('click', startSession);
+    document.getElementById('newlist')?.addEventListener('click', ()=>{ summaryArea.classList.add('hidden'); });
+    if (window.insertSummaryAd) window.insertSummaryAd();
+  }
+
+  // utils
   function mergeUnique(base, add){
     const seen = new Set(base.map(w=>w.toLowerCase()));
     const out = base.slice();
-    add.forEach(w=>{ const k = w.toLowerCase(); if (!seen.has(k)) { seen.add(k); out.push(w); }});
+    add.forEach(w=>{ const k=w.toLowerCase(); if(!seen.has(k)){ seen.add(k); out.push(w);} });
     return out;
   }
 });
