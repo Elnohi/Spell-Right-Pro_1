@@ -1,62 +1,68 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
+  <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>SpellRightPro</title>
-
-  <!-- Styles -->
-  <link rel="stylesheet" href="css/styles.css" />
-  <link rel="stylesheet" href="css/premium.css" />
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
-
   <style>
-    /* Modal styles */
-    .modal {
-      position: fixed;
-      z-index: 1000;
-      left: 0; top: 0; width: 100%; height: 100%;
-      background-color: rgba(0,0,0,0.5);
-      display: fle
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; line-height: 1.5; padding: 16px; }
+    .links { max-width: 720px; margin: 0 auto; }
+    .links a { display: inline-block; margin: 0 12px 12px 0; color: #2a55ff; text-decoration: none; }
+    .links a:hover { text-decoration: underline; }
+    .premium { font-weight: 600; }
   </style>
 </head>
 <body>
-  <!-- ... your original landing content ... -->
-
-  <!-- Existing section preserved; only added the School link below -->
-  <div class="version-links">
+  <div class="links">
     <a href="freemium-oet.html">OET Trainer (Freemium)</a>
     <a href="freemium-bee.html">Spelling Bee (Freemium)</a>
     <a href="freemium-school.html">School Mode (Freemium)</a>
-    <a href="premium.html" class="premium-link">
-      <i class="fas fa-crown crown-icon"></i>Premium Edition
-    </a>
+    <a href="premium.html" class="premium">👑 Premium Edition</a>
   </div>
 
-  <!-- ... the rest of your original file unchanged, including modal scripts & dark mode toggle ... -->
+  <!-- If you later add modal / dark-mode UI back, this script already guards for missing elements -->
   <script>
-    document.addEventListener('DOMContentLoaded', function() {
-      const modal = document.getElementById('contact-modal');
-      const contactLink = document.getElementById('contact-link');
-      const closeBtn = document.querySelector('.close-modal');
-
-      contactLink.addEventListener('click', function(e) {
-        e.preventDefault(); modal.classList.add('active');
-      });
-      closeBtn.addEventListener('click', function() { modal.classList.remove('active'); });
-      window.addEventListener('click', function(e) { if (e.target === modal) modal.classList.remove('active'); });
-
-      const darkModeToggle = document.getElementById('dark-mode-toggle');
-      darkModeToggle.addEventListener('click', function() {
-        document.body.classList.toggle('dark-mode');
-        localStorage.setItem('darkMode', document.body.classList.contains('dark-mode'));
-        updateDarkModeIcon();
-      });
-      function updateDarkModeIcon() {
-        const icon = darkModeToggle.querySelector('i');
-        icon.className = document.body.classList.contains('dark-mode') ? 'fas fa-sun' : 'fas fa-moon';
+    document.addEventListener('DOMContentLoaded', function () {
+      // Modal (optional; guarded)
+      var modal = document.getElementById('contact-modal');
+      var contactLink = document.getElementById('contact-link');
+      var closeBtn = document.querySelector('.close-modal');
+      if (contactLink && modal) {
+        contactLink.addEventListener('click', function (e) {
+          e.preventDefault();
+          modal.classList.add('active');
+        });
       }
-      if (localStorage.getItem('darkMode') === 'true') document.body.classList.add('dark-mode');
+      if (closeBtn && modal) {
+        closeBtn.addEventListener('click', function () {
+          modal.classList.remove('active');
+        });
+      }
+      if (modal) {
+        window.addEventListener('click', function (e) {
+          if (e.target === modal) modal.classList.remove('active');
+        });
+      }
+
+      // Dark mode (optional; guarded)
+      var darkModeToggle = document.getElementById('dark-mode-toggle');
+      function updateDarkModeIcon() {
+        if (!darkModeToggle) return;
+        var icon = darkModeToggle.querySelector('i');
+        if (!icon) return;
+        if (document.body.classList.contains('dark-mode')) icon.className = 'fas fa-sun';
+        else icon.className = 'fas fa-moon';
+      }
+      if (darkModeToggle) {
+        darkModeToggle.addEventListener('click', function () {
+          document.body.classList.toggle('dark-mode');
+          try { localStorage.setItem('darkMode', document.body.classList.contains('dark-mode')); } catch(e) {}
+          updateDarkModeIcon();
+        });
+      }
+      try {
+        if (localStorage.getItem('darkMode') === 'true') document.body.classList.add('dark-mode');
+      } catch(e) {}
       updateDarkModeIcon();
     });
   </script>
