@@ -1,71 +1,71 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <title>SpellRightPro Premium</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta charset="UTF-8"/>
+  <title>SpellRightPro – Premium</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <base href="/" />
 
-  <!-- Performance hints -->
-  <link rel="preconnect" href="https://js.stripe.com" />
-  <link rel="preconnect" href="https://www.gstatic.com" />
-  <link rel="preconnect" href="https://www.googleapis.com" />
-
   <!-- Styles -->
-  <link rel="stylesheet" href="/css/styles.css">
-  <link rel="stylesheet" href="/css/premium.css">
   <link rel="icon" href="/assets/logo.png">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="/css/styles.css"/>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"/>
 
-  <!-- Firebase (compat) -->
+  <!-- Firebase (kept in Premium) -->
   <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-analytics-compat.js"></script>
+  <script src="/js/config.js"></script>
 
-  <!-- Config MUST load before anything that uses it -->
-  <script src="/js/config.js?v=2025-08-25"></script>
-
-  <!-- Helpers / data -->
-  <script src="/js/common.js" defer></script>
-  <script src="/js/oet_word_list.js" defer></script>
-
-  <!-- Stripe -->
-  <script src="https://js.stripe.com/v3/" defer></script>
-
-  <!-- Main premium app -->
-  <script src="/js/main-premium.js?v=2025-08-25-1" defer></script>
-
-  <!-- Promo logic -->
+  <!-- Promo module (shared) -->
   <script src="/js/promo.js" defer></script>
 
-  <!-- Register SW at root -->
-  <script>
-    if ("serviceWorker" in navigator) {
-      addEventListener("load", () => {
-        navigator.serviceWorker.register("/sw.js", { scope: "/" }).catch(console.warn);
-      });
-    }
-  </script>
+  <!-- Main Premium logic -->
+  <script src="/js/main-premium.js" defer></script>
 
   <style>
-    .skeleton-line{height:12px;border-radius:6px;background:linear-gradient(90deg,
-      rgba(0,0,0,.08) 25%, rgba(0,0,0,.14) 37%, rgba(0,0,0,.08) 63%);
-      background-size:400% 100%; animation:skeleton 1.2s ease-in-out infinite}
-    .skeleton-block{border:1px solid var(--border,#e6e6e6);border-radius:12px;padding:16px}
-    @keyframes skeleton{0%{background-position:100% 0}100%{background-position:0 0}}
-    .loader-wrap{display:grid;gap:10px}
-    .loader-title{width:180px;height:18px}
-    .loader-line{width:100%}
-    .loader-btn{width:160px;height:36px;border-radius:8px}
+    :root{
+      --primary:#4361ee; --text:#111; --muted:#f6f7f9; --border:#e7e9ed; --surface:#fff;
+      --gray:#6b7280; --good:#16a34a; --bad:#dc2626; --promo:#0f9d58;
+    }
+    *{box-sizing:border-box}
+    body{margin:0;background:#fafbfc;color:var(--text);font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif}
 
-    /* Promo styles */
-    .strike{text-decoration:line-through;color:#777;margin-right:6px}
+    .navbar{display:flex;justify-content:space-between;align-items:center;padding:.75rem 1rem;background:#fff;border-bottom:1px solid var(--border)}
+    .brand{display:flex;gap:.75rem;align-items:center}
+    .brand .logo{width:40px;height:40px;object-fit:contain}
+    .brand .subtitle{display:block;color:var(--gray);font-size:.85rem;margin-top:-2px}
+    .nav-actions{display:flex;gap:.5rem;align-items:center}
+    .btn{border:1px solid var(--border);background:#fff;padding:.5rem .75rem;border-radius:8px;text-decoration:none;color:var(--text);cursor:pointer}
+    .btn.primary{background:var(--primary);border-color:var(--primary);color:#fff}
+    .btn.outline{background:#fff;border-color:var(--primary);color:var(--primary)}
+    .btn.icon{display:inline-flex;align-items:center;gap:.5rem}
+
+    .container{max-width:1100px;margin:0 auto;padding:1rem}
+    .hero{display:grid;grid-template-columns:1.2fr .8fr;gap:1rem;align-items:center}
+    @media (max-width: 900px){ .hero{grid-template-columns:1fr; } }
+
+    /* Promo banner */
     .promo-note{border:1px solid #d7f1e3;background:#ecfff6;border-radius:14px;padding:12px;margin:14px 0;text-align:center}
-    .promo-note strong{color:#0f9d58}
+    .promo-note strong{color:var(--promo)}
     .promo-note #premium-countdown{font-feature-settings:"tnum";font-variant-numeric:tabular-nums;font-weight:700}
-    .price{font-size:1.2rem;font-weight:700;margin:8px 0}
+
+    .pricing-card{background:#fff;border:1px solid var(--border);border-radius:14px;padding:16px}
+    .price{font-size:1.8rem;font-weight:800;margin:.25rem 0}
+    .strike{text-decoration:line-through;color:#777;margin-right:8px}
     .hidden{display:none}
+
+    .features{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.5rem}
+    .feature{display:flex;gap:.5rem;align-items:flex-start}
+    .feature i{color:var(--good);margin-top:.25rem}
+
+    .section{margin-top:1.5rem}
+    .card{background:#fff;border:1px solid var(--border);border-radius:14px;padding:16px}
+    .muted{color:var(--gray)}
+
+    footer{margin:28px 0 18px;text-align:center;color:#666;font-size:.9rem}
+    footer a{color:#4361ee;text-decoration:none} footer a:hover{text-decoration:underline}
   </style>
 </head>
 <body>
@@ -77,127 +77,89 @@
 
   <header class="navbar">
     <div class="brand">
-      <img src="/assets/logo.png" alt="SpellRightPro Logo" class="logo">
+      <img src="/assets/logo.png" alt="SpellRightPro Logo" class="logo"/>
       <div>
         <span>SpellRightPro</span>
         <span class="subtitle">Premium</span>
       </div>
     </div>
     <div class="nav-actions">
-      <button id="dark-mode-toggle" class="btn-icon" title="Toggle theme">
-        <i class="fas fa-moon"></i>
+      <a class="btn" href="/index.html"><i class="fa fa-home"></i> Home</a>
+      <button id="dark-mode-toggle" class="btn icon" title="Toggle theme">
+        <i class="fa fa-moon"></i> Theme
       </button>
     </div>
   </header>
 
   <main class="container">
-    <div id="auth-area"></div>
-
-    <!-- Promo Banner -->
+    <!-- PROMO BANNER (auto-hidden after promo ends) -->
     <div id="promo-note" class="promo-note" hidden>
-      🎉 <strong>70% OFF</strong> with code <span id="premium-code">BACK2SCHOOL70</span> <br/>
+      🎉 <strong>70% OFF</strong> with code <span id="premium-code">BACK2SCHOOL70</span><br/>
       <small>Hurry! Offer ends in <span id="premium-countdown">10d 00:00:00</span></small>
     </div>
 
-    <section id="premium-app" class="training-card hidden">
-      <h2 id="app-title" class="card-title">Premium</h2>
+    <section class="hero">
+      <div>
+        <h1>Unlock Everything in SpellRightPro</h1>
+        <p class="muted">All modes unlocked (OET, Bee, School), unlimited custom lists, detailed progress tracking, and an ad-free experience.</p>
 
-      <!-- Pricing -->
-      <div class="pricing">
-        <p id="price-monthly" class="price">
-          <span class="strike" id="price-monthly-strike">$9</span>
-          <span id="price-monthly-discount">$2.70</span> /month
-        </p>
-        <p id="price-annual" class="price">
-          <span class="strike" id="price-annual-strike">$7</span>
-          <span id="price-annual-discount">$2.10</span> /month
-          <small> ($25.20 billed annually)</small>
-        </p>
-      </div>
-
-      <div id="exam-ui">
-        <div class="skeleton-block" role="status" aria-live="polite" aria-busy="true">
-          <div class="loader-wrap">
-            <div class="skeleton-line loader-title"></div>
-            <div class="skeleton-line loader-line"></div>
-            <div class="skeleton-line loader-line"></div>
-            <div class="skeleton-line loader-btn" style="margin-top:6px;"></div>
+        <div class="section pricing-card">
+          <!-- Monthly -->
+          <div id="price-monthly" class="price">
+            <span id="price-monthly-strike" class="strike">$9</span>
+            <span id="price-monthly-discount">$2.70</span>
+            <small>/month</small>
           </div>
+          <!-- Annual -->
+          <div id="price-annual" class="price">
+            <span id="price-annual-strike" class="strike">$7</span>
+            <span id="price-annual-discount">$2.10</span>
+            <small>/month ($25.20 billed annually)</small>
+          </div>
+
+          <div style="margin-top:.75rem;display:flex;gap:.5rem;flex-wrap:wrap">
+            <button id="upgrade-btn" class="btn primary icon">
+              <i class="fa fa-crown"></i> Upgrade Now
+            </button>
+            <a class="btn outline" href="/pricing.html"><i class="fa fa-tags"></i> View Pricing</a>
+          </div>
+          <p class="muted" style="margin:.5rem 0 0">Safe checkout via Stripe.</p>
+        </div>
+
+        <div class="section features card">
+          <div class="feature"><i class="fa fa-check"></i><div>All exam modes: OET, Spelling Bee, School</div></div>
+          <div class="feature"><i class="fa fa-check"></i><div>Unlimited custom lists (upload .txt/.pdf/.docx)</div></div>
+          <div class="feature"><i class="fa fa-check"></i><div>Detailed progress & lifetime stats</div></div>
+          <div class="feature"><i class="fa fa-check"></i><div>Ad-free experience</div></div>
         </div>
       </div>
 
-      <div id="trainer-area" class="hidden"></div>
-      <div id="summary-area" class="hidden"></div>
+      <div class="card">
+        <h3>What you’ll get</h3>
+        <ul>
+          <li>Unlimited daily words with no caps</li>
+          <li>All premium voices & accents</li>
+          <li>Advanced review and wrong-word drills</li>
+          <li>Priority support</li>
+        </ul>
+        <p class="muted">Your current session will carry over after upgrading.</p>
+      </div>
+    </section>
 
-      <div class="ad-container" style="margin-top:1rem;"></div>
-
-      <button id="upgrade-btn" class="btn primary">Upgrade Now</button>
+    <!-- App container (if you initialize premium tools inside) -->
+    <section id="premium-app" class="section card">
+      <h2>Premium Tools</h2>
+      <p class="muted">After purchase, your account is upgraded instantly. Log in with the same email on any device to access Premium tools.</p>
+      <div id="premium-status" class="muted">Status: <strong>Not purchased</strong></div>
     </section>
   </main>
 
-  <footer class="container" style="margin-top:2rem;">
-    <p>
-      <a href="https://spellrightpro.org/terms.html">Terms of Service</a>
-      <a href="https://spellrightpro.org/privacy.html">Privacy Policy</a>
-      <a href="https://spellrightpro.org/refund-policy.html">Refund Policy</a>
-      <a href="https://spellrightpro.org/contact.html">Contact Support</a>
-    </p>
-    <p>© 2025 SpellRightPro. All rights reserved.</p>
+  <footer>
+    © 2025 SpellRightPro ·
+    <a href="/terms.html">Terms</a> ·
+    <a href="/privacy.html">Privacy</a> ·
+    <a href="/refund-policy.html">Refunds</a> ·
+    <a href="/contact.html">Contact</a>
   </footer>
-
-  <script>
-    document.addEventListener('DOMContentLoaded', () => {
-      const promoActive = window.PROMO?.active();
-      const note = document.getElementById('promo-note');
-      const code = document.getElementById('premium-code');
-      const countdownEl = document.getElementById('premium-countdown');
-      const btn = document.getElementById('upgrade-btn');
-      const strikeMonthly = document.getElementById('price-monthly-strike');
-      const strikeAnnual = document.getElementById('price-annual-strike');
-      const discountMonthly = document.getElementById('price-monthly-discount');
-      const discountAnnual = document.getElementById('price-annual-discount');
-
-      if (promoActive) {
-        if (note) note.hidden = false;
-        if (code) code.textContent = window.PROMO.code;
-
-        function tick() {
-          const left = Math.max(0, window.PROMO.endsAt() - Date.now());
-          const d = Math.floor(left / 86400000);
-          const h = Math.floor((left % 86400000) / 3600000);
-          const m = Math.floor((left % 3600000) / 60000);
-          const s = Math.floor((left % 60000) / 1000);
-          countdownEl.textContent = `${d}d ${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
-          if (left <= 0) {
-            if (note) note.hidden = true;
-            if (strikeMonthly) strikeMonthly.classList.add('hidden');
-            if (strikeAnnual) strikeAnnual.classList.add('hidden');
-            if (discountMonthly) discountMonthly.textContent = "$9";
-            if (discountAnnual) discountAnnual.textContent = "$7";
-            clearInterval(iv);
-          }
-        }
-        tick();
-        const iv = setInterval(tick, 1000);
-
-        if (btn) {
-          if (window.PROMO.checkoutUrl) {
-            btn.addEventListener('click', () => window.location.href = window.PROMO.checkoutUrl);
-          } else {
-            btn.addEventListener('click', () => {
-              const u = new URL('https://spellrightpro.org/checkout', location.href);
-              u.searchParams.set('promo', window.PROMO.code);
-              window.location.href = u.toString();
-            });
-          }
-        }
-      } else {
-        if (strikeMonthly) strikeMonthly.classList.add('hidden');
-        if (strikeAnnual) strikeAnnual.classList.add('hidden');
-        if (discountMonthly) discountMonthly.textContent = "$9";
-        if (discountAnnual) discountAnnual.textContent = "$7";
-      }
-    });
-  </script>
 </body>
 </html>
