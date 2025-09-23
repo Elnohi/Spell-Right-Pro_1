@@ -91,12 +91,13 @@
         <div class="badge">Most Popular</div>
         <h3 id="premium-title">Premium</h3>
 
-        <!-- Normal prices -->
         <div class="price monthly-price">
-          <span class="strike">$9</span> $2.70<small>/month</small>
+          <span id="price-monthly-strike" class="strike">$9</span>
+          <span id="price-monthly-discount">$2.70</span><small>/month</small>
         </div>
         <div class="price annual-price hidden">
-          <span class="strike">$7</span> $2.10<small>/month ($25.20 billed annually)</small>
+          <span id="price-annual-strike" class="strike">$7</span>
+          <span id="price-annual-discount">$2.10</span><small>/month ($25.20 billed annually)</small>
         </div>
 
         <ul>
@@ -140,18 +141,21 @@
       });
     });
 
-    // Promo integration
+    // Promo integration with auto-hide
     document.addEventListener('DOMContentLoaded', () => {
-      if (window.PROMO?.active()) {
-        const box = document.getElementById('promo-box');
-        const code = document.getElementById('pricing-code');
-        const countdownEl = document.getElementById('pricing-countdown');
-        const btn = document.getElementById('pricing-upgrade-btn');
+      const box = document.getElementById('promo-box');
+      const code = document.getElementById('pricing-code');
+      const countdownEl = document.getElementById('pricing-countdown');
+      const btn = document.getElementById('pricing-upgrade-btn');
+      const strikeMonthly = document.getElementById('price-monthly-strike');
+      const strikeAnnual = document.getElementById('price-annual-strike');
+      const discountMonthly = document.getElementById('price-monthly-discount');
+      const discountAnnual = document.getElementById('price-annual-discount');
 
+      if (window.PROMO?.active()) {
         if (box) box.hidden = false;
         if (code) code.textContent = window.PROMO.code;
 
-        // apply promo URL
         if (btn) {
           if (window.PROMO.checkoutUrl) {
             btn.href = window.PROMO.checkoutUrl;
@@ -162,7 +166,6 @@
           }
         }
 
-        // countdown
         function tick() {
           const left = Math.max(0, window.PROMO.endsAt() - Date.now());
           const d = Math.floor(left / 86400000);
@@ -170,10 +173,26 @@
           const m = Math.floor((left % 3600000) / 60000);
           const s = Math.floor((left % 60000) / 1000);
           countdownEl.textContent = `${d}d ${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
-          if (left <= 0) { box.hidden = true; clearInterval(iv); }
+
+          if (left <= 0) {
+            // promo expired → hide banner + revert prices
+            if (box) box.hidden = true;
+            if (strikeMonthly) strikeMonthly.classList.add('hidden');
+            if (strikeAnnual) strikeAnnual.classList.add('hidden');
+            if (discountMonthly) discountMonthly.textContent = "$9";
+            if (discountAnnual) discountAnnual.textContent = "$7";
+            clearInterval(iv);
+          }
         }
         tick();
         const iv = setInterval(tick, 1000);
+      } else {
+        // Already expired
+        if (box) box.hidden = true;
+        if (strikeMonthly) strikeMonthly.classList.add('hidden');
+        if (strikeAnnual) strikeAnnual.classList.add('hidden');
+        if (discountMonthly) discountMonthly.textContent = "$9";
+        if (discountAnnual) discountAnnual.textContent = "$7";
       }
     });
   </script>
