@@ -1,83 +1,81 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
+  <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>SpellRightPro (School - Freemium)</title>
-  <link rel="stylesheet" href="css/styles.css" />
+
+  <!-- Your global styles -->
+  <link rel="stylesheet" href="css/styles.css"/>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"/>
-  <!-- AdSense (client matches your site) -->
+
+  <!-- AdSense -->
   <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7632930282249669" crossorigin="anonymous"></script>
-  <style>
-    .container{max-width:980px;margin:0 auto;padding:1rem}
-    .card{background:#fff;border:1px solid #e6e8eb;border-radius:12px;padding:1rem}
-    .header{display:flex;justify-content:space-between;align-items:center;gap:1rem;margin-bottom:.5rem}
-    .lifetime{font-size:.9rem;color:#555}
-    .big-input{display:flex;gap:.5rem;align-items:center;margin-top:.75rem}
-    .big-input input{flex:1;height:52px;font-size:1.1rem;border:2px solid #8ab4f8;border-radius:10px;padding:0 12px;outline:none}
-    .big-input input:focus{box-shadow:0 0 0 3px rgba(67,97,238,.2)}
-    .ad-container{text-align:center;margin:1rem auto;max-width:728px}
-    .summary-area{margin-top:1rem}
-    .flag-row{margin-top:.5rem}
-    .btn{padding:.55rem .9rem;border-radius:10px;border:1px solid #e6e8eb;background:#f6f7f9;cursor:pointer}
-    .btn.primary{background:#4361ee;color:#fff;border-color:#4361ee}
-    .btn.secondary{background:#eef2f7}
-    .btn-icon{width:40px;height:40px;border-radius:10px;border:1px solid #e6e8eb;background:#fff;display:grid;place-items:center;cursor:pointer}
-  </style>
 </head>
 <body>
-  <nav class="navbar" style="display:flex;justify-content:space-between;align-items:center;padding:.75rem 1rem;border-bottom:1px solid #e6e8eb;background:#fff">
-    <div class="brand" style="display:flex;gap:.6rem;align-items:center">
-      <img src="assets/logo.png" alt="SpellRightPro Logo" style="width:40px;height:40px;object-fit:contain"/>
+  <!-- Navbar matches your design system -->
+  <nav class="navbar">
+    <div class="brand">
+      <img src="assets/logo.png" alt="SpellRightPro Logo" class="logo"/>
       <div>
-        <strong>SpellRightPro</strong>
-        <div style="font-size:.85rem;color:#777;margin-top:-2px">School Trainer</div>
+        <span>SpellRightPro</span>
+        <span class="subtitle">School Trainer</span>
       </div>
     </div>
-    <div class="nav-actions" style="display:flex;gap:.5rem">
-      <a class="btn" href="index.html"><i class="fa fa-home"></i> Home</a>
-      <a class="btn primary" href="premium.html"><i class="fa fa-crown"></i> Upgrade</a>
+    <div class="nav-actions">
+      <a class="btn-secondary" href="index.html"><i class="fa fa-home"></i> Home</a>
+      <a class="btn-primary" href="premium.html"><i class="fa fa-crown"></i> Upgrade</a>
     </div>
   </nav>
 
-  <div class="ad-container">
+  <!-- Header Ad -->
+  <div class="ad-container" style="text-align:center;margin:1rem auto;max-width:728px">
     <ins class="adsbygoogle" style="display:block" data-ad-client="ca-pub-7632930282249669" data-ad-slot="YOUR_HEADER_SLOT" data-ad-format="auto" data-full-width-responsive="true"></ins>
     <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
   </div>
 
   <main class="container">
-    <section class="card">
-      <div class="header">
-        <h1><i class="fa fa-school"></i> School Word Practice</h1>
-        <div class="lifetime">
-          Lifetime: <span id="lifetime-correct">0</span> correct /
-          <span id="lifetime-attempts">0</span> attempts
-        </div>
+    <section class="training-card">
+      <h1 class="card-title"><i class="fa fa-school"></i> School Word Practice</h1>
+
+      <!-- Lifetime stats (styled, right-aligned on wide screens) -->
+      <div style="display:flex;justify-content:center;gap:1rem;margin:-.5rem 0 1rem;color:var(--gray)">
+        <div>Lifetime Correct: <strong id="lifetime-correct">0</strong></div>
+        <div>Lifetime Attempts: <strong id="lifetime-attempts">0</strong></div>
       </div>
 
-      <div style="display:flex;gap:.5rem;margin-bottom:.5rem">
-        <button data-accent="en-US" class="btn primary" id="accent-us">🇺🇸 en-US</button>
-        <button data-accent="en-GB" class="btn" id="accent-gb">🇬🇧 en-GB</button>
-        <button data-accent="en-AU" class="btn" id="accent-au">🇦🇺 en-AU</button>
+      <!-- Accent picker uses your .accent-picker -->
+      <div class="accent-picker">
+        <button id="accent-us"  data-accent="en-US" class="active"><span class="flag-icon">🇺🇸</span> en-US</button>
+        <button id="accent-gb"  data-accent="en-GB"><span class="flag-icon">🇬🇧</span> en-GB</button>
+        <button id="accent-au"  data-accent="en-AU"><span class="flag-icon">🇦🇺</span> en-AU</button>
       </div>
 
-      <div id="trainer-area" class="hidden"></div>
+      <!-- Trainer area (input will use .form-control and be BIG/clear) -->
+      <div id="trainer-area" class="trainer-area hidden"></div>
+
+      <!-- Summary -->
       <div id="summary-area" class="summary-area hidden"></div>
 
-      <div class="card" style="margin-top:.75rem">
-        <label class="section-label"><strong>Custom Words (Freemium: one list per day, still capped at 10 words total per day)</strong></label>
-        <textarea id="custom-words" placeholder="Type or paste words (comma separated)" style="width:100%;min-height:100px"></textarea>
-        <div style="display:flex;gap:.5rem;align-items:center;margin-top:.5rem">
-          <label for="file-input" class="btn"><i class="fa fa-file-upload"></i> Upload Word List</label>
-          <input type="file" id="file-input" accept=".txt,.pdf,.docx" style="display:none"/>
-          <button id="add-custom-btn" class="btn primary"><i class="fa fa-plus"></i> Add Words</button>
-          <button id="start-btn" class="btn primary"><i class="fa fa-play"></i> Start Session</button>
+      <!-- Custom words (keeps your semantics; still one list/day; 10 words/day total) -->
+      <div class="custom-words-section">
+        <label class="section-label">Custom Words (optional)</label>
+        <textarea id="custom-words" placeholder="Type or paste words (comma separated)"></textarea>
+        <div class="file-upload">
+          <label for="file-input" class="btn-upload"><i class="fa fa-file-upload"></i> Upload Word List</label>
+          <input type="file" id="file-input" accept=".txt,.pdf,.docx"/>
+        </div>
+
+        <div class="button-group">
+          <button id="add-custom-btn" class="btn-secondary"><i class="fa fa-plus"></i> Add Words</button>
+          <button id="start-btn" class="btn-start"><i class="fa fa-play"></i> Start Session</button>
         </div>
       </div>
     </section>
   </main>
 
-  <div class="ad-container">
+  <!-- Footer Ad -->
+  <div class="ad-container" style="text-align:center;margin:1rem auto;max-width:728px">
     <ins class="adsbygoogle" style="display:block" data-ad-client="ca-pub-7632930282249669" data-ad-slot="YOUR_FOOTER_SLOT" data-ad-format="auto" data-full-width-responsive="true"></ins>
     <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
   </div>
