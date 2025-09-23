@@ -4,7 +4,6 @@
   <meta charset="UTF-8" />
   <title>SpellRightPro - Pricing</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-
   <base href="/" />
   <link rel="icon" href="/assets/logo.png">
 
@@ -33,6 +32,7 @@
     .price{font-size:2rem;font-weight:800;margin:6px 0 14px}
     .price small{font-size:.9rem;font-weight:600;color:var(--gray)}
     .hidden{display:none}
+    .strike{text-decoration:line-through;color:#777;margin-right:6px}
 
     .btn{display:inline-block;padding:10px 16px;border-radius:10px;text-decoration:none}
     .btn-primary{background:var(--primary);color:#fff}
@@ -63,7 +63,7 @@
       <!-- Promo Announcement -->
       <div id="promo-box" class="promo-box" hidden>
         🎉 <strong>70% OFF</strong> Premium with code <span id="pricing-code">BACK2SCHOOL70</span><br/>
-        <small>Hurry! Offer ends in <span id="pricing-countdown">10d 00:00:00</span></small>
+        <small>Offer ends in <span id="pricing-countdown">10d 00:00:00</span></small>
       </div>
 
       <div class="toggle-container" role="tablist" aria-label="Billing period">
@@ -73,6 +73,7 @@
     </div>
 
     <div class="pricing-grid">
+      <!-- Free Tier -->
       <div class="pricing-card" aria-labelledby="free-title">
         <h3 id="free-title">Free</h3>
         <div class="price">$0<small>/forever</small></div>
@@ -85,11 +86,19 @@
         <a href="freemium-oet.html" class="btn btn-outline">Start Free</a>
       </div>
 
+      <!-- Premium Tier -->
       <div class="pricing-card featured" aria-labelledby="premium-title">
         <div class="badge">Most Popular</div>
         <h3 id="premium-title">Premium</h3>
-        <div class="price monthly-price">$9<small>/month</small></div>
-        <div class="price annual-price hidden">$7<small>/month ($84 billed annually)</small></div>
+
+        <!-- Normal prices -->
+        <div class="price monthly-price">
+          <span class="strike">$9</span> $2.70<small>/month</small>
+        </div>
+        <div class="price annual-price hidden">
+          <span class="strike">$7</span> $2.10<small>/month ($25.20 billed annually)</small>
+        </div>
+
         <ul>
           <li>✓ All exam modes unlocked</li>
           <li>✓ Unlimited custom lists</li>
@@ -153,7 +162,7 @@
           }
         }
 
-        // countdown timer
+        // countdown
         function tick() {
           const left = Math.max(0, window.PROMO.endsAt() - Date.now());
           const d = Math.floor(left / 86400000);
