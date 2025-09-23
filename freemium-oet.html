@@ -1,83 +1,117 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
+  <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>SpellRightPro - OET Freemium</title>
+  <title>SpellRightPro (OET - Freemium)</title>
 
-  <link rel="icon" href="/assets/logo.png" />
-  <link rel="stylesheet" href="/css/styles.css"/>
+  <!-- Global styles -->
+  <link rel="stylesheet" href="css/styles.css"/>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"/>
 
-  <!-- Firebase SDK -->
+  <!-- Firebase -->
   <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-analytics-compat.js"></script>
-  <script src="/js/config.js"></script>
+  <script src="js/config.js"></script>
 
   <!-- AdSense -->
   <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7632930282249669" crossorigin="anonymous"></script>
 </head>
 <body>
-  <header class="navbar">
+  <nav class="navbar">
     <div class="brand">
-      <img src="/assets/logo.png" alt="logo"/>
-      <span>OET Freemium</span>
+      <img src="assets/logo.png" alt="SpellRightPro Logo" class="logo"/>
+      <div>
+        <span>SpellRightPro</span>
+        <span class="subtitle">OET Practice</span>
+      </div>
     </div>
-    <div class="actions">
-      <a href="/index.html">Home</a>
-      <a href="/premium.html" class="premium">Upgrade</a>
+    <div class="nav-actions">
+      <a class="btn-secondary" href="index.html"><i class="fa fa-home"></i> Home</a>
+      <a class="btn-primary" href="premium.html"><i class="fa fa-crown"></i> Premium</a>
     </div>
-  </header>
+  </nav>
+
+  <!-- Header Ad -->
+  <div class="ad-container">
+    <div class="ad-label">Advertisement</div>
+    <ins class="adsbygoogle"
+         style="display:block"
+         data-ad-client="ca-pub-7632930282249669"
+         data-ad-slot="3344556677"
+         data-ad-format="auto"
+         data-full-width-responsive="true"></ins>
+    <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
+  </div>
 
   <main class="container">
-    <h1>OET Word Practice (Freemium)</h1>
-
-    <!-- Ad header -->
-    <div class="ad-container">
-      <ins class="adsbygoogle"
-        style="display:block"
-        data-ad-client="ca-pub-7632930282249669"
-        data-ad-slot="1234567890"
-        data-ad-format="auto"></ins>
-    </div>
-
-    <div class="trainer card">
-      <div class="row">
-        <button id="start-btn">Start Session</button>
-        <select id="accent-picker">
-          <option value="en-US">US</option>
-          <option value="en-GB">UK</option>
-          <option value="en-AU">AU</option>
-        </select>
-      </div>
-
-      <div id="word-area" class="prompt"></div>
-      <input id="answer" type="text" placeholder="Type spelling and press Enter"/>
+    <section class="training-card">
+      <h1 class="card-title"><i class="fa fa-stethoscope"></i> OET Word Practice</h1>
 
       <div class="lifetime-stats">
-        <p>Correct: <span id="correct-count">0</span> |
-           Attempts: <span id="attempt-count">0</span></p>
+        <div>Correct: <span id="life-correct">0</span></div>
+        <div>Attempts: <span id="life-attempts">0</span></div>
       </div>
-    </div>
 
-    <section id="summary-area" class="card"></section>
+      <div class="row">
+        <div class="accent-picker">
+          <button data-accent="en-US" class="active">🇺🇸</button>
+          <button data-accent="en-GB">🇬🇧</button>
+          <button data-accent="en-AU">🇦🇺</button>
+        </div>
+        <div class="session-controls">
+          <button id="start-btn" class="btn-start"><i class="fa fa-play"></i> Start</button>
+          <button id="replay-btn" class="btn-secondary"><i class="fa fa-volume-high"></i></button>
+          <button id="backspace-btn" class="btn-secondary"><i class="fa fa-delete-left"></i></button>
+        </div>
+      </div>
 
-    <!-- Ad footer -->
-    <div class="ad-container">
-      <ins class="adsbygoogle"
-        style="display:block"
-        data-ad-client="ca-pub-7632930282249669"
-        data-ad-slot="9876543210"
-        data-ad-format="auto"></ins>
-    </div>
+      <div id="practice-area" class="hidden">
+        <div id="prompt" class="prompt">Listen and spell the word.</div>
+        <div id="word-tiles"></div>
+        <div id="feedback" class="feedback"></div>
+      </div>
+
+      <div id="summary-area" class="summary-area hidden"></div>
+    </section>
   </main>
 
-  <footer class="footer">
-    <p>© 2025 SpellRightPro</p>
-  </footer>
+  <!-- Footer Ad -->
+  <div class="ad-container">
+    <div class="ad-label">Advertisement</div>
+    <ins class="adsbygoogle"
+         style="display:block"
+         data-ad-client="ca-pub-7632930282249669"
+         data-ad-slot="3344556688"
+         data-ad-format="auto"
+         data-full-width-responsive="true"></ins>
+    <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
+  </div>
 
-  <!-- Scripts -->
-  <script src="/js/main-freemium-oet.js"></script>
+  <!-- Summary Ad injector -->
+  <script>
+    window.insertSummaryAd = function() {
+      var box = document.getElementById('summary-area');
+      if (!box) return;
+      var prev = box.querySelector('.summary-ad-container');
+      if (prev) prev.remove();
+      var wrap = document.createElement('div');
+      wrap.className = 'summary-ad-container ad-container';
+      wrap.innerHTML = `
+        <ins class="adsbygoogle"
+             style="display:block"
+             data-ad-client="ca-pub-7632930282249669"
+             data-ad-slot="3344556699"
+             data-ad-format="auto"
+             data-full-width-responsive="true"></ins>
+      `;
+      box.appendChild(wrap);
+      try { (adsbygoogle = window.adsbygoogle || []).push({}); } catch(e) {}
+    };
+  </script>
+
+  <script src="js/main-freemium-oet.js"></script>
 </body>
 </html>
