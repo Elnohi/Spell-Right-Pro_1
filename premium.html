@@ -12,6 +12,8 @@
     .promo-note{border:1px solid #d7f1e3;background:#ecfff6;border-radius:14px;padding:12px;margin:14px 0;text-align:center}
     .promo-note strong{color:#0f9d58}
     .promo-note #premium-countdown{font-feature-settings:"tnum";font-variant-numeric:tabular-nums;font-weight:700}
+    .price{font-size:1.5rem;font-weight:700;margin:8px 0}
+    .hidden{display:none}
   </style>
 </head>
 <body>
@@ -29,7 +31,6 @@
 
     <section class="card">
       <h2>Unlock All Features</h2>
-      <p>With Premium, you get:</p>
       <ul>
         <li>✓ All exam modes (OET, Bee, School)</li>
         <li>✓ Unlimited custom word lists</li>
@@ -37,13 +38,15 @@
         <li>✓ Ad-free experience</li>
       </ul>
 
-      <!-- Pricing Display -->
+      <!-- Pricing -->
       <div class="pricing">
-        <p class="monthly">
-          <span class="strike">$9</span> <strong>$2.70</strong> /month
+        <p id="price-monthly" class="price">
+          <span class="strike" id="price-monthly-strike">$9</span>
+          <span id="price-monthly-discount">$2.70</span> /month
         </p>
-        <p class="annual">
-          <span class="strike">$7</span> <strong>$2.10</strong> /month
+        <p id="price-annual" class="price">
+          <span class="strike" id="price-annual-strike">$7</span>
+          <span id="price-annual-discount">$2.10</span> /month
           <small> ($25.20 billed annually)</small>
         </p>
       </div>
@@ -59,15 +62,22 @@
   <script src="js/promo.js"></script>
   <script>
     document.addEventListener('DOMContentLoaded', () => {
-      if (window.PROMO?.active()) {
-        // Show promo banner
-        const note = document.getElementById('promo-note');
-        const code = document.getElementById('premium-code');
+      const promoActive = window.PROMO?.active();
+      const note = document.getElementById('promo-note');
+      const code = document.getElementById('premium-code');
+      const countdownEl = document.getElementById('premium-countdown');
+      const btn = document.getElementById('upgrade-btn');
+
+      const strikeMonthly = document.getElementById('price-monthly-strike');
+      const strikeAnnual = document.getElementById('price-annual-strike');
+      const discountMonthly = document.getElementById('price-monthly-discount');
+      const discountAnnual = document.getElementById('price-annual-discount');
+
+      if (promoActive) {
         if (note) note.hidden = false;
         if (code) code.textContent = window.PROMO.code;
 
         // Countdown
-        const countdownEl = document.getElementById('premium-countdown');
         function tick() {
           const left = Math.max(0, window.PROMO.endsAt() - Date.now());
           const d = Math.floor(left / 86400000);
@@ -75,13 +85,20 @@
           const m = Math.floor((left % 3600000) / 60000);
           const s = Math.floor((left % 60000) / 1000);
           countdownEl.textContent = `${d}d ${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
-          if (left <= 0) { note.hidden = true; clearInterval(iv); }
+          if (left <= 0) {
+            // promo expired → hide banner + revert prices
+            if (note) note.hidden = true;
+            if (strikeMonthly) strikeMonthly.classList.add('hidden');
+            if (strikeAnnual) strikeAnnual.classList.add('hidden');
+            if (discountMonthly) discountMonthly.textContent = "$9";
+            if (discountAnnual) discountAnnual.textContent = "$7";
+            clearInterval(iv);
+          }
         }
         tick();
         const iv = setInterval(tick, 1000);
 
-        // Upgrade button with promo link
-        const btn = document.getElementById('upgrade-btn');
+        // Button with promo code
         if (btn) {
           if (window.PROMO.checkoutUrl) {
             btn.addEventListener('click', () => window.location.href = window.PROMO.checkoutUrl);
@@ -93,9 +110,14 @@
             });
           }
         }
+      } else {
+        // No promo: just show normal prices
+        if (strikeMonthly) strikeMonthly.classList.add('hidden');
+        if (strikeAnnual) strikeAnnual.classList.add('hidden');
+        if (discountMonthly) discountMonthly.textContent = "$9";
+        if (discountAnnual) discountAnnual.textContent = "$7";
       }
     });
   </script>
 </body>
 </html>
-
