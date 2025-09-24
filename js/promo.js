@@ -16,11 +16,11 @@
 
   // Public API for other pages (premium/pricing)
   window.PROMO = {
-    active: () => Date.now() >= start && Date.now() < end,
-    endsAt: () => end,
-    code: CODE,
-    checkoutUrl: PROMO_CHECKOUT_URL
-  };
+  code: "BACK2SCHOOL70",
+  active: () => Date.now() < new Date("2025-10-03").getTime(),
+  endsAt: () => new Date("2025-10-03").getTime(),
+  checkoutUrl: "https://buy.stripe.com/test_1234567890" // <-- your real Stripe Checkout link
+};
 
   // Index banner hookup
   document.addEventListener('DOMContentLoaded', function () {
