@@ -1,124 +1,181 @@
-// Freemium OET — sample list from oet.json, 10/day cap, lifetime stats, accent, ads
+// ==================== SpellRightPro Freemium OET ====================
 document.addEventListener('DOMContentLoaded', () => {
+  const trainerArea = document.getElementById('trainer-area');
+  const summaryArea = document.getElementById('summary-area');
+  const addCustomBtn = document.getElementById('add-custom-btn');
+  const fileInput = document.getElementById('file-input');
+  const customInput = document.getElementById('custom-words');
   const startBtn = document.getElementById('start-btn');
-  const replayBtn = document.getElementById('replay-btn');
-  const backspaceBtn = document.getElementById('backspace-btn');
-  const practice = document.getElementById('practice-area');
-  const promptEl = document.getElementById('prompt');
-  const tiles = document.getElementById('word-tiles');
-  const feedback = document.getElementById('feedback');
-  const summary = document.getElementById('summary-area');
+  const practiceBtn = document.getElementById('practice-mode-btn');
+  const testBtn = document.getElementById('test-mode-btn');
+  const modeSwitchBtn = document.getElementById('mode-switch-btn');
+  const accentPicker = document.querySelector('.accent-picker');
 
-  const lifeCorrectEl = document.getElementById('life-correct');
-  const lifeAttemptsEl = document.getElementById('life-attempts');
+  // TTS
+  let accent = 'en-US';
+  let synth = window.speechSynthesis;
+  function speak(w){
+    try {
+      synth && synth.cancel();
+      const u = new SpeechSynthesisUtterance(w);
+      u.lang = accent;
+      (synth||window.speechSynthesis).speak(u);
+    } catch(e){}
+  }
 
-  let accent='en-US'; const picker=document.querySelector('.accent-picker');
-  let synth=window.speechSynthesis;
-
-  function speak(w){ try{ synth&&synth.cancel(); const u=new SpeechSynthesisUtterance(w); u.lang=accent; (synth||window.speechSynthesis).speak(u);}catch(e){} }
-  picker?.addEventListener('click',(e)=>{
-    const btn=e.target.closest('button[data-accent]'); if(!btn) return;
-    accent=btn.getAttribute('data-accent')||'en-US';
-    picker.querySelectorAll('button').forEach(b=>b.classList.remove('active'));
-    btn.classList.add('active');
+  // Mode
+  let sessionMode = 'practice';
+  practiceBtn?.addEventListener('click', ()=> sessionMode='practice');
+  testBtn?.addEventListener('click', ()=> sessionMode='test');
+  modeSwitchBtn?.addEventListener('click', ()=> sessionMode = sessionMode==='practice' ? 'test' : 'practice');
+  accentPicker?.addEventListener('click', (e)=>{
+    if(e.target.tagName==='BUTTON'){
+      accent=e.target.dataset.accent;
+      accentPicker.querySelectorAll('button').forEach(b=>b.classList.remove('active'));
+      e.target.classList.add('active');
+    }
   });
 
-  const CAP=10;
-  function todayKey(){ const d=new Date(); return `srp_daily_OET_${d.getFullYear()}-${d.getMonth()+1}-${d.getDate()}`; }
-  function getUsed(){ return parseInt(localStorage.getItem(todayKey())||'0',10); }
-  function setUsed(n){ localStorage.setItem(todayKey(), String(n)); }
-
-  function loadLife(){
-    const c=parseInt(localStorage.getItem('oet_life_correct')||'0',10);
-    const a=parseInt(localStorage.getItem('oet_life_attempts')||'0',10);
-    lifeCorrectEl.textContent=c; lifeAttemptsEl.textContent=a;
-    return {c,a};
+  // Daily cap (10)
+  const FREEMIUM_MAX = 10;
+  function dayKey(){
+    const d = new Date();
+    return `srp_daily_words_OET_${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
   }
-  function saveLife(c,a){
-    localStorage.setItem('oet_life_correct', String(c));
-    localStorage.setItem('oet_life_attempts', String(a));
-    lifeCorrectEl.textContent=c; lifeAttemptsEl.textContent=a;
+  function usedToday(){ return parseInt(localStorage.getItem(dayKey())||'0',10); }
+  function setUsedToday(n){ localStorage.setItem(dayKey(), String(n)); }
+  function capForToday(list){
+    const used = usedToday();
+    if (used >= FREEMIUM_MAX){
+      alert(`Freemium limit reached: ${FREEMIUM_MAX} words today.`);
+      return [];
+    }
+    const remain = FREEMIUM_MAX - used;
+    return list.length > remain ? list.slice(0, remain) : list;
   }
-  let {c:lifeCorrect,a:lifeAttempts} = loadLife();
 
-  let sampleWords=[];
+  // Base OET words via oet.json
+  let baseOET = [];
   (async ()=>{
     try{
-      const res=await fetch('oet.json',{cache:'no-cache'});
-      const data=await res.json();
-      sampleWords = Array.isArray(data?.words)? data.words.filter(Boolean):[];
-    }catch(e){ console.warn('Failed to load oet.json', e); }
+      const res = await fetch('oet.json', {cache:'no-cache'});
+      const data = await res.json();
+      baseOET = Array.isArray(data?.words) ? data.words.filter(Boolean) : [];
+    }catch(e){ console.warn('Could not load oet.json', e); }
   })();
 
-  let words=[], idx=0, typed='', running=false, currentWord='';
+  // Custom once/day
+  function todayStr(){ return new Date().toISOString().slice(0,10); }
+  function canAddCustom(){ return localStorage.getItem('oet_customListDate') !== todayStr(); }
+  function markCustom(){ localStorage.setItem('oet_customListDate', todayStr()); }
 
-  function capList(list){
-    const used=getUsed();
-    if(used>=CAP){ alert(`Freemium limit reached: ${CAP} words today.`); return []; }
-    const remain=CAP-used; return list.length>remain? list.slice(0,remain):list;
-  }
+  let customWords = [];
+  addCustomBtn?.addEventListener('click', ()=>{
+    if (!canAddCustom()){ alert('Freemium allows one custom list per day.'); return; }
+    const raw = (customInput.value||'').trim();
+    if (!raw){ alert('Enter some words first.'); return; }
+    const parsed = raw.split(/[\s,;]+/).map(w=>w.trim()).filter(Boolean);
+    customWords = mergeUnique(customWords, parsed);
+    customInput.value = '';
+    markCustom();
+    alert(`Added ${parsed.length} custom words.`);
+  });
+  fileInput?.addEventListener('change', (e)=>{
+    if (!canAddCustom()){ alert('Freemium allows one custom list per day.'); e.target.value=''; return; }
+    const f = e.target.files[0]; if(!f) return;
+    const r = new FileReader();
+    r.onload = ()=>{
+      const txt = r.result||'';
+      const parsed = txt.split(/\r?\n|,|;|\t/).map(w=>w.trim()).filter(Boolean);
+      customWords = mergeUnique(customWords, parsed);
+      markCustom();
+      alert(`Uploaded ${parsed.length} custom words.`);
+    };
+    r.readAsText(f);
+  });
+
+  // Session
+  let words=[], i=0, score=0, answers=[];
+  startBtn?.addEventListener('click', startSession);
 
   function startSession(){
-    const capped=capList(sampleWords.slice());
-    if(!capped.length) return;
-    words=capped; idx=0; typed=''; running=true;
-    summary.classList.add('hidden'); practice.classList.remove('hidden');
-    renderWord();
+    const base = baseOET.slice();
+    const merged = mergeUnique(base, customWords);
+    let sessionWords = merged;
+    if (sessionMode==='test') sessionWords = shuffle(sessionWords).slice(0,24);
+    sessionWords = capForToday(sessionWords);
+    if (!sessionWords.length) return;
+    words=sessionWords; i=0; score=0; answers=[];
+    trainerArea.classList.remove('hidden');
+    summaryArea.classList.add('hidden');
+    startBtn.innerHTML = '<i class="fas fa-stop"></i> End Session';
+    renderQ();
   }
 
-  function renderWord(){
-    if(idx>=words.length){ return finish(); }
-    currentWord=words[idx]; typed='';
-    tiles.innerHTML = Array.from({length: currentWord.length}).map(()=>`<div class="letter-tile">&nbsp;</div>`).join('');
-    updateTiles();
-    feedback.textContent='';
-    promptEl.textContent=`Word ${idx+1} — listen and type, press Enter`;
-    speak(currentWord);
-
-    document.onkeydown=(e)=>{
-      if(!running) return;
-      if(e.key==='Enter'){ evaluate(); return; }
-      if(e.key==='Backspace'){ typed=typed.slice(0,-1); updateTiles(); return; }
-      if(/^[a-zA-Z]$/.test(e.key)){ if(typed.length<currentWord.length){ typed+=e.key; updateTiles(); } return; }
-      if(e.key===' '){ e.preventDefault(); speak(currentWord); }
-    };
-  }
-
-  function updateTiles(){
-    const children=tiles.children;
-    for(let i=0;i<children.length;i++){ children[i].textContent=typed[i]?typed[i].toUpperCase():' '; }
-  }
-
-  function evaluate(){
-    lifeAttempts++;
-    if((typed||'').trim().toLowerCase()===currentWord.toLowerCase()){
-      lifeCorrect++; feedback.textContent='✅ Correct';
-    }else{
-      feedback.textContent=`❌ "${typed}" → ${currentWord}`;
-    }
-    saveLife(lifeCorrect,lifeAttempts);
-    setUsed(getUsed()+1);
-    idx++;
-    setTimeout(renderWord,350);
-  }
-
-  function finish(){
-    running=false; document.onkeydown=null;
-    const total=idx, pct=total? Math.round(lifeCorrect/(lifeAttempts||1)*100):0;
-    summary.innerHTML=`
-      <div class="summary-header">
-        <h2>Session Summary</h2>
-        <div class="score-display">${idx}/${words.length}</div>
-      </div>
-      <div class="results-grid">
-        <div class="results-card"><h3>Tip</h3><p>Replay with <strong>space</strong>, Backspace to edit, Enter to check.</p></div>
-        <div class="results-card"><h3>Progress</h3><p>Lifetime accuracy: <strong>${pct}%</strong></p></div>
+  function renderQ(){
+    if (i>=words.length) return endSession();
+    const w = words[i];
+    trainerArea.innerHTML = `
+      <div class="word-playback"><button id="hear" class="btn-icon" title="Hear again"><i class="fas fa-volume-up"></i></button>
+        <span class="indicator">Word ${i+1}/${words.length}</span></div>
+      <div class="answer-row">
+        <input id="answer" type="text" placeholder="Type the spelling..." autocomplete="off"/>
+        <button id="submit" class="btn-primary"><i class="fas fa-check"></i> Submit</button>
+        <button id="skip" class="btn-secondary"><i class="fas fa-forward"></i> Skip</button>
       </div>`;
-    practice.classList.add('hidden'); summary.classList.remove('hidden');
-    if(window.insertSummaryAd) window.insertSummaryAd();
+    document.getElementById('hear')?.addEventListener('click', ()=>speak(w));
+    document.getElementById('submit')?.addEventListener('click', submit);
+    document.getElementById('skip')?.addEventListener('click', ()=>{ answers.push(''); i++; renderQ(); });
+    const input = document.getElementById('answer'); input?.focus();
+    input?.addEventListener('keydown', (e)=>{ if(e.key==='Enter') submit(); });
+    speak(w);
   }
 
-  startBtn?.addEventListener('click', startSession);
-  replayBtn?.addEventListener('click', ()=> currentWord && speak(currentWord));
-  backspaceBtn?.addEventListener('click', ()=>{ if(!running) return; typed=typed.slice(0,-1); updateTiles(); });
+  function submit(){
+    const input = (document.getElementById('answer')?.value||'').trim();
+    const w = (words[i]||'').trim();
+    if (input.toLowerCase() === w.toLowerCase()) score++;
+    answers.push(input);
+    i++;
+    renderQ();
+  }
+
+  function endSession(){
+    setUsedToday(usedToday() + words.length);
+    const wrong = words.filter((w,idx)=> (answers[idx]||'').toLowerCase() !== w.toLowerCase());
+    const percent = words.length ? Math.round(score/words.length*100) : 0;
+    summaryArea.innerHTML = `
+      <div class="summary-header"><h2>Session Results</h2><div class="score-display">${score}/${words.length} (${percent}%)</div></div>
+      <div class="results-grid">
+        <div class="results-card"><h3>Correct</h3><div class="word-list">
+          ${words.filter((w,idx)=> (answers[idx]||'').toLowerCase()===w.toLowerCase()).map(w=>`<div class="word-item">${w}</div>`).join('')}
+        </div></div>
+        <div class="results-card"><h3>Needs Practice</h3><div class="word-list">
+          ${wrong.map(w=>`<div class="word-item">${w}</div>`).join('')}
+        </div></div>
+      </div>`;
+    trainerArea.classList.add('hidden');
+    summaryArea.classList.remove('hidden');
+    startBtn.innerHTML = '<i class="fas fa-play"></i> Start Session';
+    if (window.insertSummaryAd) window.insertSummaryAd();
+  }
+
+  // utils
+  function mergeUnique(base, add){
+    const seen = new Set(base.map(w=>w.toLowerCase()));
+    const out = base.slice();
+    add.forEach(w=>{
+      const k = w.toLowerCase();
+      if(!seen.has(k)){ seen.add(k); out.push(w); }
+    });
+    return out;
+  }
+  function shuffle(a){
+    const arr=a.slice();
+    for(let i=arr.length-1;i>0;i--){
+      const j=Math.floor(Math.random()*(i+1));
+      [arr[i],arr[j]]=[arr[j],arr[i]];
+    }
+    return arr;
+  }
 });
