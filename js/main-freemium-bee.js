@@ -80,7 +80,7 @@ document.addEventListener('DOMContentLoaded', () => {
   let sampleWords = [];
   (async ()=>{
     try{
-      const res = await fetch('spelling-bee.json', {cache:'no-cache'});
+      const res = await fetch('/data/word-lists/spelling-bee.json', {cache: 'no-cache'});
       const data = await res.json();
       sampleWords = Array.isArray(data?.words) ? data.words.filter(Boolean) : [];
     }catch(e){
