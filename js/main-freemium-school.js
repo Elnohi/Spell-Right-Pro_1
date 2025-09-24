@@ -67,7 +67,7 @@ document.addEventListener('DOMContentLoaded', () => {
   let sampleWords = [];
   (async ()=>{
     try {
-      const res = await fetch('school.json',{cache:'no-cache'});
+      const res = await fetch('/data/word-lists/school.json', {cache: 'no-cache'});
       const data = await res.json();
       sampleWords = Array.isArray(data?.words) ? data.words.filter(Boolean) : [];
     } catch(e) {
