@@ -1,22 +1,43 @@
-// ==================== SpellRightPro Freemium OET (Toggle Limit) ====================
+// ==================== SpellRightPro Freemium OET (Practice/Test + End Session) ====================
 document.addEventListener('DOMContentLoaded', () => {
-  const trainerArea   = document.getElementById('trainer-area');
-  const practiceArea  = document.getElementById('practice-area');
-  const summaryArea   = document.getElementById('summary-area');
-  const startBtn      = document.getElementById('start-btn');
-  const accentPicker  = document.querySelector('.accent-picker');
-  const feedbackBox   = document.getElementById('feedback');
+  const practiceArea   = document.getElementById('practice-area');
+  const summaryArea    = document.getElementById('summary-area');
+  const startBtn       = document.getElementById('start-btn');
+  const practiceBtn    = document.getElementById('practice-mode-btn');
+  const testBtn        = document.getElementById('test-mode-btn');
+  const accentPicker   = document.querySelector('.accent-picker');
+  const feedbackBox    = document.getElementById('feedback');
 
-  const prevBtn   = document.getElementById('prev-btn');
-  const nextBtn   = document.getElementById('next-btn');
-  const repeatBtn = document.getElementById('repeat-btn');
+  const prevBtn        = document.getElementById('prev-btn');
+  const nextBtn        = document.getElementById('next-btn');
+  const repeatBtn      = document.getElementById('repeat-btn');
 
-  const lifeCorrect = document.getElementById('life-correct');
-  const lifeAttempts = document.getElementById('life-attempts');
+  const lifeCorrectEl  = document.getElementById('life-correct');
+  const lifeAttemptsEl = document.getElementById('life-attempts');
 
-  // ---------- CONFIG: Toggle the daily word limit ----------
-  const ENABLE_WORD_LIMIT = false;  // <-- set to true to enforce 10 words/day, false for unlimited
-  const FREEMIUM_MAX = 10;          // only applies if ENABLE_WORD_LIMIT = true
+  const addCustomBtn   = document.getElementById('add-custom-btn');
+  const fileInput      = document.getElementById('file-input');
+  const customInput    = document.getElementById('custom-words');
+
+  // ---------- Config ----------
+  const ENABLE_WORD_LIMIT   = false;
+  const FREEMIUM_MAX        = 10;
+
+  // ---------- Lifetime stats ----------
+  function loadLife() {
+    const c = parseInt(localStorage.getItem('oet_life_correct')  || '0', 10);
+    const a = parseInt(localStorage.getItem('oet_life_attempts') || '0', 10);
+    lifeCorrectEl.textContent  = c;
+    lifeAttemptsEl.textContent = a;
+    return { c, a };
+  }
+  function saveLife(c, a) {
+    localStorage.setItem('oet_life_correct',  String(c));
+    localStorage.setItem('oet_life_attempts', String(a));
+    lifeCorrectEl.textContent  = c;
+    lifeAttemptsEl.textContent = a;
+  }
+  let { c: lifeCorrect, a: lifeAttempts } = loadLife();
 
   // ---------- TTS ----------
   let accent = 'en-US';
@@ -26,91 +47,114 @@ document.addEventListener('DOMContentLoaded', () => {
       synth && synth.cancel();
       const u = new SpeechSynthesisUtterance(w);
       u.lang = accent;
-      (synth || window.speechSynthesis).speak(u);
+      synth.speak(u);
     } catch (e) {}
   }
-
-  // ---------- Mode ----------
-  let sessionMode = 'practice';
   accentPicker?.addEventListener('click', (e) => {
-    if (e.target.tagName === 'BUTTON') {
-      accent = e.target.dataset.accent;
-      accentPicker.querySelectorAll('button').forEach((b) => b.classList.remove('active'));
-      e.target.classList.add('active');
-    }
+    const btn = e.target.closest('button[data-accent]');
+    if (!btn) return;
+    accentPicker.querySelectorAll('button').forEach((b) => b.classList.remove('active'));
+    btn.classList.add('active');
+    accent = btn.getAttribute('data-accent') || 'en-US';
   });
 
-  // ---------- Word limit handling ----------
-  function dayKey() {
-    const d = new Date();
-    return `srp_daily_words_OET_${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-  }
-  function usedToday()     { return parseInt(localStorage.getItem(dayKey()) || '0', 10); }
-  function setUsedToday(n) { localStorage.setItem(dayKey(), String(n)); }
-
+  // ---------- Word limit ----------
   function capForToday(list) {
-    if (!ENABLE_WORD_LIMIT) return list; // unlimited mode
-    const used = usedToday();
+    if (!ENABLE_WORD_LIMIT) return list;
+    const used = parseInt(localStorage.getItem('srp_daily_words_OET')||'0',10);
     if (used >= FREEMIUM_MAX) {
       alert(`Freemium limit reached: ${FREEMIUM_MAX} words today.`);
       return [];
     }
-    const remain = FREEMIUM_MAX - used;
-    return list.length > remain ? list.slice(0, remain) : list;
+    return list;
   }
 
-  // ---------- Base OET words (from oet_word_list.js) ----------
+  // ---------- Base words ----------
   let baseOET = [];
   if (Array.isArray(window.oetWords)) {
     baseOET = window.oetWords.filter(Boolean);
   } else {
-    console.warn('window.oetWords not found in oet_word_list.js');
-    if (startBtn) {
-      startBtn.disabled = true;
-      startBtn.title = 'OET word list not loaded (check that /js/oet_word_list.js is included before this script).';
-    }
-    alert('Error: OET word list not loaded. Please check that /js/oet_word_list.js is included before main-freemium-oet.js in your HTML.');
+    alert('OET word list not loaded. Make sure js/oet_word_list.js is included before this script.');
   }
 
-  // ---------- Session ----------
-  let words = [], i = 0, score = 0, answers = [];
+  // ---------- Custom words ----------
+  let customWords = [];
+  function mergeUnique(base, add) {
+    const seen = new Set(base.map((w) => w.toLowerCase()));
+    const out = base.slice();
+    add.forEach((w) => {
+      const k = w.toLowerCase();
+      if (!seen.has(k)) { seen.add(k); out.push(w); }
+    });
+    return out;
+  }
+  function parseWords(text) {
+    return text.split(/\r?\n|,|;|\t|\s+/).map(w=>w.trim()).filter(Boolean);
+  }
 
-  startBtn?.addEventListener('click', startSession);
+  addCustomBtn?.addEventListener('click', () => {
+    const raw = (customInput?.value || '').trim();
+    if (!raw) { alert('Enter some words first.'); return; }
+    const parsed = parseWords(raw);
+    customWords = mergeUnique(customWords, parsed);
+    customInput.value = '';
+    alert(`Added ${parsed.length} custom words.`);
+  });
+  fileInput?.addEventListener('change', (e) => {
+    const f = e.target.files?.[0]; if (!f) return;
+    const r = new FileReader();
+    r.onload = () => {
+      const parsed = parseWords(r.result);
+      customWords = mergeUnique(customWords, parsed);
+      alert(`Uploaded ${parsed.length} words.`);
+    };
+    r.readAsText(f);
+  });
+
+  // ---------- Session ----------
+  let words = [], i = 0, score = 0, answers = [], sessionMode = 'practice', sessionActive = false;
+
+  practiceBtn?.addEventListener('click', ()=> sessionMode='practice');
+  testBtn?.addEventListener('click', ()=> sessionMode='test');
+
+  startBtn?.addEventListener('click', () => {
+    if (sessionActive) {
+      endSession();
+    } else {
+      startSession();
+    }
+  });
 
   function startSession() {
-    const merged = baseOET.slice();
-    let sessionWords = merged;
-    if (sessionMode === 'test') sessionWords = shuffle(sessionWords).slice(0, 24);
+    let sessionWords = mergeUnique(baseOET.slice(), customWords);
+    if (sessionMode === 'test') {
+      sessionWords = shuffle(sessionWords).slice(0, 24);
+    }
     sessionWords = capForToday(sessionWords);
-    if (!sessionWords.length) return;
+    if (!sessionWords.length) { alert('No words available.'); return; }
 
-    words = sessionWords; i = 0; score = 0; answers = [];
-    trainerArea?.classList.remove('hidden');
-    practiceArea?.classList.remove('hidden');
-    summaryArea?.classList.add('hidden');
+    words = sessionWords; i=0; score=0; answers=[];
+    practiceArea.classList.remove('hidden');
+    summaryArea.classList.add('hidden');
     feedbackBox.textContent = '';
-    if (startBtn) startBtn.innerHTML = '<i class="fas fa-stop"></i> End Session';
+    sessionActive = true;
+    startBtn.innerHTML = '<i class="fas fa-stop"></i> End Session';
     renderQ();
   }
 
   function renderQ() {
     if (i >= words.length) return endSession();
     const w = words[i];
-
     const answerInput = document.getElementById('answer');
     const submitBtn   = document.getElementById('submit');
-
     if (answerInput) {
       answerInput.value = '';
       answerInput.focus();
       answerInput.onkeydown = (e) => { if (e.key === 'Enter') submit(); };
     }
-    if (submitBtn) {
-      submitBtn.onclick = submit;
-    }
-
+    if (submitBtn) submitBtn.onclick = submit;
     speak(w);
-    feedbackBox.textContent = ''; // clear old feedback
+    feedbackBox.textContent = '';
   }
 
   function submit() {
@@ -118,78 +162,50 @@ document.addEventListener('DOMContentLoaded', () => {
     const w = (words[i] || '').trim();
     let correct = false;
     if (input.toLowerCase() === w.toLowerCase()) {
-      score++;
-      correct = true;
+      score++; correct = true;
       feedbackBox.textContent = `✅ Correct: ${w}`;
     } else {
       feedbackBox.textContent = `❌ Incorrect. Correct spelling: ${w}`;
     }
     answers[i] = input;
-
-    // update lifetime stats
-    const attempts = parseInt(lifeAttempts.textContent) + 1;
-    lifeAttempts.textContent = attempts;
-    if (correct) {
-      const corr = parseInt(lifeCorrect.textContent) + 1;
-      lifeCorrect.textContent = corr;
-    }
-
+    lifeAttempts++; if (correct) lifeCorrect++;
+    saveLife(lifeCorrect, lifeAttempts);
     i++;
-    setTimeout(renderQ, 600); // small delay so user sees feedback
+    setTimeout(renderQ, 600);
   }
 
   function endSession() {
-    if (ENABLE_WORD_LIMIT) setUsedToday(usedToday() + words.length);
-    const wrong   = words.filter((w, idx) => (answers[idx] || '').toLowerCase() !== w.toLowerCase());
-    const percent = words.length ? Math.round((score / words.length) * 100) : 0;
-
+    sessionActive = false;
+    const wrong   = words.filter((w, idx)=> (answers[idx]||'').toLowerCase() !== w.toLowerCase());
+    const percent = words.length ? Math.round((score/words.length)*100) : 0;
     summaryArea.innerHTML = `
-      <div class="summary-header">
-        <h2>Session Results</h2>
-        <div class="score-display">${score}/${words.length} (${percent}%)</div>
-      </div>
+      <div class="summary-header"><h2>Session Results</h2>
+      <div class="score-display">${score}/${words.length} (${percent}%)</div></div>
       <div class="results-grid">
-        <div class="results-card">
-          <h3>Correct</h3>
-          <div class="word-list">
-            ${words.filter((w, idx) => (answers[idx] || '').toLowerCase() === w.toLowerCase()).map((w) => `<div class="word-item">${w}</div>`).join('')}
-          </div>
-        </div>
-        <div class="results-card">
-          <h3>Needs Practice</h3>
-          <div class="word-list">
-            ${wrong.map((w) => `<div class="word-item">${w}</div>`).join('')}
-          </div>
-        </div>
+        <div class="results-card"><h3>Correct</h3><div class="word-list">
+          ${words.filter((w,idx)=>(answers[idx]||'').toLowerCase()===w.toLowerCase()).map(w=>`<div class="word-item">${w}</div>`).join('')}
+        </div></div>
+        <div class="results-card"><h3>Needs Practice</h3><div class="word-list">
+          ${wrong.map(w=>`<div class="word-item">${w}</div>`).join('')}
+        </div></div>
       </div>`;
-    trainerArea.classList.add('hidden');
     practiceArea.classList.add('hidden');
     summaryArea.classList.remove('hidden');
-    if (startBtn) startBtn.innerHTML = '<i class="fas fa-play"></i> Start Session';
+    startBtn.innerHTML = '<i class="fas fa-play"></i> Start Session';
     if (window.insertSummaryAd) window.insertSummaryAd();
   }
 
-  // ---------- Nav controls ----------
-  prevBtn?.addEventListener('click', () => {
-    if (i > 0) {
-      i--;
-      renderQ();
-    }
-  });
-  nextBtn?.addEventListener('click', () => {
-    i++;
-    renderQ();
-  });
-  repeatBtn?.addEventListener('click', () => {
-    if (i < words.length) speak(words[i]);
-  });
+  // ---------- Navigation ----------
+  prevBtn?.addEventListener('click', ()=>{ if (i>0){ i--; renderQ(); } });
+  nextBtn?.addEventListener('click', ()=>{ i++; renderQ(); });
+  repeatBtn?.addEventListener('click', ()=>{ if (i<words.length) speak(words[i]); });
 
-  // ---------- utils ----------
+  // ---------- Helpers ----------
   function shuffle(a) {
-    const arr = a.slice();
-    for (let i = arr.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [arr[i], arr[j]] = [arr[j], arr[i]];
+    const arr=a.slice();
+    for (let j=arr.length-1;j>0;j--) {
+      const k=Math.floor(Math.random()*(j+1));
+      [arr[j],arr[k]]=[arr[k],arr[j]];
     }
     return arr;
   }
