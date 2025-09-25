@@ -56,17 +56,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Base OET words via oet_word_list.js
 let baseOET = [];
-(async () => {
-  try {
-    // Ensure the script is already loaded in HTML: <script src="/js/oet_word_list.js"></script>
-    if (Array.isArray(window.oetWords)) {
-      baseOET = window.oetWords.filter(Boolean);
-    } else {
-      console.warn('window.oetWords not found in oet_word_list.js');
-    }
-  } catch (e) {
-    console.error('Could not load oet_word_list.js', e);
-  }
+if (Array.isArray(window.oetWords)) {
+  baseOET = window.oetWords.filter(Boolean);
+} else {
+  console.warn('window.oetWords not found in oet_word_list.js');
+  alert('Error: OET word list not loaded. Please check that /js/oet_word_list.js is included before main-freemium-oet.js in your HTML.');
+}
 })();
 
   // Custom once/day
