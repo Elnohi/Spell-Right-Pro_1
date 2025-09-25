@@ -5,46 +5,16 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>SpellRightPro (OET - Freemium)</title>
 
-  <!-- Global styles -->
-  <link rel="stylesheet" href="/css/styles.css"/>
+  <!-- Styles -->
+  <link rel="stylesheet" href="css/styles.css"/>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"/>
-
-  <!-- Small UX polish specific to this page -->
-  <style>
-    .training-card { max-width: 900px; margin: 16px auto; padding: 16px; background:#fff; border:1px solid #e5e7eb; border-radius:14px; }
-    .row { display:flex; gap:12px; align-items:center; flex-wrap:wrap; margin:12px 0; }
-    .accent-picker button { padding:8px 10px; border:1px solid #e5e7eb; background:#f9fafb; border-radius:10px; cursor:pointer }
-    .accent-picker button.active { background:#098cfb; color:#fff; border-color:#098cfb }
-    .session-controls { display:flex; gap:8px; align-items:center; }
-    .btn-start, .btn-primary, .btn-secondary { padding:10px 14px; border-radius:10px; border:1px solid #e5e7eb; background:#f3f4f6; cursor:pointer }
-    .btn-primary { background:#098cfb; color:#fff; border-color:#098cfb }
-    .btn-start { background:#16a34a; color:#fff; border-color:#16a34a }
-    .btn-start.stop { background:#ef4444; border-color:#ef4444 }
-    .custom-words.card { margin-top:14px; padding:14px; border:1px solid #e5e7eb; border-radius:12px; background:#fafafa }
-    .custom-words .wide { width:100%; font-size:1rem; padding:10px 12px; border:1px solid #d1d5db; border-radius:10px; box-sizing:border-box }
-    .custom-row { display:flex; gap:10px; align-items:center; margin-top:8px; flex-wrap:wrap }
-    .answer-row { display:flex; gap:8px; margin-top:14px; align-items:center }
-    #answer { flex:1; min-width:220px; font-size:1.05rem; padding:10px 12px; border:1px solid #d1d5db; border-radius:10px; }
-    .nav-controls { display:flex; gap:8px; margin:12px 0 6px }
-    .feedback { min-height:28px; margin-top:8px; font-weight:600 }
-    .lifetime-stats { display:flex; gap:16px; color:#374151; margin:8px 0 6px }
-    .card-title { margin:0 0 6px; }
-    .prompt { color:#374151; margin-top:6px }
-    .hidden { display:none !important; }
-    .navbar{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;background:#fff;border-bottom:1px solid #e5e7eb}
-    .brand{display:flex;align-items:center;gap:10px}
-    .brand .logo{height:34px}
-    .nav-actions a{text-decoration:none}
-    .ad-container{max-width:980px;margin:10px auto;padding:0 16px}
-    .ad-label{font-size:.8rem;color:#6b7280;margin:6px 0}
-  </style>
 
   <!-- Firebase -->
   <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-analytics-compat.js"></script>
-  <script src="/js/config.js"></script>
+  <script src="js/config.js"></script>
 
   <!-- AdSense -->
   <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7632930282249669" crossorigin="anonymous"></script>
@@ -53,15 +23,15 @@
   <!-- Navbar -->
   <nav class="navbar">
     <div class="brand">
-      <img src="/assets/logo.png" alt="SpellRightPro Logo" class="logo"/>
+      <img src="assets/logo.png" alt="SpellRightPro Logo" class="logo"/>
       <div>
-        <span>SpellRightPro</span><br/>
+        <span>SpellRightPro</span>
         <span class="subtitle">OET Practice</span>
       </div>
     </div>
     <div class="nav-actions">
-      <a class="btn-secondary" href="/"><i class="fa fa-home"></i> Home</a>
-      <a class="btn-primary" href="/premium"><i class="fa fa-crown"></i> Premium</a>
+      <a class="btn-secondary" href="index.html"><i class="fa fa-home"></i> Home</a>
+      <a class="btn-primary" href="premium.html"><i class="fa fa-crown"></i> Premium</a>
     </div>
   </nav>
 
@@ -77,7 +47,6 @@
     <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
   </div>
 
-  <!-- Main -->
   <main class="container">
     <section class="training-card">
       <h1 class="card-title"><i class="fa fa-stethoscope"></i> OET Word Practice</h1>
@@ -88,41 +57,40 @@
         <div>Attempts: <span id="life-attempts">0</span></div>
       </div>
 
-      <!-- Controls -->
+      <!-- Mode & Accent -->
       <div class="row">
         <div class="accent-picker">
           <button data-accent="en-US" class="active">🇺🇸</button>
           <button data-accent="en-GB">🇬🇧</button>
           <button data-accent="en-AU">🇦🇺</button>
         </div>
+        <div class="mode-controls">
+          <button id="practice-mode-btn" class="btn-secondary">Practice</button>
+          <button id="test-mode-btn" class="btn-secondary">Test</button>
+          <button id="mode-switch-btn" class="btn-secondary"><i class="fa fa-random"></i> Switch</button>
+        </div>
         <div class="session-controls">
-          <button id="practice-mode-btn" class="btn-secondary"><i class="fa fa-book"></i> Practice</button>
-          <button id="test-mode-btn" class="btn-secondary"><i class="fa fa-clipboard-check"></i> Test (24)</button>
           <button id="start-btn" class="btn-start"><i class="fa fa-play"></i> Start</button>
         </div>
       </div>
 
-      <!-- Custom words -->
-      <div class="custom-words card">
-        <h3 class="card-title"><i class="fa fa-list-ul"></i> Custom Words</h3>
-        <p class="muted">Paste or type words (comma, space, or newline separated), or upload a .txt file.</p>
-        <textarea id="custom-words" class="wide" rows="5" placeholder="e.g. auscultation, haemorrhage, intravenous
-nausea
-vomiting"></textarea>
-        <div class="custom-row">
-          <input type="file" id="file-input" accept=".txt"/>
-          <button id="add-custom-btn" class="btn-secondary"><i class="fa fa-plus"></i> Add Words</button>
-        </div>
+      <!-- Add custom words -->
+      <div class="custom-inputs">
+        <textarea id="custom-words" placeholder="Add custom words (comma, space, or line separated)..."></textarea>
+        <button id="add-custom-btn" class="btn-primary"><i class="fa fa-plus"></i> Add Words</button>
+        <input type="file" id="file-input" accept=".txt"/>
       </div>
 
-      <!-- Practice area -->
+      <!-- Training Area -->
+      <div id="trainer-area" class="hidden"></div>
+
+      <!-- Navigation controls -->
       <div id="practice-area" class="hidden">
         <div class="nav-controls">
           <button id="prev-btn" class="btn-secondary"><i class="fa fa-arrow-left"></i> Previous</button>
-          <button id="repeat-btn" class="btn-secondary"><i class="fa fa-rotate-right"></i> Repeat</button>
+          <button id="repeat-btn" class="btn-secondary"><i class="fa fa-redo"></i> Repeat</button>
           <button id="next-btn" class="btn-secondary">Next <i class="fa fa-arrow-right"></i></button>
         </div>
-
         <div id="prompt" class="prompt">Listen and spell the word.</div>
         <div class="answer-row">
           <input id="answer" type="text" placeholder="Type the spelling..." autocomplete="off"/>
@@ -170,8 +138,8 @@ vomiting"></textarea>
     };
   </script>
 
-  <!-- Word list + App logic -->
+  <!-- Scripts -->
   <script src="/js/oet_word_list.js"></script>
-  <script src="/js/main-freemium-oet.js"></script>
+  <script src="js/main-freemium-oet.js"></script>
 </body>
 </html>
