@@ -11,10 +11,6 @@ document.addEventListener('DOMContentLoaded', () => {
   const modeSwitchBtn = document.getElementById('mode-switch-btn');
   const accentPicker  = document.querySelector('.accent-picker');
 
-  const prevBtn   = document.getElementById('prev-btn');
-  const repeatBtn = document.getElementById('repeat-btn');
-  const nextBtn   = document.getElementById('next-btn');
-
   // ---------- TTS ----------
   let accent = 'en-US';
   const synth = window.speechSynthesis;
@@ -87,11 +83,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // ---------- Session ----------
   let words = [], i = 0, score = 0, answers = [];
   startBtn?.addEventListener('click', () => {
-    if (words.length && !summaryArea.classList.contains('hidden')) {
-      // Already ended → restart
-      startSession();
-    } else if (startBtn.innerText.includes('Stop')) {
-      // End manually
+    if (startBtn.innerText.includes('Stop')) {
       endSession();
     } else {
       startSession();
@@ -128,14 +120,31 @@ document.addEventListener('DOMContentLoaded', () => {
         <input id="answer" type="text" placeholder="Type the spelling..." autocomplete="off"/>
         <button id="submit" class="btn-primary"><i class="fas fa-check"></i> Submit</button>
         <button id="skip" class="btn-secondary"><i class="fas fa-forward"></i> Skip</button>
-      </div>`;
+      </div>
+      <div class="nav-controls">
+        <button id="prev-btn" class="btn-secondary"><i class="fa fa-arrow-left"></i> Previous</button>
+        <button id="repeat-btn" class="btn-secondary"><i class="fa fa-redo"></i> Repeat</button>
+        <button id="next-btn" class="btn-secondary">Next <i class="fa fa-arrow-right"></i></button>
+      </div>
+      <div id="feedback" class="feedback"></div>`;
 
     document.getElementById('hear')?.addEventListener('click', () => speak(w));
     document.getElementById('submit')?.addEventListener('click', submit);
     document.getElementById('skip')?.addEventListener('click', () => { answers.push(''); i++; renderQ(); });
+
+    document.getElementById('prev-btn')?.addEventListener('click', () => {
+      if (i > 0) { i--; renderQ(); }
+    });
+    document.getElementById('repeat-btn')?.addEventListener('click', () => speak(w));
+    document.getElementById('next-btn')?.addEventListener('click', () => {
+      if (i < words.length - 1) { i++; renderQ(); }
+      else { endSession(); }
+    });
+
     const input = document.getElementById('answer');
     input?.focus();
     input?.addEventListener('keydown', (e) => { if (e.key === 'Enter') submit(); });
+
     speak(w);
   }
 
@@ -176,28 +185,6 @@ document.addEventListener('DOMContentLoaded', () => {
     if (startBtn) startBtn.innerHTML = '<i class="fas fa-play"></i> Start Session';
     if (window.insertSummaryAd) window.insertSummaryAd();
   }
-
-  // ---------- Extra Nav Buttons ----------
-  prevBtn?.addEventListener('click', () => {
-    if (i > 0) {
-      i--;
-      renderQ();
-    }
-  });
-
-  repeatBtn?.addEventListener('click', () => {
-    const w = words[i];
-    if (w) speak(w);
-  });
-
-  nextBtn?.addEventListener('click', () => {
-    if (i < words.length - 1) {
-      i++;
-      renderQ();
-    } else {
-      endSession();
-    }
-  });
 
   // ---------- utils ----------
   function mergeUnique(base, add) {
