@@ -1,15 +1,18 @@
 // ==================== SpellRightPro Freemium OET ====================
 document.addEventListener('DOMContentLoaded', () => {
   const trainerArea   = document.getElementById('trainer-area');
+  const practiceArea  = document.getElementById('practice-area');
   const summaryArea   = document.getElementById('summary-area');
-  const addCustomBtn  = document.getElementById('add-custom-btn');
-  const fileInput     = document.getElementById('file-input');
-  const customInput   = document.getElementById('custom-words');
   const startBtn      = document.getElementById('start-btn');
-  const practiceBtn   = document.getElementById('practice-mode-btn');
-  const testBtn       = document.getElementById('test-mode-btn');
-  const modeSwitchBtn = document.getElementById('mode-switch-btn');
   const accentPicker  = document.querySelector('.accent-picker');
+  const feedbackBox   = document.getElementById('feedback');
+
+  const prevBtn   = document.getElementById('prev-btn');
+  const nextBtn   = document.getElementById('next-btn');
+  const repeatBtn = document.getElementById('repeat-btn');
+
+  const lifeCorrect = document.getElementById('life-correct');
+  const lifeAttempts = document.getElementById('life-attempts');
 
   // ---------- TTS ----------
   let accent = 'en-US';
@@ -25,9 +28,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // ---------- Mode ----------
   let sessionMode = 'practice';
-  practiceBtn?.addEventListener('click', () => (sessionMode = 'practice'));
-  testBtn?.addEventListener('click',     () => (sessionMode = 'test'));
-  modeSwitchBtn?.addEventListener('click', () => (sessionMode = sessionMode === 'practice' ? 'test' : 'practice'));
   accentPicker?.addEventListener('click', (e) => {
     if (e.target.tagName === 'BUTTON') {
       accent = e.target.dataset.accent;
@@ -55,9 +55,6 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // ---------- Base OET words (from oet_word_list.js) ----------
-  // IMPORTANT: in freemium-oet.html, load this before main-freemium-oet.js:
-  // <script src="/js/oet_word_list.js"></script>
-  // <script src="/js/main-freemium-oet.js"></script>
   let baseOET = [];
   if (Array.isArray(window.oetWords)) {
     baseOET = window.oetWords.filter(Boolean);
@@ -70,44 +67,13 @@ document.addEventListener('DOMContentLoaded', () => {
     alert('Error: OET word list not loaded. Please check that /js/oet_word_list.js is included before main-freemium-oet.js in your HTML.');
   }
 
-  // ---------- Custom once/day ----------
-  function todayStr()        { return new Date().toISOString().slice(0, 10); }
-  function canAddCustom()    { return localStorage.getItem('oet_customListDate') !== todayStr(); }
-  function markCustom()      { localStorage.setItem('oet_customListDate', todayStr()); }
-
-  let customWords = [];
-  addCustomBtn?.addEventListener('click', () => {
-    if (!canAddCustom()) { alert('Freemium allows one custom list per day.'); return; }
-    const raw = (customInput?.value || '').trim();
-    if (!raw) { alert('Enter some words first.'); return; }
-    const parsed = raw.split(/[\s,;]+/).map((w) => w.trim()).filter(Boolean);
-    customWords = mergeUnique(customWords, parsed);
-    if (customInput) customInput.value = '';
-    markCustom();
-    alert(`Added ${parsed.length} custom words.`);
-  });
-
-  fileInput?.addEventListener('change', (e) => {
-    if (!canAddCustom()) { alert('Freemium allows one custom list per day.'); e.target.value = ''; return; }
-    const f = e.target.files?.[0]; if (!f) return;
-    const r = new FileReader();
-    r.onload = () => {
-      const txt = String(r.result || '');
-      const parsed = txt.split(/\r?\n|,|;|\t/).map((w) => w.trim()).filter(Boolean);
-      customWords = mergeUnique(customWords, parsed);
-      markCustom();
-      alert(`Uploaded ${parsed.length} custom words.`);
-    };
-    r.readAsText(f);
-  });
-
   // ---------- Session ----------
   let words = [], i = 0, score = 0, answers = [];
+
   startBtn?.addEventListener('click', startSession);
 
   function startSession() {
-    const base   = baseOET.slice();
-    const merged = mergeUnique(base, customWords);
+    const merged = baseOET.slice();
     let sessionWords = merged;
     if (sessionMode === 'test') sessionWords = shuffle(sessionWords).slice(0, 24);
     sessionWords = capForToday(sessionWords);
@@ -115,7 +81,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     words = sessionWords; i = 0; score = 0; answers = [];
     trainerArea?.classList.remove('hidden');
+    practiceArea?.classList.remove('hidden');
     summaryArea?.classList.add('hidden');
+    feedbackBox.textContent = '';
     if (startBtn) startBtn.innerHTML = '<i class="fas fa-stop"></i> End Session';
     renderQ();
   }
@@ -123,32 +91,46 @@ document.addEventListener('DOMContentLoaded', () => {
   function renderQ() {
     if (i >= words.length) return endSession();
     const w = words[i];
-    trainerArea.innerHTML = `
-      <div class="word-playback">
-        <button id="hear" class="btn-icon" title="Hear again"><i class="fas fa-volume-up"></i></button>
-        <span class="indicator">Word ${i + 1}/${words.length}</span>
-      </div>
-      <div class="answer-row">
-        <input id="answer" type="text" placeholder="Type the spelling..." autocomplete="off"/>
-        <button id="submit" class="btn-primary"><i class="fas fa-check"></i> Submit</button>
-        <button id="skip" class="btn-secondary"><i class="fas fa-forward"></i> Skip</button>
-      </div>`;
-    document.getElementById('hear')?.addEventListener('click', () => speak(w));
-    document.getElementById('submit')?.addEventListener('click', submit);
-    document.getElementById('skip')?.addEventListener('click', () => { answers.push(''); i++; renderQ(); });
-    const input = document.getElementById('answer');
-    input?.focus();
-    input?.addEventListener('keydown', (e) => { if (e.key === 'Enter') submit(); });
+
+    const answerInput = document.getElementById('answer');
+    const submitBtn   = document.getElementById('submit');
+
+    if (answerInput) {
+      answerInput.value = '';
+      answerInput.focus();
+      answerInput.onkeydown = (e) => { if (e.key === 'Enter') submit(); };
+    }
+    if (submitBtn) {
+      submitBtn.onclick = submit;
+    }
+
     speak(w);
+    feedbackBox.textContent = ''; // clear old feedback
   }
 
   function submit() {
     const input = (document.getElementById('answer')?.value || '').trim();
     const w = (words[i] || '').trim();
-    if (input.toLowerCase() === w.toLowerCase()) score++;
-    answers.push(input);
+    let correct = false;
+    if (input.toLowerCase() === w.toLowerCase()) {
+      score++;
+      correct = true;
+      feedbackBox.textContent = `✅ Correct: ${w}`;
+    } else {
+      feedbackBox.textContent = `❌ Incorrect. Correct spelling: ${w}`;
+    }
+    answers[i] = input;
+
+    // update lifetime stats
+    const attempts = parseInt(lifeAttempts.textContent) + 1;
+    lifeAttempts.textContent = attempts;
+    if (correct) {
+      const corr = parseInt(lifeCorrect.textContent) + 1;
+      lifeCorrect.textContent = corr;
+    }
+
     i++;
-    renderQ();
+    setTimeout(renderQ, 600); // small delay so user sees feedback
   }
 
   function endSession() {
@@ -176,21 +158,28 @@ document.addEventListener('DOMContentLoaded', () => {
         </div>
       </div>`;
     trainerArea.classList.add('hidden');
+    practiceArea.classList.add('hidden');
     summaryArea.classList.remove('hidden');
     if (startBtn) startBtn.innerHTML = '<i class="fas fa-play"></i> Start Session';
     if (window.insertSummaryAd) window.insertSummaryAd();
   }
 
+  // ---------- Nav controls ----------
+  prevBtn?.addEventListener('click', () => {
+    if (i > 0) {
+      i--;
+      renderQ();
+    }
+  });
+  nextBtn?.addEventListener('click', () => {
+    i++;
+    renderQ();
+  });
+  repeatBtn?.addEventListener('click', () => {
+    if (i < words.length) speak(words[i]);
+  });
+
   // ---------- utils ----------
-  function mergeUnique(base, add) {
-    const seen = new Set(base.map((w) => w.toLowerCase()));
-    const out = base.slice();
-    add.forEach((w) => {
-      const k = w.toLowerCase();
-      if (!seen.has(k)) { seen.add(k); out.push(w); }
-    });
-    return out;
-  }
   function shuffle(a) {
     const arr = a.slice();
     for (let i = arr.length - 1; i > 0; i--) {
@@ -199,4 +188,4 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     return arr;
   }
-}); // <-- single, correct closing of DOMContentLoaded
+});
