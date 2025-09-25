@@ -20,6 +20,7 @@
   <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7632930282249669" crossorigin="anonymous"></script>
 </head>
 <body>
+  <!-- Navbar -->
   <nav class="navbar">
     <div class="brand">
       <img src="assets/logo.png" alt="SpellRightPro Logo" class="logo"/>
@@ -46,15 +47,18 @@
     <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
   </div>
 
+  <!-- Main -->
   <main class="container">
     <section class="training-card">
       <h1 class="card-title"><i class="fa fa-stethoscope"></i> OET Word Practice</h1>
 
+      <!-- Lifetime stats -->
       <div class="lifetime-stats">
         <div>Correct: <span id="life-correct">0</span></div>
         <div>Attempts: <span id="life-attempts">0</span></div>
       </div>
 
+      <!-- Controls -->
       <div class="row">
         <div class="accent-picker">
           <button data-accent="en-US" class="active">🇺🇸</button>
@@ -63,25 +67,29 @@
         </div>
         <div class="session-controls">
           <button id="start-btn" class="btn-start"><i class="fa fa-play"></i> Start</button>
-       </div>
-        
+        </div>
+      </div> <!-- ✅ closed row -->
+
+      <!-- Training area -->
       <div id="trainer-area" class="hidden"></div>
 
-     <div id="practice-area" class="hidden">
-       <div class="nav-controls">
-  <button id="prev-btn" class="btn-secondary"><i class="fa fa-arrow-left"></i> Previous</button>
-  <button id="repeat-btn" class="btn-secondary"><i class="fa fa-redo"></i> Repeat</button>
-  <button id="next-btn" class="btn-secondary">Next <i class="fa fa-arrow-right"></i></button>
-</div>
+      <!-- Practice area -->
+      <div id="practice-area" class="hidden">
+        <div class="nav-controls">
+          <button id="prev-btn" class="btn-secondary"><i class="fa fa-arrow-left"></i> Previous</button>
+          <button id="repeat-btn" class="btn-secondary"><i class="fa fa-rotate-right"></i> Repeat</button>
+          <button id="next-btn" class="btn-secondary">Next <i class="fa fa-arrow-right"></i></button>
+        </div>
 
-  <div id="prompt" class="prompt">Listen and spell the word.</div>
-  <div class="answer-row">
-    <input id="answer" type="text" placeholder="Type the spelling..." autocomplete="off"/>
-    <button id="submit" class="btn-primary"><i class="fa fa-check"></i> Submit</button>
-  </div>
-  <div id="feedback" class="feedback"></div>
-</div>
+        <div id="prompt" class="prompt">Listen and spell the word.</div>
+        <div class="answer-row">
+          <input id="answer" type="text" placeholder="Type the spelling..." autocomplete="off"/>
+          <button id="submit" class="btn-primary"><i class="fa fa-check"></i> Submit</button>
+        </div>
+        <div id="feedback" class="feedback"></div>
+      </div>
 
+      <!-- Summary -->
       <div id="summary-area" class="hidden"></div>
     </section>
   </main>
@@ -120,7 +128,8 @@
     };
   </script>
 
-  <script src="/js/oet_word_list.js"></script>
+  <!-- Word list + App logic -->
+  <script src="js/oet_word_list.js"></script>
   <script src="js/main-freemium-oet.js"></script>
 </body>
 </html>
