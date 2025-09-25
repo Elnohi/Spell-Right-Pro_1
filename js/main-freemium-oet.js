@@ -1,4 +1,4 @@
-// ==================== SpellRightPro Freemium OET ====================
+// ==================== SpellRightPro Freemium OET (Toggle Limit) ====================
 document.addEventListener('DOMContentLoaded', () => {
   const trainerArea   = document.getElementById('trainer-area');
   const practiceArea  = document.getElementById('practice-area');
@@ -13,6 +13,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
   const lifeCorrect = document.getElementById('life-correct');
   const lifeAttempts = document.getElementById('life-attempts');
+
+  // ---------- CONFIG: Toggle the daily word limit ----------
+  const ENABLE_WORD_LIMIT = false;  // <-- set to true to enforce 10 words/day, false for unlimited
+  const FREEMIUM_MAX = 10;          // only applies if ENABLE_WORD_LIMIT = true
 
   // ---------- TTS ----------
   let accent = 'en-US';
@@ -36,15 +40,16 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-  // ---------- Daily cap (10) ----------
-  const FREEMIUM_MAX = 10;
+  // ---------- Word limit handling ----------
   function dayKey() {
     const d = new Date();
     return `srp_daily_words_OET_${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
   }
   function usedToday()     { return parseInt(localStorage.getItem(dayKey()) || '0', 10); }
   function setUsedToday(n) { localStorage.setItem(dayKey(), String(n)); }
+
   function capForToday(list) {
+    if (!ENABLE_WORD_LIMIT) return list; // unlimited mode
     const used = usedToday();
     if (used >= FREEMIUM_MAX) {
       alert(`Freemium limit reached: ${FREEMIUM_MAX} words today.`);
@@ -134,7 +139,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function endSession() {
-    setUsedToday(usedToday() + words.length);
+    if (ENABLE_WORD_LIMIT) setUsedToday(usedToday() + words.length);
     const wrong   = words.filter((w, idx) => (answers[idx] || '').toLowerCase() !== w.toLowerCase());
     const percent = words.length ? Math.round((score / words.length) * 100) : 0;
 
