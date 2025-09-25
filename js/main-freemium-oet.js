@@ -1,4 +1,4 @@
-// ==================== SpellRightPro Freemium OET (Practice/Test + End Session) ====================
+// ==================== SpellRightPro Freemium OET (Practice/Test + End Session + Custom Words) ====================
 document.addEventListener('DOMContentLoaded', () => {
   const practiceArea   = document.getElementById('practice-area');
   const summaryArea    = document.getElementById('summary-area');
@@ -19,9 +19,9 @@ document.addEventListener('DOMContentLoaded', () => {
   const fileInput      = document.getElementById('file-input');
   const customInput    = document.getElementById('custom-words');
 
-  // ---------- Config ----------
-  const ENABLE_WORD_LIMIT   = false;
-  const FREEMIUM_MAX        = 10;
+  // ---------- Config (no daily limit; flip to true if you want the old cap back) ----------
+  const ENABLE_WORD_LIMIT = false;
+  const FREEMIUM_MAX      = 10;
 
   // ---------- Lifetime stats ----------
   function loadLife() {
@@ -61,7 +61,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // ---------- Word limit ----------
   function capForToday(list) {
     if (!ENABLE_WORD_LIMIT) return list;
-    const used = parseInt(localStorage.getItem('srp_daily_words_OET')||'0',10);
+    const used = parseInt(localStorage.getItem('srp_daily_words_OET') || '0', 10);
     if (used >= FREEMIUM_MAX) {
       alert(`Freemium limit reached: ${FREEMIUM_MAX} words today.`);
       return [];
@@ -69,27 +69,28 @@ document.addEventListener('DOMContentLoaded', () => {
     return list;
   }
 
-  // ---------- Base words ----------
+  // ---------- Base OET words (from /js/oet_word_list.js) ----------
   let baseOET = [];
   if (Array.isArray(window.oetWords)) {
     baseOET = window.oetWords.filter(Boolean);
   } else {
-    alert('OET word list not loaded. Make sure js/oet_word_list.js is included before this script.');
+    alert('OET word list not loaded. Ensure /js/oet_word_list.js is included before this script.');
+    if (startBtn) { startBtn.disabled = true; startBtn.title = 'Word list not loaded'; }
   }
 
   // ---------- Custom words ----------
   let customWords = [];
   function mergeUnique(base, add) {
-    const seen = new Set(base.map((w) => w.toLowerCase()));
+    const seen = new Set(base.map((w) => (w || '').toLowerCase()));
     const out = base.slice();
     add.forEach((w) => {
-      const k = w.toLowerCase();
-      if (!seen.has(k)) { seen.add(k); out.push(w); }
+      const k = (w || '').toLowerCase();
+      if (k && !seen.has(k)) { seen.add(k); out.push(w); }
     });
     return out;
   }
   function parseWords(text) {
-    return text.split(/\r?\n|,|;|\t|\s+/).map(w=>w.trim()).filter(Boolean);
+    return String(text).split(/\r?\n|,|;|\t|\s+/).map(w=>w.trim()).filter(Boolean);
   }
 
   addCustomBtn?.addEventListener('click', () => {
@@ -111,15 +112,17 @@ document.addEventListener('DOMContentLoaded', () => {
     r.readAsText(f);
   });
 
-  // ---------- Session ----------
-  let words = [], i = 0, score = 0, answers = [], sessionMode = 'practice', sessionActive = false;
+  // ---------- Modes & session ----------
+  let sessionMode = 'practice'; // 'practice' (sequential) | 'test' (random 24)
+  let sessionActive = false;
+  let words = [], i = 0, score = 0, answers = [];
 
-  practiceBtn?.addEventListener('click', ()=> sessionMode='practice');
-  testBtn?.addEventListener('click', ()=> sessionMode='test');
+  practiceBtn?.addEventListener('click', () => { sessionMode = 'practice'; });
+  testBtn?.addEventListener('click',     () => { sessionMode = 'test'; });
 
   startBtn?.addEventListener('click', () => {
     if (sessionActive) {
-      endSession();
+      endSession(); // show summary immediately on manual end
     } else {
       startSession();
     }
@@ -138,6 +141,7 @@ document.addEventListener('DOMContentLoaded', () => {
     summaryArea.classList.add('hidden');
     feedbackBox.textContent = '';
     sessionActive = true;
+    startBtn.classList.add('stop');
     startBtn.innerHTML = '<i class="fas fa-stop"></i> End Session';
     renderQ();
   }
@@ -145,14 +149,17 @@ document.addEventListener('DOMContentLoaded', () => {
   function renderQ() {
     if (i >= words.length) return endSession();
     const w = words[i];
+
     const answerInput = document.getElementById('answer');
     const submitBtn   = document.getElementById('submit');
+
     if (answerInput) {
       answerInput.value = '';
       answerInput.focus();
       answerInput.onkeydown = (e) => { if (e.key === 'Enter') submit(); };
     }
     if (submitBtn) submitBtn.onclick = submit;
+
     speak(w);
     feedbackBox.textContent = '';
   }
@@ -168,8 +175,11 @@ document.addEventListener('DOMContentLoaded', () => {
       feedbackBox.textContent = `❌ Incorrect. Correct spelling: ${w}`;
     }
     answers[i] = input;
+
+    // lifetime stats
     lifeAttempts++; if (correct) lifeCorrect++;
     saveLife(lifeCorrect, lifeAttempts);
+
     i++;
     setTimeout(renderQ, 600);
   }
@@ -178,6 +188,7 @@ document.addEventListener('DOMContentLoaded', () => {
     sessionActive = false;
     const wrong   = words.filter((w, idx)=> (answers[idx]||'').toLowerCase() !== w.toLowerCase());
     const percent = words.length ? Math.round((score/words.length)*100) : 0;
+
     summaryArea.innerHTML = `
       <div class="summary-header"><h2>Session Results</h2>
       <div class="score-display">${score}/${words.length} (${percent}%)</div></div>
@@ -191,14 +202,15 @@ document.addEventListener('DOMContentLoaded', () => {
       </div>`;
     practiceArea.classList.add('hidden');
     summaryArea.classList.remove('hidden');
-    startBtn.innerHTML = '<i class="fas fa-play"></i> Start Session';
+    startBtn.classList.remove('stop');
+    startBtn.innerHTML = '<i class="fas fa-play"></i> Start';
     if (window.insertSummaryAd) window.insertSummaryAd();
   }
 
   // ---------- Navigation ----------
-  prevBtn?.addEventListener('click', ()=>{ if (i>0){ i--; renderQ(); } });
-  nextBtn?.addEventListener('click', ()=>{ i++; renderQ(); });
-  repeatBtn?.addEventListener('click', ()=>{ if (i<words.length) speak(words[i]); });
+  prevBtn?.addEventListener('click', ()=>{ if (sessionActive && i>0){ i--; renderQ(); } });
+  nextBtn?.addEventListener('click', ()=>{ if (sessionActive){ i++; renderQ(); } });
+  repeatBtn?.addEventListener('click', ()=>{ if (sessionActive && i<words.length) speak(words[i]); });
 
   // ---------- Helpers ----------
   function shuffle(a) {
