@@ -54,15 +54,20 @@ document.addEventListener('DOMContentLoaded', () => {
     return list.length > remain ? list.slice(0, remain) : list;
   }
 
-  // Base OET words via oet.json
-  let baseOET = [];
-  (async ()=>{
-    try{
-      const res = await fetch('/js/oet_word_list.js', { cache: 'no-cache' });
-      const data = await res.json();
-      baseOET = Array.isArray(data?.words) ? data.words.filter(Boolean) : [];
-    }catch(e){ console.warn('Could not load oet.json', e); }
-  })();
+  // Base OET words via oet_word_list.js
+let baseOET = [];
+(async () => {
+  try {
+    // Ensure the script is already loaded in HTML: <script src="/js/oet_word_list.js"></script>
+    if (Array.isArray(window.oetWords)) {
+      baseOET = window.oetWords.filter(Boolean);
+    } else {
+      console.warn('window.oetWords not found in oet_word_list.js');
+    }
+  } catch (e) {
+    console.error('Could not load oet_word_list.js', e);
+  }
+})();
 
   // Custom once/day
   function todayStr(){ return new Date().toISOString().slice(0,10); }
