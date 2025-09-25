@@ -58,7 +58,7 @@ document.addEventListener('DOMContentLoaded', () => {
   let baseOET = [];
   (async ()=>{
     try{
-      const res = await fetch('/data/word-lists/oet.json', { cache: 'no-cache' });
+      const res = await fetch('/js/oet_word_list.js', { cache: 'no-cache' });
       const data = await res.json();
       baseOET = Array.isArray(data?.words) ? data.words.filter(Boolean) : [];
     }catch(e){ console.warn('Could not load oet.json', e); }
