@@ -62,7 +62,6 @@ if (Array.isArray(window.oetWords)) {
   console.warn('window.oetWords not found in oet_word_list.js');
   alert('Error: OET word list not loaded. Please check that /js/oet_word_list.js is included before main-freemium-oet.js in your HTML.');
 }
-});
 
   // Custom once/day
   function todayStr(){ return new Date().toISOString().slice(0,10); }
@@ -177,4 +176,5 @@ if (Array.isArray(window.oetWords)) {
       [arr[i],arr[j]]=[arr[j],arr[i]];
     }
     return arr;
+  }
   });
