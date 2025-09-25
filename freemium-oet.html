@@ -66,12 +66,24 @@
           <button data-accent="en-AU">🇦🇺</button>
         </div>
         <div class="session-controls">
+          <button id="practice-mode-btn" class="btn-secondary"><i class="fa fa-book"></i> Practice</button>
+          <button id="test-mode-btn" class="btn-secondary"><i class="fa fa-clipboard-check"></i> Test</button>
           <button id="start-btn" class="btn-start"><i class="fa fa-play"></i> Start</button>
         </div>
-      </div> <!-- ✅ closed row -->
+      </div> <!-- close row -->
 
-      <!-- Training area -->
-      <div id="trainer-area" class="hidden"></div>
+      <!-- Custom words -->
+      <div class="custom-words card">
+        <h3 class="card-title"><i class="fa fa-list-ul"></i> Custom Words</h3>
+        <p class="muted">Paste or type words (comma, space, or newline separated), or upload a .txt file.</p>
+        <textarea id="custom-words" class="wide" rows="5" placeholder="e.g. auscultation, haemorrhage, intravenous
+nausea
+vomiting"></textarea>
+        <div class="custom-row">
+          <input type="file" id="file-input" accept=".txt"/>
+          <button id="add-custom-btn" class="btn-secondary"><i class="fa fa-plus"></i> Add Words</button>
+        </div>
+      </div>
 
       <!-- Practice area -->
       <div id="practice-area" class="hidden">
