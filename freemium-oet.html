@@ -6,7 +6,7 @@
   <title>SpellRightPro (OET - Freemium)</title>
 
   <!-- Styles -->
-  <link rel="stylesheet" href="css/styles.css"/>
+  <link rel="stylesheet" href="/css/styles.css"/>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"/>
 
   <!-- Firebase -->
@@ -14,7 +14,7 @@
   <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-analytics-compat.js"></script>
-  <script src="js/config.js"></script>
+  <script src="/js/config.js"></script>
 
   <!-- AdSense -->
   <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7632930282249669" crossorigin="anonymous"></script>
@@ -23,15 +23,15 @@
   <!-- Navbar -->
   <nav class="navbar">
     <div class="brand">
-      <img src="assets/logo.png" alt="SpellRightPro Logo" class="logo"/>
+      <img src="/assets/logo.png" alt="SpellRightPro Logo" class="logo"/>
       <div>
         <span>SpellRightPro</span>
         <span class="subtitle">OET Practice</span>
       </div>
     </div>
     <div class="nav-actions">
-      <a class="btn-secondary" href="index.html"><i class="fa fa-home"></i> Home</a>
-      <a class="btn-primary" href="premium.html"><i class="fa fa-crown"></i> Premium</a>
+      <a class="btn-secondary" href="/index.html"><i class="fa fa-home"></i> Home</a>
+      <a class="btn-primary" href="/premium.html"><i class="fa fa-crown"></i> Premium</a>
     </div>
   </nav>
 
@@ -66,7 +66,7 @@
         </div>
         <div class="mode-controls">
           <button id="practice-mode-btn" class="btn-secondary">Practice</button>
-          <button id="test-mode-btn" class="btn-secondary">Test</button>
+          <button id="test-mode-btn" class="btn-secondary">Test (24)</button>
           <button id="mode-switch-btn" class="btn-secondary"><i class="fa fa-random"></i> Switch</button>
         </div>
         <div class="session-controls">
@@ -81,23 +81,8 @@
         <input type="file" id="file-input" accept=".txt"/>
       </div>
 
-      <!-- Training Area -->
+      <!-- Training Area (dynamic) -->
       <div id="trainer-area" class="hidden"></div>
-
-      <!-- Navigation controls -->
-      <div id="practice-area" class="hidden">
-        <div class="nav-controls">
-          <button id="prev-btn" class="btn-secondary"><i class="fa fa-arrow-left"></i> Previous</button>
-          <button id="repeat-btn" class="btn-secondary"><i class="fa fa-redo"></i> Repeat</button>
-          <button id="next-btn" class="btn-secondary">Next <i class="fa fa-arrow-right"></i></button>
-        </div>
-        <div id="prompt" class="prompt">Listen and spell the word.</div>
-        <div class="answer-row">
-          <input id="answer" type="text" placeholder="Type the spelling..." autocomplete="off"/>
-          <button id="submit" class="btn-primary"><i class="fa fa-check"></i> Submit</button>
-        </div>
-        <div id="feedback" class="feedback"></div>
-      </div>
 
       <!-- Summary -->
       <div id="summary-area" class="hidden"></div>
@@ -138,7 +123,7 @@
     };
   </script>
 
-  <!-- Scripts -->
+  <!-- Scripts (root-relative so they load correctly) -->
   <script src="/js/oet_word_list.js"></script>
   <script src="/js/main-freemium-oet.js"></script>
 </body>
