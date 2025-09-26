@@ -1,42 +1,109 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8"/>
+  <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>SpellRightPro (Spelling Bee - Freemium)</title>
+  <title>SpellRightPro (Bee - Freemium)</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="css/styles.css" />
 
-  <!-- Styles -->
-  <link rel="stylesheet" href="css/styles.css"/>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"/>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-analytics.js"></script>
+  
+  <!-- Google AdSense -->
+  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7632930282249669"
+     crossorigin="anonymous"></script>
 
-  <!-- Firebase -->
-  <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-analytics-compat.js"></script>
-  <script src="js/config.js"></script>
+  <style>
+    .ad-container {
+      margin: 1.5rem auto;
+      padding: 0;
+      text-align: center;
+      max-width: 728px;
+      overflow: hidden;
+    }
+    .ad-container.header-ad { margin-bottom: 0.5rem; }
+    .ad-container.footer-ad { margin-top: 1.5rem; }
+    .ad-label {
+      font-size: 0.75rem;
+      color: var(--gray);
+      letter-spacing: 0.04em;
+      margin-bottom: 0.25rem;
+      text-transform: uppercase;
+    }
 
-  <!-- AdSense -->
-  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7632930282249669" crossorigin="anonymous"></script>
+    /* Page styles */
+    .navbar { display: flex; justify-content: space-between; align-items: center; padding: .75rem 1rem; border-bottom: 1px solid var(--border); }
+    .brand { display: flex; gap: .75rem; align-items: center; }
+    .brand .logo { width: 40px; height: 40px; object-fit: contain; }
+    .brand .subtitle { font-size: .85rem; color: var(--gray); display: block; margin-top: -2px; }
+    .container { max-width: 980px; margin: 0 auto; padding: 1rem; }
+    .card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 1rem 1rem; }
+    .card-header { display: flex; justify-content: space-between; align-items: center; gap: 1rem; }
+    .title { font-size: 1.15rem; font-weight: 700; }
+    .subtitle-note { color: var(--gray); font-size: .9rem; }
+    .row { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem .75rem; }
+    .row .left { display: flex; gap: .5rem; align-items: center; }
+    .row .right { margin-left: auto; }
+    .btn { border: 1px solid var(--border); background: var(--surfaceElevated); padding: .5rem .75rem; border-radius: 10px; cursor: pointer; }
+    .btn-primary { background: var(--primary); color: #fff; border-color: var(--primary); }
+    .btn-start { background: #16a34a; color: #fff; border-color: #16a34a; }
+    .btn-start.stop { background: #ef4444; border-color: #ef4444; }
+    .pill { padding: .25rem .5rem; border-radius: 999px; background: var(--muted); font-size: .85rem; }
+
+    #bee-area { margin-top: .75rem; }
+    #spelling-visual { display: grid; grid-template-columns: repeat(auto-fit, 42px); gap: 8px; justify-content: center; padding: 1rem 0; }
+    .letter-tile {
+      width: 42px; height: 42px; border-radius: 10px; background: var(--surfaceElevated);
+      border: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.1rem; font-weight: 600;
+    }
+    .feedback { text-align: center; margin-top: .5rem; min-height: 24px; }
+    #start-btn { margin-top: .75rem; }
+    .summary-area { margin-top: 1rem; }
+    .summary-header { display: flex; justify-content: space-between; align-items: center; }
+    .results-grid { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 1rem; margin-top: .5rem; }
+    .results-card { border: 1px solid var(--border); border-radius: 10px; padding: .75rem; }
+    .word-item { padding: .25rem .5rem; border-radius: 6px; background: var(--muted); display: inline-block; margin: 2px; }
+
+    .accent-picker { display:flex; gap:.5rem; align-items:center; }
+    .accent-picker button{ border:1px solid var(--border); background: var(--surface); padding:.5rem .65rem; border-radius:8px; cursor:pointer }
+    .accent-picker button.active{ border-color:var(--primary); box-shadow:0 0 0 2px rgba(67,97,238,.15) }
+    .hidden { display:none; }
+
+    .custom-words-section { margin-top: 1rem; }
+    .custom-words-section textarea { width:100%; min-height:120px; border:1px solid var(--border); border-radius:10px; padding:.75rem; }
+    .file-upload { display:flex; gap:.5rem; align-items:center; margin:.5rem 0 }
+    .file-upload label { border:1px dashed var(--border); padding:.5rem .75rem; border-radius:10px; cursor:pointer; display:inline-flex; align-items:center; gap:.5rem }
+    .controls { display:flex; gap:.5rem; align-items:center; margin-top:.75rem }
+    .btn-primary{ background:var(--primary); border:1px solid var(--primary); color:#fff; padding:.5rem .75rem; border-radius:8px; cursor:pointer }
+    .btn-secondary{ background:var(--surfaceElevated); border:1px solid var(--border); color:var(--text); padding:.5rem .75rem; border-radius:8px; cursor:pointer }
+  </style>
 </head>
 <body>
-  <!-- Navbar -->
   <nav class="navbar">
     <div class="brand">
-      <img src="assets/logo.png" alt="SpellRightPro Logo" class="logo"/>
+      <img src="assets/logo.png" alt="SpellRightPro Logo" class="logo">
       <div>
         <span>SpellRightPro</span>
-        <span class="subtitle">Bee Practice</span>
+        <span class="subtitle">Spelling Bee</span>
       </div>
     </div>
     <div class="nav-actions">
-      <a class="btn-secondary" href="index.html"><i class="fa fa-home"></i> Home</a>
-      <a class="btn-primary" href="premium.html"><i class="fa fa-crown"></i> Premium</a>
+      <button class="btn-secondary" onclick="location.href='index.html'">
+        <i class="fas fa-home"></i> Home
+      </button>
+      <button class="btn-primary" onclick="location.href='premium.html'">
+        <i class="fas fa-crown"></i> Premium
+      </button>
     </div>
   </nav>
 
-  <!-- Header Ad -->
-  <div class="ad-container">
+  <!-- Header Ad (above main content) -->
+  <div class="ad-container header-ad">
     <div class="ad-label">Advertisement</div>
     <ins class="adsbygoogle"
          style="display:block"
@@ -48,49 +115,65 @@
   </div>
 
   <main class="container">
-    <section class="training-card">
-      <h1 class="card-title"><i class="fa fa-spell-check"></i> Spelling Bee Practice</h1>
-
-      <!-- Lifetime stats -->
-      <div class="lifetime-stats">
-        <div>Correct: <span id="life-correct">0</span></div>
-        <div>Attempts: <span id="life-attempts">0</span></div>
+    <section class="card">
+      <div class="card-header">
+        <div class="title"><i class="fas fa-bug"></i> Spelling Bee Practice</div>
+        <div class="subtitle-note">Free Mode</div>
       </div>
 
-      <!-- Controls -->
       <div class="row">
-        <div class="accent-picker">
-          <button data-accent="en-US" class="active">🇺🇸</button>
-          <button data-accent="en-GB">🇬🇧</button>
-          <button data-accent="en-AU">🇦🇺</button>
+        <div class="left">
+          <div class="accent-picker">
+            <button data-accent="en-US" class="active">🇺🇸</button>
+            <button data-accent="en-GB">🇬🇧</button>
+            <button data-accent="en-AU">🇦🇺</button>
+          </div>
+          <span class="pill">Daily Cap: 10 words</span>
         </div>
-        <div class="session-controls">
-          <button id="start-btn" class="btn-start"><i class="fa fa-play"></i> Start</button>
+        <div class="right">
+          <button id="start-btn" class="btn-start">
+            <i class="fas fa-play"></i> Start Session
+          </button>
         </div>
       </div>
 
-      <!-- Training Area -->
-      <div id="trainer-area" class="hidden">
-        <div class="nav-controls">
-          <button id="prev-btn" class="btn-secondary"><i class="fa fa-arrow-left"></i> Previous</button>
-          <button id="repeat-btn" class="btn-secondary"><i class="fa fa-redo"></i> Repeat</button>
-          <button id="next-btn" class="btn-secondary">Next <i class="fa fa-arrow-right"></i></button>
-        </div>
-        <div id="prompt" class="prompt">Listen and spell the word.</div>
-        <div class="answer-row">
-          <input id="answer" type="text" placeholder="Type the spelling..." autocomplete="off"/>
-          <button id="submit" class="btn-primary"><i class="fa fa-check"></i> Submit</button>
-        </div>
+      <!-- Practice area -->
+      <div id="bee-area" class="hidden">
+        <div id="spelling-visual"></div>
         <div id="feedback" class="feedback"></div>
+
+        <!-- NEW: navigation controls -->
+        <div class="nav-controls" style="display:flex;gap:.5rem;justify-content:center;margin:.5rem 0">
+          <button id="bee-prev" class="btn-secondary"><i class="fas fa-arrow-left"></i> Previous</button>
+          <button id="bee-repeat" class="btn-secondary"><i class="fas fa-redo"></i> Repeat</button>
+          <button id="bee-next" class="btn-secondary">Next <i class="fas fa-arrow-right"></i></button>
+        </div>
       </div>
 
-      <!-- Summary -->
-      <div id="summary-area" class="hidden"></div>
+      <div id="summary-area" class="summary-area hidden"></div>
+
+      <div class="custom-words-section">
+        <label class="section-label">Custom Words</label>
+        <textarea id="custom-words" placeholder="Type or paste your words separated by spaces, commas, or new lines..."></textarea>
+        <div class="file-upload">
+          <label for="file-input"><i class="fas fa-file-arrow-up"></i> Upload list (.txt/.pdf/.docx)</label>
+          <input type="file" id="file-input" accept=".txt,.pdf,.docx"/>
+        </div>
+        <button id="add-custom-btn" class="btn-primary">
+          <i class="fas fa-plus"></i> Add Words
+        </button>
+      </div>
+
+      <div class="controls">
+        <button id="start-btn" class="btn-primary" aria-label="Start session">
+          <i class="fas fa-play"></i> Start Session
+        </button>
+      </div>
     </section>
   </main>
 
-  <!-- Footer Ad -->
-  <div class="ad-container">
+  <!-- Footer Ad (Outside main content area) -->
+  <div class="ad-container footer-ad">
     <div class="ad-label">Advertisement</div>
     <ins class="adsbygoogle"
          style="display:block"
@@ -103,27 +186,25 @@
 
   <!-- Summary Ad injector -->
   <script>
-    window.insertSummaryAd = function() {
-      var box = document.getElementById('summary-area');
-      if (!box) return;
-      var prev = box.querySelector('.summary-ad-container');
-      if (prev) prev.remove();
-      var wrap = document.createElement('div');
-      wrap.className = 'summary-ad-container ad-container';
-      wrap.innerHTML = `
-        <ins class="adsbygoogle"
-             style="display:block"
-             data-ad-client="ca-pub-7632930282249669"
-             data-ad-slot="3344556699"
-             data-ad-format="auto"
-             data-full-width-responsive="true"></ins>
-      `;
-      box.appendChild(wrap);
-      try { (adsbygoogle = window.adsbygoogle || []).push({}); } catch(e) {}
-    };
+  window.injectBeeSummaryAd = function(){
+    const summaryArea = document.getElementById('summary-area');
+    if (!summaryArea) return;
+    const adDiv = document.createElement('div');
+    adDiv.className = 'ad-container';
+    adDiv.innerHTML = `
+      <div class="ad-label">Advertisement</div>
+      <ins class="adsbygoogle"
+           style="display:block"
+           data-ad-client="ca-pub-7632930282249669"
+           data-ad-slot="3344556699"
+           data-ad-format="auto"
+           data-full-width-responsive="true"></ins>
+    `;
+    summaryArea.appendChild(adDiv);
+    try { (adsbygoogle = window.adsbygoogle || []).push({}); } catch(e) {}
+  };
   </script>
 
-  <!-- Scripts -->
   <script src="js/main-freemium-bee.js"></script>
 </body>
 </html>
