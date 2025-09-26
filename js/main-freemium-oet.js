@@ -29,11 +29,11 @@ document.addEventListener('DOMContentLoaded', () => {
   testBtn?.addEventListener('click',     () => (sessionMode = 'test'));
   modeSwitchBtn?.addEventListener('click', () => (sessionMode = sessionMode === 'practice' ? 'test' : 'practice'));
   accentPicker?.addEventListener('click', (e) => {
-    if (e.target.tagName === 'BUTTON') {
-      accent = e.target.dataset.accent;
-      accentPicker.querySelectorAll('button').forEach((b) => b.classList.remove('active'));
-      e.target.classList.add('active');
-    }
+    const btn = e.target.closest('button[data-accent]');
+    if (!btn) return;
+    accentPicker.querySelectorAll('button').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    accent = btn.getAttribute('data-accent') || 'en-US';
   });
 
   // ---------- Base OET words (from oet_word_list.js) ----------
@@ -41,25 +41,23 @@ document.addEventListener('DOMContentLoaded', () => {
   if (Array.isArray(window.oetWords)) {
     baseOET = window.oetWords.filter(Boolean);
   } else {
-    console.warn('window.oetWords not found in oet_word_list.js');
-    if (startBtn) {
-      startBtn.disabled = true;
-      startBtn.title = 'OET word list not loaded (check that /js/oet_word_list.js is included before this script).';
-    }
-    alert('Error: OET word list not loaded. Please check that /js/oet_word_list.js is included before main-freemium-oet.js in your HTML.');
+    console.warn('window.oetWords not found in /js/oet_word_list.js');
+    alert('OET word list not loaded. Ensure /js/oet_word_list.js is included BEFORE this script.');
+    startBtn?.setAttribute('disabled', 'true');
+    startBtn && (startBtn.title = 'Word list not loaded');
   }
 
   // ---------- Custom once/day ----------
-  function todayStr()        { return new Date().toISOString().slice(0, 10); }
-  function canAddCustom()    { return localStorage.getItem('oet_customListDate') !== todayStr(); }
-  function markCustom()      { localStorage.setItem('oet_customListDate', todayStr()); }
+  function todayStr()     { return new Date().toISOString().slice(0, 10); }
+  function canAddCustom() { return localStorage.getItem('oet_customListDate') !== todayStr(); }
+  function markCustom()   { localStorage.setItem('oet_customListDate', todayStr()); }
 
   let customWords = [];
   addCustomBtn?.addEventListener('click', () => {
     if (!canAddCustom()) { alert('Freemium allows one custom list per day.'); return; }
     const raw = (customInput?.value || '').trim();
     if (!raw) { alert('Enter some words first.'); return; }
-    const parsed = raw.split(/[\s,;]+/).map((w) => w.trim()).filter(Boolean);
+    const parsed = raw.split(/[\s,;]+/).map(w => w.trim()).filter(Boolean);
     customWords = mergeUnique(customWords, parsed);
     if (customInput) customInput.value = '';
     markCustom();
@@ -67,12 +65,12 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   fileInput?.addEventListener('change', (e) => {
-    if (!canAddCustom()) { alert('Freemium allows one custom list per day.'); e.target.value = ''; return; }
+    if (!canAddCustom()) { alert('Freemium allows one custom list per day.'); e.target.value=''; return; }
     const f = e.target.files?.[0]; if (!f) return;
     const r = new FileReader();
     r.onload = () => {
       const txt = String(r.result || '');
-      const parsed = txt.split(/\r?\n|,|;|\t/).map((w) => w.trim()).filter(Boolean);
+      const parsed = txt.split(/\r?\n|,|;|\t/).map(w => w.trim()).filter(Boolean);
       customWords = mergeUnique(customWords, parsed);
       markCustom();
       alert(`Uploaded ${parsed.length} custom words.`);
@@ -81,65 +79,63 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   // ---------- Session ----------
-  let words = [], i = 0, score = 0, answers = [];
+  let words = [], i = 0, score = 0, answers = [], sessionActive = false;
+
   startBtn?.addEventListener('click', () => {
-    if (startBtn.innerText.includes('Stop')) {
-      endSession();
-    } else {
-      startSession();
-    }
+    if (sessionActive) endSession();
+    else startSession();
   });
 
   function startSession() {
-    const base   = baseOET.slice();
-    const merged = mergeUnique(base, customWords);
-    let sessionWords = merged;
-
-    if (sessionMode === 'test') {
-      sessionWords = shuffle(sessionWords).slice(0, 24);
+    if (!baseOET.length && !customWords.length) {
+      alert('No words available. Check that oet_word_list.js loaded, or add custom words.');
+      return;
     }
+    let sessionWords = mergeUnique(baseOET.slice(), customWords);
+    if (sessionMode === 'test') sessionWords = shuffle(sessionWords).slice(0, 24);
+    if (!sessionWords.length) { alert('No words available.'); return; }
 
-    if (!sessionWords.length) return;
-
-    words = sessionWords; i = 0; score = 0; answers = [];
+    words = sessionWords; i=0; score=0; answers=[];
     trainerArea?.classList.remove('hidden');
     summaryArea?.classList.add('hidden');
-    if (startBtn) startBtn.innerHTML = '<i class="fas fa-stop"></i> End Session';
+    startBtn && (startBtn.innerHTML = '<i class="fas fa-stop"></i> End Session', startBtn.classList.add('stop'));
+    sessionActive = true;
     renderQ();
   }
 
   function renderQ() {
     if (i >= words.length) return endSession();
-    const w = words[i];
+    const w = (words[i] || '').trim();
+
     trainerArea.innerHTML = `
       <div class="word-playback">
         <button id="hear" class="btn-icon" title="Hear again"><i class="fas fa-volume-up"></i></button>
         <span class="indicator">Word ${i + 1}/${words.length}</span>
       </div>
+
       <div class="answer-row">
         <input id="answer" type="text" placeholder="Type the spelling..." autocomplete="off"/>
         <button id="submit" class="btn-primary"><i class="fas fa-check"></i> Submit</button>
         <button id="skip" class="btn-secondary"><i class="fas fa-forward"></i> Skip</button>
       </div>
-      <div class="nav-controls">
+
+      <div class="nav-controls" style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap">
         <button id="prev-btn" class="btn-secondary"><i class="fa fa-arrow-left"></i> Previous</button>
         <button id="repeat-btn" class="btn-secondary"><i class="fa fa-redo"></i> Repeat</button>
         <button id="next-btn" class="btn-secondary">Next <i class="fa fa-arrow-right"></i></button>
       </div>
-      <div id="feedback" class="feedback"></div>`;
 
+      <div id="feedback" class="feedback" style="min-height:28px;margin-top:8px;font-weight:600"></div>
+    `;
+
+    // wire events
     document.getElementById('hear')?.addEventListener('click', () => speak(w));
     document.getElementById('submit')?.addEventListener('click', submit);
-    document.getElementById('skip')?.addEventListener('click', () => { answers.push(''); i++; renderQ(); });
+    document.getElementById('skip')?.addEventListener('click', () => { answers[i] = ''; i++; renderQ(); });
 
-    document.getElementById('prev-btn')?.addEventListener('click', () => {
-      if (i > 0) { i--; renderQ(); }
-    });
+    document.getElementById('prev-btn')?.addEventListener('click', () => { if (i>0){ i--; renderQ(); } });
     document.getElementById('repeat-btn')?.addEventListener('click', () => speak(w));
-    document.getElementById('next-btn')?.addEventListener('click', () => {
-      if (i < words.length - 1) { i++; renderQ(); }
-      else { endSession(); }
-    });
+    document.getElementById('next-btn')?.addEventListener('click', () => { if (i < words.length-1){ i++; renderQ(); } else { endSession(); } });
 
     const input = document.getElementById('answer');
     input?.focus();
@@ -151,13 +147,19 @@ document.addEventListener('DOMContentLoaded', () => {
   function submit() {
     const input = (document.getElementById('answer')?.value || '').trim();
     const w = (words[i] || '').trim();
-    if (input.toLowerCase() === w.toLowerCase()) score++;
-    answers.push(input);
+    if (input.toLowerCase() === w.toLowerCase()) {
+      score++;
+      const fb = document.getElementById('feedback'); if (fb) fb.textContent = `✅ Correct: ${w}`;
+    } else {
+      const fb = document.getElementById('feedback'); if (fb) fb.textContent = `❌ Incorrect. Correct spelling: ${w}`;
+    }
+    answers[i] = input;
     i++;
-    renderQ();
+    setTimeout(renderQ, 500);
   }
 
   function endSession() {
+    sessionActive = false;
     const wrong   = words.filter((w, idx) => (answers[idx] || '').toLowerCase() !== w.toLowerCase());
     const percent = words.length ? Math.round((score / words.length) * 100) : 0;
 
@@ -170,37 +172,37 @@ document.addEventListener('DOMContentLoaded', () => {
         <div class="results-card">
           <h3>Correct</h3>
           <div class="word-list">
-            ${words.filter((w, idx) => (answers[idx] || '').toLowerCase() === w.toLowerCase()).map((w) => `<div class="word-item">${w}</div>`).join('')}
+            ${words.filter((w, idx) => (answers[idx] || '').toLowerCase() === w.toLowerCase()).map(w => `<div class="word-item">${w}</div>`).join('')}
           </div>
         </div>
         <div class="results-card">
           <h3>Needs Practice</h3>
           <div class="word-list">
-            ${wrong.map((w) => `<div class="word-item">${w}</div>`).join('')}
+            ${wrong.map(w => `<div class="word-item">${w}</div>`).join('')}
           </div>
         </div>
       </div>`;
     trainerArea.classList.add('hidden');
     summaryArea.classList.remove('hidden');
-    if (startBtn) startBtn.innerHTML = '<i class="fas fa-play"></i> Start Session';
+    startBtn && (startBtn.innerHTML = '<i class="fas fa-play"></i> Start', startBtn.classList.remove('stop'));
     if (window.insertSummaryAd) window.insertSummaryAd();
   }
 
   // ---------- utils ----------
   function mergeUnique(base, add) {
-    const seen = new Set(base.map((w) => w.toLowerCase()));
+    const seen = new Set(base.map(w => (w || '').toLowerCase()));
     const out = base.slice();
-    add.forEach((w) => {
-      const k = w.toLowerCase();
-      if (!seen.has(k)) { seen.add(k); out.push(w); }
+    add.forEach(w => {
+      const k = (w || '').toLowerCase();
+      if (k && !seen.has(k)) { seen.add(k); out.push(w); }
     });
     return out;
   }
   function shuffle(a) {
     const arr = a.slice();
-    for (let i = arr.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [arr[i], arr[j]] = [arr[j], arr[i]];
+    for (let j = arr.length - 1; j > 0; j--) {
+      const k = Math.floor(Math.random() * (j + 1));
+      [arr[j], arr[k]] = [arr[k], arr[j]];
     }
     return arr;
   }
