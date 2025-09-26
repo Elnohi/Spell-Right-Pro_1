@@ -9,12 +9,47 @@
   <link rel="stylesheet" href="/css/styles.css"/>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"/>
 
+  <!-- Hard-stop any file input overlay issues -->
+  <style>
+    /* Ensure the upload input NEVER overlays the page */
+    #file-input{
+      position: static !important;
+      width: auto !important;
+      height: auto !important;
+      opacity: 1 !important;
+      z-index: auto !important;
+      pointer-events: auto !important;
+      display: inline-block !important;
+    }
+    .custom-inputs{ display:grid; gap:10px; margin:10px 0 }
+    .custom-inputs textarea{
+      width:100%; min-height:100px; padding:10px 12px; font-size:1rem;
+      border:1px solid #d1d5db; border-radius:10px; box-sizing:border-box;
+    }
+    .navbar{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;background:#fff;border-bottom:1px solid #e5e7eb}
+    .brand{display:flex;align-items:center;gap:10px}
+    .brand .logo{height:34px}
+    .nav-actions a{text-decoration:none}
+    .ad-container{max-width:980px;margin:10px auto;padding:0 16px}
+    .ad-label{font-size:.8rem;color:#6b7280;margin:6px 0}
+    .training-card{ max-width:900px; margin:16px auto; padding:16px; background:#fff; border:1px solid #e5e7eb; border-radius:14px; }
+    .row{ display:flex; gap:12px; align-items:center; flex-wrap:wrap; margin:12px 0; }
+    .accent-picker button{ padding:8px 10px; border:1px solid #e5e7eb; background:#f9fafb; border-radius:10px; cursor:pointer }
+    .accent-picker button.active{ background:#098cfb; color:#fff; border-color:#098cfb }
+    .btn-secondary, .btn-primary, .btn-start{ padding:10px 14px; border-radius:10px; border:1px solid #e5e7eb; background:#f3f4f6; cursor:pointer }
+    .btn-primary{ background:#098cfb; color:#fff; border-color:#098cfb }
+    .btn-start{ background:#16a34a; color:#fff; border-color:#16a34a }
+    .btn-start.stop{ background:#ef4444; border-color:#ef4444 }
+    .lifetime-stats{ display:flex; gap:16px; color:#374151; margin:8px 0 6px }
+    .hidden{ display:none !important; }
+  </style>
+
   <!-- Firebase -->
   <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-analytics-compat.js"></script>
-  <script src="/js/config.js"></script>
+  <script src="/js/config.js" defer></script>
 
   <!-- AdSense -->
   <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7632930282249669" crossorigin="anonymous"></script>
@@ -74,14 +109,14 @@
         </div>
       </div>
 
-      <!-- Add custom words -->
+      <!-- Custom words -->
       <div class="custom-inputs">
         <textarea id="custom-words" placeholder="Add custom words (comma, space, or line separated)..."></textarea>
         <button id="add-custom-btn" class="btn-primary"><i class="fa fa-plus"></i> Add Words</button>
         <input type="file" id="file-input" accept=".txt"/>
       </div>
 
-      <!-- Training Area (dynamic) -->
+      <!-- Dynamic training UI will be injected here -->
       <div id="trainer-area" class="hidden"></div>
 
       <!-- Summary -->
@@ -104,11 +139,11 @@
   <!-- Summary Ad injector -->
   <script>
     window.insertSummaryAd = function() {
-      var box = document.getElementById('summary-area');
+      const box = document.getElementById('summary-area');
       if (!box) return;
-      var prev = box.querySelector('.summary-ad-container');
+      const prev = box.querySelector('.summary-ad-container');
       if (prev) prev.remove();
-      var wrap = document.createElement('div');
+      const wrap = document.createElement('div');
       wrap.className = 'summary-ad-container ad-container';
       wrap.innerHTML = `
         <ins class="adsbygoogle"
@@ -123,8 +158,8 @@
     };
   </script>
 
-  <!-- Scripts (root-relative so they load correctly) -->
-  <script src="/js/oet_word_list.js"></script>
-  <script src="/js/main-freemium-oet.js"></script>
+  <!-- Scripts (root-relative + cache-busting) -->
+  <script src="/js/oet_word_list.js?v=2025-09-25-1" defer></script>
+  <script src="/js/main-freemium-oet.js?v=2025-09-25-1" defer></script>
 </body>
 </html>
