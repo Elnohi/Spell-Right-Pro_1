@@ -1,331 +1,370 @@
-// ==================== SpellRightPro — Freemium Bee (FULL) ====================
+// ==================== SpellRightPro — Freemium Spelling Bee (Hands-Free) ====================
 document.addEventListener('DOMContentLoaded', () => {
-  // ------- Elements -------
-  const beeArea        = document.getElementById('bee-area')       || document.getElementById('practice-area');
-  const visual         = document.getElementById('spelling-visual')|| document.getElementById('word-tiles');
-  const summaryArea    = document.getElementById('summary-area');
-  const startBtn       = document.getElementById('start-btn')      || document.getElementById('start-btn-dup');
-  const accentPicker   = document.querySelector('.accent-picker');
-  const fileInput      = document.getElementById('file-input');
-  const addCustomBtn   = document.getElementById('add-custom-btn');
-  const customInput    = document.getElementById('custom-words');
-  const feedback       = document.getElementById('feedback')       || document.getElementById('bee-feedback');
+  // ---------- DOM ----------
+  const beeArea         = document.getElementById('bee-area');
+  const spellingVisual  = document.getElementById('spelling-visual');
+  const feedbackBox     = document.getElementById('feedback');
+  const summaryArea     = document.getElementById('summary-area');
 
-  // Lifetime counters (if present)
-  const lifeCorrectEl  = document.getElementById('correct-count')  || document.getElementById('life-correct');
-  const lifeAttemptsEl = document.getElementById('attempt-count')  || document.getElementById('life-attempts');
+  const addCustomBtn    = document.getElementById('add-custom-btn');
+  const fileInput       = document.getElementById('file-input');
+  const customInput     = document.getElementById('custom-words');
+  const startBtn        = document.getElementById('start-btn');
+  const accentPicker    = document.querySelector('.accent-picker');
 
-  // ------- Firebase analytics (non-fatal if missing) -------
-  function track(event, data){ try{ firebase?.analytics?.().logEvent?.(event, data||{});}catch(_e){} }
+  // Optional nav buttons (present in some layouts)
+  const prevBtn         = document.getElementById('bee-prev');
+  const repeatBtn       = document.getElementById('bee-repeat');
+  const nextBtn         = document.getElementById('bee-next');
 
-  // ------- TTS / Accent -------
+  // Optional mic indicator
+  const micStatus       = document.getElementById('mic-status');
+
+  // ---------- Config ----------
+  // Toggle daily cap ON/OFF easily here:
+  const FREEMIUM_LIMIT_ENABLED = false;     // << leave OFF as requested
+  const FREEMIUM_MAX           = 10;        // cap when enabled
+
+  // Hands-free timings (ms)
+  const DELAY_BEFORE_LISTEN    = 2000;      // after TTS, wait before starting recognition
+  const DELAY_AFTER_FEEDBACK   = 1800;      // pause to show feedback before next word
+  const RECOGNITION_TIMEOUT    = 6000;      // max listen time for a word (best-effort)
+
+  // ---------- TTS ----------
   let accent = 'en-US';
-  let synth  = window.speechSynthesis;
-
-  function setAccent(a){
-    accent = a || 'en-US';
-  }
-  function speak(text){
-    try{
+  const synth = window.speechSynthesis;
+  function speak(text) {
+    try {
+      if (!text) return;
       synth && synth.cancel();
       const u = new SpeechSynthesisUtterance(text);
       u.lang = accent;
       (synth || window.speechSynthesis).speak(u);
-    }catch(_e){}
+    } catch (e) { console.error('[TTS]', e); }
   }
-  accentPicker?.addEventListener('click', (e)=>{
-    const btn = e.target.closest('button[data-accent]');
-    if (!btn) return;
-    setAccent(btn.getAttribute('data-accent'));
-    accentPicker.querySelectorAll('button').forEach(b=>b.classList.remove('active'));
-    btn.classList.add('active');
-    if (recognition) recognition.lang = accent;
-  });
 
-  // ------- Speech Recognition -------
-  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-  let recognition = null;
-  if (SpeechRecognition) {
-    recognition = new SpeechRecognition();
-    recognition.lang = accent;
-    recognition.interimResults = false;
-    recognition.maxAlternatives = 1;
-    recognition.onresult = (event) => {
-      const transcript = (event.results[0][0].transcript || '').trim();
-      // simulate typing outcome
-      attempts[idx] = transcript;
-      lifeAttempts++;
-      if (transcript.toLowerCase() === (currentWord||'').toLowerCase()) {
-        lifeCorrect++;
-        if (feedback) feedback.textContent = '✅ Correct';
-      } else {
-        if (feedback) feedback.textContent = `❌ "${transcript}" (correct: ${currentWord})`;
+  if (accentPicker) {
+    accentPicker.addEventListener('click', (e) => {
+      if (e.target.tagName === 'BUTTON') {
+        accent = e.target.dataset.accent || 'en-US';
+        accentPicker.querySelectorAll('button').forEach(b => b.classList.remove('active'));
+        e.target.classList.add('active');
       }
-      saveLife(lifeCorrect, lifeAttempts);
-      idx++;
-      setTimeout(renderWord, 350);
-    };
-    recognition.onerror = () => { /* ignore and let user type */ };
-    recognition.onend = () => { /* noop */ };
+    });
   }
 
-  // ------- Daily cap -------
-  const CAP = 10;
-  function todayKey(){
-    const d = new Date();
-    const y=d.getFullYear(), m=String(d.getMonth()+1).padStart(2,'0'), da=String(d.getDate()).padStart(2,'0');
-    return `bee_cap_${y}-${m}-${da}`;
+  // ---------- Speech Recognition ----------
+  let recognition = null;
+  let recognitionTimer = null;
+  function makeRecognition() {
+    // prefer webkit for wider support
+    const Ctor = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!Ctor) return null;
+    const rec = new Ctor();
+    rec.lang = (accent || 'en-US');
+    rec.continuous = false;
+    rec.interimResults = false;
+    rec.maxAlternatives = 1;
+    return rec;
   }
-  function usedToday(){ return parseInt(localStorage.getItem(todayKey())||'0',10); }
-  function setUsedToday(n){ localStorage.setItem(todayKey(), String(n)); }
-  function applyCap(list){
+  function startRecognition(onResult, onError) {
+    if (recognition) stopRecognition();
+    recognition = makeRecognition();
+    if (!recognition) {
+      console.warn('SpeechRecognition not supported.');
+      onError && onError(new Error('unsupported'));
+      return;
+    }
+    try {
+      recognition.onresult = (e) => {
+        try { clearTimeout(recognitionTimer); } catch(_) {}
+        const transcript = (e.results?.[0]?.[0]?.transcript || '').trim();
+        stopRecognition();
+        onResult && onResult(transcript);
+      };
+      recognition.onerror = (e) => {
+        try { clearTimeout(recognitionTimer); } catch(_) {}
+        stopRecognition();
+        onError && onError(e);
+      };
+      recognition.onend = () => {
+        try { clearTimeout(recognitionTimer); } catch(_) {}
+        // onend fires even on success; we do nothing here because onresult/onerror handle flow.
+      };
+
+      recognition.start();
+      // safety timeout (some browsers hang)
+      recognitionTimer = setTimeout(() => {
+        stopRecognition();
+        onError && onError(new Error('timeout'));
+      }, RECOGNITION_TIMEOUT);
+
+      // UI: mic indicator
+      if (micStatus) micStatus.classList.remove('hidden');
+    } catch (e) {
+      console.error('[Recognition start]', e);
+      onError && onError(e);
+    }
+  }
+  function stopRecognition() {
+    try {
+      if (recognition) {
+        recognition.onresult = null;
+        recognition.onerror = null;
+        recognition.onend = null;
+        try { recognition.stop(); } catch(_) {}
+        try { recognition.abort(); } catch(_) {}
+      }
+    } catch(_) {}
+    recognition = null;
+    if (micStatus) micStatus.classList.add('hidden');
+    try { clearTimeout(recognitionTimer); } catch(_) {}
+    recognitionTimer = null;
+  }
+
+  // ---------- Daily Cap ----------
+  function dayKey() {
+    const d = new Date();
+    return `srp_daily_words_Bee_${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+  }
+  function usedToday()     { return parseInt(localStorage.getItem(dayKey()) || '0', 10); }
+  function setUsedToday(n) { localStorage.setItem(dayKey(), String(n)); }
+  function capForToday(list) {
+    if (!FREEMIUM_LIMIT_ENABLED) return list;
     const used = usedToday();
-    if (used >= CAP){
-      alert(`Freemium limit reached: ${CAP} words today.`);
+    if (used >= FREEMIUM_MAX) {
+      alert(`Freemium limit reached: ${FREEMIUM_MAX} words today.`);
       return [];
     }
-    const remain = CAP - used;
+    const remain = FREEMIUM_MAX - used;
     return list.length > remain ? list.slice(0, remain) : list;
+    // note: we increment the counter at endSession() to count full batch consumed
   }
 
-  // ------- Lifetime stats -------
-  function loadLife(){
-    const c = parseInt(localStorage.getItem('bee_life_correct')  || '0', 10);
-    const a = parseInt(localStorage.getItem('bee_life_attempts') || '0', 10);
-    if (lifeCorrectEl)  lifeCorrectEl.textContent  = c;
-    if (lifeAttemptsEl) lifeAttemptsEl.textContent = a;
-    return {c,a};
-  }
-  function saveLife(c,a){
-    localStorage.setItem('bee_life_correct',  String(c));
-    localStorage.setItem('bee_life_attempts', String(a));
-    if (lifeCorrectEl)  lifeCorrectEl.textContent  = c;
-    if (lifeAttemptsEl) lifeAttemptsEl.textContent = a;
-  }
-  let {c:lifeCorrect, a:lifeAttempts} = loadLife();
-
-  // ------- Sample list -------
-  let sampleWords = [];
-  (async ()=>{
-    try{
-      const res = await (async()=>{try{return await fetch('/data/word-lists/spelling-bee.json', {cache: 'no-cache'});}catch(e){return await fetch('spelling-bee.json',{cache:'no-cache'});} })();
+  // ---------- Load Base Words (JSON) ----------
+  // Expected format: { "words": ["alpha", "beta", ...] }  OR simple array ["alpha",...]
+  let baseBee = [];
+  (async () => {
+    try {
+      const res = await fetch('spelling-bee.json', { cache: 'no-cache' });
       const data = await res.json();
-      sampleWords = Array.isArray(data?.words) ? data.words.filter(Boolean) : [];
-    }catch(_e){
-      console.warn('Could not load spelling-bee.json');
-      sampleWords = [];
+      baseBee = Array.isArray(data?.words) ? data.words.filter(Boolean)
+               : Array.isArray(data)       ? data.filter(Boolean)
+               : [];
+    } catch (e) {
+      console.warn('Could not load spelling-bee.json', e);
     }
   })();
 
-  // ------- Custom input (one list per day) -------
-  function todayISO(){ return new Date().toISOString().slice(0,10); }
-  function canAddCustom(){ return localStorage.getItem('bee_custom_date') !== todayISO(); }
-  function markCustom(){ localStorage.setItem('bee_custom_date', todayISO()); }
+  // ---------- Custom words (one list/day policy stays; you can relax it if you want) ----------
+  function todayStr()     { return new Date().toISOString().slice(0, 10); }
+  function canAddCustom() { return localStorage.getItem('bee_customListDate') !== todayStr(); }
+  function markCustom()   { localStorage.setItem('bee_customListDate', todayStr()); }
 
   let customWords = [];
-  addCustomBtn?.addEventListener('click', ()=>{
-    if (!canAddCustom()){ alert('Freemium allows one custom list per day.'); return; }
-    const txt = (customInput?.value||'').trim();
-    if (!txt){ alert('Enter some words first.'); return; }
-    const parsed = txt.split(/[\s,;]+/).map(w=>w.trim()).filter(Boolean);
+  addCustomBtn?.addEventListener('click', () => {
+    if (!canAddCustom()) { alert('Freemium allows one custom list per day.'); return; }
+    const raw = (customInput?.value || '').trim();
+    if (!raw) { alert('Enter some words first.'); return; }
+    const parsed = raw.split(/[\s,;]+/).map(w => w.trim()).filter(Boolean);
     customWords = mergeUnique(customWords, parsed);
     if (customInput) customInput.value = '';
     markCustom();
-    alert(`Added ${parsed.length} words.`);
+    alert(`Added ${parsed.length} custom words.`);
   });
 
-  fileInput?.addEventListener('change', (e)=>{
-    if (!canAddCustom()){ alert('Freemium allows one custom list per day.'); e.target.value=''; return; }
+  fileInput?.addEventListener('change', (e) => {
+    if (!canAddCustom()) { alert('Freemium allows one custom list per day.'); e.target.value=''; return; }
     const f = e.target.files?.[0]; if (!f) return;
     const r = new FileReader();
-    r.onload = ()=>{
-      const text   = String(r.result||'');
-      const parsed = text.split(/\r?\n|,|;|\t/).map(w=>w.trim()).filter(Boolean);
-      customWords  = mergeUnique(customWords, parsed);
+    r.onload = () => {
+      const txt = String(r.result || '');
+      const parsed = txt.split(/\r?\n|,|;|\t/).map(w => w.trim()).filter(Boolean);
+      customWords = mergeUnique(customWords, parsed);
       markCustom();
       alert(`Uploaded ${parsed.length} custom words.`);
     };
     r.readAsText(f);
   });
 
-  // ------- State -------
+  // ---------- Session State ----------
   let words = [];
-  let idx   = 0;
-  let typed = '';
+  let i = 0;
+  let score = 0;
+  let answers = [];
   let running = false;
-  let currentWord = '';
-  let attempts = [];
+  let autoNextTimer = null;
 
-  function startSession(){
-    // Merge sample + custom; cap by daily limit
-    const merged = mergeUnique(sampleWords.slice(), customWords);
-    const capped = applyCap(merged);
-    if (!capped.length) return;
+  startBtn?.addEventListener('click', () => {
+    if (!running) {
+      startSession();
+    } else {
+      // End manually
+      endSession();
+    }
+  });
 
-    words   = capped;
-    idx     = 0;
-    typed   = '';
+  function startSession() {
+    const merged = mergeUnique(baseBee.slice(), customWords);
+    let sessionWords = capForToday(merged);
+    if (!sessionWords.length) return;
+
+    words = sessionWords;
+    i = 0;
+    score = 0;
+    answers = [];
     running = true;
 
-    // Show practice area, hide summary
     beeArea?.classList.remove('hidden');
     summaryArea?.classList.add('hidden');
-
-    // Change button (if needed)
     if (startBtn) startBtn.innerHTML = '<i class="fas fa-stop"></i> End Session';
 
-    // First word
-    renderWord();
-    track('freemium_bee_start', {count: words.length});
+    runCurrentWord();
   }
 
-  function endSession(){
+  function runCurrentWord() {
+    clearTimers();
+    stopRecognition();
+
+    if (i >= words.length) return endSession();
+
+    const w = words[i];
+
+    // Render letter tiles (hidden/blank baseline)
+    if (spellingVisual) {
+      spellingVisual.innerHTML = Array.from({ length: w.length })
+        .map(() => `<div class="letter-tile">&nbsp;</div>`)
+        .join('');
+    }
+    if (feedbackBox) {
+      feedbackBox.innerHTML = 'Listen carefully...';
+    }
+
+    // Step 1: Speak
+    speak(w);
+
+    // Step 2: wait before listening
+    setTimeout(() => {
+      // Step 3: Recognize
+      startRecognition(
+        (transcript) => { // onResult
+          gradeAndShow(transcript, w);
+          // Step 4: wait, then auto-next
+          autoNextTimer = setTimeout(() => {
+            i++;
+            runCurrentWord();
+          }, DELAY_AFTER_FEEDBACK);
+        },
+        (_err) => { // onError or timeout
+          gradeAndShow('', w, /*noHeard=*/true);
+          autoNextTimer = setTimeout(() => {
+            i++;
+            runCurrentWord();
+          }, DELAY_AFTER_FEEDBACK);
+        }
+      );
+    }, DELAY_BEFORE_LISTEN);
+  }
+
+  function gradeAndShow(transcript, correctWord, noHeard = false) {
+    const said = (transcript || '').trim();
+    const isCorrect = said.toLowerCase() === (correctWord || '').toLowerCase();
+
+    if (!noHeard) {
+      answers.push(said);
+      if (isCorrect) score++;
+    } else {
+      answers.push('');
+    }
+
+    // Paint feedback
+    if (feedbackBox) {
+      if (noHeard) {
+        feedbackBox.innerHTML = `⚠️ No response detected.<br>Correct: <b>${escapeHtml(correctWord)}</b>`;
+      } else if (isCorrect) {
+        feedbackBox.innerHTML = `✅ Correct: <b>${escapeHtml(correctWord)}</b>`;
+      } else {
+        feedbackBox.innerHTML = `❌ You said: “${escapeHtml(said)}”<br>Correct: <b>${escapeHtml(correctWord)}</b>`;
+      }
+    }
+
+    // Color-code tiles as a soft hint
+    if (spellingVisual) {
+      const chars = (correctWord || '').split('');
+      spellingVisual.innerHTML = chars.map((ch, idx) => {
+        const ok = isCorrect ? 'correct' : 'incorrect';
+        return `<div class="letter-tile ${ok}">${escapeHtml(ch)}</div>`;
+      }).join('');
+    }
+  }
+
+  function endSession() {
     running = false;
-    document.onkeydown = null;
+    clearTimers();
+    stopRecognition();
 
-    // Mark daily usage
-    setUsedToday( usedToday() + words.length );
-
-    // Compute summary
-    const correct = [];
-    const incorrect = [];
-    for (let k=0;k<attempts.length;k++){
-      const a = (attempts[k]||'').toLowerCase();
-      const w = (words[k]||'').toLowerCase();
-      if (a === w) correct.push(words[k]); else incorrect.push({attempt: attempts[k]||'', word: words[k]});
+    if (FREEMIUM_LIMIT_ENABLED) {
+      setUsedToday(usedToday() + words.length);
     }
-    const pct = words.length ? Math.round(correct.length/words.length*100) : 0;
 
-    // Render summary
-    summaryArea.innerHTML = `
-      <div class="summary-header">
-        <h2>Session Results</h2>
-        <div class="score-display">${correct.length}/${words.length} (${pct}%)</div>
-      </div>
-      <div class="results-grid">
-        <div class="results-card">
-          <h3>Correct</h3>
-          <div class="word-list">
-            ${correct.map(w=>`<span class="word-item">${w}</span>`).join('')}
+    const percent = words.length ? Math.round((score / words.length) * 100) : 0;
+
+    if (summaryArea) {
+      summaryArea.innerHTML = `
+        <div class="summary-header">
+          <h2>Spelling Bee Results</h2>
+          <div class="score-display">${score}/${words.length} (${percent}%)</div>
+        </div>
+        <div class="results-grid">
+          <div class="results-card">
+            <h3>Words Practiced</h3>
+            <div class="word-list">
+              ${words.map(w => `<div class="word-item">${escapeHtml(w)}</div>`).join('')}
+            </div>
           </div>
         </div>
-        <div class="results-card">
-          <h3>Needs Practice</h3>
-          <div class="word-list">
-            ${incorrect.map(x=>`<span class="word-item" title="You: ${x.attempt}">${x.word}</span>`).join('')}
-          </div>
-        </div>
-      </div>
-    `;
-    beeArea?.classList.add('hidden');
-    summaryArea?.classList.remove('hidden');
+      `;
+      beeArea?.classList.add('hidden');
+      summaryArea?.classList.remove('hidden');
+    }
+
     if (startBtn) startBtn.innerHTML = '<i class="fas fa-play"></i> Start Session';
-    try{ window.injectBeeSummaryAd?.(); }catch(_e){}
-    track('freemium_bee_end', {total: words.length, correct: correct.length});
+    if (window.insertSummaryAd) window.insertSummaryAd();
   }
 
-  function renderWord(){
-    if (idx >= words.length) return endSession();
-
-    currentWord = words[idx];
-    typed = '';
-    attempts[idx] = '';
-
-    // Render tiles
-    visual.innerHTML = Array.from({length: currentWord.length})
-      .map(()=>`<div class="letter-tile">&nbsp;</div>`).join('');
-    updateTiles();
-
-    // Clear feedback
-    if (feedback) feedback.textContent = '';
-
-    // Speak word
-    speak(currentWord);
-    if (recognition) { try{ recognition.abort(); }catch(_e){} try{ recognition.start(); }catch(_e){} }
-
-    // Key handling
-    document.onkeydown = (e)=>{
-      if (!running) return;
-
-      const key = e.key;
-
-      if (key === 'Enter'){
-        // evaluate
-        lifeAttempts++;
-        if ((typed||'').trim().toLowerCase() === currentWord.toLowerCase()){
-          lifeCorrect++;
-          attempts[idx] = typed;
-          if (feedback) feedback.textContent = '✅ Correct';
-        } else {
-          attempts[idx] = typed;
-          if (feedback) feedback.textContent = `❌ "${typed}" (correct: ${currentWord})`;
-        }
-        saveLife(lifeCorrect, lifeAttempts);
-
-        idx++;
-        setTimeout(renderWord, 350);
-        return;
-      }
-
-      if (key === 'Backspace'){
-        typed = typed.slice(0,-1);
-        updateTiles();
-        return;
-      }
-
-      if (/^[a-zA-Z]$/.test(key)){
-        if (typed.length < currentWord.length){
-          typed += key;
-          updateTiles();
-        }
-        return;
-      }
-
-      if (key === ' '){
-        e.preventDefault();
-        speak(currentWord);
-        return;
-      }
-    };
+  function clearTimers() {
+    try { clearTimeout(autoNextTimer); } catch(_) {}
+    autoNextTimer = null;
   }
 
-  function updateTiles(){
-    const tiles = visual.children;
-    for (let t=0; t<tiles.length; t++){
-      tiles[t].textContent = typed[t] ? typed[t].toUpperCase() : ' ';
-    }
-  }
-
-  // ------- Utilities -------
-  function mergeUnique(base, add){
-    const seen = new Set(base.map(w=>(w||'').toLowerCase()));
-    const out = base.slice();
-    add.forEach(w=>{
-      const k = (w||'').toLowerCase();
-      if (k && !seen.has(k)){ seen.add(k); out.push(w); }
-    });
-    return out;
-  }
-
-  // ------- Events -------
-  startBtn?.addEventListener('click', ()=>{
-    if (!running){ startSession(); }
+  // ---------- Optional manual navigation ----------
+  prevBtn?.addEventListener('click', () => {
+    if (!running) return;
+    if (i > 0) { i--; runCurrentWord(); }
+  });
+  repeatBtn?.addEventListener('click', () => {
+    if (!running) return;
+    const w = words[i]; if (w) speak(w);
+  });
+  nextBtn?.addEventListener('click', () => {
+    if (!running) return;
+    if (i < words.length - 1) { i++; runCurrentWord(); }
     else { endSession(); }
   });
 
-  // Nav buttons (if present in HTML)
-  const prevBtn = document.getElementById('bee-prev');
-  const repeatBtn = document.getElementById('bee-repeat');
-  const nextBtn = document.getElementById('bee-next');
-  prevBtn?.addEventListener('click', ()=>{ if (running && idx>0){ idx--; renderWord(); } });
-  repeatBtn?.addEventListener('click', ()=>{ if (running && currentWord){ speak(currentWord); if (recognition){ try{ recognition.abort(); recognition.start(); }catch(_e){} } } });
-  nextBtn?.addEventListener('click', ()=>{ if (running){ if (idx < words.length-1){ idx++; renderWord(); } else { endSession(); } } });
-
-  // Attempt to set a default accent based on OS/browser pref
-  try {
-    const navLang = (navigator.language || 'en-US');
-    if (/^en-GB/i.test(navLang)) setAccent('en-GB');
-    else if (/^en-AU/i.test(navLang)) setAccent('en-AU');
-    else setAccent('en-US');
-  } catch(_e){}
+  // ---------- utils ----------
+  function mergeUnique(base, add) {
+    const seen = new Set(base.map(w => w.toLowerCase()));
+    const out = base.slice();
+    add.forEach(w => {
+      const k = (w || '').toLowerCase();
+      if (k && !seen.has(k)) { seen.add(k); out.push(w); }
+    });
+    return out;
+  }
+  function escapeHtml(s) {
+    return String(s).replace(/[&<>"']/g, m => (
+      { '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[m]
+    ));
+  }
 });
