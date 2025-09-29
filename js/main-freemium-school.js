@@ -1,149 +1,190 @@
-// ==================== SpellRightPro — Freemium School ====================
-document.addEventListener('DOMContentLoaded', () => {
-  const startBtn   = document.getElementById('start-btn');
-  const replayBtn  = document.getElementById('replay-btn');
-  const backBtn    = document.getElementById('backspace-btn');
-  const practice   = document.getElementById('practice-area');
-  const promptEl   = document.getElementById('prompt');
-  const tiles      = document.getElementById('word-tiles');
-  const feedback   = document.getElementById('feedback');
-  const summary    = document.getElementById('summary-area');
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>SpellRightPro (School - Freemium)</title>
 
-  const customBox  = document.getElementById('custom-words');
-  const addBtn     = document.getElementById('add-custom-btn');
-  const fileInput  = document.getElementById('file-input');
+  <!-- Styles -->
+  <link rel="stylesheet" href="css/styles.css"/>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"/>
 
-  const lifeCorrectEl = document.getElementById('life-correct');
-  const lifeAttemptsEl = document.getElementById('life-attempts');
+  <!-- Firebase -->
+  <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-analytics-compat.js"></script>
+  <script src="js/config.js"></script>
 
-  // TTS
-  let accent = 'en-US';
-  const synth = window.speechSynthesis;
-  function speak(word) {
-    if (!word) return;
-    synth.cancel();
-    const u = new SpeechSynthesisUtterance(word);
-    u.lang = accent;
-    synth.speak(u);
-  }
+  <!-- AdSense -->
+  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7632930282249669" crossorigin="anonymous"></script>
 
-  document.querySelector('.accent-picker')?.addEventListener('click', (e) => {
-    const btn = e.target.closest('button[data-accent]');
-    if (!btn) return;
-    accent = btn.dataset.accent;
-    document.querySelectorAll('.accent-picker button').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-  });
-
-  // Stats
-  function loadStats() {
-    return {
-      correct: parseInt(localStorage.getItem('school_life_correct')||'0',10),
-      attempts: parseInt(localStorage.getItem('school_life_attempts')||'0',10)
-    };
-  }
-  function saveStats(c,a) {
-    localStorage.setItem('school_life_correct', c);
-    localStorage.setItem('school_life_attempts', a);
-    lifeCorrectEl.textContent = c;
-    lifeAttemptsEl.textContent = a;
-  }
-  let {correct:lifeCorrect, attempts:lifeAttempts} = loadStats();
-  saveStats(lifeCorrect, lifeAttempts);
-
-  // Words
-  let baseWords = [];
-  (async () => {
-    try {
-      const res = await fetch('data/school.json');
-      const data = await res.json();
-      baseWords = Array.isArray(data.words) ? data.words : [];
-    } catch(e) { console.warn(e); }
-  })();
-
-  let customWords = [];
-  addBtn?.addEventListener('click', () => {
-    const raw = (customBox.value||'').trim();
-    if (!raw) return;
-    customWords = [...new Set([...customWords, ...raw.split(/\s+|,|;/)])];
-    customBox.value = '';
-  });
-
-  fileInput?.addEventListener('change', (e) => {
-    const f = e.target.files[0]; if (!f) return;
-    const r = new FileReader();
-    r.onload = () => {
-      customWords = [...new Set([...customWords, ...r.result.split(/\s+|,|;/)])];
-    };
-    r.readAsText(f);
-  });
-
-  // Session
-  let words = [], idx = 0, typed = '', running = false, sessionCorrect = 0, sessionAttempts = 0;
-
-  startBtn?.addEventListener('click', startSession);
-  replayBtn?.addEventListener('click', () => speak(words[idx]));
-  backBtn?.addEventListener('click', () => { typed = typed.slice(0,-1); updateTiles(); });
-
-  function startSession() {
-    words = [...new Set([...baseWords, ...customWords])];
-    if (!words.length) return;
-    idx = 0; typed=''; running=true; sessionCorrect=0; sessionAttempts=0;
-    summary.classList.add('hidden');
-    practice.classList.remove('hidden');
-    renderWord();
-  }
-
-  function renderWord() {
-    if (idx >= words.length) return endSession();
-    const w = words[idx];
-    typed = '';
-    tiles.innerHTML = Array.from({length: w.length}, () => `<div class="letter-tile">&nbsp;</div>`).join('');
-    updateTiles();
-    promptEl.textContent = `Word ${idx+1} of ${words.length}`;
-    feedback.textContent = '';
-    speak(w);
-
-    document.onkeydown = (e) => {
-      if (!running) return;
-      if (e.key === 'Enter') return evaluate();
-      if (e.key === 'Backspace') { typed = typed.slice(0,-1); updateTiles(); return; }
-      if (/^[a-zA-Z]$/.test(e.key) && typed.length < w.length) {
-        typed += e.key; updateTiles();
-      }
-    };
-  }
-
-  function updateTiles() {
-    Array.from(tiles.children).forEach((tile,i) => tile.textContent = typed[i] ? typed[i].toUpperCase() : ' ');
-  }
-
-  function evaluate() {
-    const w = words[idx];
-    sessionAttempts++;
-    lifeAttempts++;
-    if (typed.toLowerCase() === w.toLowerCase()) {
-      sessionCorrect++;
-      lifeCorrect++;
-      feedback.textContent = `✅ Correct: ${w}`;
-    } else {
-      feedback.textContent = `❌ You wrote "${typed}", correct was ${w}`;
+  <style>
+    :root{
+      --primary:#4361ee; --text:#222; --muted:#f6f7f9; --border:#e7e9ed; --surface:#fff; --surfaceElevated:#fff;
+      --gray:#6b7280; --background:#fafbfc;
     }
-    saveStats(lifeCorrect, lifeAttempts);
-    idx++; typed='';
-    setTimeout(renderWord, 700);
-  }
+    *{box-sizing:border-box}
+    body{margin:0;background:var(--background);color:var(--text);font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif}
 
-  function endSession() {
-    running=false; document.onkeydown=null;
-    const percent = sessionAttempts ? Math.round(sessionCorrect/sessionAttempts*100) : 0;
-    summary.innerHTML = `
-      <div class="summary-header">
-        <h2>Session Results</h2>
-        <div class="score-display">${sessionCorrect}/${sessionAttempts} (${percent}%)</div>
-      </div>`;
-    practice.classList.add('hidden');
-    summary.classList.remove('hidden');
-    if (window.insertSummaryAd) window.insertSummaryAd();
-  }
-});
+    .navbar{display:flex;justify-content:space-between;align-items:center;padding:.75rem 1rem;background:#fff;border-bottom:1px solid var(--border)}
+    .brand{display:flex;gap:.75rem;align-items:center}
+    .brand .logo{width:40px;height:40px;object-fit:contain}
+    .brand .subtitle{display:block;color:var(--gray);font-size:.85rem;margin-top:-2px}
+    .nav-actions{display:flex;gap:.5rem;align-items:center}
+    .btn-secondary{background:var(--surfaceElevated);border:1px solid var(--border);color:var(--text);padding:.5rem .75rem;border-radius:8px;cursor:pointer;text-decoration:none}
+    .btn-primary{background:var(--primary);border:1px solid var(--primary);color:#fff;padding:.5rem .75rem;border-radius:8px;cursor:pointer;text-decoration:none}
+
+    .container{max-width:1000px;margin:0 auto;padding:1rem}
+    .training-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:1rem 1rem}
+    .card-title{margin:.25rem 0 1rem 0}
+
+    .ad-container{margin:1.25rem auto;max-width:728px;text-align:center}
+    .ad-label{font-size:.75rem;color:var(--gray);letter-spacing:.04em;margin-bottom:.25rem;text-transform:uppercase}
+    .summary-ad-container{margin-top:1rem}
+
+    .row{display:flex;gap:.75rem;align-items:center;flex-wrap:wrap}
+    .accent-picker{display:flex;gap:.5rem;align-items:center}
+    .accent-picker button{border:1px solid var(--border);background:var(--surface);padding:.5rem .65rem;border-radius:8px;cursor:pointer}
+    .accent-picker button.active{border-color:var(--primary);box-shadow:0 0 0 2px rgba(67,97,238,.15)}
+
+    .session-controls{display:flex;gap:.5rem;align-items:center;margin-top:.75rem;flex-wrap:wrap}
+    #start-btn.btn-start{background:var(--primary);border:1px solid var(--primary);color:#fff}
+
+    #word-tiles{display:grid;grid-template-columns:repeat(auto-fit,42px);gap:8px;justify-content:center;padding:1rem 0}
+    .letter-tile{width:42px;height:42px;border-radius:10px;background:var(--surfaceElevated);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-weight:700}
+
+    .feedback{min-height:24px;text-align:center;margin:.5rem 0;color:var(--gray)}
+    .prompt{font-weight:600;text-align:center}
+
+    .lifetime-stats{display:flex;justify-content:center;gap:1rem;margin:-.5rem 0 1rem;color:var(--gray)}
+    .lifetime-stats span{font-weight:700}
+
+    .summary-area{margin-top:1rem}
+    .summary-header{display:flex;justify-content:space-between;align-items:center;gap:1rem}
+    .results-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1rem;margin-top:.75rem}
+    .results-card{border:1px solid var(--border);border-radius:10px;padding:.75rem}
+    .word-item{padding:.25rem .5rem;border-radius:6px;background:var(--muted);display:inline-block;margin:2px}
+
+    .custom-words-section{margin-top:1rem}
+    .custom-words-section textarea{width:100%;min-height:120px;border:1px solid var(--border);border-radius:10px;padding:.75rem}
+    .button-group{display:flex;gap:.5rem;flex-wrap:wrap}
+    .hidden{display:none}
+  </style>
+</head>
+<body>
+  <!-- Navbar -->
+  <nav class="navbar">
+    <div class="brand">
+      <img src="assets/logo.png" alt="SpellRightPro Logo" class="logo"/>
+      <div>
+        <span>SpellRightPro</span>
+        <span class="subtitle">School Trainer</span>
+      </div>
+    </div>
+    <div class="nav-actions">
+      <a class="btn-secondary" href="index.html"><i class="fa fa-home"></i> Home</a>
+      <a class="btn-primary" href="premium.html"><i class="fa fa-crown"></i> Premium</a>
+    </div>
+  </nav>
+
+  <!-- Header Ad -->
+  <div class="ad-container">
+    <div class="ad-label">Advertisement</div>
+    <ins class="adsbygoogle"
+         style="display:block"
+         data-ad-client="ca-pub-7632930282249669"
+         data-ad-slot="2233445566"
+         data-ad-format="auto"
+         data-full-width-responsive="true"></ins>
+    <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
+  </div>
+
+  <main class="container">
+    <section class="training-card">
+      <h1 class="card-title"><i class="fa fa-school"></i> School Word Practice</h1>
+
+      <!-- Lifetime totals -->
+      <div class="lifetime-stats">
+        <div>Correct: <span id="life-correct">0</span></div>
+        <div>Attempts: <span id="life-attempts">0</span></div>
+      </div>
+
+      <div class="row">
+        <div class="accent-picker" aria-label="Select accent">
+          <button type="button" class="active" data-accent="en-US">🇺🇸</button>
+          <button type="button" data-accent="en-GB">🇬🇧</button>
+          <button type="button" data-accent="en-AU">🇦🇺</button>
+        </div>
+        <div class="session-controls">
+          <button type="button" id="start-btn" class="btn-start"><i class="fa fa-play"></i> Start Session</button>
+          <button type="button" id="replay-btn" class="btn-secondary" title="Replay"><i class="fa fa-volume-high"></i></button>
+          <button type="button" id="backspace-btn" class="btn-secondary" title="Backspace"><i class="fa fa-delete-left"></i></button>
+        </div>
+      </div>
+
+      <!-- Practice area -->
+      <div id="practice-area" class="hidden">
+        <div id="prompt" class="prompt">Listen and type, then press Enter</div>
+        <div id="word-tiles"></div>
+        <div id="feedback" class="feedback"></div>
+      </div>
+
+      <!-- Summary area -->
+      <div id="summary-area" class="summary-area hidden"></div>
+
+      <!-- Custom list -->
+      <div class="custom-words-section">
+        <label class="section-label"><i class="fa fa-list"></i> Custom Words</label>
+        <textarea id="custom-words" placeholder="Type or paste words separated by space, comma, or new lines..."></textarea>
+
+        <div class="button-group">
+          <button type="button" id="add-custom-btn" class="btn-secondary"><i class="fa fa-plus"></i> Add Words</button>
+
+          <!-- Hidden file input + visible upload button -->
+          <input type="file" id="file-input" accept=".txt" style="display:none"/>
+          <button type="button" id="upload-btn" class="btn-primary">
+            <i class="fa fa-upload"></i> Upload File
+          </button>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Footer Ad -->
+  <div class="ad-container">
+    <div class="ad-label">Advertisement</div>
+    <ins class="adsbygoogle"
+         style="display:block"
+         data-ad-client="ca-pub-7632930282249669"
+         data-ad-slot="2233445588"
+         data-ad-format="auto"
+         data-full-width-responsive="true"></ins>
+    <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
+  </div>
+
+  <!-- Summary Ad injector -->
+  <script>
+    window.insertSummaryAd = function() {
+      var box = document.getElementById('summary-area');
+      if (!box) return;
+      var prev = box.querySelector('.summary-ad-container');
+      if (prev) prev.remove();
+      var wrap = document.createElement('div');
+      wrap.className = 'summary-ad-container ad-container';
+      wrap.innerHTML = `
+        <ins class="adsbygoogle"
+             style="display:block"
+             data-ad-client="ca-pub-7632930282249669"
+             data-ad-slot="2233445577"
+             data-ad-format="auto"
+             data-full-width-responsive="true"></ins>
+      `;
+      box.appendChild(wrap);
+      try { (adsbygoogle = window.adsbygoogle || []).push({}); } catch(e) {}
+    };
+  </script>
+
+  <script src="js/main-freemium-school.js"></script>
+</body>
+</html>
