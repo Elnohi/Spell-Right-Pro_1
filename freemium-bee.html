@@ -58,21 +58,21 @@
 
       <!-- Accent picker -->
       <div class="accent-picker">
-        <button data-accent="en-US" class="active">🇺🇸</button>
-        <button data-accent="en-GB">🇬🇧</button>
-        <button data-accent="en-AU">🇦🇺</button>
+        <button type="button" data-accent="en-US" class="active" aria-label="US Accent">🇺🇸</button>
+        <button type="button" data-accent="en-GB" aria-label="UK Accent">🇬🇧</button>
+        <button type="button" data-accent="en-AU" aria-label="AU Accent">🇦🇺</button>
       </div>
 
       <!-- Start Button -->
       <div class="session-controls">
-        <button id="start-btn" class="btn-start"><i class="fa fa-play"></i> Start</button>
+        <button type="button" id="start-btn" class="btn-start"><i class="fa fa-play"></i> Start</button>
       </div>
 
       <!-- Add custom words -->
       <div class="custom-inputs">
         <textarea id="custom-words" placeholder="Add custom words (comma, space, or line separated)..."></textarea>
-        <button id="add-custom-btn" class="btn-primary"><i class="fa fa-plus"></i> Add Words</button>
-        <input type="file" id="file-input" accept=".txt"/>
+        <button type="button" id="add-custom-btn" class="btn-primary"><i class="fa fa-plus"></i> Add Words</button>
+        <input type="file" id="file-input" accept=".txt" aria-label="Upload custom word file"/>
       </div>
 
       <!-- Training area -->
@@ -82,9 +82,9 @@
 
         <!-- Nav buttons -->
         <div class="nav-controls">
-          <button id="bee-prev" class="btn-secondary"><i class="fa fa-arrow-left"></i> Previous</button>
-          <button id="bee-repeat" class="btn-secondary"><i class="fa fa-redo"></i> Repeat</button>
-          <button id="bee-next" class="btn-secondary">Next <i class="fa fa-arrow-right"></i></button>
+          <button type="button" id="bee-prev" class="btn-secondary"><i class="fa fa-arrow-left"></i> Previous</button>
+          <button type="button" id="bee-repeat" class="btn-secondary"><i class="fa fa-redo"></i> Repeat</button>
+          <button type="button" id="bee-next" class="btn-secondary">Next <i class="fa fa-arrow-right"></i></button>
         </div>
 
         <!-- Mic indicator -->
