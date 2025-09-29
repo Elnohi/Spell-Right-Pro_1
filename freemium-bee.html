@@ -72,7 +72,10 @@
       <div class="custom-inputs">
         <textarea id="custom-words" placeholder="Add custom words (comma, space, or line separated)..."></textarea>
         <button type="button" id="add-custom-btn" class="btn-primary"><i class="fa fa-plus"></i> Add Words</button>
-        <input type="file" id="file-input" accept=".txt" aria-label="Upload custom word file"/>
+        <!-- Hidden file input -->
+        <input type="file" id="file-input" accept=".txt" style="display:none"/>
+        <!-- Visible upload button -->
+        <button type="button" id="upload-btn" class="btn-primary"><i class="fa fa-upload"></i> Upload File</button>
       </div>
 
       <!-- Training area -->
@@ -134,5 +137,11 @@
 
   <!-- Scripts -->
   <script src="js/main-freemium-bee.js"></script>
+  <script>
+    // Connect Upload button to hidden file input
+    const fileInput = document.getElementById('file-input');
+    const uploadBtn = document.getElementById('upload-btn');
+    uploadBtn?.addEventListener('click', () => fileInput.click());
+  </script>
 </body>
 </html>
