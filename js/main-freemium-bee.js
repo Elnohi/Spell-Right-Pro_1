@@ -146,7 +146,7 @@ document.addEventListener('DOMContentLoaded', () => {
   let baseBee = [];
   (async () => {
     try {
-      const res = await fetch('data/word-lists
+      const res = await fetch('/data/word-lists
 /spelling-bee.json', { cache: 'no-cache' });
       const data = await res.json();
       baseBee = Array.isArray(data?.words) ? data.words.filter(Boolean)
