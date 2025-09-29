@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>SpellRightPro (School - Freemium)</title>
 
+  <!-- Styles -->
   <link rel="stylesheet" href="css/styles.css"/>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"/>
 
@@ -18,24 +19,76 @@
   <!-- AdSense -->
   <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7632930282249669" crossorigin="anonymous"></script>
 
-  <link rel="stylesheet" href="css/school.css"/>
+  <style>
+    :root{
+      --primary:#4361ee; --text:#222; --muted:#f6f7f9; --border:#e7e9ed; --surface:#fff; --surfaceElevated:#fff;
+      --gray:#6b7280; --background:#fafbfc;
+    }
+    *{box-sizing:border-box}
+    body{margin:0;background:var(--background);color:var(--text);font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif}
+
+    .navbar{display:flex;justify-content:space-between;align-items:center;padding:.75rem 1rem;background:#fff;border-bottom:1px solid var(--border)}
+    .brand{display:flex;gap:.75rem;align-items:center}
+    .brand .logo{width:40px;height:40px;object-fit:contain}
+    .brand .subtitle{display:block;color:var(--gray);font-size:.85rem;margin-top:-2px}
+    .nav-actions{display:flex;gap:.5rem;align-items:center}
+    .btn-secondary{background:var(--surfaceElevated);border:1px solid var(--border);color:var(--text);padding:.5rem .75rem;border-radius:8px;cursor:pointer;text-decoration:none}
+    .btn-primary{background:var(--primary);border:1px solid var(--primary);color:#fff;padding:.5rem .75rem;border-radius:8px;cursor:pointer;text-decoration:none}
+
+    .container{max-width:1000px;margin:0 auto;padding:1rem}
+    .training-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:1rem 1rem}
+    .card-title{margin:.25rem 0 1rem 0}
+
+    .ad-container{margin:1.25rem auto;max-width:728px;text-align:center}
+    .ad-label{font-size:.75rem;color:var(--gray);letter-spacing:.04em;margin-bottom:.25rem;text-transform:uppercase}
+    .summary-ad-container{margin-top:1rem}
+
+    .row{display:flex;gap:.75rem;align-items:center;flex-wrap:wrap}
+    .accent-picker{display:flex;gap:.5rem;align-items:center}
+    .accent-picker button{border:1px solid var(--border);background:var(--surface);padding:.5rem .65rem;border-radius:8px;cursor:pointer}
+    .accent-picker button.active{border-color:var(--primary);box-shadow:0 0 0 2px rgba(67,97,238,.15)}
+
+    .session-controls{display:flex;gap:.5rem;align-items:center;margin-top:.75rem;flex-wrap:wrap}
+    #start-btn.btn-start{background:var(--primary);border:1px solid var(--primary);color:#fff}
+
+    #word-tiles{display:grid;grid-template-columns:repeat(auto-fit,42px);gap:8px;justify-content:center;padding:1rem 0}
+    .letter-tile{width:42px;height:42px;border-radius:10px;background:var(--surfaceElevated);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-weight:700}
+
+    .feedback{min-height:24px;text-align:center;margin:.5rem 0;color:var(--gray)}
+    .prompt{font-weight:600;text-align:center}
+
+    .lifetime-stats{display:flex;justify-content:center;gap:1rem;margin:-.5rem 0 1rem;color:var(--gray)}
+    .lifetime-stats span{font-weight:700}
+
+    .summary-area{margin-top:1rem}
+    .summary-header{display:flex;justify-content:space-between;align-items:center;gap:1rem}
+    .results-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1rem;margin-top:.75rem}
+    .results-card{border:1px solid var(--border);border-radius:10px;padding:.75rem}
+    .word-item{padding:.25rem .5rem;border-radius:6px;background:var(--muted);display:inline-block;margin:2px}
+
+    .custom-words-section{margin-top:1rem}
+    .custom-words-section textarea{width:100%;min-height:120px;border:1px solid var(--border);border-radius:10px;padding:.75rem}
+    .button-group{display:flex;gap:.5rem;flex-wrap:wrap}
+    .hidden{display:none}
+  </style>
 </head>
 <body>
+  <!-- Navbar -->
   <nav class="navbar">
     <div class="brand">
-      <img src="assets/logo.png" class="logo" alt="SpellRightPro"/>
+      <img src="assets/logo.png" alt="SpellRightPro Logo" class="logo"/>
       <div>
         <span>SpellRightPro</span>
         <span class="subtitle">School Trainer</span>
       </div>
     </div>
     <div class="nav-actions">
-      <a href="index.html" class="btn-secondary"><i class="fa fa-home"></i> Home</a>
-      <a href="premium.html" class="btn-primary"><i class="fa fa-crown"></i> Premium</a>
+      <a class="btn-secondary" href="index.html"><i class="fa fa-home"></i> Home</a>
+      <a class="btn-primary" href="premium.html"><i class="fa fa-crown"></i> Premium</a>
     </div>
   </nav>
 
-  <!-- Ads -->
+  <!-- Header Ad -->
   <div class="ad-container">
     <div class="ad-label">Advertisement</div>
     <ins class="adsbygoogle"
@@ -51,47 +104,54 @@
     <section class="training-card">
       <h1 class="card-title"><i class="fa fa-school"></i> School Word Practice</h1>
 
-      <!-- Lifetime -->
+      <!-- Lifetime totals -->
       <div class="lifetime-stats">
         <div>Correct: <span id="life-correct">0</span></div>
         <div>Attempts: <span id="life-attempts">0</span></div>
       </div>
 
-      <!-- Accent + controls -->
       <div class="row">
-        <div class="accent-picker">
-          <button type="button" data-accent="en-US" class="active">🇺🇸</button>
+        <div class="accent-picker" aria-label="Select accent">
+          <button type="button" class="active" data-accent="en-US">🇺🇸</button>
           <button type="button" data-accent="en-GB">🇬🇧</button>
           <button type="button" data-accent="en-AU">🇦🇺</button>
         </div>
         <div class="session-controls">
-          <button id="start-btn" class="btn-start"><i class="fa fa-play"></i> Start Session</button>
-          <button id="replay-btn" class="btn-secondary"><i class="fa fa-volume-high"></i></button>
-          <button id="backspace-btn" class="btn-secondary"><i class="fa fa-delete-left"></i></button>
+          <button type="button" id="start-btn" class="btn-start"><i class="fa fa-play"></i> Start Session</button>
+          <button type="button" id="replay-btn" class="btn-secondary" title="Replay"><i class="fa fa-volume-high"></i></button>
+          <button type="button" id="backspace-btn" class="btn-secondary" title="Backspace"><i class="fa fa-delete-left"></i></button>
         </div>
       </div>
 
-      <!-- Practice -->
+      <!-- Practice area -->
       <div id="practice-area" class="hidden">
-        <div id="prompt" class="prompt"></div>
+        <div id="prompt" class="prompt">Listen and type, then press Enter</div>
         <div id="word-tiles"></div>
         <div id="feedback" class="feedback"></div>
       </div>
 
-      <!-- Summary -->
-      <div id="summary-area" class="hidden"></div>
+      <!-- Summary area -->
+      <div id="summary-area" class="summary-area hidden"></div>
 
-      <!-- Custom -->
+      <!-- Custom list -->
       <div class="custom-words-section">
-        <label><i class="fa fa-list"></i> Custom Words</label>
-        <textarea id="custom-words" placeholder="Type or paste words..."></textarea>
-        <input type="file" id="file-input" accept=".txt"/>
-        <button id="add-custom-btn" class="btn-secondary"><i class="fa fa-plus"></i> Add Words</button>
+        <label class="section-label"><i class="fa fa-list"></i> Custom Words</label>
+        <textarea id="custom-words" placeholder="Type or paste words separated by space, comma, or new lines..."></textarea>
+
+        <div class="button-group">
+          <button type="button" id="add-custom-btn" class="btn-secondary"><i class="fa fa-plus"></i> Add Words</button>
+
+          <!-- Hidden file input + visible upload button -->
+          <input type="file" id="file-input" accept=".txt" style="display:none"/>
+          <button type="button" id="upload-btn" class="btn-primary">
+            <i class="fa fa-upload"></i> Upload File
+          </button>
+        </div>
       </div>
     </section>
   </main>
 
-  <!-- Footer Ads -->
+  <!-- Footer Ad -->
   <div class="ad-container">
     <div class="ad-label">Advertisement</div>
     <ins class="adsbygoogle"
@@ -102,6 +162,28 @@
          data-full-width-responsive="true"></ins>
     <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
   </div>
+
+  <!-- Summary Ad injector -->
+  <script>
+    window.insertSummaryAd = function() {
+      var box = document.getElementById('summary-area');
+      if (!box) return;
+      var prev = box.querySelector('.summary-ad-container');
+      if (prev) prev.remove();
+      var wrap = document.createElement('div');
+      wrap.className = 'summary-ad-container ad-container';
+      wrap.innerHTML = `
+        <ins class="adsbygoogle"
+             style="display:block"
+             data-ad-client="ca-pub-7632930282249669"
+             data-ad-slot="2233445577"
+             data-ad-format="auto"
+             data-full-width-responsive="true"></ins>
+      `;
+      box.appendChild(wrap);
+      try { (adsbygoogle = window.adsbygoogle || []).push({}); } catch(e) {}
+    };
+  </script>
 
   <script src="js/main-freemium-school.js"></script>
 </body>
