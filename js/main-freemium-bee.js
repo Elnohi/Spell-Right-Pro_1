@@ -7,7 +7,8 @@ document.addEventListener('DOMContentLoaded', () => {
   const summaryArea     = document.getElementById('summary-area');
 
   const addCustomBtn    = document.getElementById('add-custom-btn');
-  const fileInput       = document.getElementById('file-input');
+  const uploadBtn       = document.getElementById('upload-btn'); // NEW: visible upload button
+  const fileInput       = document.getElementById('file-input');  // now hidden
   const customInput     = document.getElementById('custom-words');
   const startBtn        = document.getElementById('start-btn');
   const accentPicker    = document.querySelector('.accent-picker');
@@ -57,7 +58,6 @@ document.addEventListener('DOMContentLoaded', () => {
   let recognition = null;
   let recognitionTimer = null;
   function makeRecognition() {
-    // prefer webkit for wider support
     const Ctor = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (!Ctor) return null;
     const rec = new Ctor();
@@ -89,17 +89,14 @@ document.addEventListener('DOMContentLoaded', () => {
       };
       recognition.onend = () => {
         try { clearTimeout(recognitionTimer); } catch(_) {}
-        // onend fires even on success; we do nothing here because onresult/onerror handle flow.
       };
 
       recognition.start();
-      // safety timeout (some browsers hang)
       recognitionTimer = setTimeout(() => {
         stopRecognition();
         onError && onError(new Error('timeout'));
       }, RECOGNITION_TIMEOUT);
 
-      // UI: mic indicator
       if (micStatus) micStatus.classList.remove('hidden');
     } catch (e) {
       console.error('[Recognition start]', e);
@@ -138,7 +135,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     const remain = FREEMIUM_MAX - used;
     return list.length > remain ? list.slice(0, remain) : list;
-    // note: we increment the counter at endSession() to count full batch consumed
   }
 
   // ---------- Load Base Words (JSON) ----------
@@ -146,24 +142,26 @@ document.addEventListener('DOMContentLoaded', () => {
   let baseBee = [];
   (async () => {
     try {
-      const res = await fetch('/data/word-lists
-/spelling-bee.json', { cache: 'no-cache' });
+      // FIXED PATH: no newline; absolute path recommended
+      const res = await fetch('/data/word-lists/spelling-bee.json', { cache: 'no-cache' });
       const data = await res.json();
       baseBee = Array.isArray(data?.words) ? data.words.filter(Boolean)
                : Array.isArray(data)       ? data.filter(Boolean)
                : [];
     } catch (e) {
       console.warn('Could not load spelling-bee.json', e);
+      baseBee = [];
     }
   })();
 
-  // ---------- Custom words (one list/day policy stays; you can relax it if you want) ----------
+  // ---------- Custom words ----------
   function todayStr()     { return new Date().toISOString().slice(0, 10); }
   function canAddCustom() { return localStorage.getItem('bee_customListDate') !== todayStr(); }
   function markCustom()   { localStorage.setItem('bee_customListDate', todayStr()); }
 
   let customWords = [];
-  addCustomBtn?.addEventListener('click', () => {
+  addCustomBtn?.addEventListener('click', (ev) => {
+    ev.preventDefault();
     if (!canAddCustom()) { alert('Freemium allows one custom list per day.'); return; }
     const raw = (customInput?.value || '').trim();
     if (!raw) { alert('Enter some words first.'); return; }
@@ -172,6 +170,12 @@ document.addEventListener('DOMContentLoaded', () => {
     if (customInput) customInput.value = '';
     markCustom();
     alert(`Added ${parsed.length} custom words.`);
+  });
+
+  // NEW: visible button triggers hidden input
+  uploadBtn?.addEventListener('click', (e) => {
+    e.preventDefault();
+    fileInput?.click();
   });
 
   fileInput?.addEventListener('change', (e) => {
@@ -196,11 +200,11 @@ document.addEventListener('DOMContentLoaded', () => {
   let running = false;
   let autoNextTimer = null;
 
-  startBtn?.addEventListener('click', () => {
+  startBtn?.addEventListener('click', (e) => {
+    e.preventDefault();
     if (!running) {
       startSession();
     } else {
-      // End manually
       endSession();
     }
   });
@@ -238,6 +242,7 @@ document.addEventListener('DOMContentLoaded', () => {
         .join('');
     }
     if (feedbackBox) {
+      feedbackBox.classList.remove('correct','incorrect');
       feedbackBox.innerHTML = 'Listen carefully...';
     }
 
@@ -280,11 +285,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Paint feedback
     if (feedbackBox) {
+      feedbackBox.classList.remove('correct','incorrect');
       if (noHeard) {
         feedbackBox.innerHTML = `⚠️ No response detected.<br>Correct: <b>${escapeHtml(correctWord)}</b>`;
       } else if (isCorrect) {
+        feedbackBox.classList.add('correct');
         feedbackBox.innerHTML = `✅ Correct: <b>${escapeHtml(correctWord)}</b>`;
       } else {
+        feedbackBox.classList.add('incorrect');
         feedbackBox.innerHTML = `❌ You said: “${escapeHtml(said)}”<br>Correct: <b>${escapeHtml(correctWord)}</b>`;
       }
     }
@@ -292,7 +300,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Color-code tiles as a soft hint
     if (spellingVisual) {
       const chars = (correctWord || '').split('');
-      spellingVisual.innerHTML = chars.map((ch, idx) => {
+      spellingVisual.innerHTML = chars.map((ch) => {
         const ok = isCorrect ? 'correct' : 'incorrect';
         return `<div class="letter-tile ${ok}">${escapeHtml(ch)}</div>`;
       }).join('');
@@ -339,15 +347,18 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // ---------- Optional manual navigation ----------
-  prevBtn?.addEventListener('click', () => {
+  prevBtn?.addEventListener('click', (e) => {
+    e.preventDefault();
     if (!running) return;
     if (i > 0) { i--; runCurrentWord(); }
   });
-  repeatBtn?.addEventListener('click', () => {
+  repeatBtn?.addEventListener('click', (e) => {
+    e.preventDefault();
     if (!running) return;
     const w = words[i]; if (w) speak(w);
   });
-  nextBtn?.addEventListener('click', () => {
+  nextBtn?.addEventListener('click', (e) => {
+    e.preventDefault();
     if (!running) return;
     if (i < words.length - 1) { i++; runCurrentWord(); }
     else { endSession(); }
