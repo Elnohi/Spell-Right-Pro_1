@@ -6,15 +6,16 @@
   <title>SpellRightPro (School - Freemium)</title>
 
   <!-- Global styles -->
-  <link rel="stylesheet" href="css/styles.css"/>
+  <link rel="stylesheet" href="/css/styles.css"/>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"/>
+  <link rel="preload" href="/css/styles.css" as="style">
 
   <!-- Firebase -->
   <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-analytics-compat.js"></script>
-  <script src="js/config.js"></script>
+  <script src="/js/config.js"></script>
 
   <!-- AdSense -->
   <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7632930282249669" crossorigin="anonymous"></script>
@@ -23,15 +24,15 @@
   <!-- Navbar -->
   <nav class="navbar">
     <div class="brand">
-      <img src="assets/logo.png" alt="SpellRightPro Logo" class="logo"/>
+      <img src="/assets/logo.png" alt="SpellRightPro Logo" class="logo" loading="lazy"/>
       <div>
         <span>SpellRightPro</span>
         <span class="subtitle">School Trainer</span>
       </div>
     </div>
     <div class="nav-actions">
-      <a class="btn-secondary" href="index.html"><i class="fa fa-home"></i> Home</a>
-      <a class="btn-primary" href="premium.html"><i class="fa fa-crown"></i> Premium</a>
+      <a class="btn-secondary" href="/index.html"><i class="fa fa-home"></i> Home</a>
+      <a class="btn-primary" href="/premium.html"><i class="fa fa-crown"></i> Premium</a>
     </div>
   </nav>
 
@@ -51,28 +52,54 @@
     <section class="training-card">
       <h1 class="card-title"><i class="fa fa-school"></i> School Word Practice</h1>
 
+      <!-- Info Box -->
+      <div class="info-box">
+        <p><strong>Typing Practice:</strong> Listen to each word and type the correct spelling. Press Enter to submit.</p>
+      </div>
+
       <!-- Lifetime totals -->
       <div class="lifetime-stats">
         <div>Correct: <span id="life-correct">0</span></div>
         <div>Attempts: <span id="life-attempts">0</span></div>
+        <div>Accuracy: <span id="life-accuracy">0%</span></div>
       </div>
 
       <div class="row">
         <div class="accent-picker" aria-label="Select accent">
-          <button type="button" class="active" data-accent="en-US">🇺🇸</button>
-          <button type="button" data-accent="en-GB">🇬🇧</button>
-          <button type="button" data-accent="en-AU">🇦🇺</button>
+          <button type="button" class="active" data-accent="en-US">
+            <span class="flag-icon">🇺🇸</span> US
+          </button>
+          <button type="button" data-accent="en-GB">
+            <span class="flag-icon">🇬🇧</span> UK
+          </button>
+          <button type="button" data-accent="en-AU">
+            <span class="flag-icon">🇦🇺</span> AU
+          </button>
         </div>
         <div class="session-controls">
-          <button type="button" id="replay-btn" class="btn-secondary" title="Replay word"><i class="fa fa-volume-high"></i></button>
-          <button type="button" id="backspace-btn" class="btn-secondary" title="Backspace"><i class="fa fa-delete-left"></i></button>
+          <button type="button" id="replay-btn" class="btn-secondary" title="Replay word">
+            <i class="fa fa-volume-high"></i> Replay
+          </button>
+          <button type="button" id="backspace-btn" class="btn-secondary" title="Backspace">
+            <i class="fa fa-delete-left"></i> Clear
+          </button>
         </div>
       </div>
 
       <!-- Practice area -->
       <div id="practice-area" class="hidden">
-        <div id="prompt" class="prompt">Listen and spell the word.</div>
-        <div id="word-tiles"></div>
+        <div class="word-progress">
+          Word <span id="current-word-index">1</span> of <span id="total-words">10</span>
+        </div>
+        
+        <div id="prompt" class="prompt">Listen carefully and type the word you hear...</div>
+        
+        <div id="word-tiles" class="spelling-visual"></div>
+        
+        <div class="input-hint">
+          <small>Press <kbd>Enter</kbd> to submit • Press <kbd>Space</kbd> to replay • Type to spell</small>
+        </div>
+        
         <div id="feedback" class="feedback"></div>
       </div>
 
@@ -83,14 +110,33 @@
       <div class="custom-words-section">
         <label class="section-label"><i class="fa fa-list"></i> Custom Words</label>
         <textarea id="custom-words" placeholder="Type or paste words separated by space, comma, or new lines..."></textarea>
+        
         <div class="file-upload">
-          <label for="file-input"><i class="fa fa-file-arrow-up"></i> Upload list (.txt)</label>
+          <label for="file-input" class="btn-upload">
+            <i class="fa fa-file-arrow-up"></i> Upload Word List (.txt)
+          </label>
           <input type="file" id="file-input" accept=".txt"/>
         </div>
 
         <div class="button-group">
-          <button type="button" id="add-custom-btn" class="btn-secondary"><i class="fa fa-plus"></i> Add Words</button>
-          <button type="button" id="start-btn-dup" class="btn-start"><i class="fa fa-play"></i> Start Session</button>
+          <button type="button" id="add-custom-btn" class="btn-secondary">
+            <i class="fa fa-plus"></i> Add Words
+          </button>
+          <button type="button" id="start-btn-dup" class="btn-start">
+            <i class="fa fa-play"></i> Start Session
+          </button>
+        </div>
+        
+        <div class="custom-words-info">
+          <small>Freemium allows one custom list per day. Max 10 words per session.</small>
+        </div>
+      </div>
+
+      <!-- Loading State -->
+      <div id="loading-state" class="hidden" style="text-align:center;padding:2rem;">
+        <div class="loading-spinner">
+          <i class="fas fa-spinner fa-spin"></i>
+          <p>Preparing your session...</p>
         </div>
       </div>
     </section>
@@ -130,6 +176,28 @@
     };
   </script>
 
-  <script src="js/main-freemium-school.js"></script>
+  <script src="/js/main-freemium-school.js"></script>
+  
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      // Update accuracy display
+      function updateAccuracy() {
+        const correct = parseInt(document.getElementById('life-correct').textContent) || 0;
+        const attempts = parseInt(document.getElementById('life-attempts').textContent) || 0;
+        const accuracy = attempts > 0 ? Math.round((correct / attempts) * 100) : 0;
+        document.getElementById('life-accuracy').textContent = accuracy + '%';
+      }
+      
+      // Observe changes to lifetime stats
+      const observer = new MutationObserver(updateAccuracy);
+      const lifeCorrect = document.getElementById('life-correct');
+      const lifeAttempts = document.getElementById('life-attempts');
+      
+      if (lifeCorrect) observer.observe(lifeCorrect, { childList: true, subtree: true });
+      if (lifeAttempts) observer.observe(lifeAttempts, { childList: true, subtree: true });
+      
+      updateAccuracy();
+    });
+  </script>
 </body>
 </html>
