@@ -8,6 +8,7 @@
   <!-- Styles -->
   <link rel="stylesheet" href="/css/styles.css"/>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"/>
+  <link rel="preload" href="/css/styles.css" as="style">
 
   <!-- Hard-stop any file input overlay issues -->
   <style>
@@ -21,27 +22,34 @@
       pointer-events: auto !important;
       display: inline-block !important;
     }
-    .custom-inputs{ display:grid; gap:10px; margin:10px 0 }
+    .custom-inputs{ display:grid; gap:12px; margin:16px 0 }
     .custom-inputs textarea{
-      width:100%; min-height:100px; padding:10px 12px; font-size:1rem;
-      border:1px solid #d1d5db; border-radius:10px; box-sizing:border-box;
+      width:100%; min-height:100px; padding:12px; font-size:1rem;
+      border:2px solid #d1d5db; border-radius:10px; box-sizing:border-box;
+      font-family:inherit;
     }
     .navbar{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;background:#fff;border-bottom:1px solid #e5e7eb}
     .brand{display:flex;align-items:center;gap:10px}
     .brand .logo{height:34px}
     .nav-actions a{text-decoration:none}
-    .ad-container{max-width:980px;margin:10px auto;padding:0 16px}
+    .ad-container{max-width:980px;margin:12px auto;padding:0 16px}
     .ad-label{font-size:.8rem;color:#6b7280;margin:6px 0}
-    .training-card{ max-width:900px; margin:16px auto; padding:16px; background:#fff; border:1px solid #e5e7eb; border-radius:14px; }
-    .row{ display:flex; gap:12px; align-items:center; flex-wrap:wrap; margin:12px 0; }
-    .accent-picker button{ padding:8px 10px; border:1px solid #e5e7eb; background:#f9fafb; border-radius:10px; cursor:pointer }
+    .training-card{ max-width:900px; margin:16px auto; padding:20px; background:#fff; border:1px solid #e5e7eb; border-radius:14px; }
+    .row{ display:flex; gap:12px; align-items:center; flex-wrap:wrap; margin:16px 0; }
+    .accent-picker{display:flex;gap:8px}
+    .accent-picker button{ padding:10px 12px; border:2px solid #e5e7eb; background:#f9fafb; border-radius:10px; cursor:pointer; transition:all 0.2s ease; min-height:44px }
     .accent-picker button.active{ background:#098cfb; color:#fff; border-color:#098cfb }
-    .btn-secondary, .btn-primary, .btn-start{ padding:10px 14px; border-radius:10px; border:1px solid #e5e7eb; background:#f3f4f6; cursor:pointer }
+    .mode-controls{display:flex;gap:8px;flex-wrap:wrap}
+    .btn-secondary, .btn-primary, .btn-start{ padding:10px 16px; border-radius:10px; border:2px solid #e5e7eb; background:#f3f4f6; cursor:pointer; font-weight:600; transition:all 0.2s ease; min-height:44px }
     .btn-primary{ background:#098cfb; color:#fff; border-color:#098cfb }
+    .btn-primary:hover{ background:#0077e6; transform:translateY(-1px) }
     .btn-start{ background:#16a34a; color:#fff; border-color:#16a34a }
+    .btn-start:hover{ background:#15803d; transform:translateY(-1px) }
     .btn-start.stop{ background:#ef4444; border-color:#ef4444 }
-    .lifetime-stats{ display:flex; gap:16px; color:#374151; margin:8px 0 6px }
+    .btn-start.stop:hover{ background:#dc2626 }
+    .lifetime-stats{ display:flex; gap:20px; color:#374151; margin:12px 0; flex-wrap:wrap }
     .hidden{ display:none !important; }
+    .session-info{background:#f0f9ff;border:1px solid#bae6fd;border-radius:8px;padding:12px;margin:12px 0}
   </style>
 
   <!-- Firebase -->
@@ -58,7 +66,7 @@
   <!-- Navbar -->
   <nav class="navbar">
     <div class="brand">
-      <img src="/assets/logo.png" alt="SpellRightPro Logo" class="logo"/>
+      <img src="/assets/logo.png" alt="SpellRightPro Logo" class="logo" loading="lazy"/>
       <div>
         <span>SpellRightPro</span>
         <span class="subtitle">OET Practice</span>
@@ -86,38 +94,62 @@
     <section class="training-card">
       <h1 class="card-title"><i class="fa fa-stethoscope"></i> OET Word Practice</h1>
 
+      <!-- Info Box -->
+      <div class="info-box">
+        <p><strong>Medical Terminology:</strong> Practice spelling healthcare-related words commonly used in OET exams.</p>
+      </div>
+
       <!-- Lifetime stats -->
       <div class="lifetime-stats">
         <div>Correct: <span id="life-correct">0</span></div>
         <div>Attempts: <span id="life-attempts">0</span></div>
+        <div>Today's Progress: <span id="daily-progress">0/24</span></div>
       </div>
 
       <!-- Mode & Accent -->
       <div class="row">
         <div class="accent-picker">
-          <button data-accent="en-US" class="active">🇺🇸</button>
-          <button data-accent="en-GB">🇬🇧</button>
-          <button data-accent="en-AU">🇦🇺</button>
+          <button data-accent="en-US" class="active">🇺🇸 US</button>
+          <button data-accent="en-GB">🇬🇧 UK</button>
+          <button data-accent="en-AU">🇦🇺 AU</button>
         </div>
         <div class="mode-controls">
-          <button id="practice-mode-btn" class="btn-secondary">Practice</button>
-          <button id="test-mode-btn" class="btn-secondary">Test (24)</button>
+          <button id="practice-mode-btn" class="btn-secondary active">Practice Mode</button>
+          <button id="test-mode-btn" class="btn-secondary">Test Mode (24)</button>
           <button id="mode-switch-btn" class="btn-secondary"><i class="fa fa-random"></i> Switch</button>
         </div>
         <div class="session-controls">
-          <button id="start-btn" class="btn-start"><i class="fa fa-play"></i> Start</button>
+          <button id="start-btn" class="btn-start"><i class="fa fa-play"></i> Start Session</button>
         </div>
+      </div>
+
+      <!-- Session Info -->
+      <div id="session-info" class="session-info hidden">
+        <p><strong>Current Mode:</strong> <span id="current-mode">Practice</span></p>
+        <p>Words will be presented in random order. Type the spelling and press Enter to submit.</p>
       </div>
 
       <!-- Custom words -->
       <div class="custom-inputs">
-        <textarea id="custom-words" placeholder="Add custom words (comma, space, or line separated)..."></textarea>
-        <button id="add-custom-btn" class="btn-primary"><i class="fa fa-plus"></i> Add Words</button>
+        <textarea id="custom-words" placeholder="Add custom medical terms (comma, space, or line separated)..."></textarea>
+        <button id="add-custom-btn" class="btn-primary"><i class="fa fa-plus"></i> Add Custom Words</button>
         <input type="file" id="file-input" accept=".txt"/>
+        
+        <div class="custom-words-info">
+          <small>Freemium allows one custom list per day. Test mode limited to 24 words.</small>
+        </div>
       </div>
 
       <!-- Dynamic training UI will be injected here -->
       <div id="trainer-area" class="hidden"></div>
+
+      <!-- Loading State -->
+      <div id="loading-state" class="hidden" style="text-align:center;padding:2rem;">
+        <div class="loading-spinner">
+          <i class="fas fa-spinner fa-spin"></i>
+          <p>Loading OET words...</p>
+        </div>
+      </div>
 
       <!-- Summary -->
       <div id="summary-area" class="hidden"></div>
@@ -161,5 +193,33 @@
   <!-- Scripts (root-relative + cache-busting) -->
   <script src="/js/oet_word_list.js?v=2025-09-25-1" defer></script>
   <script src="/js/main-freemium-oet.js?v=2025-09-25-1" defer></script>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      // Enhanced mode switching with visual feedback
+      const practiceBtn = document.getElementById('practice-mode-btn');
+      const testBtn = document.getElementById('test-mode-btn');
+      const modeSwitchBtn = document.getElementById('mode-switch-btn');
+      const sessionInfo = document.getElementById('session-info');
+      const currentMode = document.getElementById('current-mode');
+      
+      function setActiveMode(mode) {
+        practiceBtn.classList.toggle('active', mode === 'practice');
+        testBtn.classList.toggle('active', mode === 'test');
+        currentMode.textContent = mode === 'practice' ? 'Practice' : 'Test';
+        sessionInfo.classList.remove('hidden');
+      }
+      
+      practiceBtn?.addEventListener('click', () => setActiveMode('practice'));
+      testBtn?.addEventListener('click', () => setActiveMode('test'));
+      modeSwitchBtn?.addEventListener('click', () => {
+        const newMode = practiceBtn.classList.contains('active') ? 'test' : 'practice';
+        setActiveMode(newMode);
+      });
+      
+      // Initialize
+      setActiveMode('practice');
+    });
+  </script>
 </body>
 </html>
