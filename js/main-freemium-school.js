@@ -25,7 +25,7 @@ document.addEventListener('DOMContentLoaded', () => {
   function speak(text) {
     try {
       if (!text) return;
-      synth.cancel(); // stop overlapping
+      synth.cancel(); // prevent overlap
       const u = new SpeechSynthesisUtterance(text);
       u.lang = accent;
       synth.speak(u);
@@ -43,7 +43,6 @@ document.addEventListener('DOMContentLoaded', () => {
   // ---------- State ----------
   const CAP = 10;
   let words = [], idx = 0, typed = '', running = false, currentWord = '';
-  let sessionAnswers = []; // track answers per session
   let lifeCorrect = parseInt(localStorage.getItem('school_life_correct') || '0', 10);
   let lifeAttempts = parseInt(localStorage.getItem('school_life_attempts') || '0', 10);
 
@@ -101,7 +100,6 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!merged.length) return;
     words = merged.slice(0, CAP);
     idx = 0; running = true;
-    sessionAnswers = [];
     summary.classList.add('hidden');
     practice.classList.remove('hidden');
     renderWord();
@@ -117,6 +115,7 @@ document.addEventListener('DOMContentLoaded', () => {
     feedback.textContent = '';
     promptEl.textContent = `Word ${idx+1}/${words.length}: Listen and type.`;
 
+    // speak only once, after small delay
     setTimeout(() => speak(currentWord), 300);
 
     document.onkeydown = (e) => {
@@ -138,15 +137,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function evaluate() {
     lifeAttempts++;
-    let correct = false;
     if (typed.toLowerCase() === currentWord.toLowerCase()) {
       lifeCorrect++;
-      correct = true;
       feedback.textContent = '✅ Correct';
     } else {
       feedback.textContent = `❌ "${typed}" → ${currentWord}`;
     }
-    sessionAnswers.push({ word: currentWord, answer: typed, correct });
     saveLife();
     idx++;
     setTimeout(renderWord, 500);
@@ -154,32 +150,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function finish() {
     running = false; document.onkeydown = null;
-
-    const correctList = sessionAnswers.filter(a => a.correct).map(a => a.word);
-    const wrongList   = sessionAnswers.filter(a => !a.correct).map(a => a.word);
-    const percent     = sessionAnswers.length ? Math.round((correctList.length/sessionAnswers.length)*100) : 0;
-
+    const percent = lifeAttempts ? Math.round((lifeCorrect/lifeAttempts)*100) : 0;
     summary.innerHTML = `
       <div class="summary-header">
-        <h2>Session Results</h2>
-        <div class="score-display">${correctList.length}/${sessionAnswers.length} (${percent}%)</div>
+        <h2>Session Summary</h2>
+        <div class="score-display">${lifeCorrect}/${lifeAttempts} (${percent}%)</div>
       </div>
-      <div class="results-grid">
-        <div class="results-card">
-          <h3>Correct</h3>
-          <div class="word-list">
-            ${correctList.map(w => `<div class="word-item">${w}</div>`).join('')}
-          </div>
-        </div>
-        <div class="results-card">
-          <h3>Needs Practice</h3>
-          <div class="word-list">
-            ${wrongList.map(w => `<div class="word-item">${w}</div>`).join('')}
-          </div>
-        </div>
-      </div>
+      <p>Great work! Press Start again for another session.</p>
     `;
-
     practice.classList.add('hidden');
     summary.classList.remove('hidden');
     if (window.insertSummaryAd) window.insertSummaryAd();
