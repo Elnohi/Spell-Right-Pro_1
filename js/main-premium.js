@@ -5,10 +5,11 @@
   /* ==================== GLOBAL STATE ==================== */
   let currentUser = null;
   let premiumUser = false;
+  let isInitialized = false;
 
-  let examType = "OET";          // "OET" | "Bee" | "School"
-  let accent   = "en-US";        // "en-US" | "en-GB" | "en-AU"
-  let sessionMode = "practice";  // "practice" | "test"
+  let examType = "OET";
+  let accent = "en-US";
+  let sessionMode = "practice";
 
   let words = [];
   let originalWords = [];
@@ -29,148 +30,388 @@
   let app, auth, db, analytics;
 
   /* ==================== HELPERS ==================== */
-  function $(sel, root = document) { return root.querySelector(sel); }
-  function $all(sel, root = document) { return Array.from(root.querySelectorAll(sel)); }
-  function nowISO() { return new Date().toISOString(); }
-
-  function log(...args) { console.log("[SRP Premium]", ...args); }
-  function warn(...args) { console.warn("[SRP Premium]", ...args); }
-
-  function selectVoice(accent) {
-    const list = speechSynthesis.getVoices() || [];
-    if (!list.length) return null;
-    let v = list.find(v => v.lang === accent) || list.find(v => v.lang?.startsWith(accent.split('-')[0]));
-    return v || list[0] || null;
+  function $(sel, root = document) { 
+    return root.querySelector(sel); 
+  }
+  
+  function $all(sel, root = document) { 
+    return Array.from(root.querySelectorAll(sel)); 
+  }
+  
+  function nowISO() { 
+    return new Date().toISOString(); 
   }
 
-  function speak(text, { rate = 1, pitch = 1, volume = 1 } = {}) {
+  function log(...args) { 
+    console.log("[SRP Premium]", ...args); 
+  }
+  
+  function warn(...args) { 
+    console.warn("[SRP Premium]", ...args); 
+  }
+  
+  function error(...args) { 
+    console.error("[SRP Premium]", ...args); 
+  }
+
+  function showAlert(message, type = 'success', duration = 5000) {
+    const alert = document.createElement('div');
+    alert.className = `alert alert-${type}`;
+    alert.innerHTML = `
+      <i class="fas fa-${type === 'success' ? 'check-circle' : 'exclamation-triangle'}"></i>
+      ${message}
+    `;
+    
+    document.body.appendChild(alert);
+    
+    setTimeout(() => {
+      alert.classList.add('fade-out');
+      setTimeout(() => alert.remove(), 500);
+    }, duration);
+  }
+
+  function showGlobalLoading(message) {
+    if (window.showGlobalLoading) {
+      window.showGlobalLoading(message);
+    }
+  }
+
+  function hideGlobalLoading() {
+    if (window.hideGlobalLoading) {
+      window.hideGlobalLoading();
+    }
+  }
+
+  function selectVoice(accent) {
+    try {
+      const voices = speechSynthesis.getVoices() || [];
+      if (!voices.length) return null;
+      
+      // Try exact match first
+      let voice = voices.find(v => v.lang === accent);
+      
+      // Then try language match
+      if (!voice) {
+        const lang = accent.split('-')[0];
+        voice = voices.find(v => v.lang.startsWith(lang));
+      }
+      
+      // Fallback to first available voice
+      return voice || voices[0] || null;
+    } catch (e) {
+      console.warn('Voice selection failed:', e);
+      return null;
+    }
+  }
+
+  function speak(text, { rate = 0.9, pitch = 1, volume = 1 } = {}) {
     return new Promise((resolve) => {
       try {
+        if (!text || typeof text !== 'string') {
+          resolve();
+          return;
+        }
+
         window.speechSynthesis.cancel();
-        const u = new SpeechSynthesisUtterance(text);
-        if (ttsVoice) u.voice = ttsVoice;
-        u.rate = rate; u.pitch = pitch; u.volume = volume;
-        u.onend = () => { isSpeaking = false; resolve(); };
+        
+        const utterance = new SpeechSynthesisUtterance(text);
+        if (ttsVoice) utterance.voice = ttsVoice;
+        utterance.rate = rate;
+        utterance.pitch = pitch;
+        utterance.volume = volume;
+        utterance.lang = accent;
+        
+        utterance.onend = () => {
+          isSpeaking = false;
+          resolve();
+        };
+        
+        utterance.onerror = (e) => {
+          console.warn('TTS Error:', e);
+          isSpeaking = false;
+          resolve();
+        };
+        
         isSpeaking = true;
-        window.speechSynthesis.speak(u);
-      } catch (e) { isSpeaking = false; resolve(); }
+        window.speechSynthesis.speak(utterance);
+      } catch (e) {
+        console.error('Speak error:', e);
+        isSpeaking = false;
+        resolve();
+      }
     });
   }
 
-  function stopSpeaking() { try { window.speechSynthesis.cancel(); } catch {} isSpeaking = false; }
+  function stopSpeaking() {
+    try {
+      window.speechSynthesis.cancel();
+    } catch (e) {
+      // Silent fail
+    }
+    isSpeaking = false;
+  }
 
   function createRecognition() {
-    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (!SR) return null;
-    const rec = new SR();
-    rec.lang = accent || "en-US";
-    rec.continuous = false; rec.interimResults = false; rec.maxAlternatives = 1;
-    return rec;
+    try {
+      const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (!SR) {
+        throw new Error('SpeechRecognition not supported');
+      }
+      
+      const rec = new SR();
+      rec.lang = accent || "en-US";
+      rec.continuous = false;
+      rec.interimResults = false;
+      rec.maxAlternatives = 1;
+      
+      return rec;
+    } catch (e) {
+      console.error('Recognition creation failed:', e);
+      return null;
+    }
   }
 
   function startListeningOnce() {
     return new Promise((resolve) => {
       const rec = createRecognition();
-      if (!rec) return resolve(null);
-      isListening = true; listeningController = rec;
+      if (!rec) {
+        resolve(null);
+        return;
+      }
+      
+      isListening = true;
+      listeningController = rec;
+      
       rec.onresult = (e) => {
-        isListening = false; listeningController = null;
+        isListening = false;
+        listeningController = null;
         const result = (e.results?.[0]?.[0]?.transcript || "").trim();
         resolve(result);
       };
-      rec.onerror = () => { isListening = false; listeningController = null; resolve(null); };
-      rec.onend = () => { isListening = false; listeningController = null; };
-      try { rec.start(); } catch { isListening = false; listeningController = null; resolve(null); }
+      
+      rec.onerror = (e) => {
+        console.warn('Recognition error:', e.error);
+        isListening = false;
+        listeningController = null;
+        resolve(null);
+      };
+      
+      rec.onend = () => {
+        isListening = false;
+        listeningController = null;
+      };
+      
+      try {
+        rec.start();
+        
+        // Auto-stop after 8 seconds
+        setTimeout(() => {
+          if (isListening) {
+            stopListening();
+            resolve(null);
+          }
+        }, 8000);
+      } catch (e) {
+        console.error('Recognition start failed:', e);
+        isListening = false;
+        listeningController = null;
+        resolve(null);
+      }
     });
   }
 
-  function stopListening() { try { listeningController?.stop(); } catch {} isListening = false; }
+  function stopListening() {
+    try {
+      listeningController?.stop();
+    } catch (e) {
+      // Silent fail
+    }
+    isListening = false;
+    listeningController = null;
+  }
 
-  function shuffle(arr) { for (let i = arr.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [arr[i], arr[j]] = [arr[j], arr[i]]; } return arr; }
+  function shuffle(arr) {
+    const shuffled = [...arr];
+    for (let i = shuffled.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+    }
+    return shuffled;
+  }
 
   function uniqueWords(arr) {
-    const s = new Set(); const out = [];
+    const seen = new Set();
+    const out = [];
+    
     for (const w of arr) {
       const k = (w || "").trim().toLowerCase();
-      if (k && !s.has(k)) { s.add(k); out.push(w.trim()); }
+      if (k && !seen.has(k)) {
+        seen.add(k);
+        out.push(w.trim());
+      }
     }
+    
     return out;
+  }
+
+  function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
   }
 
   /* ==================== FIREBASE INIT ==================== */
   async function initFirebase() {
-    try { app = firebase.app(); } catch { app = firebase.initializeApp(window.SRP_CONFIG); }
+    try {
+      // Try to get existing app first
+      app = firebase.app();
+      log('Using existing Firebase app');
+    } catch (e) {
+      // Initialize new app
+      if (!window.SRP_CONFIG) {
+        throw new Error('Firebase configuration not found');
+      }
+      
+      app = firebase.initializeApp(window.SRP_CONFIG);
+      log('Initialized new Firebase app');
+    }
+    
     auth = firebase.auth();
     db = firebase.firestore();
-    analytics = firebase.analytics ? firebase.analytics() : null;
+    
+    // Initialize analytics if available
+    if (firebase.analytics) {
+      analytics = firebase.analytics();
+      log('Analytics initialized');
+    }
+    
+    // Configure persistence
+    try {
+      await db.enablePersistence({ synchronizeTabs: true });
+      log('Firestore persistence enabled');
+    } catch (e) {
+      warn('Persistence failed:', e);
+    }
   }
-  function track(eventName, params = {}) { try { analytics?.logEvent?.(eventName, params); } catch {} }
+
+  function track(eventName, params = {}) {
+    try {
+      analytics?.logEvent?.(eventName, {
+        ...params,
+        timestamp: nowISO(),
+        uid: currentUser?.uid || 'anonymous',
+        premium: premiumUser
+      });
+    } catch (e) {
+      // Silent fail for analytics
+    }
+  }
 
   /* ==================== UI TEMPLATES ==================== */
   function premiumHeaderHTML() {
     return `
       <div class="toolbar">
         <div class="toolbar-left">
-          <button id="logout-btn" class="btn danger small"><i class="fa fa-sign-out-alt"></i> Logout</button>
+          <button id="logout-btn" class="btn danger small" aria-label="Logout">
+            <i class="fa fa-sign-out-alt"></i> Logout
+          </button>
         </div>
         <div class="toolbar-right">
-          <label class="toggle"><input type="checkbox" id="mode-toggle" /><span>Test Mode</span></label>
+          <label class="toggle" style="display:flex;align-items:center;gap:8px">
+            <input type="checkbox" id="mode-toggle" aria-label="Toggle test mode" />
+            <span>Test Mode</span>
+          </label>
         </div>
       </div>
       <div class="input-group">
-        <select id="exam-type" class="form-control">
+        <select id="exam-type" class="form-control" aria-label="Select exam type">
           <option value="OET">OET Spelling</option>
           <option value="Bee">Spelling Bee (Voice)</option>
           <option value="School">School Lists</option>
         </select>
-        <select id="accent-select" class="form-control" style="max-width:150px;">
+        <select id="accent-select" class="form-control" aria-label="Select accent" style="max-width:150px;">
           <option value="en-US">American English</option>
           <option value="en-GB">British English</option>
           <option value="en-AU">Australian English</option>
         </select>
-        <button id="shuffle-btn" class="btn outline"><i class="fa fa-random"></i> Shuffle</button>
-        <button id="repeat-btn" class="btn outline"><i class="fa fa-volume-up"></i> Repeat</button>
-        <button id="flag-btn" class="btn"><i class="fa fa-flag"></i> Flag</button>
+        <button id="shuffle-btn" class="btn outline" aria-label="Shuffle words">
+          <i class="fa fa-random"></i> Shuffle
+        </button>
+        <button id="repeat-btn" class="btn outline" aria-label="Repeat word">
+          <i class="fa fa-volume-up"></i> Repeat
+        </button>
+        <button id="flag-btn" class="btn" aria-label="Flag current word">
+          <i class="fa fa-flag"></i> Flag
+        </button>
       </div>`;
   }
 
   function premiumBodyHTML() {
     return `
-      <div class="row">
+      <div class="row" style="display:grid;grid-template-columns:1fr 1fr;gap:2rem;">
         <div class="col">
-          <h2 id="app-title" class="card-title">Premium</h2>
-          <div class="muted" style="margin:4px 0 14px;"><p>Unlock OET, Bee, School lists, history & more.</p></div>
-          <div id="word-audio" class="muted"></div>
-          <div class="input-row">
-            <input id="answer-input" type="text" class="form-control" placeholder="Type the spelling and press Enter" autocomplete="off"/>
-            <button id="submit-btn" class="btn success">Submit</button>
-            <button id="skip-btn" class="btn">Skip</button>
+          <h2 id="app-title" class="card-title">Premium Trainer</h2>
+          <div class="muted" style="margin:4px 0 14px;">
+            <p>Unlock OET, Bee, School lists, history & more.</p>
+          </div>
+          
+          <div id="word-audio" class="word-audio-feedback">
+            <i class="fas fa-volume-up"></i>
+            <span>Listen to the word...</span>
+          </div>
+          
+          <div class="input-row" style="display:flex;gap:0.75rem;margin:1rem 0;">
+            <div class="input-wrapper" style="flex:1">
+              <input id="answer-input" type="text" class="form-control" 
+                     placeholder="Type the spelling and press Enter" 
+                     autocomplete="off" aria-label="Type your answer"/>
+              <div id="real-time-feedback" class="real-time-feedback"></div>
+            </div>
+            <button id="submit-btn" class="btn success" aria-label="Submit answer">
+              <i class="fas fa-check"></i> Submit
+            </button>
+            <button id="skip-btn" class="btn" aria-label="Skip word">
+              <i class="fas fa-forward"></i> Skip
+            </button>
+          </div>
+
+          <div class="word-progress">
+            <i class="fas fa-list-ol"></i>
+            Progress: <span id="progress-text">0 / 0</span>
           </div>
         </div>
+        
         <div class="col">
           <div class="card">
-            <h3 class="card-title">Controls</h3>
-            <div class="controls-grid">
-              <label>Accent</label>
+            <h3 class="card-title"><i class="fas fa-cog"></i> Controls</h3>
+            <div class="controls-grid" style="display:grid;grid-template-columns:auto 1fr;gap:0.75rem;align-items:center">
+              <label for="accent-select-secondary">Accent</label>
               <select id="accent-select-secondary" class="form-control">
                 <option value="en-US">American English</option>
                 <option value="en-GB">British English</option>
                 <option value="en-AU">Australian English</option>
               </select>
-              <label>Mode</label>
+              
+              <label for="mode-select">Mode</label>
               <select id="mode-select" class="form-control">
                 <option value="practice">Practice</option>
                 <option value="test">Test</option>
               </select>
+              
               <label>Session</label>
-              <div id="progress-meta">0 / 0</div>
-              <div id="score-meta">Score: 0</div>
+              <div id="progress-meta" style="font-weight:600">0 / 0</div>
+              
+              <label>Score</label>
+              <div id="score-meta" style="font-weight:600;color:var(--success)">0</div>
             </div>
           </div>
+          
           <div class="card" id="custom-upload-card">
-            <h3 class="card-title">School List Upload</h3>
-            <p class="muted">Upload .txt or .json with one word per line (Premium only).</p>
-            <input type="file" id="file-upload" accept=".txt,.json,.docx,.pdf"/>
+            <h3 class="card-title"><i class="fas fa-upload"></i> Custom Lists</h3>
+            <p class="muted">Upload .txt, .json, .docx or .pdf files with one word per line.</p>
+            <input type="file" id="file-upload" accept=".txt,.json,.docx,.pdf" 
+                   aria-label="Upload word list" style="margin:0.5rem 0"/>
+            <div id="upload-status" class="muted" style="font-size:0.8rem"></div>
           </div>
         </div>
       </div>`;
@@ -179,60 +420,643 @@
   function summaryHTML() {
     return `
       <div class="card">
-        <h3 class="card-title">Session Summary</h3>
-        <div id="summary-stats"></div>
-        <div id="flagged-list"></div>
-        <div style="margin-top:10px;">
-          <button id="retry-flagged" class="btn outline">Retry Flagged</button>
-          <button id="retry-wrong" class="btn outline">Retry Wrong</button>
-          <button id="new-session" class="btn primary">New Session</button>
+        <h3 class="card-title"><i class="fas fa-chart-bar"></i> Session Summary</h3>
+        <div id="summary-stats" style="margin:1rem 0"></div>
+        <div id="flagged-list" style="margin:1rem 0"></div>
+        <div style="margin-top:1.5rem;display:flex;gap:0.75rem;flex-wrap:wrap">
+          <button id="retry-flagged" class="btn outline">
+            <i class="fas fa-redo"></i> Retry Flagged
+          </button>
+          <button id="retry-wrong" class="btn outline">
+            <i class="fas fa-bolt"></i> Retry Wrong
+          </button>
+          <button id="new-session" class="btn primary">
+            <i class="fas fa-plus"></i> New Session
+          </button>
         </div>
       </div>`;
   }
 
   /* ==================== DOM BUILD ==================== */
   function buildUI() {
+    if (!examUIRoot) {
+      error('examUIRoot not found');
+      return;
+    }
+    
     examUIRoot.innerHTML = premiumHeaderHTML() + premiumBodyHTML();
     appTitle = $("#app-title");
-    trainerArea.innerHTML = "";
+    trainerArea = $("#trainer-area");
+    summaryArea = $("#summary-area");
+    
+    if (!summaryArea) {
+      error('summaryArea not found');
+      return;
+    }
+    
     summaryArea.innerHTML = summaryHTML();
+    
+    // Hide ads for premium users
+    document.querySelectorAll('.ad-container').forEach(ad => {
+      ad.style.display = 'none';
+    });
   }
 
   /* ==================== DATA LOADING ==================== */
-  async function loadOET() { try { const res = await fetch("/oet.json", { cache: "no-cache" }); const data = await res.json(); return uniqueWords(data?.words || []); } catch { return []; } }
-  async function loadBee() { try { const res = await fetch("/spelling-bee.json", { cache: "no-cache" }); const data = await res.json(); return uniqueWords(data?.words || []); } catch { return []; } }
-  async function loadSchoolFromUpload(file) { try { const text = await file.text(); if (file.name.endsWith(".json")) { const parsed = JSON.parse(text); if (Array.isArray(parsed?.words)) return uniqueWords(parsed.words); } return uniqueWords(text.split(/\r?\n/).map(l => l.trim()).filter(Boolean)); } catch { return []; } }
+  async function loadOET() {
+    try {
+      showGlobalLoading('Loading OET words...');
+      const res = await fetch("/data/word-lists/oet.json", { 
+        cache: "no-cache",
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      
+      const data = await res.json();
+      const words = uniqueWords(data?.words || []);
+      
+      log(`Loaded ${words.length} OET words`);
+      return words;
+    } catch (e) {
+      error('OET load failed:', e);
+      showAlert('Failed to load OET words. Using fallback list.', 'error');
+      
+      // Fallback words
+      return uniqueWords([
+        'abdominal', 'biopsy', 'cardiac', 'diagnosis', 'epidural',
+        'fracture', 'gastric', 'hemorrhage', 'intravenous', 'jaundice'
+      ]);
+    } finally {
+      hideGlobalLoading();
+    }
+  }
 
-  /* ==================== TRAINER ==================== */
-  function resetSession() { words=[];originalWords=[];flaggedWords.clear();correctCount=0;wrongCount=0;totalAsked=0;currentIndex=0;stopSpeaking();stopListening();$("#answer-input")?.focus();updateMeta(0,0); }
-  function updateMeta(cur,total){$("#progress-meta").textContent=`${cur} / ${total}`;$("#score-meta").textContent=`Score: ${correctCount}`;}
-  function showWord(word){$("#word-audio").textContent=`🔊 ${word}`;speak(word);}
-  function askNext(){if(currentIndex>=words.length)return endSession();showWord(words[currentIndex]);}
-  function submitAnswer(val){const input=(val||$("#answer-input")?.value||"").trim();const correct=(words[currentIndex]||"").trim();totalAsked++;if(input.toLowerCase()===correct.toLowerCase()){correctCount++;currentIndex++;}else{wrongCount++;currentIndex++;}updateMeta(currentIndex,words.length);askNext();}
-  function endSession(){trainerArea.innerHTML="";$("#summary-stats").innerHTML=`<p>Words attempted:<strong>${totalAsked}</strong></p><p>Correct:<strong>${correctCount}</strong></p><p>Wrong:<strong>${wrongCount}</strong></p>`;const fl=Array.from(flaggedWords);$("#flagged-list").innerHTML=fl.length?`<p>Flagged words:</p><ul>${fl.map(w=>`<li>${w}</li>`).join("")}</ul>`:`<p>No flagged words this session.</p>`;summaryArea.classList.remove("hidden");track("session_end",{mode:sessionMode,examType,totalAsked,correctCount,wrongCount,at:nowISO()});}
+  async function loadBee() {
+    try {
+      showGlobalLoading('Loading spelling bee words...');
+      const res = await fetch("/data/word-lists/spelling-bee.json", { 
+        cache: "no-cache" 
+      });
+      
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      
+      const data = await res.json();
+      const words = uniqueWords(data?.words || []);
+      
+      log(`Loaded ${words.length} spelling bee words`);
+      return words;
+    } catch (e) {
+      error('Bee load failed:', e);
+      showAlert('Failed to load spelling bee words. Using fallback list.', 'error');
+      
+      return uniqueWords([
+        'accommodate', 'belligerent', 'conscience', 'dilemma', 'embarrass',
+        'fluorescent', 'guarantee', 'harass', 'ignorance', 'jeopardy'
+      ]);
+    } finally {
+      hideGlobalLoading();
+    }
+  }
 
-  function onFlag(){const w=words[currentIndex];if(w) flaggedWords.add(w); }
-  function onShuffle(){words=shuffle(words);currentIndex=0;updateMeta(0,words.length);askNext();}
-  function setAccent(a){accent=a;ttsVoice=selectVoice(accent);}
+  async function loadSchoolFromUpload(file) {
+    try {
+      showGlobalLoading('Processing your word list...');
+      
+      const text = await file.text();
+      let wordList = [];
+      
+      if (file.name.endsWith(".json")) {
+        const parsed = JSON.parse(text);
+        wordList = Array.isArray(parsed?.words) ? parsed.words : parsed;
+      } else {
+        // Handle text files with various delimiters
+        wordList = text.split(/\r?\n|,|;|\t/).map(l => l.trim()).filter(Boolean);
+      }
+      
+      const unique = uniqueWords(wordList);
+      log(`Processed ${unique.length} words from upload`);
+      showAlert(`Successfully loaded ${unique.length} words from ${file.name}`, 'success');
+      
+      return unique;
+    } catch (e) {
+      error('File upload processing failed:', e);
+      showAlert('Failed to process the uploaded file. Please check the format.', 'error');
+      return [];
+    } finally {
+      hideGlobalLoading();
+    }
+  }
+
+  /* ==================== TRAINER FUNCTIONS ==================== */
+  function resetSession() {
+    words = [];
+    originalWords = [];
+    flaggedWords.clear();
+    correctCount = 0;
+    wrongCount = 0;
+    totalAsked = 0;
+    currentIndex = 0;
+    
+    stopSpeaking();
+    stopListening();
+    
+    $("#answer-input")?.focus();
+    updateMeta(0, 0);
+  }
+
+  function updateMeta(current, total) {
+    const progress = $("#progress-meta");
+    const score = $("#score-meta");
+    const progressText = $("#progress-text");
+    
+    if (progress) progress.textContent = `${current} / ${total}`;
+    if (score) score.textContent = `Score: ${correctCount}`;
+    if (progressText) progressText.textContent = `${current} / ${total}`;
+  }
+
+  function showWord(word) {
+    const wordAudio = $("#word-audio");
+    if (wordAudio) {
+      wordAudio.innerHTML = `<i class="fas fa-volume-up"></i> 🔊 ${escapeHtml(word)}`;
+    }
+    
+    speak(word);
+  }
+
+  function askNext() {
+    if (currentIndex >= words.length) {
+      endSession();
+      return;
+    }
+    
+    showWord(words[currentIndex]);
+    
+    // Focus input
+    const input = $("#answer-input");
+    if (input) {
+      input.value = '';
+      input.focus();
+    }
+  }
+
+  function submitAnswer(val) {
+    const input = $("#answer-input");
+    const userAnswer = (val || (input?.value || "")).trim();
+    const correctAnswer = (words[currentIndex] || "").trim();
+    
+    if (!userAnswer) {
+      showAlert('Please enter an answer before submitting.', 'error', 3000);
+      return;
+    }
+    
+    totalAsked++;
+    
+    if (userAnswer.toLowerCase() === correctAnswer.toLowerCase()) {
+      correctCount++;
+      showAlert('✅ Correct!', 'success', 2000);
+    } else {
+      wrongCount++;
+      showAlert(`❌ Incorrect. Correct: ${correctAnswer}`, 'error', 4000);
+    }
+    
+    currentIndex++;
+    updateMeta(currentIndex, words.length);
+    
+    // Auto-advance after short delay
+    setTimeout(askNext, 1000);
+  }
+
+  function endSession() {
+    if (!trainerArea || !summaryArea) return;
+    
+    trainerArea.innerHTML = "";
+    
+    const stats = $("#summary-stats");
+    if (stats) {
+      stats.innerHTML = `
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;text-align:center">
+          <div>
+            <div style="font-size:0.9rem;color:var(--gray)">Words Attempted</div>
+            <div style="font-size:2rem;font-weight:bold;color:var(--primary)">${totalAsked}</div>
+          </div>
+          <div>
+            <div style="font-size:0.9rem;color:var(--gray)">Correct</div>
+            <div style="font-size:2rem;font-weight:bold;color:var(--success)">${correctCount}</div>
+          </div>
+          <div>
+            <div style="font-size:0.9rem;color:var(--gray)">Accuracy</div>
+            <div style="font-size:2rem;font-weight:bold;color:var(--${totalAsked ? (correctCount/totalAsked >= 0.7 ? 'success' : 'warning') : 'gray'})">
+              ${totalAsked ? Math.round((correctCount / totalAsked) * 100) : 0}%
+            </div>
+          </div>
+        </div>
+      `;
+    }
+    
+    const flagged = $("#flagged-list");
+    if (flagged) {
+      const flaggedArray = Array.from(flaggedWords);
+      flagged.innerHTML = flaggedArray.length ? `
+        <div style="margin-top:1rem">
+          <h4 style="margin-bottom:0.5rem"><i class="fas fa-flag"></i> Flagged Words</h4>
+          <div class="word-list">
+            ${flaggedArray.map(w => `<div class="word-item">${escapeHtml(w)}</div>`).join('')}
+          </div>
+        </div>
+      ` : `<p style="color:var(--gray);text-align:center">No words were flagged this session.</p>`;
+    }
+    
+    summaryArea.classList.remove("hidden");
+    
+    track("session_end", {
+      mode: sessionMode,
+      examType: examType,
+      totalAsked: totalAsked,
+      correctCount: correctCount,
+      wrongCount: wrongCount,
+      flaggedCount: flaggedWords.size,
+      accuracy: totalAsked ? (correctCount / totalAsked) : 0
+    });
+  }
+
+  function onFlag() {
+    const word = words[currentIndex];
+    if (word) {
+      if (flaggedWords.has(word)) {
+        flaggedWords.delete(word);
+        showAlert('Word unflagged', 'success', 2000);
+      } else {
+        flaggedWords.add(word);
+        showAlert('Word flagged for review', 'success', 2000);
+      }
+    }
+  }
+
+  function onShuffle() {
+    words = shuffle(words);
+    currentIndex = 0;
+    updateMeta(0, words.length);
+    askNext();
+  }
+
+  function setAccent(newAccent) {
+    accent = newAccent;
+    ttsVoice = selectVoice(accent);
+    
+    // Update both select elements
+    $all('#accent-select, #accent-select-secondary').forEach(select => {
+      if (select) select.value = newAccent;
+    });
+    
+    showAlert(`Accent set to ${newAccent}`, 'success', 2000);
+  }
 
   /* ==================== START MODES ==================== */
-  async function startOETPractice(){resetSession();appTitle.textContent="OET Spelling Practice";words=await loadOET();originalWords=words.slice();updateMeta(0,words.length);askNext();}
-  async function startBeePractice(){resetSession();appTitle.textContent="Spelling Bee Practice";words=await loadBee();originalWords=words.slice();updateMeta(0,words.length);askNext();}
-  function startSchoolPractice(){resetSession();appTitle.textContent="School Spelling Practice";const f=$("#file-upload");if(!f?.files?.[0]){trainerArea.innerHTML=`<div class="muted">Upload a list with <strong>School List Upload</strong>.</div>`;return;} (async()=>{words=await loadSchoolFromUpload(f.files[0]);originalWords=words.slice();updateMeta(0,words.length);askNext();})();}
+  async function startOETPractice() {
+    resetSession();
+    if (appTitle) appTitle.textContent = "OET Spelling Practice";
+    
+    const loadedWords = await loadOET();
+    words = loadedWords;
+    originalWords = words.slice();
+    
+    updateMeta(0, words.length);
+    askNext();
+    
+    track("session_start", { type: "OET", mode: sessionMode, wordCount: words.length });
+  }
+
+  async function startBeePractice() {
+    resetSession();
+    if (appTitle) appTitle.textContent = "Spelling Bee Practice";
+    
+    const loadedWords = await loadBee();
+    words = loadedWords;
+    originalWords = words.slice();
+    
+    updateMeta(0, words.length);
+    askNext();
+    
+    track("session_start", { type: "Bee", mode: sessionMode, wordCount: words.length });
+  }
+
+  function startSchoolPractice() {
+    resetSession();
+    if (appTitle) appTitle.textContent = "School Spelling Practice";
+    
+    const fileInput = $("#file-upload");
+    if (!fileInput?.files?.[0]) {
+      if (trainerArea) {
+        trainerArea.innerHTML = `
+          <div class="empty-state">
+            <i class="fas fa-upload"></i>
+            <h3>No File Selected</h3>
+            <p>Please upload a word list using the file uploader on the right.</p>
+            <button class="btn primary" onclick="document.getElementById('file-upload').click()">
+              <i class="fas fa-file-upload"></i> Choose File
+            </button>
+          </div>
+        `;
+      }
+      return;
+    }
+    
+    (async () => {
+      const loadedWords = await loadSchoolFromUpload(fileInput.files[0]);
+      if (loadedWords.length === 0) return;
+      
+      words = loadedWords;
+      originalWords = words.slice();
+      updateMeta(0, words.length);
+      askNext();
+      
+      track("session_start", { type: "School", mode: sessionMode, wordCount: words.length });
+    })();
+  }
 
   /* ==================== WIRING ==================== */
-  function wireUI(){const examTypeSel=$("#exam-type");$("#submit-btn")?.addEventListener("click",()=>submitAnswer());$("#skip-btn")?.addEventListener("click",()=>{currentIndex++;updateMeta(currentIndex,words.length);askNext();});$("#repeat-btn")?.addEventListener("click",()=>{const w=words[currentIndex];if(w) speak(w);});$("#shuffle-btn")?.addEventListener("click",onShuffle);$("#flag-btn")?.addEventListener("click",onFlag);$("#retry-flagged")?.addEventListener("click",()=>{const list=Array.from(flaggedWords);if(!list.length)return;words=list.slice();currentIndex=0;correctCount=wrongCount=totalAsked=0;updateMeta(0,words.length);askNext();});$("#retry-wrong")?.addEventListener("click",()=>{const wrong=originalWords.filter(w=>!flaggedWords.has(w));if(!wrong.length)return;words=wrong.slice();currentIndex=0;correctCount=wrongCount=totalAsked=0;updateMeta(0,words.length);askNext();});$("#new-session")?.addEventListener("click",()=>{if(examType==="OET")startOETPractice();else if(examType==="Bee")startBeePractice();else startSchoolPractice();});examTypeSel?.addEventListener("change",(e)=>{examType=e.target.value;if(examType==="OET")startOETPractice();else if(examType==="Bee")startBeePractice();else startSchoolPractice();});$("#accent-select")?.addEventListener("change",(e)=>setAccent(e.target.value));$("#accent-select-secondary")?.addEventListener("change",(e)=>setAccent(e.target.value));}
+  function wireUI() {
+    // Answer submission
+    $("#submit-btn")?.addEventListener("click", () => submitAnswer());
+    
+    // Skip functionality
+    $("#skip-btn")?.addEventListener("click", () => {
+      currentIndex++;
+      updateMeta(currentIndex, words.length);
+      askNext();
+    });
+    
+    // Word repetition
+    $("#repeat-btn")?.addEventListener("click", () => {
+      const word = words[currentIndex];
+      if (word) speak(word);
+    });
+    
+    // Shuffle words
+    $("#shuffle-btn")?.addEventListener("click", onShuffle);
+    
+    // Flag word
+    $("#flag-btn")?.addEventListener("click", onFlag);
+    
+    // Retry flagged words
+    $("#retry-flagged")?.addEventListener("click", () => {
+      const list = Array.from(flaggedWords);
+      if (!list.length) {
+        showAlert('No flagged words to retry', 'error', 3000);
+        return;
+      }
+      
+      words = list.slice();
+      currentIndex = 0;
+      correctCount = wrongCount = totalAsked = 0;
+      updateMeta(0, words.length);
+      askNext();
+    });
+    
+    // Retry wrong answers (simplified)
+    $("#retry-wrong")?.addEventListener("click", () => {
+      if (!originalWords.length) {
+        showAlert('No session data available', 'error', 3000);
+        return;
+      }
+      
+      words = shuffle(originalWords.slice());
+      currentIndex = 0;
+      correctCount = wrongCount = totalAsked = 0;
+      updateMeta(0, words.length);
+      askNext();
+    });
+    
+    // New session
+    $("#new-session")?.addEventListener("click", () => {
+      if (examType === "OET") startOETPractice();
+      else if (examType === "Bee") startBeePractice();
+      else startSchoolPractice();
+    });
+    
+    // Exam type change
+    const examTypeSel = $("#exam-type");
+    examTypeSel?.addEventListener("change", (e) => {
+      examType = e.target.value;
+      if (examType === "OET") startOETPractice();
+      else if (examType === "Bee") startBeePractice();
+      else startSchoolPractice();
+    });
+    
+    // Accent changes
+    $("#accent-select")?.addEventListener("change", (e) => setAccent(e.target.value));
+    $("#accent-select-secondary")?.addEventListener("change", (e) => setAccent(e.target.value));
+    
+    // Mode toggle
+    const modeToggle = $("#mode-toggle");
+    modeToggle?.addEventListener("change", (e) => {
+      sessionMode = e.target.checked ? "test" : "practice";
+      showAlert(`Switched to ${sessionMode} mode`, 'success', 2000);
+    });
+    
+    // File upload
+    const fileUpload = $("#file-upload");
+    fileUpload?.addEventListener("change", (e) => {
+      const file = e.target.files?.[0];
+      const status = $("#upload-status");
+      
+      if (file && status) {
+        status.textContent = `Selected: ${file.name} (${(file.size / 1024).toFixed(1)}KB)`;
+        status.style.color = "var(--success)";
+      }
+    });
+    
+    // Enter key support
+    const answerInput = $("#answer-input");
+    answerInput?.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") {
+        submitAnswer();
+      }
+    });
+    
+    // Real-time input feedback
+    answerInput?.addEventListener("input", (e) => {
+      const feedback = $("#real-time-feedback");
+      if (!feedback) return;
+      
+      const input = e.target.value.trim();
+      if (!input) {
+        feedback.innerHTML = '';
+        return;
+      }
+      
+      // Simple length-based feedback
+      const currentWord = words[currentIndex];
+      if (currentWord) {
+        if (input.length === currentWord.length) {
+          feedback.innerHTML = '<i class="fas fa-check correct-feedback"></i>';
+        } else if (input.length > currentWord.length) {
+          feedback.innerHTML = '<i class="fas fa-exclamation-triangle incorrect-feedback"></i>';
+        } else {
+          feedback.innerHTML = '';
+        }
+      }
+    });
+  }
 
   /* ==================== AUTH ==================== */
-  async function signOut(){try{await auth.signOut();location.href="/";}catch(e){warn(e);}}
-  function drawSignedIn(user){currentUser=user;premiumUser=true;appTitle=$("#app-title");examUIRoot=$("#exam-ui");trainerArea=$("#trainer-area");summaryArea=$("#summary-area");buildUI();wireUI();ttsVoice=selectVoice(accent);startOETPractice();track("login_success",{uid:user.uid,at:nowISO()});}
-  function drawSignedOut(){location.href="/";}
+  async function signOut() {
+    try {
+      showGlobalLoading('Signing out...');
+      await auth.signOut();
+      window.location.href = "/";
+    } catch (e) {
+      error('Sign out failed:', e);
+      showAlert('Sign out failed. Please try again.', 'error');
+      hideGlobalLoading();
+    }
+  }
+
+  function drawSignedIn(user) {
+    currentUser = user;
+    premiumUser = true; // Assume premium for now
+    
+    // Get DOM elements
+    appTitle = $("#app-title");
+    examUIRoot = $("#exam-ui");
+    trainerArea = $("#trainer-area");
+    summaryArea = $("#summary-area");
+    
+    if (!examUIRoot || !trainerArea || !summaryArea) {
+      error('Required DOM elements not found');
+      showAlert('UI initialization failed. Please refresh the page.', 'error');
+      return;
+    }
+    
+    // Build UI
+    buildUI();
+    wireUI();
+    
+    // Initialize TTS voice
+    ttsVoice = selectVoice(accent);
+    
+    // Start with OET practice
+    startOETPractice();
+    
+    // Show success message
+    showAlert(`Welcome back, ${user.email}! Premium features activated.`, 'success');
+    
+    track("login_success", { uid: user.uid, email: user.email });
+    
+    // Hide auth area and show premium app
+    const authArea = $("#auth-area");
+    const premiumApp = $("#premium-app");
+    
+    if (authArea) authArea.style.display = 'none';
+    if (premiumApp) premiumApp.classList.remove('hidden');
+  }
+
+  function drawSignedOut() {
+    window.location.href = "/";
+  }
 
   /* ==================== PROMO ==================== */
-  function setupPromoUI(){const note=$("#promo-note");const code=$("#premium-code");const countdown=$("#premium-countdown");const strikeM=$("#price-monthly-strike");const strikeA=$("#price-annual-strike");const discM=$("#price-monthly-discount");const discA=$("#price-annual-discount");if(window.PROMO?.active()){if(note)note.hidden=false;if(code)code.textContent=window.PROMO.code;function tick(){const left=Math.max(0,window.PROMO.endsAt()-Date.now());const d=Math.floor(left/86400000);const h=Math.floor((left%86400000)/3600000);const m=Math.floor((left%3600000)/60000);const s=Math.floor((left%60000)/1000);countdown.textContent=`${d}d ${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;if(left<=0){if(note)note.hidden=true;strikeM?.classList.add("hidden");strikeA?.classList.add("hidden");discM.textContent="$9";discA.textContent="$7";clearInterval(iv);}}tick();const iv=setInterval(tick,1000);}else{strikeM?.classList.add("hidden");strikeA?.classList.add("hidden");discM.textContent="$9";discA.textContent="$7";}}
-  function upgradeToPremium(){if(window.PROMO?.active()&&window.PROMO.checkoutUrl){location.href=window.PROMO.checkoutUrl;return;}const u=new URL("https://spellrightpro.org/checkout",location.href);if(window.PROMO?.active())u.searchParams.set("promo",window.PROMO.code);location.href=u.toString();}
+  function setupPromoUI() {
+    // Promo logic is handled in the HTML file
+    log('Promo UI setup completed');
+  }
+
+  function upgradeToPremium() {
+    if (window.PROMO?.active() && window.PROMO.checkoutUrl) {
+      window.location.href = window.PROMO.checkoutUrl;
+      return;
+    }
+    
+    const url = new URL("https://spellrightpro.org/checkout", window.location.href);
+    if (window.PROMO?.active()) {
+      url.searchParams.set("promo", window.PROMO.code);
+    }
+    
+    window.location.href = url.toString();
+  }
 
   /* ==================== INIT ==================== */
-  async function initApp(){await initFirebase();auth.onAuthStateChanged(user=>{if(user)drawSignedIn(user);else drawSignedOut();});document.body.addEventListener("click",(e)=>{if(e.target?.id==="logout-btn")signOut();});setupPromoUI();$("#upgrade-btn")?.addEventListener("click",upgradeToPremium);try{window.speechSynthesis.onvoiceschanged=()=>{ttsVoice=selectVoice(accent);};}catch{}}
-  document.addEventListener("DOMContentLoaded", initApp);
+  async function initApp() {
+    if (isInitialized) {
+      log('App already initialized');
+      return;
+    }
+    
+    try {
+      showGlobalLoading('Initializing SpellRightPro Premium...');
+      
+      // Initialize Firebase
+      await initFirebase();
+      log('Firebase initialized successfully');
+      
+      // Set up auth state listener
+      auth.onAuthStateChanged(user => {
+        if (user) {
+          log('User authenticated:', user.email);
+          drawSignedIn(user);
+        } else {
+          log('No user authenticated');
+          drawSignedOut();
+        }
+        hideGlobalLoading();
+      });
+      
+      // Set up global event listeners
+      document.body.addEventListener("click", (e) => {
+        if (e.target?.id === "logout-btn") {
+          e.preventDefault();
+          signOut();
+        }
+      });
+      
+      // Set up promo UI
+      setupPromoUI();
+      
+      // Set up upgrade button
+      $("#upgrade-btn")?.addEventListener("click", upgradeToPremium);
+      
+      // Voice loading
+      try {
+        window.speechSynthesis.onvoiceschanged = () => {
+          ttsVoice = selectVoice(accent);
+          log('Voices loaded, selected:', ttsVoice?.name);
+        };
+      } catch (e) {
+        warn('Voice loading failed:', e);
+      }
+      
+      isInitialized = true;
+      log('SpellRightPro Premium initialized successfully');
+      
+    } catch (error) {
+      console.error('Initialization failed:', error);
+      showAlert('Failed to initialize the app. Please refresh the page.', 'error');
+      hideGlobalLoading();
+    }
+  }
+
+  // Start the app when DOM is ready
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initApp);
+  } else {
+    initApp();
+  }
+
+  // Global error handler
+  window.addEventListener('error', (event) => {
+    console.error('Global error caught:', event.error);
+    showAlert('An unexpected error occurred. Please refresh the page.', 'error');
+  });
+
+  // Export functions for global access
+  window.SpellRightPro = {
+    startOETPractice,
+    startBeePractice,
+    startSchoolPractice,
+    signOut,
+    track
+  };
 })();
