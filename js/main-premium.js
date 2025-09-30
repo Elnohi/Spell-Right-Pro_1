@@ -82,6 +82,148 @@
     }
   }
 
+  /* ==================== FIREBASE INIT ==================== */
+  async function initFirebase() {
+    try {
+      // Try to get existing app first
+      const apps = firebase.apps;
+      if (apps.length > 0) {
+        app = apps[0];
+        log('Using existing Firebase app');
+      } else {
+        // Initialize new app
+        if (!window.SRP_CONFIG) {
+          throw new Error('Firebase configuration not found');
+        }
+        
+        app = firebase.initializeApp(window.SRP_CONFIG);
+        log('Initialized new Firebase app');
+      }
+      
+      auth = firebase.auth();
+      db = firebase.firestore();
+      
+      // Initialize analytics if available
+      if (firebase.analytics) {
+        analytics = firebase.analytics();
+        log('Analytics initialized');
+      }
+      
+      // Configure persistence
+      try {
+        await db.enablePersistence({ synchronizeTabs: true });
+        log('Firestore persistence enabled');
+      } catch (e) {
+        warn('Persistence failed:', e);
+      }
+    } catch (e) {
+      error('Firebase initialization failed:', e);
+      throw e;
+    }
+  }
+
+  function track(eventName, params = {}) {
+    try {
+      analytics?.logEvent?.(eventName, {
+        ...params,
+        timestamp: nowISO(),
+        uid: currentUser?.uid || 'anonymous',
+        premium: premiumUser
+      });
+    } catch (e) {
+      // Silent fail for analytics
+    }
+  }
+
+  /* ==================== AUTH MANAGEMENT ==================== */
+  async function checkPremiumStatus(user) {
+    try {
+      if (!user) return false;
+      
+      // For now, assume all authenticated users are premium
+      // In a real app, you would check Firestore or a premium claims
+      return true;
+      
+      // Example of real premium check:
+      // const userDoc = await db.collection('users').doc(user.uid).get();
+      // return userDoc.exists && userDoc.data().premium === true;
+    } catch (e) {
+      error('Premium check failed:', e);
+      return false;
+    }
+  }
+
+  async function signOut() {
+    try {
+      showGlobalLoading('Signing out...');
+      await auth.signOut();
+      // Don't redirect immediately, let the auth state change handle it
+    } catch (e) {
+      error('Sign out failed:', e);
+      showAlert('Sign out failed. Please try again.', 'error');
+      hideGlobalLoading();
+    }
+  }
+
+  function drawSignedIn(user) {
+    currentUser = user;
+    
+    // Check premium status
+    checkPremiumStatus(user).then(isPremium => {
+      premiumUser = isPremium;
+      
+      if (!isPremium) {
+        showAlert('Premium access required. Redirecting...', 'error', 3000);
+        setTimeout(() => {
+          window.location.href = "/premium.html?upgrade=true";
+        }, 3000);
+        return;
+      }
+      
+      // Get DOM elements
+      appTitle = $("#app-title");
+      examUIRoot = $("#exam-ui");
+      trainerArea = $("#trainer-area");
+      summaryArea = $("#summary-area");
+      
+      if (!examUIRoot || !trainerArea || !summaryArea) {
+        error('Required DOM elements not found');
+        showAlert('UI initialization failed. Please refresh the page.', 'error');
+        return;
+      }
+      
+      // Build UI
+      buildUI();
+      wireUI();
+      
+      // Initialize TTS voice
+      initTTS();
+      
+      // Start with OET practice
+      startOETPractice();
+      
+      // Show success message
+      showAlert(`Welcome to SpellRightPro Premium, ${user.email || 'User'}!`, 'success');
+      
+      // Hide auth area and show premium app
+      const authArea = $("#auth-area");
+      const premiumApp = $("#premium-app");
+      
+      if (authArea) authArea.style.display = 'none';
+      if (premiumApp) premiumApp.classList.remove('hidden');
+      
+      track("premium_access_granted", { uid: user.uid, email: user.email });
+    });
+  }
+
+  function drawSignedOut() {
+    // Only redirect if we're not already on the index page
+    if (!window.location.pathname.includes('index.html')) {
+      window.location.href = "/index.html";
+    }
+  }
+
+  /* ==================== TTS & RECOGNITION ==================== */
   function selectVoice(accent) {
     try {
       const voices = speechSynthesis.getVoices() || [];
@@ -101,6 +243,22 @@
     } catch (e) {
       console.warn('Voice selection failed:', e);
       return null;
+    }
+  }
+
+  function initTTS() {
+    try {
+      ttsVoice = selectVoice(accent);
+      
+      // Set up voice change listener
+      if (speechSynthesis.onvoiceschanged !== undefined) {
+        speechSynthesis.onvoiceschanged = () => {
+          ttsVoice = selectVoice(accent);
+          log('Voices updated, selected:', ttsVoice?.name);
+        };
+      }
+    } catch (e) {
+      warn('TTS initialization failed:', e);
     }
   }
 
@@ -149,162 +307,6 @@
       // Silent fail
     }
     isSpeaking = false;
-  }
-
-  function createRecognition() {
-    try {
-      const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-      if (!SR) {
-        throw new Error('SpeechRecognition not supported');
-      }
-      
-      const rec = new SR();
-      rec.lang = accent || "en-US";
-      rec.continuous = false;
-      rec.interimResults = false;
-      rec.maxAlternatives = 1;
-      
-      return rec;
-    } catch (e) {
-      console.error('Recognition creation failed:', e);
-      return null;
-    }
-  }
-
-  function startListeningOnce() {
-    return new Promise((resolve) => {
-      const rec = createRecognition();
-      if (!rec) {
-        resolve(null);
-        return;
-      }
-      
-      isListening = true;
-      listeningController = rec;
-      
-      rec.onresult = (e) => {
-        isListening = false;
-        listeningController = null;
-        const result = (e.results?.[0]?.[0]?.transcript || "").trim();
-        resolve(result);
-      };
-      
-      rec.onerror = (e) => {
-        console.warn('Recognition error:', e.error);
-        isListening = false;
-        listeningController = null;
-        resolve(null);
-      };
-      
-      rec.onend = () => {
-        isListening = false;
-        listeningController = null;
-      };
-      
-      try {
-        rec.start();
-        
-        // Auto-stop after 8 seconds
-        setTimeout(() => {
-          if (isListening) {
-            stopListening();
-            resolve(null);
-          }
-        }, 8000);
-      } catch (e) {
-        console.error('Recognition start failed:', e);
-        isListening = false;
-        listeningController = null;
-        resolve(null);
-      }
-    });
-  }
-
-  function stopListening() {
-    try {
-      listeningController?.stop();
-    } catch (e) {
-      // Silent fail
-    }
-    isListening = false;
-    listeningController = null;
-  }
-
-  function shuffle(arr) {
-    const shuffled = [...arr];
-    for (let i = shuffled.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
-    }
-    return shuffled;
-  }
-
-  function uniqueWords(arr) {
-    const seen = new Set();
-    const out = [];
-    
-    for (const w of arr) {
-      const k = (w || "").trim().toLowerCase();
-      if (k && !seen.has(k)) {
-        seen.add(k);
-        out.push(w.trim());
-      }
-    }
-    
-    return out;
-  }
-
-  function escapeHtml(text) {
-    const div = document.createElement('div');
-    div.textContent = text;
-    return div.innerHTML;
-  }
-
-  /* ==================== FIREBASE INIT ==================== */
-  async function initFirebase() {
-    try {
-      // Try to get existing app first
-      app = firebase.app();
-      log('Using existing Firebase app');
-    } catch (e) {
-      // Initialize new app
-      if (!window.SRP_CONFIG) {
-        throw new Error('Firebase configuration not found');
-      }
-      
-      app = firebase.initializeApp(window.SRP_CONFIG);
-      log('Initialized new Firebase app');
-    }
-    
-    auth = firebase.auth();
-    db = firebase.firestore();
-    
-    // Initialize analytics if available
-    if (firebase.analytics) {
-      analytics = firebase.analytics();
-      log('Analytics initialized');
-    }
-    
-    // Configure persistence
-    try {
-      await db.enablePersistence({ synchronizeTabs: true });
-      log('Firestore persistence enabled');
-    } catch (e) {
-      warn('Persistence failed:', e);
-    }
-  }
-
-  function track(eventName, params = {}) {
-    try {
-      analytics?.logEvent?.(eventName, {
-        ...params,
-        timestamp: nowISO(),
-        uid: currentUser?.uid || 'anonymous',
-        premium: premiumUser
-      });
-    } catch (e) {
-      // Silent fail for analytics
-    }
   }
 
   /* ==================== UI TEMPLATES ==================== */
@@ -550,6 +552,36 @@
     }
   }
 
+  function uniqueWords(arr) {
+    const seen = new Set();
+    const out = [];
+    
+    for (const w of arr) {
+      const k = (w || "").trim().toLowerCase();
+      if (k && !seen.has(k)) {
+        seen.add(k);
+        out.push(w.trim());
+      }
+    }
+    
+    return out;
+  }
+
+  function shuffle(arr) {
+    const shuffled = [...arr];
+    for (let i = shuffled.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+    }
+    return shuffled;
+  }
+
+  function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+  }
+
   /* ==================== TRAINER FUNCTIONS ==================== */
   function resetSession() {
     words = [];
@@ -561,7 +593,6 @@
     currentIndex = 0;
     
     stopSpeaking();
-    stopListening();
     
     $("#answer-input")?.focus();
     updateMeta(0, 0);
@@ -866,6 +897,11 @@
       if (file && status) {
         status.textContent = `Selected: ${file.name} (${(file.size / 1024).toFixed(1)}KB)`;
         status.style.color = "var(--success)";
+        
+        // Auto-start school practice if school mode is selected
+        if (examType === "School") {
+          startSchoolPractice();
+        }
       }
     });
     
@@ -900,82 +936,12 @@
         }
       }
     });
-  }
-
-  /* ==================== AUTH ==================== */
-  async function signOut() {
-    try {
-      showGlobalLoading('Signing out...');
-      await auth.signOut();
-      window.location.href = "/";
-    } catch (e) {
-      error('Sign out failed:', e);
-      showAlert('Sign out failed. Please try again.', 'error');
-      hideGlobalLoading();
-    }
-  }
-
-  function drawSignedIn(user) {
-    currentUser = user;
-    premiumUser = true; // Assume premium for now
     
-    // Get DOM elements
-    appTitle = $("#app-title");
-    examUIRoot = $("#exam-ui");
-    trainerArea = $("#trainer-area");
-    summaryArea = $("#summary-area");
-    
-    if (!examUIRoot || !trainerArea || !summaryArea) {
-      error('Required DOM elements not found');
-      showAlert('UI initialization failed. Please refresh the page.', 'error');
-      return;
-    }
-    
-    // Build UI
-    buildUI();
-    wireUI();
-    
-    // Initialize TTS voice
-    ttsVoice = selectVoice(accent);
-    
-    // Start with OET practice
-    startOETPractice();
-    
-    // Show success message
-    showAlert(`Welcome back, ${user.email}! Premium features activated.`, 'success');
-    
-    track("login_success", { uid: user.uid, email: user.email });
-    
-    // Hide auth area and show premium app
-    const authArea = $("#auth-area");
-    const premiumApp = $("#premium-app");
-    
-    if (authArea) authArea.style.display = 'none';
-    if (premiumApp) premiumApp.classList.remove('hidden');
-  }
-
-  function drawSignedOut() {
-    window.location.href = "/";
-  }
-
-  /* ==================== PROMO ==================== */
-  function setupPromoUI() {
-    // Promo logic is handled in the HTML file
-    log('Promo UI setup completed');
-  }
-
-  function upgradeToPremium() {
-    if (window.PROMO?.active() && window.PROMO.checkoutUrl) {
-      window.location.href = window.PROMO.checkoutUrl;
-      return;
-    }
-    
-    const url = new URL("https://spellrightpro.org/checkout", window.location.href);
-    if (window.PROMO?.active()) {
-      url.searchParams.set("promo", window.PROMO.code);
-    }
-    
-    window.location.href = url.toString();
+    // Logout button
+    $("#logout-btn")?.addEventListener("click", (e) => {
+      e.preventDefault();
+      signOut();
+    });
   }
 
   /* ==================== INIT ==================== */
@@ -994,39 +960,19 @@
       
       // Set up auth state listener
       auth.onAuthStateChanged(user => {
+        log('Auth state changed:', user ? 'signed in' : 'signed out');
         if (user) {
-          log('User authenticated:', user.email);
           drawSignedIn(user);
         } else {
-          log('No user authenticated');
           drawSignedOut();
         }
         hideGlobalLoading();
       });
       
-      // Set up global event listeners
-      document.body.addEventListener("click", (e) => {
-        if (e.target?.id === "logout-btn") {
-          e.preventDefault();
-          signOut();
-        }
+      // Set up upgrade button (for non-premium users)
+      $("#upgrade-btn")?.addEventListener("click", () => {
+        window.location.href = "https://spellrightpro.org/checkout";
       });
-      
-      // Set up promo UI
-      setupPromoUI();
-      
-      // Set up upgrade button
-      $("#upgrade-btn")?.addEventListener("click", upgradeToPremium);
-      
-      // Voice loading
-      try {
-        window.speechSynthesis.onvoiceschanged = () => {
-          ttsVoice = selectVoice(accent);
-          log('Voices loaded, selected:', ttsVoice?.name);
-        };
-      } catch (e) {
-        warn('Voice loading failed:', e);
-      }
       
       isInitialized = true;
       log('SpellRightPro Premium initialized successfully');
