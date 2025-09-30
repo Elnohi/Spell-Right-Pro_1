@@ -3,52 +3,78 @@
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>SpellRightPro</title>
+  <title>SpellRightPro - Spelling Practice App</title>
 
   <link rel="icon" href="/assets/logo.png">
   <link rel="stylesheet" href="/css/styles.css"/>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"/>
+  <link rel="preload" href="/css/styles.css" as="style">
+  <link rel="preload" href="/js/promo.js" as="script">
 
   <style>
     :root{ --primary:#4361ee; --text:#222; --border:#e6e8eb; --surface:#fff; --promo:#0f9d58; }
     *{box-sizing:border-box}
     body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;background:#fafbfc;color:var(--text)}
-    .nav{display:flex;justify-content:space-between;align-items:center;padding:14px 18px;background:#fff;border-bottom:1px solid var(--border)}
-    .brand{display:flex;gap:10px;align-items:center}
+    .nav{display:flex;justify-content:space-between;align-items:center;padding:14px 18px;background:#fff;border-bottom:1px solid var(--border);position:sticky;top:0;z-index:1000;backdrop-filter:blur(10px)}
+    .brand{display:flex;gap:10px;align-items:center;transition:transform 0.2s ease}
+    .brand:hover{transform:scale(1.05)}
     .brand img{width:40px;height:40px}
-    .brand .name{font-weight:700}
-    .nav a{color:var(--text);text-decoration:none}
+    .brand .name{font-weight:700;font-size:1.3rem}
+    .nav a{color:var(--text);text-decoration:none;padding:8px 12px;border-radius:6px;transition:background-color 0.2s ease}
+    .nav a:hover{background:rgba(0,0,0,0.05)}
     .wrap{max-width:980px;margin:24px auto;padding:0 16px}
-    .card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:18px}
-    .links{display:flex;flex-wrap:wrap;gap:12px;margin:8px 0 2px}
-    .links a{display:inline-block;padding:10px 14px;border:1px solid var(--border);border-radius:10px;background:#fff;text-decoration:none}
-    .links a:hover{border-color:#cbd2d9}
-    .premium{background:var(--primary);color:#fff;border-color:var(--primary)}
-    footer{margin:28px 0 18px;text-align:center;color:#666;font-size:.9rem}
+    .card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:24px;box-shadow:0 4px 6px -1px rgba(0,0,0,0.1)}
+    .links{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:16px;margin:24px 0}
+    .mode-link{display:flex;flex-direction:column;align-items:center;padding:24px;border:2px solid var(--border);border-radius:12px;text-decoration:none;color:var(--text);transition:all 0.3s ease;background:white;text-align:center}
+    .mode-link:hover{transform:translateY(-4px);box-shadow:0 8px 25px rgba(0,0,0,0.15);border-color:var(--primary)}
+    .mode-link i{font-size:2.5rem;margin-bottom:12px;color:var(--primary)}
+    .mode-link.premium{background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);color:white;border-color:#667eea}
+    .mode-link.premium i{color:white}
+    .mode-title{font-weight:700;font-size:1.2rem;margin-bottom:8px}
+    .mode-desc{font-size:0.9rem;opacity:0.8;line-height:1.4}
+    footer{margin:48px 0 24px;text-align:center;color:#666;font-size:.9rem}
+    footer a{color:var(--primary);text-decoration:none;margin:0 8px}
+    footer a:hover{text-decoration:underline}
 
     /* Promo banner */
-    .promo{border:1px solid #d7f1e3;background:#ecfff6;border-radius:14px;padding:14px;display:flex;gap:12px;align-items:center;margin-bottom:16px}
-    .promo .badge{background:var(--promo);color:#fff;border-radius:999px;padding:6px 10px;font-weight:700;font-size:.85rem}
-    .promo .title{font-weight:800}
-    .promo .timer{margin-left:auto;font-variant-numeric:tabular-nums}
-    .promo .cta a{background:var(--promo);color:#fff;border-radius:10px;padding:8px 12px;text-decoration:none;border:1px solid #0a7f46}
+    .promo{border:1px solid #d7f1e3;background:linear-gradient(135deg,#ecfff6 0%,#d4f7e7 100%);border-radius:14px;padding:16px;display:flex;gap:12px;align-items:center;margin-bottom:24px;box-shadow:0 4px 12px rgba(15,157,88,0.15)}
+    .promo .badge{background:var(--promo);color:#fff;border-radius:999px;padding:6px 12px;font-weight:700;font-size:.85rem}
+    .promo .title{font-weight:800;font-size:1.1rem}
+    .promo .timer{margin-left:auto;font-variant-numeric:tabular-nums;font-weight:600}
+    .promo .cta a{background:var(--promo);color:#fff;border-radius:10px;padding:10px 16px;text-decoration:none;border:1px solid #0a7f46;font-weight:600;transition:all 0.2s ease}
+    .promo .cta a:hover{background:#0a7f46;transform:translateY(-1px)}
 
     /* Contact modal */
-    .modal{position:fixed;inset:0;background:rgba(0,0,0,.5);display:none;align-items:center;justify-content:center;z-index:1000}
+    .modal{position:fixed;inset:0;background:rgba(0,0,0,.5);display:none;align-items:center;justify-content:center;z-index:1000;backdrop-filter:blur(4px)}
     .modal.active{display:flex}
-    .modal .box{background:#fff;border-radius:12px;max-width:520px;width:92%;padding:16px;border:1px solid var(--border)}
-    .box header{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
-    .close{cursor:pointer;border:0;background:none;font-size:1.2rem}
-    .field{display:flex;flex-direction:column;gap:6px;margin:10px 0}
-    .field input,.field textarea{border:1px solid var(--border);border-radius:8px;padding:10px}
-    .btn{padding:10px 14px;border-radius:10px;border:1px solid var(--border);cursor:pointer}
+    .modal .box{background:#fff;border-radius:16px;max-width:520px;width:92%;padding:24px;border:1px solid var(--border);box-shadow:0 20px 40px rgba(0,0,0,0.2)}
+    .box header{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;padding-bottom:12px;border-bottom:1px solid var(--border)}
+    .close{cursor:pointer;border:0;background:none;font-size:1.5rem;width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;transition:background-color 0.2s ease}
+    .close:hover{background:rgba(0,0,0,0.1)}
+    .field{display:flex;flex-direction:column;gap:6px;margin:16px 0}
+    .field label{font-weight:600;color:var(--text)}
+    .field input,.field textarea{border:1px solid var(--border);border-radius:8px;padding:12px;font-size:1rem;font-family:inherit;transition:border-color 0.2s ease}
+    .field input:focus,.field textarea:focus{outline:none;border-color:var(--primary);box-shadow:0 0 0 3px rgba(67,97,238,0.1)}
+    .btn{padding:12px 24px;border-radius:10px;border:1px solid var(--border);cursor:pointer;font-size:1rem;font-weight:600;transition:all 0.2s ease;min-height:44px}
     .btn.primary{background:var(--primary);color:#fff;border-color:var(--primary)}
+    .btn.primary:hover{background:var(--secondary);transform:translateY(-1px)}
+
+    /* Loading state for promo */
+    .promo.loading{opacity:0.7;pointer-events:none}
+    
+    @media (max-width:768px){
+      .promo{flex-direction:column;text-align:center;gap:16px}
+      .promo .timer{margin-left:0}
+      .links{grid-template-columns:1fr}
+      .nav{flex-direction:column;gap:12px;padding:12px}
+      .brand .name{font-size:1.1rem}
+    }
   </style>
 </head>
 <body>
   <nav class="nav">
     <div class="brand">
-      <img src="/assets/logo.png" alt="SpellRightPro Logo"/><span class="name">SpellRightPro</span>
+      <img src="/assets/logo.png" alt="SpellRightPro Logo" loading="lazy"/><span class="name">SpellRightPro</span>
     </div>
     <div class="actions">
       <a id="contact-link" href="#"><i class="fa-regular fa-envelope"></i> Contact Us</a>
@@ -64,41 +90,76 @@
         <small>Use code <strong id="promo-code-badge">BACK2SCHOOL70</strong> at checkout.</small>
       </div>
       <div class="timer">Ends in <span id="promo-timer">10d 00:00:00</span></div>
-      <div class="cta"><a id="promo-upgrade-link" href="/premium.html">Upgrade now</a></div>
+      <div class="cta"><a id="promo-upgrade-link" href="/premium.html">Upgrade Now</a></div>
     </div>
 
     <div class="card">
-      <h1>Choose Your Mode</h1>
+      <h1 style="text-align:center;margin-bottom:8px;color:var(--primary)">Choose Your Practice Mode</h1>
+      <p style="text-align:center;color:var(--gray);margin-bottom:32px">Improve your spelling skills with our specialized training modes</p>
+      
       <div class="links">
-        <a href="/freemium-oet.html">OET Trainer (Freemium)</a>
-        <a href="/freemium-bee.html">Spelling Bee (Freemium)</a>
-        <a href="/freemium-school.html">School Mode (Freemium)</a>
-        <a href="/premium.html" class="premium-link">👑 Premium Edition</a>
+        <a href="/freemium-oet.html" class="mode-link">
+          <i class="fas fa-stethoscope"></i>
+          <div class="mode-title">OET Trainer</div>
+          <div class="mode-desc">Medical terminology practice for healthcare professionals</div>
+          <small style="margin-top:8px;color:var(--success)">Freemium</small>
+        </a>
+        
+        <a href="/freemium-bee.html" class="mode-link">
+          <i class="fas fa-spell-check"></i>
+          <div class="mode-title">Spelling Bee</div>
+          <div class="mode-desc">Hands-free voice recognition practice</div>
+          <small style="margin-top:8px;color:var(--success)">Freemium</small>
+        </a>
+        
+        <a href="/freemium-school.html" class="mode-link">
+          <i class="fas fa-school"></i>
+          <div class="mode-title">School Mode</div>
+          <div class="mode-desc">Vocabulary building for students</div>
+          <small style="margin-top:8px;color:var(--success)">Freemium</small>
+        </a>
+        
+        <a href="/premium.html" class="mode-link premium">
+          <i class="fas fa-crown"></i>
+          <div class="mode-title">Premium Edition</div>
+          <div class="mode-desc">Unlock all features, unlimited practice, and advanced analytics</div>
+          <small style="margin-top:8px;opacity:0.9">Get Full Access</small>
+        </a>
       </div>
     </div>
   </div>
 
   <footer>
-  © 2025 SpellRightPro ·
-  <a href="/terms.html">Terms</a> ·
-  <a href="/privacy.html">Privacy</a> ·
-  <a href="/refund-policy.html">Refunds</a> ·
-  <a href="/contact.html">Contact</a>
-</footer>
+    © 2025 SpellRightPro · 
+    <a href="/terms.html">Terms</a> · 
+    <a href="/privacy.html">Privacy</a> · 
+    <a href="/refund-policy.html">Refunds</a> · 
+    <a href="/contact.html">Contact</a>
+  </footer>
 
   <!-- Contact Modal -->
   <div id="contact-modal" class="modal" aria-hidden="true" role="dialog">
     <div class="box">
       <header>
-        <h3>Contact Us</h3>
+        <h3 style="margin:0">Contact Us</h3>
         <button class="close close-modal" aria-label="Close">&times;</button>
       </header>
-      <!-- Formspree example; replace with your own endpoint if you already use one -->
       <form action="https://formspree.io/f/xzbnzyae" method="POST">
-        <div class="field"><label>Name</label><input type="text" name="name" required/></div>
-        <div class="field"><label>Email</label><input type="email" name="email" required/></div>
-        <div class="field"><label>Message</label><textarea name="message" rows="5" required></textarea></div>
-        <button class="btn primary" type="submit">Send</button>
+        <div class="field">
+          <label for="contact-name">Name</label>
+          <input type="text" id="contact-name" name="name" required minlength="2"/>
+        </div>
+        <div class="field">
+          <label for="contact-email">Email</label>
+          <input type="email" id="contact-email" name="email" required/>
+        </div>
+        <div class="field">
+          <label for="contact-message">Message</label>
+          <textarea id="contact-message" name="message" rows="5" required minlength="10"></textarea>
+        </div>
+        <button class="btn primary" type="submit" style="width:100%">
+          <i class="fas fa-paper-plane"></i> Send Message
+        </button>
       </form>
     </div>
   </div>
@@ -112,14 +173,50 @@
       var modal = document.getElementById('contact-modal');
       var contactLink = document.getElementById('contact-link');
       var closeBtn = document.querySelector('.close-modal');
+      
+      function openModal() {
+        modal.classList.add('active');
+        modal.setAttribute('aria-hidden','false');
+        document.body.style.overflow = 'hidden';
+      }
+      
+      function closeModal() {
+        modal.classList.remove('active');
+        modal.setAttribute('aria-hidden','true');
+        document.body.style.overflow = '';
+      }
+      
       if (contactLink && modal) {
-        contactLink.addEventListener('click', function (e) { e.preventDefault(); modal.classList.add('active'); modal.setAttribute('aria-hidden','false'); });
+        contactLink.addEventListener('click', function (e) { 
+          e.preventDefault(); 
+          openModal(); 
+        });
       }
+      
       if (closeBtn && modal) {
-        closeBtn.addEventListener('click', function(){ modal.classList.remove('active'); modal.setAttribute('aria-hidden','true'); });
+        closeBtn.addEventListener('click', closeModal);
       }
+      
       if (modal) {
-        window.addEventListener('click', function(e){ if (e.target === modal) { modal.classList.remove('active'); modal.setAttribute('aria-hidden','true'); }});
+        window.addEventListener('click', function(e){ 
+          if (e.target === modal) { 
+            closeModal(); 
+          }
+        });
+        
+        // Close on Escape key
+        document.addEventListener('keydown', function(e) {
+          if (e.key === 'Escape' && modal.classList.contains('active')) {
+            closeModal();
+          }
+        });
+      }
+
+      // Add loading state to promo if needed
+      const promo = document.getElementById('promo-banner');
+      if (promo && !promo.hasAttribute('hidden')) {
+        promo.classList.add('loading');
+        setTimeout(() => promo.classList.remove('loading'), 1000);
       }
     });
   </script>
