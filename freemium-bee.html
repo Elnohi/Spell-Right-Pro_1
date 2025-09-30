@@ -6,15 +6,16 @@
   <title>SpellRightPro (Spelling Bee - Freemium)</title>
 
   <!-- Styles -->
-  <link rel="stylesheet" href="css/styles.css"/>
+  <link rel="stylesheet" href="/css/styles.css"/>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"/>
+  <link rel="preload" href="/css/styles.css" as="style">
 
   <!-- Firebase -->
   <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-analytics-compat.js"></script>
-  <script src="js/config.js"></script>
+  <script src="/js/config.js"></script>
 
   <!-- AdSense -->
   <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7632930282249669" crossorigin="anonymous"></script>
@@ -23,15 +24,15 @@
   <!-- Navbar -->
   <nav class="navbar">
     <div class="brand">
-      <img src="assets/logo.png" alt="SpellRightPro Logo" class="logo"/>
+      <img src="/assets/logo.png" alt="SpellRightPro Logo" class="logo" loading="lazy"/>
       <div>
         <span>SpellRightPro</span>
         <span class="subtitle">Spelling Bee</span>
       </div>
     </div>
     <div class="nav-actions">
-      <a class="btn-secondary" href="index.html"><i class="fa fa-home"></i> Home</a>
-      <a class="btn-primary" href="premium.html"><i class="fa fa-crown"></i> Premium</a>
+      <a class="btn-secondary" href="/index.html"><i class="fa fa-home"></i> Home</a>
+      <a class="btn-primary" href="/premium.html"><i class="fa fa-crown"></i> Premium</a>
     </div>
   </nav>
 
@@ -56,48 +57,93 @@
         <p><strong>Hands-Free Mode:</strong> Each word will be spoken, then the app listens to your response and marks it automatically. No need to press Submit!</p>
       </div>
 
+      <!-- Session Stats -->
+      <div class="lifetime-stats">
+        <div>Today's Progress: <span id="daily-progress">0/10</span></div>
+        <div>Correct: <span id="life-correct">0</span></div>
+        <div>Attempts: <span id="life-attempts">0</span></div>
+      </div>
+
       <!-- Accent picker -->
       <div class="accent-picker">
-        <button type="button" data-accent="en-US" class="active" aria-label="US Accent">🇺🇸</button>
-        <button type="button" data-accent="en-GB" aria-label="UK Accent">🇬🇧</button>
-        <button type="button" data-accent="en-AU" aria-label="AU Accent">🇦🇺</button>
+        <button type="button" data-accent="en-US" class="active" aria-label="US Accent">
+          <span class="flag-icon">🇺🇸</span> US
+        </button>
+        <button type="button" data-accent="en-GB" aria-label="UK Accent">
+          <span class="flag-icon">🇬🇧</span> UK
+        </button>
+        <button type="button" data-accent="en-AU" aria-label="AU Accent">
+          <span class="flag-icon">🇦🇺</span> AU
+        </button>
       </div>
 
       <!-- Start Button -->
       <div class="session-controls">
-        <button type="button" id="start-btn" class="btn-start"><i class="fa fa-play"></i> Start</button>
+        <button type="button" id="start-btn" class="btn-start">
+          <i class="fa fa-play"></i> Start Session
+        </button>
       </div>
 
       <!-- Add custom words -->
-      <div class="custom-inputs">
+      <div class="custom-words-section">
+        <label class="section-label"><i class="fa fa-list"></i> Custom Words</label>
         <textarea id="custom-words" placeholder="Add custom words (comma, space, or line separated)..."></textarea>
-        <button type="button" id="add-custom-btn" class="btn-primary"><i class="fa fa-plus"></i> Add Words</button>
-        <!-- Hidden file input -->
+        
+        <div class="button-group">
+          <button type="button" id="add-custom-btn" class="btn-secondary">
+            <i class="fa fa-plus"></i> Add Words
+          </button>
+          <button type="button" id="upload-btn" class="btn-secondary">
+            <i class="fa fa-upload"></i> Upload File
+          </button>
+        </div>
+        
         <input type="file" id="file-input" accept=".txt" style="display:none"/>
-        <!-- Visible upload button -->
-        <button type="button" id="upload-btn" class="btn-primary"><i class="fa fa-upload"></i> Upload File</button>
+        
+        <div class="custom-words-info">
+          <small>Freemium allows one custom list per day. Upgrade to Premium for unlimited custom words.</small>
+        </div>
       </div>
 
       <!-- Training area -->
       <div id="bee-area" class="hidden">
-        <div id="spelling-visual" class="spelling-visual"></div>
-        <div id="feedback" class="feedback"></div>
-
-        <!-- Nav buttons -->
-        <div class="nav-controls">
-          <button type="button" id="bee-prev" class="btn-secondary"><i class="fa fa-arrow-left"></i> Previous</button>
-          <button type="button" id="bee-repeat" class="btn-secondary"><i class="fa fa-redo"></i> Repeat</button>
-          <button type="button" id="bee-next" class="btn-secondary">Next <i class="fa fa-arrow-right"></i></button>
+        <div class="word-progress">
+          Word <span id="current-word-index">1</span> of <span id="total-words">10</span>
         </div>
+        
+        <div id="spelling-visual" class="spelling-visual"></div>
+        
+        <div id="feedback" class="feedback"></div>
 
         <!-- Mic indicator -->
         <div id="mic-status" class="mic-status hidden">
-          <i class="fa fa-microphone"></i> Listening...
+          <i class="fa fa-microphone pulse"></i> Listening... Speak now!
+        </div>
+
+        <!-- Nav buttons -->
+        <div class="nav-controls">
+          <button type="button" id="bee-prev" class="btn-secondary" disabled>
+            <i class="fa fa-arrow-left"></i> Previous
+          </button>
+          <button type="button" id="bee-repeat" class="btn-secondary">
+            <i class="fa fa-redo"></i> Repeat
+          </button>
+          <button type="button" id="bee-next" class="btn-secondary" disabled>
+            Next <i class="fa fa-arrow-right"></i>
+          </button>
         </div>
       </div>
 
       <!-- Summary -->
       <div id="summary-area" class="hidden"></div>
+
+      <!-- Loading State -->
+      <div id="loading-state" class="hidden" style="text-align:center;padding:2rem;">
+        <div class="loading-spinner">
+          <i class="fas fa-spinner fa-spin"></i>
+          <p>Loading session...</p>
+        </div>
+      </div>
     </section>
   </main>
 
@@ -136,12 +182,29 @@
   </script>
 
   <!-- Scripts -->
-  <script src="js/main-freemium-bee.js"></script>
+  <script src="/js/main-freemium-bee.js"></script>
   <script>
     // Connect Upload button to hidden file input
-    const fileInput = document.getElementById('file-input');
-    const uploadBtn = document.getElementById('upload-btn');
-    uploadBtn?.addEventListener('click', () => fileInput.click());
+    document.addEventListener('DOMContentLoaded', function() {
+      const fileInput = document.getElementById('file-input');
+      const uploadBtn = document.getElementById('upload-btn');
+      
+      uploadBtn?.addEventListener('click', () => {
+        fileInput?.click();
+      });
+      
+      // Add haptic feedback for mobile
+      function provideHapticFeedback() {
+        if ('vibrate' in navigator) {
+          navigator.vibrate(50);
+        }
+      }
+      
+      // Add click feedback to buttons
+      document.querySelectorAll('button').forEach(btn => {
+        btn.addEventListener('click', provideHapticFeedback);
+      });
+    });
   </script>
 </body>
 </html>
