@@ -1,6 +1,5 @@
 /* ===== Base Styles & Variables ===== */
 :root {
-  /* Colors */
   --primary: #4361ee;
   --secondary: #3f37c9;
   --success: #4cc9f0;
@@ -9,8 +8,6 @@
   --light: #f8f9fa;
   --dark: #212529;
   --gray: #6c757d;
-  
-  /* Semantic Colors */
   --correct: #28a745;
   --incorrect: #dc3545;
   --flagged: #ffc107;
@@ -36,7 +33,6 @@ body {
   transition: background-color 0.3s ease, color 0.3s ease;
 }
 
-/* Better selection */
 ::selection {
   background: var(--primary);
   color: white;
@@ -44,33 +40,28 @@ body {
 
 /* ===== Mobile Keyboard Support ===== */
 @media (max-width: 768px) {
-  /* Ensure input fields are easily tappable */
   .form-control, input[type="text"], input[type="email"] {
-    font-size: 16px; /* Prevents zoom on iOS */
+    font-size: 16px;
     min-height: 44px;
     padding: 12px 16px;
   }
   
-  /* Make sure practice area is above keyboard */
   .container {
     padding-bottom: 400px;
     min-height: 100vh;
     position: relative;
   }
   
-  /* Training card adjustments for mobile */
   .training-card {
     margin-bottom: env(safe-area-inset-bottom);
   }
   
-  /* Letter tiles mobile optimization */
   .letter-tile {
     min-width: 44px;
     min-height: 44px;
     font-size: 1.1rem;
   }
   
-  /* Button group mobile layout */
   .button-group {
     gap: 8px;
   }
@@ -81,9 +72,8 @@ body {
   }
 }
 
-/* ===== MOBILE FIXES - Enhanced Responsiveness ===== */
+/* ===== MOBILE FIXES ===== */
 @media (max-width: 768px) {
-  /* Fix 1: Letters Pad Mobile Layout */
   .letters-pad {
     display: grid !important;
     grid-template-columns: repeat(4, 1fr) !important;
@@ -118,7 +108,6 @@ body {
     transform: scale(0.95);
   }
   
-  /* Fix 2: Premium Button Mobile Fix */
   .premium-button, .upgrade-button, [class*="premium"] {
     min-height: 50px !important;
     font-size: 16px !important;
@@ -132,14 +121,12 @@ body {
     transform: scale(0.98);
   }
   
-  /* Fix 3: Container spacing for mobile */
   .container {
     padding-bottom: 500px !important;
     min-height: calc(100vh - 100px);
     padding: 10px;
   }
   
-  /* Fix 4: Start button visibility */
   .btn-start {
     position: relative;
     z-index: 100;
@@ -152,12 +139,10 @@ body {
     transform: scale(0.98);
   }
   
-  /* Fix 5: Trainer area spacing */
   .trainer-area {
     margin-bottom: 100px;
   }
 
-  /* Fix 6: Navbar mobile optimization */
   .navbar {
     flex-wrap: wrap;
     padding: 10px;
@@ -169,7 +154,6 @@ body {
     margin-top: 10px;
   }
 
-  /* Fix 7: Modal fixes for mobile */
   .modal-content {
     width: 95% !important;
     margin: 10px auto !important;
@@ -178,7 +162,6 @@ body {
   }
 }
 
-/* Extra small mobile fixes */
 @media (max-width: 480px) {
   .letters-pad {
     grid-template-columns: repeat(3, 1fr) !important;
@@ -192,7 +175,6 @@ body {
     font-size: 1.5rem !important;
   }
   
-  /* Premium modal fix for small screens */
   .premium-modal .modal-content {
     width: 95% !important;
     margin: 10px !important;
@@ -221,33 +203,29 @@ body {
   }
 }
 
-/* Prevent zoom on input focus in iOS */
 @media (max-width: 480px) {
   input[type="text"], input[type="email"], textarea {
     font-size: 16px !important;
   }
 }
 
-/* Touch device optimizations */
 @media (hover: none) and (pointer: coarse) {
   .btn, .accent-picker button, .letter-tile {
     min-height: 44px;
     min-width: 44px;
   }
   
-  /* Increase tap targets */
   .nav-actions a, .mode-link {
     padding: 12px 16px;
   }
 
-  /* Better touch feedback */
   .btn:active, .accent-picker button:active, .letter-tile:active {
     transform: scale(0.95);
     transition: transform 0.1s ease;
   }
 }
 
-/* ===== Layout ===== */
+/* ===== Layout & Components ===== */
 .container {
   padding-bottom: 300px;
   max-width: 800px;
@@ -257,7 +235,6 @@ body {
   position: relative;
 }
 
-/* ===== Navbar ===== */
 .navbar {
   display: flex;
   justify-content: space-between;
@@ -291,7 +268,6 @@ body {
 .brand span {
   font-weight: 600;
   font-size: 1.2rem;
-  transition: color 0.3s ease;
 }
 
 .subtitle {
@@ -305,16 +281,12 @@ body {
   gap: 0.5rem;
 }
 
-/* ===== Training Card ===== */
 .training-card {
   background: linear-gradient(135deg, #fff 0%, #f8fafc 100%);
   border-radius: 12px;
   padding: 2rem;
   margin-top: 1rem;
-  box-shadow: 
-    0 4px 6px -1px rgba(0, 0, 0, 0.1),
-    0 2px 4px -1px rgba(0, 0, 0, 0.06),
-    inset 0 1px 0 rgba(255, 255, 255, 0.5);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
   border: 1px solid rgba(255,255,255,0.8);
   transition: background-color 0.3s ease, box-shadow 0.3s ease;
 }
@@ -326,7 +298,6 @@ body {
   font-weight: 700;
 }
 
-/* ===== Mode Selector ===== */
 .mode-selector {
   display: flex;
   gap: 0.5rem;
@@ -355,7 +326,6 @@ body {
   color: white;
 }
 
-/* ===== Accent Picker ===== */
 .accent-picker {
   display: flex;
   gap: 0.5rem;
@@ -388,7 +358,6 @@ body {
   font-size: 1.2rem;
 }
 
-/* ===== Custom Words Section ===== */
 .custom-words-section {
   margin-bottom: 1.5rem;
 }
@@ -441,7 +410,6 @@ textarea {
   cursor: pointer;
 }
 
-/* ===== Buttons ===== */
 .btn-primary {
   background-color: var(--primary);
   color: white;
@@ -459,25 +427,6 @@ textarea {
   position: relative;
   overflow: hidden;
   min-height: 44px;
-}
-
-.btn-primary::after {
-  content: '';
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  width: 0;
-  height: 0;
-  background: rgba(255,255,255,0.2);
-  border-radius: 50%;
-  transition: all 0.3s ease;
-}
-
-.btn-primary:hover::after {
-  width: 300px;
-  height: 300px;
-  top: -50px;
-  left: -50px;
 }
 
 .btn-primary:hover {
@@ -568,7 +517,6 @@ textarea {
   background-color: rgba(255, 193, 7, 0.1);
 }
 
-/* Focus states for accessibility */
 button:focus-visible, 
 input:focus-visible,
 textarea:focus-visible {
@@ -576,7 +524,6 @@ textarea:focus-visible {
   outline-offset: 2px;
 }
 
-/* ===== Trainer Area ===== */
 .trainer-area {
   margin-bottom: 5rem;
   margin-top: 2rem;
@@ -634,7 +581,6 @@ textarea:focus-visible {
   min-height: 44px;
 }
 
-/* ===== Feedback ===== */
 .feedback {
   padding: 1rem;
   border-radius: 8px;
@@ -655,7 +601,6 @@ textarea:focus-visible {
   border-left: 4px solid var(--incorrect);
 }
 
-/* ===== Results Summary ===== */
 .summary-area {
   margin-top: 2rem;
 }
@@ -754,7 +699,6 @@ textarea:focus-visible {
   justify-content: center;
 }
 
-/* ===== Info Box ===== */
 .info-box {
   background: #e3f2fd;
   border: 1px solid #bbdefb;
@@ -769,7 +713,6 @@ textarea:focus-visible {
   font-size: 0.9rem;
 }
 
-/* ===== Mic Status ===== */
 .mic-status {
   text-align: center;
   padding: 0.5rem;
@@ -779,13 +722,6 @@ textarea:focus-visible {
   margin: 1rem 0;
   color: #856404;
   font-weight: 500;
-}
-
-/* ===== Animations ===== */
-@keyframes pulseGreen {
-  0% { background: white; }
-  50% { background: var(--correct); }
-  100% { background: white; }
 }
 
 @keyframes fadeIn {
@@ -807,7 +743,6 @@ textarea:focus-visible {
   animation: pulse 2s infinite;
 }
 
-/* ===== Loading States ===== */
 .loading {
   opacity: 0.7;
   pointer-events: none;
@@ -832,7 +767,6 @@ textarea:focus-visible {
   100% { transform: rotate(360deg); }
 }
 
-/* ===== Dark Mode ===== */
 .dark-mode {
   background-color: #1a1a1a;
   color: var(--text-light);
@@ -893,7 +827,6 @@ textarea:focus-visible {
   color: #90caf9;
 }
 
-/* ===== Responsive Design ===== */
 @media (max-width: 768px) {
   .container {
     padding-bottom: 400px;
@@ -930,14 +863,12 @@ textarea:focus-visible {
     justify-content: center;
   }
 
-  /* Touch-friendly sizes */
   .btn, .accent-picker button, .letter-tile {
     min-height: 44px;
     min-width: 44px;
   }
 }
 
-/* Pricing grid adjustments */
 .pricing-grid {
   display: flex;
   flex-direction: column;
@@ -951,7 +882,6 @@ textarea:focus-visible {
   padding: 20px;
 }
 
-/* Empty state styling */
 .empty-state {
   text-align: center;
   padding: 2rem;
@@ -962,4 +892,30 @@ textarea:focus-visible {
   font-size: 3rem;
   margin-bottom: 1rem;
   opacity: 0.5;
+}
+
+/* Premium Modal Styles */
+#premium-modal {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0,0,0,0.5);
+  z-index: 10000;
+}
+
+.modal-content {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: white;
+  padding: 30px;
+  border-radius: 10px;
+  min-width: 300px;
+  max-width: 90%;
+  max-height: 90vh;
+  overflow-y: auto;
 }
