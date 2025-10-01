@@ -34,6 +34,199 @@ class SpellingBeeApp {
         this.init();
     }
 
+    // ===== PAGE MANAGEMENT METHODS =====
+
+showPage(pageId) {
+    console.log('📄 Showing page:', pageId);
+    
+    // Hide all pages
+    const pages = ['home-page', 'game-page', 'results-page'];
+    pages.forEach(page => {
+        const element = document.getElementById(page);
+        if (element) {
+            element.style.display = 'none';
+        }
+    });
+    
+    // Show requested page
+    const targetPage = document.getElementById(pageId);
+    if (targetPage) {
+        targetPage.style.display = 'block';
+        targetPage.classList.add('fade-in');
+    }
+}
+
+showHomePage() {
+    this.showPage('home-page');
+    console.log('🏠 Showing home page');
+}
+
+showGamePage() {
+    this.showPage('game-page');
+    console.log('🎮 Showing game page');
+    
+    // Initialize game if not already started
+    if (this.currentWordIndex === 0 && this.words.length > 0) {
+        this.loadWord(0);
+    }
+}
+
+showResultsPage() {
+    this.showPage('results-page');
+    console.log('📊 Showing results page');
+    this.showResults();
+}
+
+// ===== BUTTON EVENT HANDLERS =====
+
+initializeAllButtons() {
+    console.log('🔘 Initializing all buttons...');
+    
+    // Start Button
+    const startBtn = document.getElementById('start-button');
+    if (startBtn) {
+        startBtn.onclick = () => {
+            console.log('🎯 Start button clicked - Starting spelling bee');
+            this.processWordsFromTextarea();
+            if (this.words.length > 0) {
+                this.showGamePage();
+                this.startSpellingBee();
+            } else {
+                this.showError('Please add some words first!');
+            }
+        };
+    }
+    
+    // Premium Button
+    const premiumBtn = document.getElementById('premium-main-btn');
+    if (premiumBtn) {
+        premiumBtn.onclick = () => {
+            console.log('💎 Premium button clicked');
+            this.handlePremiumClick();
+        };
+    }
+    
+    // Game Action Buttons
+    const prevBtn = document.getElementById('prev-button');
+    if (prevBtn) {
+        prevBtn.onclick = () => {
+            console.log('⏮️ Previous button clicked');
+            this.previousWord();
+        };
+    }
+    
+    const repeatBtn = document.getElementById('repeat-button');
+    if (repeatBtn) {
+        repeatBtn.onclick = () => {
+            console.log('🔊 Repeat button clicked');
+            this.repeatCurrentWord();
+        };
+    }
+    
+    const submitBtn = document.getElementById('submit-button');
+    if (submitBtn) {
+        submitBtn.onclick = () => {
+            console.log('✅ Submit button clicked');
+            this.checkSpelling();
+        };
+    }
+    
+    // Accent Buttons
+    const accentBtns = document.querySelectorAll('.accent-btn');
+    accentBtns.forEach(btn => {
+        btn.onclick = () => {
+            const accent = btn.getAttribute('data-accent');
+            console.log('🎵 Accent selected:', accent);
+            this.setAccent(accent);
+            
+            // Update UI
+            accentBtns.forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+        };
+    });
+    
+    console.log('✅ All buttons initialized');
+}
+
+// ===== WORD PROCESSING =====
+
+processWordsFromTextarea() {
+    const textarea = document.getElementById('words-textarea');
+    if (textarea && textarea.value.trim()) {
+        const text = textarea.value;
+        const words = text.split(/[,\n]/)
+            .map(word => word.trim())
+            .filter(word => word.length > 0);
+        
+        if (words.length > 0) {
+            this.words = words;
+            console.log(`📝 Processed ${words.length} words from textarea`);
+            
+            // Show success message
+            this.showSuccess(`Loaded ${words.length} words for practice!`);
+            
+            // Clear textarea
+            textarea.value = '';
+        }
+    } else {
+        // Use default words if none provided
+        this.words = [
+            'example', 'spelling', 'practice', 'education', 'learning',
+            'knowledge', 'vocabulary', 'language', 'pronunciation', 'exercise'
+        ];
+        console.log('📝 Using default words:', this.words.length);
+    }
+}
+
+// ===== ACCENT MANAGEMENT =====
+
+setAccent(accent) {
+    this.state.accent = accent;
+    console.log('🎵 Accent set to:', accent);
+    this.saveUserPreferences();
+}
+
+// ===== GAME CONTROL METHODS =====
+
+repeatCurrentWord() {
+    if (this.currentWordIndex < this.words.length) {
+        const word = this.words[this.currentWordIndex];
+        console.log('🔊 Repeating word:', word);
+        this.speakWord(word);
+    }
+}
+
+// ===== ENHANCED INITIALIZATION =====
+
+initializeApp() {
+    console.log('🔄 Starting app initialization sequence...');
+    
+    try {
+        // Show home page first
+        this.showHomePage();
+        
+        // Initialize all buttons
+        this.initializeAllButtons();
+        
+        // Initialize other components
+        this.initializeElements();
+        this.initializeMobileApp();
+        this.initializePremiumFeatures();
+        this.initializeSpeechRecognition();
+        this.loadUserPreferences();
+        
+        this.isInitialized = true;
+        console.log('✅ App initialized successfully - Showing home page');
+        
+        this.hideLoading();
+        this.showWelcomeMessage();
+        
+    } catch (error) {
+        console.error('❌ App initialization failed:', error);
+        this.showError('Failed to initialize application. Please refresh the page.');
+    }
+}
+
     // ===== Initialization Methods =====
     
     init() {
