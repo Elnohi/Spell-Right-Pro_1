@@ -3,48 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <meta name="description" content="SpellRightPro - Advanced spelling bee practice app with hands-free mode and premium features">
-    <meta name="keywords" content="spelling, bee, practice, education, words, vocabulary">
-    <meta name="author" content="SpellRightPro Team">
-    
-    <!-- Theme Color for Mobile Browsers -->
-    <meta name="theme-color" content="#4361ee">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="default">
-    
-    <!-- Favicon -->
-    <link rel="icon" type="image/x-icon" href="/favicon.ico">
-    <link rel="apple-touch-icon" href="/apple-touch-icon.png">
-    
-    <!-- Preload Critical Resources -->
-    <link rel="preload" href="styles.css" as="style">
-    <link rel="preload" href="main-freemium-bee.js" as="script">
-    
     <title>SpellRightPro - Spelling Bee Practice</title>
-    
-    <!-- CSS -->
     <link rel="stylesheet" href="styles.css">
-    
-    <!-- Preconnect to External Domains -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    
-    <!-- Structured Data -->
-    <script type="application/ld+json">
-    {
-        "@context": "https://schema.org",
-        "@type": "WebApplication",
-        "name": "SpellRightPro",
-        "description": "Advanced spelling bee practice application with hands-free mode",
-        "applicationCategory": "EducationalApplication",
-        "operatingSystem": "Web Browser",
-        "offers": {
-            "@type": "Offer",
-            "price": "0",
-            "priceCurrency": "USD"
-        }
-    }
-    </script>
 </head>
 <body>
     <!-- Loading Screen -->
@@ -77,260 +37,204 @@
         </div>
     </div>
 
-    <!-- Main Application -->
+    <!-- Main Application Container -->
     <div class="container" style="display: none;">
         <!-- Navigation Bar -->
-        <nav class="navbar" role="navigation" aria-label="Main navigation">
+        <nav class="navbar">
             <div class="brand">
-                <img src="/assets/logo.svg" alt="SpellRightPro Logo" class="logo" onerror="this.style.display='none'">
                 <span>SpellRightPro<br><small class="subtitle">Spelling Bee</small></span>
             </div>
-            
             <div class="nav-actions">
-                <button class="btn-icon" id="theme-toggle" aria-label="Toggle dark mode">
-                    🌙
-                </button>
                 <button class="btn-secondary premium-button" id="premium-main-btn">
                     ⭐ Premium
                 </button>
             </div>
         </nav>
 
-        <!-- Main Content -->
-        <main role="main">
-            <div class="training-card">
-                <!-- Header Section -->
-                <header class="card-header">
-                    <h1 class="card-title">Spelling Bee Practice</h1>
-                    <p class="card-subtitle" style="
-                        text-align: center;
-                        color: var(--gray);
-                        margin-bottom: 2rem;
-                        font-size: 1.1rem;
-                    ">Improve your spelling skills with interactive practice</p>
-                </header>
+        <main>
+            <!-- HOME PAGE - Setup Interface -->
+            <div id="home-page" class="training-card">
+                <h1 class="card-title">Spelling Bee Practice</h1>
+                
+                <!-- Advertisement Banner -->
+                <div class="ad-banner" style="
+                    background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%);
+                    border: 2px solid #ffd54f;
+                    border-radius: 12px;
+                    padding: 1rem;
+                    margin-bottom: 1.5rem;
+                    text-align: center;
+                ">
+                    <p style="margin: 0; color: #856404; font-weight: 600;">
+                        🚀 Upgrade to Premium for unlimited features!
+                    </p>
+                </div>
 
-                <!-- Mode Selector -->
-                <section class="mode-section" aria-labelledby="mode-heading">
-                    <h2 id="mode-heading" class="section-label">Practice Mode</h2>
-                    <div class="mode-selector" role="radiogroup" aria-labelledby="mode-heading">
-                        <button class="btn-mode active" data-mode="hands-free" role="radio" aria-checked="true">
-                            <span class="mode-icon">🎤</span>
-                            Hands-Free
-                        </button>
-                        <button class="btn-mode" data-mode="text" role="radio" aria-checked="false">
-                            <span class="mode-icon">📝</span>
-                            Text Mode
-                        </button>
+                <!-- Hands-Free Mode Info -->
+                <div class="info-box" style="margin-bottom: 1.5rem;">
+                    <p><strong>Hands-Free Mode:</strong> Each word will be spoken, then the app listens to your response and marks it automatically. No need to press Submit!</p>
+                </div>
+
+                <!-- Progress Display -->
+                <div class="progress-display" style="
+                    background: rgba(255, 255, 255, 0.9);
+                    padding: 1rem;
+                    border-radius: 8px;
+                    margin-bottom: 1.5rem;
+                    text-align: center;
+                    border: 1px solid #e9ecef;
+                ">
+                    <p style="margin: 0 0 0.5rem 0; font-weight: 600;">Today's Progress: <span id="progress-count">0/10</span></p>
+                    <div style="display: flex; justify-content: center; gap: 1rem; font-size: 0.9rem;">
+                        <span>Correct: <strong id="correct-count">0</strong></span>
+                        <span>Attempts: <strong id="attempts-count">0</strong></span>
                     </div>
-                </section>
+                </div>
 
                 <!-- Accent Selector -->
-                <section class="accent-section" aria-labelledby="accent-heading">
-                    <h2 id="accent-heading" class="section-label">Pronunciation Accent</h2>
-                    <div class="accent-picker" role="radiogroup" aria-labelledby="accent-heading">
-                        <button class="accent-btn active" data-accent="us" role="radio" aria-checked="true">
-                            <span class="flag-icon">🇺🇸</span>
-                            US English
+                <div class="accent-section" style="margin-bottom: 1.5rem;">
+                    <label class="section-label">Select Pronunciation:</label>
+                    <div class="accent-picker">
+                        <button class="accent-btn active" data-accent="us">
+                            <span class="flag-icon">🇺🇸</span> US
                         </button>
-                        <button class="accent-btn" data-accent="uk" role="radio" aria-checked="false">
-                            <span class="flag-icon">🇬🇧</span>
-                            UK English
+                        <button class="accent-btn" data-accent="uk">
+                            <span class="flag-icon">🇬🇧</span> UK
                         </button>
-                        <button class="accent-btn" data-accent="au" role="radio" aria-checked="false">
-                            <span class="flag-icon">🇦🇺</span>
-                            AU English
+                        <button class="accent-btn" data-accent="au">
+                            <span class="flag-icon">🇦🇺</span> AU
                         </button>
                     </div>
-                </section>
+                </div>
 
-                <!-- Custom Words Section -->
-                <section class="custom-words-section" aria-labelledby="words-heading">
-                    <h2 id="words-heading" class="section-label">Custom Words</h2>
-                    
-                    <div class="input-group">
-                        <textarea 
-                            id="words-textarea"
-                            placeholder="Enter words separated by commas, spaces, or new lines...
-Example: apple, banana, cherry
-Or: apple banana cherry
+                <!-- Custom Words Input -->
+                <div class="custom-words-section" style="margin-bottom: 1.5rem;">
+                    <label class="section-label">Add custom words (comma, space, or line separated)...</label>
+                    <textarea id="words-textarea" placeholder="Enter words like: apple, banana, cherry
 Or: 
 apple
 banana
-cherry"
-                            aria-labelledby="words-heading"
-                            rows="6"
-                        ></textarea>
-                    </div>
-
-                    <div class="file-upload">
-                        <div class="btn-upload" role="button" tabindex="0">
-                            <span class="upload-icon">📁</span>
-                            Upload Text File
-                            <input type="file" id="file-input" accept=".txt,.csv" aria-label="Upload word list file">
-                        </div>
-                    </div>
-
-                    <div class="info-box" role="note">
-                        <p>
-                            <strong>Freemium:</strong> One custom list per day. 
-                            <button class="text-link" onclick="app.handlePremiumClick()" style="
-                                background: none;
-                                border: none;
-                                color: var(--primary);
-                                text-decoration: underline;
-                                cursor: pointer;
-                            ">Upgrade to Premium</button> for unlimited custom words and advanced features.
-                        </p>
-                    </div>
-
-                    <div class="word-count" id="word-count" style="
-                        text-align: center;
-                        color: var(--gray);
-                        font-size: 0.9rem;
-                        margin-top: 1rem;
-                    ">
-                        0 words added
-                    </div>
-                </section>
-
-                <!-- Action Section -->
-                <section class="action-section">
-                    <button class="btn-start" id="start-button" aria-label="Start spelling bee practice">
-                        <span class="btn-icon">🐝</span>
-                        Start Spelling Bee
-                    </button>
-                </section>
-
-                <!-- Letters Pad (Initially Hidden) -->
-                <section class="letters-section" aria-labelledby="letters-heading" hidden>
-                    <h2 id="letters-heading" class="sr-only">Letter Selection</h2>
-                    <div class="letters-pad" id="letters-pad" role="group" aria-labelledby="letters-heading">
-                        <!-- Letters will be dynamically generated -->
-                    </div>
-                </section>
-
-                <!-- Trainer Area (Initially Hidden) -->
-                <section class="trainer-area hidden" id="trainer-area" aria-labelledby="trainer-heading">
-                    <h2 id="trainer-heading" class="sr-only">Spelling Practice</h2>
+cherry"></textarea>
                     
-                    <!-- Progress Indicator -->
-                    <div class="word-progress" id="word-progress" aria-live="polite">
-                        Word 1 of 10
-                    </div>
-
-                    <!-- Input Area -->
-                    <div class="input-group">
-                        <label for="spelling-input" class="sr-only">Enter the spelled word</label>
-                        <input 
-                            type="text" 
-                            id="spelling-input"
-                            class="form-control"
-                            placeholder="Spell the word you hear..."
-                            aria-describedby="input-help"
-                        >
-                        <div id="input-help" class="sr-only">
-                            Type the word you heard or use the letter buttons above
+                    <div class="file-upload">
+                        <div class="btn-upload">
+                            📁 Upload File
+                            <input type="file" id="file-input" accept=".txt,.csv">
                         </div>
                     </div>
 
-                    <!-- Action Buttons -->
-                    <div class="button-group">
-                        <button class="btn-secondary" id="prev-button" aria-label="Previous word">
-                            ← Previous
-                        </button>
-                        <button class="btn-secondary" id="repeat-button" aria-label="Repeat word">
-                            🔄 Repeat
-                        </button>
-                        <button class="btn-primary" id="submit-button" aria-label="Submit spelling">
-                            ✅ Submit
-                        </button>
+                    <div class="info-box">
+                        <p>Freemium allows one custom list per day. Upgrade to Premium for unlimited custom words.</p>
                     </div>
+                </div>
 
-                    <!-- Feedback Area -->
-                    <div class="feedback" id="feedback-area" aria-live="polite">
-                        <!-- Feedback messages will appear here -->
-                    </div>
-                </section>
+                <!-- Start Button -->
+                <button class="btn-start" id="start-button">
+                    🐝 Start Spelling Bee
+                </button>
+            </div>
 
-                <!-- Results Summary (Initially Hidden) -->
-                <section class="summary-area hidden" id="summary-area" aria-labelledby="results-heading">
-                    <h2 id="results-heading" class="sr-only">Practice Results</h2>
-                    <!-- Results will be dynamically generated -->
-                </section>
+            <!-- GAME PAGE - Spelling Bee Interface (Initially Hidden) -->
+            <div id="game-page" class="training-card" style="display: none;">
+                <h1 class="card-title">Spelling Bee</h1>
+                
+                <!-- Word Progress -->
+                <div class="word-progress" id="word-progress">Word 1 of 10</div>
+
+                <!-- Letters Pad -->
+                <div class="letters-pad" id="letters-pad">
+                    <!-- Letters will be generated here -->
+                </div>
+
+                <!-- Input Area -->
+                <div class="input-group">
+                    <input type="text" class="form-control" id="spelling-input" placeholder="Spell the word...">
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="button-group">
+                    <button class="btn-secondary" id="prev-button">Previous</button>
+                    <button class="btn-secondary" id="repeat-button">Repeat</button>
+                    <button class="btn-primary" id="submit-button">Submit</button>
+                </div>
+
+                <!-- Feedback Area -->
+                <div class="feedback" id="feedback-area"></div>
+
+                <!-- Mic Status -->
+                <div class="mic-status" id="mic-status" style="display: none;">
+                    Listening... Speak now!
+                </div>
+            </div>
+
+            <!-- RESULTS PAGE (Initially Hidden) -->
+            <div id="results-page" class="training-card" style="display: none;">
+                <h1 class="card-title">Practice Complete! 🎉</h1>
+                <div class="summary-area" id="summary-area">
+                    <!-- Results will be displayed here -->
+                </div>
             </div>
         </main>
 
-        <!-- Advertisement Section (Freemium) -->
-        <aside class="ad-section" aria-label="Advertisement" style="
-            margin: 2rem 0;
+        <!-- Console Messages Display -->
+        <div id="console-messages" style="
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 8px;
             padding: 1rem;
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 12px;
-            text-align: center;
-        ">
-            <div class="ad-content">
-                <p style="margin-bottom: 1rem; color: var(--gray);">
-                    🚀 <strong>Upgrade to Premium</strong> for an ad-free experience and unlimited features!
-                </p>
-                <button class="btn-secondary" onclick="app.handlePremiumClick()">
-                    Learn More About Premium
-                </button>
-            </div>
-        </aside>
-
-        <!-- Footer -->
-        <footer class="app-footer" style="
-            text-align: center;
-            padding: 2rem 0;
-            color: var(--gray);
-            font-size: 0.9rem;
-        ">
-            <p>&copy; 2024 SpellRightPro. All rights reserved.</p>
-            <div class="footer-links" style="margin-top: 1rem;">
-                <a href="/privacy" style="color: var(--gray); margin: 0 1rem;">Privacy Policy</a>
-                <a href="/terms" style="color: var(--gray); margin: 0 1rem;">Terms of Service</a>
-                <a href="/contact" style="color: var(--gray); margin: 0 1rem;">Contact Support</a>
-            </div>
-        </footer>
-    </div>
-
-    <!-- Premium Modal -->
-    <div id="premium-modal" class="modal-overlay" aria-hidden="true" aria-labelledby="premium-modal-title">
-        <!-- Modal content will be dynamically generated -->
-    </div>
-
-    <!-- Screen Reader Only Content -->
-    <div class="sr-only" aria-live="polite" aria-atomic="true">
-        <!-- For screen reader announcements -->
+            margin-top: 1rem;
+            font-family: monospace;
+            font-size: 0.8rem;
+            max-height: 200px;
+            overflow-y: auto;
+            display: none;
+        "></div>
     </div>
 
     <!-- JavaScript -->
     <script src="main-freemium-bee.js"></script>
-    
-    <!-- Inline Script for Immediate Functionality -->
+
+    <!-- Initialize App -->
     <script>
-        // Remove loading screen and show main content
+        // Remove loading screen and initialize app
         window.addEventListener('load', function() {
             setTimeout(() => {
                 const loading = document.getElementById('app-loading');
-                const main = document.querySelector('.container');
+                const container = document.querySelector('.container');
                 
                 if (loading) {
                     loading.style.opacity = '0';
                     loading.style.transition = 'opacity 0.5s ease';
-                    setTimeout(() => loading.remove(), 500);
+                    setTimeout(() => {
+                        loading.style.display = 'none';
+                    }, 500);
                 }
                 
-                if (main) {
-                    main.style.display = 'block';
+                if (container) {
+                    container.style.display = 'block';
+                }
+                
+                // Initialize the app
+                if (typeof initializeSpellingBee === 'function') {
+                    initializeSpellingBee();
                 }
             }, 1000);
         });
 
-        // Basic error handling for critical failures
-        window.addEventListener('error', function(event) {
-            console.error('Critical error:', event.error);
+        // Debug: Log all button clicks
+        document.addEventListener('click', function(e) {
+            if (e.target.tagName === 'BUTTON' || e.target.closest('button')) {
+                const button = e.target.tagName === 'BUTTON' ? e.target : e.target.closest('button');
+                console.log('Button clicked:', button.textContent.trim(), button.className);
+                
+                // Show in console messages
+                const consoleDiv = document.getElementById('console-messages');
+                if (consoleDiv) {
+                    consoleDiv.style.display = 'block';
+                    consoleDiv.innerHTML += `<div>🟢 Clicked: ${button.textContent.trim()}</div>`;
+                    consoleDiv.scrollTop = consoleDiv.scrollHeight;
+                }
+            }
         });
     </script>
 </body>
