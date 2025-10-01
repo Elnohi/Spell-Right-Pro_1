@@ -1534,6 +1534,53 @@ textarea:focus-visible {
   }
 }
 
+/* Page Transitions */
+#home-page,
+#game-page,
+#results-page {
+    transition: all 0.3s ease-in-out;
+}
+
+/* Button Active States */
+.btn-start:active {
+    transform: scale(0.95);
+}
+
+.accent-btn.active {
+    background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+    color: white;
+    border-color: var(--primary);
+}
+
+/* Mobile button fixes */
+@media (max-width: 768px) {
+    .btn-start {
+        min-height: 60px;
+        font-size: 1.2rem;
+    }
+    
+    .accent-picker {
+        flex-wrap: wrap;
+    }
+    
+    .accent-btn {
+        flex: 1;
+        min-width: 100px;
+    }
+}
+
+/* Focus styles for accessibility */
+button:focus {
+    outline: 2px solid var(--primary);
+    outline-offset: 2px;
+}
+
+/* Loading animation */
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
 /* ===== Reduced Motion Support ===== */
 @media (prefers-reduced-motion: reduce) {
   *,
