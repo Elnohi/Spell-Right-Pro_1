@@ -10,7 +10,6 @@
   <!-- Global styles -->
   <link rel="stylesheet" href="/css/styles.css"/>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"/>
-  <link rel="preload" href="/css/styles.css" as="style">
 
   <!-- Firebase -->
   <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-app-compat.js"></script>
@@ -21,6 +20,12 @@
 
   <!-- AdSense -->
   <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7632930282249669" crossorigin="anonymous"></script>
+
+  <style>
+    .sticky-input{position:sticky;bottom:0;background:#fff;border-top:1px solid #e5e7eb;padding:12px;z-index:5}
+    .sticky-input .row{display:flex;gap:8px;align-items:center}
+    .typed-preview{font-family:monospace;color:#374151}
+  </style>
 </head>
 <body>
   <!-- Navbar -->
@@ -41,12 +46,7 @@
   <!-- Header Ad -->
   <div class="ad-container">
     <div class="ad-label">Advertisement</div>
-    <ins class="adsbygoogle"
-         style="display:block"
-         data-ad-client="ca-pub-7632930282249669"
-         data-ad-slot="2233445566"
-         data-ad-format="auto"
-         data-full-width-responsive="true"></ins>
+    <ins class="adsbygoogle" style="display:block" data-ad-client="ca-pub-7632930282249669" data-ad-slot="2233445566" data-ad-format="auto" data-full-width-responsive="true"></ins>
     <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
   </div>
 
@@ -54,12 +54,10 @@
     <section class="training-card">
       <h1 class="card-title"><i class="fa fa-school"></i> School Word Practice</h1>
 
-      <!-- Info Box -->
       <div class="info-box">
         <p><strong>Typing Practice:</strong> Listen to each word and type the correct spelling. Press Enter to submit.</p>
       </div>
 
-      <!-- Lifetime totals -->
       <div class="lifetime-stats">
         <div>Correct: <span id="life-correct">0</span></div>
         <div>Attempts: <span id="life-attempts">0</span></div>
@@ -68,138 +66,58 @@
 
       <div class="row">
         <div class="accent-picker" aria-label="Select accent">
-          <button type="button" class="active" data-accent="en-US">
-            <span class="flag-icon">🇺🇸</span> US
-          </button>
-          <button type="button" data-accent="en-GB">
-            <span class="flag-icon">🇬🇧</span> UK
-          </button>
-          <button type="button" data-accent="en-AU">
-            <span class="flag-icon">🇦🇺</span> AU
-          </button>
+          <button type="button" class="active" data-accent="en-US">🇺🇸 US</button>
+          <button type="button" data-accent="en-GB">🇬🇧 UK</button>
+          <button type="button" data-accent="en-AU">🇦🇺 AU</button>
         </div>
         <div class="session-controls">
           <button type="button" id="replay-btn" class="btn-secondary" title="Replay word">
             <i class="fa fa-volume-high"></i> Replay
           </button>
-          <button type="button" id="backspace-btn" class="btn-secondary" title="Backspace">
+          <button type="button" id="backspace-btn" class="btn-secondary" title="Clear input">
             <i class="fa fa-delete-left"></i> Clear
           </button>
+          <button type="button" id="start-btn" class="btn-start"><i class="fa fa-play"></i> Start</button>
         </div>
       </div>
 
-      <!-- Practice area -->
       <div id="practice-area" class="hidden">
-        <div class="word-progress">
-          Word <span id="current-word-index">1</span> of <span id="total-words">10</span>
-        </div>
-        
+        <div class="word-progress">Word <span id="current-word-index">1</span> of <span id="total-words">10</span></div>
         <div id="prompt" class="prompt">Listen carefully and type the word you hear...</div>
-        
         <div id="word-tiles" class="spelling-visual"></div>
-        
-        <div class="input-hint">
-          <small>Press <kbd>Enter</kbd> to submit • Press <kbd>Space</kbd> to replay • Type to spell</small>
-        </div>
-        
         <div id="feedback" class="feedback"></div>
       </div>
 
-      <!-- Summary area -->
       <div id="summary-area" class="summary-area hidden"></div>
 
-      <!-- Custom list -->
       <div class="custom-words-section">
         <label class="section-label"><i class="fa fa-list"></i> Custom Words</label>
         <textarea id="custom-words" placeholder="Type or paste words separated by space, comma, or new lines..."></textarea>
-        
-        <div class="file-upload">
-          <label for="file-input" class="btn-upload">
-            <i class="fa fa-file-arrow-up"></i> Upload Word List (.txt)
-          </label>
-          <input type="file" id="file-input" accept=".txt"/>
-        </div>
-
-        <div class="button-group">
-          <button type="button" id="add-custom-btn" class="btn-secondary">
-            <i class="fa fa-plus"></i> Add Words
-          </button>
-          <button type="button" id="start-btn-dup" class="btn-start">
-            <i class="fa fa-play"></i> Start Session
-          </button>
-        </div>
-        
-        <div class="custom-words-info">
-          <small>Freemium allows one custom list per day. Max 10 words per session.</small>
-        </div>
-      </div>
-
-      <!-- Loading State -->
-      <div id="loading-state" class="hidden" style="text-align:center;padding:2rem;">
-        <div class="loading-spinner">
-          <i class="fas fa-spinner fa-spin"></i>
-          <p>Preparing your session...</p>
+        <div class="row" style="margin-top:8px">
+          <button id="add-custom-btn" class="btn-secondary"><i class="fa fa-plus"></i> Add Custom</button>
+          <input type="file" id="file-input" accept=".txt,.csv"/>
+          <span class="muted">Freemium: one custom list per day.</span>
         </div>
       </div>
     </section>
   </main>
 
-  <!-- Footer Ad -->
-  <div class="ad-container">
-    <div class="ad-label">Advertisement</div>
-    <ins class="adsbygoogle"
-         style="display:block"
-         data-ad-client="ca-pub-7632930282249669"
-         data-ad-slot="2233445588"
-         data-ad-format="auto"
-         data-full-width-responsive="true"></ins>
-    <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
+  <!-- Sticky input so user always sees typing + marking -->
+  <div class="sticky-input">
+    <div class="row">
+      <input id="typed-input" type="text" class="form-control" placeholder="Type here and press Enter…" autocomplete="off" />
+      <button id="typed-submit" class="btn-primary"><i class="fa fa-check"></i> Submit</button>
+      <div id="typed-preview" class="typed-preview"></div>
+    </div>
   </div>
 
-  <!-- Summary Ad injector -->
-  <script>
-    window.insertSummaryAd = function() {
-      var box = document.getElementById('summary-area');
-      if (!box) return;
-      var prev = box.querySelector('.summary-ad-container');
-      if (prev) prev.remove();
-      var wrap = document.createElement('div');
-      wrap.className = 'summary-ad-container ad-container';
-      wrap.innerHTML = `
-        <ins class="adsbygoogle"
-             style="display:block"
-             data-ad-client="ca-pub-7632930282249669"
-             data-ad-slot="2233445577"
-             data-ad-format="auto"
-             data-full-width-responsive="true"></ins>
-      `;
-      box.appendChild(wrap);
-      try { (adsbygoogle = window.adsbygoogle || []).push({}); } catch(e) {}
-    };
-  </script>
+  <footer class="container" style="padding:24px 0;text-align:center">
+    <a href="/terms.html">Terms</a> ·
+    <a href="/privacy.html">Privacy</a> ·
+    <a href="/refund-policy.html">Refund Policy</a> ·
+    <a href="/contact.html">Contact</a>
+  </footer>
 
-  <script src="/js/main-freemium-school.js"></script>
-  
-  <script>
-    document.addEventListener('DOMContentLoaded', function() {
-      // Update accuracy display
-      function updateAccuracy() {
-        const correct = parseInt(document.getElementById('life-correct').textContent) || 0;
-        const attempts = parseInt(document.getElementById('life-attempts').textContent) || 0;
-        const accuracy = attempts > 0 ? Math.round((correct / attempts) * 100) : 0;
-        document.getElementById('life-accuracy').textContent = accuracy + '%';
-      }
-      
-      // Observe changes to lifetime stats
-      const observer = new MutationObserver(updateAccuracy);
-      const lifeCorrect = document.getElementById('life-correct');
-      const lifeAttempts = document.getElementById('life-attempts');
-      
-      if (lifeCorrect) observer.observe(lifeCorrect, { childList: true, subtree: true });
-      if (lifeAttempts) observer.observe(lifeAttempts, { childList: true, subtree: true });
-      
-      updateAccuracy();
-    });
-  </script>
+  <script src="/js/main-freemium-school.js" defer></script>
 </body>
 </html>
