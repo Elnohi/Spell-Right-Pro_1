@@ -1,262 +1,106 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="light">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SpellRightPro - Spelling Bee</title>
-    <link rel="stylesheet" href="styles.css">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>SpellRightPro – Spelling Bee (Freemium)</title>
+
+  <!-- Styles & Icons -->
+  <link rel="stylesheet" href="/css/styles.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"/>
+
+  <!-- Firebase (compat) + Analytics -->
+  <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-analytics-compat.js"></script>
+  <script src="/js/config.js" defer></script>
+
+  <!-- AdSense -->
+  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7632930282249669" crossorigin="anonymous"></script>
 </head>
 <body>
-    <div class="container">
-        <!-- HOME PAGE - Always show this first -->
-        <div id="home-page" class="training-card">
-            <h1 class="card-title">Spelling Bee Practice</h1>
-            
-            <!-- Advertisement -->
-            <div class="ad-banner">
-                <p>🚀 Upgrade to Premium for unlimited features!</p>
-            </div>
-
-            <!-- Hands-Free Mode Info -->
-            <div class="info-box">
-                <p><strong>Hands-Free Mode:</strong> Each word will be spoken, then the app listens to your response automatically.</p>
-            </div>
-
-            <!-- Progress -->
-            <div class="progress-display">
-                <p>Today's Progress: <span id="progress-count">0/10</span></p>
-                <div>
-                    <span>Correct: <strong id="correct-count">0</strong></span>
-                    <span>Attempts: <strong id="attempts-count">0</strong></span>
-                </div>
-            </div>
-
-            <!-- Accent Selector -->
-            <div class="accent-section">
-                <label class="section-label">Select Pronunciation:</label>
-                <div class="accent-picker">
-                    <button class="accent-btn active" data-accent="us">🇺🇸 US</button>
-                    <button class="accent-btn" data-accent="uk">🇬🇧 UK</button>
-                    <button class="accent-btn" data-accent="au">🇦🇺 AU</button>
-                </div>
-            </div>
-
-            <!-- Custom Words -->
-            <div class="custom-words-section">
-                <label class="section-label">Add custom words...</label>
-                <textarea id="words-textarea" placeholder="Enter words like: apple, banana, cherry"></textarea>
-                
-                <div class="file-upload">
-                    <div class="btn-upload">
-                        📁 Upload File
-                        <input type="file" id="file-input">
-                    </div>
-                </div>
-
-                <div class="info-box">
-                    <p>Freemium allows one custom list per day. Upgrade to Premium for unlimited words.</p>
-                </div>
-            </div>
-
-            <!-- Start Button -->
-            <button class="btn-start" id="start-button">🐝 Start Spelling Bee</button>
-            
-            <!-- Premium Button -->
-            <button class="premium-button" id="premium-button">⭐ Premium</button>
-        </div>
-
-        <!-- GAME PAGE - Hidden by default -->
-        <div id="game-page" class="training-card" style="display: none;">
-            <h1 class="card-title">Spelling Bee Game</h1>
-            <div class="word-progress" id="word-progress">Word 1 of 10</div>
-            
-            <div class="letters-pad" id="letters-pad">
-                <!-- Letters will go here -->
-            </div>
-            
-            <div class="input-group">
-                <input type="text" class="form-control" id="spelling-input" placeholder="Spell the word...">
-            </div>
-            
-            <div class="button-group">
-                <button class="btn-secondary" id="prev-button">Previous</button>
-                <button class="btn-secondary" id="repeat-button">Repeat</button>
-                <button class="btn-primary" id="submit-button">Submit</button>
-            </div>
-            
-            <div class="feedback" id="feedback-area"></div>
-        </div>
+  <nav class="navbar">
+    <div class="brand">
+      <img src="/assets/logo.png" class="logo" alt="SpellRightPro Logo" loading="lazy"/>
+      <div>
+        <span>SpellRightPro</span>
+        <span class="subtitle">Spelling Bee</span>
+      </div>
     </div>
+    <div class="nav-actions">
+      <a class="btn-secondary" href="/index.html"><i class="fa fa-home"></i> Home</a>
+      <a class="btn-primary" href="/premium.html"><i class="fa fa-crown"></i> Premium</a>
+    </div>
+  </nav>
 
-    <!-- SIMPLE JavaScript - Add this directly in the HTML -->
-    <script>
-        class SimpleSpellingBee {
-            constructor() {
-                this.currentPage = 'home';
-                this.words = [];
-                this.currentWordIndex = 0;
-                
-                this.initialize();
-            }
-            
-            initialize() {
-                console.log('🚀 Starting Simple Spelling Bee App');
-                this.showPage('home');
-                this.setupEventListeners();
-            }
-            
-            showPage(pageName) {
-                console.log('📄 Showing page:', pageName);
-                
-                // Hide all pages
-                document.getElementById('home-page').style.display = 'none';
-                document.getElementById('game-page').style.display = 'none';
-                
-                // Show requested page
-                document.getElementById(pageName + '-page').style.display = 'block';
-                this.currentPage = pageName;
-            }
-            
-            setupEventListeners() {
-                console.log('🔧 Setting up event listeners');
-                
-                // Start Button
-                document.getElementById('start-button').addEventListener('click', () => {
-                    console.log('🎯 Start button clicked!');
-                    this.startGame();
-                });
-                
-                // Premium Button
-                document.getElementById('premium-button').addEventListener('click', () => {
-                    console.log('💎 Premium button clicked!');
-                    alert('Premium features coming soon!');
-                });
-                
-                // Accent Buttons
-                document.querySelectorAll('.accent-btn').forEach(btn => {
-                    btn.addEventListener('click', (e) => {
-                        const accent = e.target.getAttribute('data-accent');
-                        console.log('🎵 Accent selected:', accent);
-                        
-                        // Update UI
-                        document.querySelectorAll('.accent-btn').forEach(b => b.classList.remove('active'));
-                        e.target.classList.add('active');
-                    });
-                });
-                
-                // Game buttons
-                document.getElementById('prev-button').addEventListener('click', () => {
-                    console.log('⏮️ Previous button');
-                    this.previousWord();
-                });
-                
-                document.getElementById('repeat-button').addEventListener('click', () => {
-                    console.log('🔊 Repeat button');
-                    this.repeatWord();
-                });
-                
-                document.getElementById('submit-button').addEventListener('click', () => {
-                    console.log('✅ Submit button');
-                    this.checkAnswer();
-                });
-            }
-            
-            startGame() {
-                console.log('🎮 Starting game...');
-                
-                // Get words from textarea or use defaults
-                const textarea = document.getElementById('words-textarea');
-                if (textarea.value.trim()) {
-                    this.words = textarea.value.split(/[,\n]/)
-                        .map(word => word.trim())
-                        .filter(word => word.length > 0);
-                } else {
-                    this.words = ['apple', 'banana', 'cherry', 'dog', 'elephant'];
-                }
-                
-                console.log('📝 Words loaded:', this.words);
-                
-                if (this.words.length > 0) {
-                    this.currentWordIndex = 0;
-                    this.showPage('game');
-                    this.loadWord(this.currentWordIndex);
-                    this.generateLetters();
-                } else {
-                    alert('Please add some words first!');
-                }
-            }
-            
-            loadWord(index) {
-                if (index < this.words.length) {
-                    const word = this.words[index];
-                    document.getElementById('word-progress').textContent = 
-                        `Word ${index + 1} of ${this.words.length}`;
-                    document.getElementById('spelling-input').value = '';
-                    console.log('📖 Loading word:', word);
-                }
-            }
-            
-            generateLetters() {
-                const lettersPad = document.getElementById('letters-pad');
-                const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
-                
-                lettersPad.innerHTML = letters.map(letter => `
-                    <button class="letter-tile" data-letter="${letter}">${letter}</button>
-                `).join('');
-                
-                // Add click handlers to letters
-                lettersPad.querySelectorAll('.letter-tile').forEach(tile => {
-                    tile.addEventListener('click', (e) => {
-                        const letter = e.target.getAttribute('data-letter');
-                        const input = document.getElementById('spelling-input');
-                        input.value += letter;
-                        console.log('🔤 Letter clicked:', letter);
-                    });
-                });
-            }
-            
-            previousWord() {
-                if (this.currentWordIndex > 0) {
-                    this.currentWordIndex--;
-                    this.loadWord(this.currentWordIndex);
-                }
-            }
-            
-            repeatWord() {
-                // In a real app, this would speak the word
-                const word = this.words[this.currentWordIndex];
-                console.log('🔊 Speaking word:', word);
-                alert(`The word is: ${word}`);
-            }
-            
-            checkAnswer() {
-                const userInput = document.getElementById('spelling-input').value.trim();
-                const correctWord = this.words[this.currentWordIndex];
-                const isCorrect = userInput.toLowerCase() === correctWord.toLowerCase();
-                
-                const feedback = document.getElementById('feedback-area');
-                feedback.textContent = isCorrect ? '✅ Correct!' : `❌ Incorrect. The word was: ${correctWord}`;
-                feedback.className = `feedback ${isCorrect ? 'correct' : 'incorrect'}`;
-                
-                // Move to next word after delay
-                setTimeout(() => {
-                    this.currentWordIndex++;
-                    if (this.currentWordIndex < this.words.length) {
-                        this.loadWord(this.currentWordIndex);
-                        feedback.textContent = '';
-                    } else {
-                        alert('🎉 Game completed!');
-                        this.showPage('home');
-                    }
-                }, 2000);
-            }
-        }
-        
-        // Start the app when page loads
-        window.addEventListener('load', () => {
-            window.app = new SimpleSpellingBee();
-            console.log('✅ App initialized successfully!');
-        });
-    </script>
+  <div class="ad-container">
+    <div class="ad-label">Advertisement</div>
+    <ins class="adsbygoogle" style="display:block" data-ad-client="ca-pub-7632930282249669" data-ad-slot="3344556677" data-ad-format="auto" data-full-width-responsive="true"></ins>
+    <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
+  </div>
+
+  <main class="container">
+    <section id="home-page" class="training-card">
+      <h1 class="card-title">Spelling Bee Practice</h1>
+      <div class="info-box">
+        <p><strong>Hands-Free Mode:</strong> The app speaks each word, then listens and marks automatically.</p>
+      </div>
+
+      <div class="progress-display">
+        <p>Today's Progress: <span id="progress-count">0/10</span></p>
+        <div>
+          <span>Correct: <strong id="correct-count">0</strong></span>
+          <span>Attempts: <strong id="attempts-count">0</strong></span>
+        </div>
+      </div>
+
+      <div class="accent-section">
+        <label class="section-label">Select Pronunciation:</label>
+        <div class="accent-picker">
+          <button class="accent-btn active" data-accent="us">🇺🇸 US</button>
+          <button class="accent-btn" data-accent="uk">🇬🇧 UK</button>
+          <button class="accent-btn" data-accent="au">🇦🇺 AU</button>
+        </div>
+      </div>
+
+      <div class="custom-words-section">
+        <label class="section-label">Add custom words (comma, space, or line separated)...</label>
+        <textarea id="words-textarea" placeholder="Enter words like: apple, banana, cherry"></textarea>
+        <div class="file-upload">
+          <label for="file-input" class="btn-upload">📁 Upload File</label>
+          <input type="file" id="file-input" accept=".txt,.csv" style="position:absolute;left:-9999px;width:1px;height:1px;opacity:0" />
+        </div>
+        <div class="info-box">
+          <p><strong>Freemium:</strong> one custom list per day. <a href="/premium.html">Unlock unlimited</a> on Premium.</p>
+        </div>
+      </div>
+
+      <button class="btn-start" id="start-button">🐝 Start Spelling Bee</button>
+    </section>
+
+    <section id="game-page" class="training-card" style="display:none;">
+      <h1 class="card-title">Spelling Bee</h1>
+      <div class="word-progress" id="word-progress">Word 1 of 10</div>
+      <div class="letters-pad" id="letters-pad"></div>
+      <div class="input-group">
+        <input type="text" class="form-control" id="spelling-input" placeholder="Spell the word..." />
+      </div>
+      <div class="button-group">
+        <button class="btn-secondary" id="prev-button">Previous</button>
+        <button class="btn-secondary" id="repeat-button">Repeat</button>
+        <button class="btn-primary" id="submit-button">Submit</button>
+      </div>
+      <div class="feedback" id="feedback-area"></div>
+      <div class="mic-status" id="mic-status" style="display:none;">Listening... Speak now!</div>
+    </section>
+
+    <section id="results-page" class="training-card" style="display:none;">
+      <h1 class="card-title">Practice Complete! 🎉</h1>
+      <div class="summary-area" id="summary-area"></div>
+    </section>
+  </main>
+
+  <script src="/js/main-freemium-bee.js" defer></script>
 </body>
 </html>
