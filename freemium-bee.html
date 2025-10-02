@@ -1,16 +1,17 @@
 <!DOCTYPE html>
 <html lang="en" data-theme="light">
 <head>
-  <meta charset="UTF-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>SpellRightPro – Spelling Bee (Freemium)</title>
 
-  <link rel="manifest" href="/manifest.json"/>
+  <link rel="manifest" href="/manifest.json">
 
-  <link rel="stylesheet" href="/css/styles.css"/>
+  <!-- Styles & Icons -->
+  <link rel="stylesheet" href="/css/styles.css" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"/>
 
-  <!-- Firebase (compat) -->
+  <!-- Firebase (compat) + Analytics -->
   <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore-compat.js"></script>
@@ -19,13 +20,21 @@
 
   <!-- AdSense -->
   <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7632930282249669" crossorigin="anonymous"></script>
+
+  <style>
+    .sticky-controls{position:sticky;bottom:0;background:#fff;border-top:1px solid #eee;padding:12px;margin-top:12px}
+    #add-words-btn{margin-top:8px}
+  </style>
 </head>
 <body>
   <nav class="navbar">
-    <a class="brand" href="/index.html">
+    <div class="brand">
       <img src="/assets/logo.png" class="logo" alt="SpellRightPro Logo" loading="lazy"/>
-      <div><span>SpellRightPro</span><span class="subtitle">Spelling Bee</span></div>
-    </a>
+      <div>
+        <span>SpellRightPro</span>
+        <span class="subtitle">Spelling Bee</span>
+      </div>
+    </div>
     <div class="nav-actions">
       <a class="btn-secondary" href="/index.html"><i class="fa fa-home"></i> Home</a>
       <a class="btn-primary" href="/premium.html"><i class="fa fa-crown"></i> Premium</a>
@@ -42,11 +51,16 @@
     <section id="home-page" class="training-card">
       <h1 class="card-title">Spelling Bee Practice</h1>
 
-      <div class="info-box"><p><strong>Hands-Free Mode:</strong> The app speaks each word, then listens and marks automatically.</p></div>
+      <div class="info-box">
+        <p><strong>Hands-Free Mode:</strong> The app speaks each word, then listens and marks automatically.</p>
+      </div>
 
       <div class="progress-display">
         <p>Today's Progress: <span id="progress-count">0/10</span></p>
-        <div><span>Correct: <strong id="correct-count">0</strong></span> <span>Attempts: <strong id="attempts-count">0</strong></span></div>
+        <div>
+          <span>Correct: <strong id="correct-count">0</strong></span>
+          <span>Attempts: <strong id="attempts-count">0</strong></span>
+        </div>
       </div>
 
       <div class="accent-section">
@@ -59,39 +73,38 @@
       </div>
 
       <div class="custom-words-section">
-        <label class="section-label"><i class="fa fa-list"></i> Add custom words</label>
-        <textarea id="words-textarea" placeholder="apple, banana, cherry"></textarea>
+        <label class="section-label">Add custom words (comma, space, or line separated)…</label>
+        <textarea id="words-textarea" placeholder="Enter words like: apple, banana, cherry"></textarea>
 
-        <div class="row" style="gap:8px;margin:8px 0 0">
-          <button class="btn-secondary" id="add-words-btn"><i class="fa fa-plus"></i> Add Words</button>
-          <label for="file-input" class="btn-secondary">📁 Upload File</label>
-          <input type="file" id="file-input" accept=".txt,.csv" hidden />
+        <div class="file-upload">
+          <label for="file-input" class="btn-upload">📁 Upload File</label>
+          <input type="file" id="file-input" accept=".txt,.csv" hidden/>
         </div>
+
+        <button id="add-words-btn" class="btn-secondary">➕ Add Words</button>
 
         <div class="info-box">
           <p><strong>Freemium:</strong> one custom list per day. <a href="/premium.html">Unlock unlimited</a> on Premium.</p>
         </div>
       </div>
 
-      <button class="btn-start" id="start-button">🐝 Start Spelling Bee</button>
+      <div class="sticky-controls">
+        <button class="btn-start" id="start-button">🐝 Start Spelling Bee</button>
+      </div>
     </section>
 
     <section id="game-page" class="training-card" style="display:none;">
       <h1 class="card-title">Spelling Bee</h1>
       <div class="word-progress" id="word-progress">Word 1 of 10</div>
       <div class="letters-pad" id="letters-pad"></div>
-
-      <div class="input-group" style="position:sticky;bottom:0;background:#fff;z-index:2;padding-top:10px">
-        <input type="text" class="form-control" id="spelling-input" placeholder="Spell the word..." autocomplete="off"/>
-        <div class="button-group">
-          <button class="btn-secondary" id="prev-button">Previous</button>
-          <button class="btn-secondary" id="repeat-button">Repeat</button>
-          <button class="btn-primary" id="submit-button">Submit</button>
-        </div>
+      <div class="input-group"><input type="text" class="form-control" id="spelling-input" placeholder="Spell the word…"/></div>
+      <div class="button-group">
+        <button class="btn-secondary" id="prev-button">Previous</button>
+        <button class="btn-secondary" id="repeat-button">Repeat</button>
+        <button class="btn-primary" id="submit-button">Submit</button>
       </div>
-
-      <div class="feedback" id="feedback-area" aria-live="polite"></div>
-      <div class="mic-status" id="mic-status" style="display:none;">Listening... Speak now!</div>
+      <div class="feedback" id="feedback-area"></div>
+      <div class="mic-status" id="mic-status" style="display:none;">Listening… Speak now!</div>
     </section>
 
     <section id="results-page" class="training-card" style="display:none;">
@@ -100,10 +113,10 @@
     </section>
   </main>
 
-  <footer class="container" style="margin:24px auto 40px; text-align:center; color:#555">
+  <footer style="margin:24px 0; text-align:center; font-size:.95rem;">
     <a href="/terms.html">Terms</a> •
     <a href="/privacy.html">Privacy</a> •
-    <a href="/refund_policy.html">Refunds</a> •
+    <a href="/refund-policy.html">Refund Policy</a> •
     <a href="/contact.html">Contact</a>
   </footer>
 
