@@ -1,188 +1,192 @@
-/* SpellRightPro – Freemium Bee (Fixed)
-   - Fallback to sample words if user added none
-   - Add "Add Words" button + file upload parsing
-   - Keep Premium links working
-*/
+// SpellRightPro — Freemium Bee (fixed)
 (() => {
   'use strict';
 
   const state = {
     words: [],
-    idx: 0,
+    current: 0,
     correct: 0,
     attempts: 0,
     accent: 'us',
-    customAddedToday: false
+    addedTodayKey: 'bee_custom_date'
   };
 
-  // elements
-  const $ = s => document.querySelector(s);
-  const $$ = s => Array.from(document.querySelectorAll(s));
+  const els = {};
+  const synth = window.speechSynthesis;
 
-  const homePage = $('#home-page');
-  const gamePage = $('#game-page');
-  const resultsPage = $('#results-page');
+  function $(id) { return document.getElementById(id); }
 
-  const progressCount = $('#progress-count');
-  const correctCount = $('#correct-count');
-  const attemptsCount = $('#attempts-count');
-  const wordProgress = $('#word-progress');
-  const lettersPad = $('#letters-pad');
-  const input = $('#spelling-input');
-  const feedback = $('#feedback-area');
+  function todayISO(){ return new Date().toISOString().slice(0,10); }
+  function canAddCustom(){ return localStorage.getItem(state.addedTodayKey) !== todayISO(); }
+  function markCustom(){ localStorage.setItem(state.addedTodayKey, todayISO()); }
 
-  const startBtn = $('#start-button');
-  const addWordsBtn = $('#add-words-btn');
-  const wordsTextarea = $('#words-textarea');
-  const fileInput = $('#file-input');
-
-  const prevBtn = $('#prev-button');
-  const repeatBtn = $('#repeat-button');
-  const submitBtn = $('#submit-button');
-
-  // ===== Helpers =====
-  function speak(word) {
-    try {
+  function speak(word){
+    try{
+      synth.cancel();
       const u = new SpeechSynthesisUtterance(word);
       u.lang = state.accent === 'uk' ? 'en-GB' : state.accent === 'au' ? 'en-AU' : 'en-US';
-      (window.speechSynthesis || speechSynthesis).speak(u);
-    } catch {}
-  }
-  function show(el) { el && (el.style.display = 'block'); }
-  function hide(el) { el && (el.style.display = 'none'); }
-  function upStats() {
-    progressCount.textContent = `${state.idx}/${Math.max(10, state.words.length)}`;
-    correctCount.textContent = state.correct;
-    attemptsCount.textContent = state.attempts;
-  }
-  function mkLettersPad() {
-    if (!lettersPad) return;
-    lettersPad.innerHTML = '';
-    'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('').forEach(ch => {
-      const b = document.createElement('button');
-      b.className = 'letter-tile';
-      b.textContent = ch;
-      b.addEventListener('click', () => {
-        input.value += ch.toLowerCase();
-        input.focus();
-      });
-      lettersPad.appendChild(b);
-    });
+      synth.speak(u);
+    }catch(e){}
   }
 
-  // ===== Accent buttons =====
-  $$('.accent-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      $$('.accent-btn').forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-      state.accent = btn.getAttribute('data-accent') || 'us';
-    });
-  });
-
-  // ===== Add words handlers =====
-  function parseTextToWords(text) {
-    return text.split(/[\s,;]+/).map(w => w.trim()).filter(Boolean);
-  }
-  addWordsBtn?.addEventListener('click', () => {
-    const raw = (wordsTextarea?.value || '').trim();
-    if (!raw) { alert('Enter some words first.'); return; }
-    const added = parseTextToWords(raw);
-    state.words.push(...added);
-    state.words = Array.from(new Set(state.words));
-    state.customAddedToday = true;
-    wordsTextarea.value = '';
-    alert(`Added ${added.length} word(s).`);
-  });
-  fileInput?.addEventListener('change', e => {
-    const f = e.target.files?.[0]; if (!f) return;
-    const r = new FileReader();
-    r.onload = () => {
-      const added = parseTextToWords(String(r.result || ''));
-      state.words.push(...added);
-      state.words = Array.from(new Set(state.words));
-      state.customAddedToday = true;
-      alert(`Uploaded ${added.length} word(s).`);
-    };
-    r.readAsText(f);
-    e.target.value = '';
-  });
-
-  // ===== Start game =====
-  async function loadDefaultWordsIfNeeded() {
-    if (state.words.length) return;
-    // Fallback to sample words from a local JSON, then to hardcoded list
-    try {
-      const res = await fetch('/data/spelling-bee.json', { cache: 'no-cache' });
-      if (res.ok) {
-        const data = await res.json();
-        const arr = Array.isArray(data?.words) ? data.words : data;
-        if (Array.isArray(arr) && arr.length) {
-          state.words = arr.slice(0, 30);
-          return;
-        }
-      }
-    } catch {}
-    state.words = ['example','spelling','practice','education','learning','knowledge','vocabulary','language','pronunciation','exercise'];
+  function parseTextarea(){
+    const ta = $('words-textarea');
+    if(!ta || !ta.value.trim()) return [];
+    return ta.value.split(/[\s,;\n]+/).map(w=>w.trim()).filter(Boolean);
   }
 
-  function showHome() { show(homePage); hide(gamePage); hide(resultsPage); }
-  function showGame() { hide(homePage); show(gamePage); hide(resultsPage); input?.focus(); }
-  function showResults() {
-    hide(homePage); hide(gamePage); show(resultsPage);
-    $('#summary-area').innerHTML = `
-      <p>Correct: <strong>${state.correct}</strong> / Attempts: <strong>${state.attempts}</strong></p>
+  function ensureWordsThenStart(){
+    if(state.words.length === 0){
+      // load sample list if user added nothing (#4)
+      fetch('/data/spelling-bee.json',{cache:'no-cache'})
+        .then(r => r.ok ? r.json() : [])
+        .then(data => {
+          state.words = Array.isArray(data) ? data.slice(0, 10) : [
+            'example','spelling','practice','education','learning',
+            'knowledge','vocabulary','language','pronunciation','exercise'
+          ];
+          startGame();
+        })
+        .catch(() => {
+          state.words = ['example','spelling','practice','education','learning',
+            'knowledge','vocabulary','language','pronunciation','exercise'];
+          startGame();
+        });
+    } else {
+      startGame();
+    }
+  }
+
+  function startGame(){
+    state.current = 0;
+    $('home-page').style.display = 'none';
+    $('game-page').style.display = 'block';
+    updateProgress();
+    loadWord();
+  }
+
+  function updateProgress(){
+    const total = state.words.length || 10;
+    $('progress-count') && ($('progress-count').textContent = `${state.current}/${total}`);
+    $('correct-count') && ($('correct-count').textContent = state.correct);
+    $('attempts-count') && ($('attempts-count').textContent = state.attempts);
+    $('word-progress') && ($('word-progress').textContent = `Word ${state.current+1} of ${total}`);
+  }
+
+  function loadWord(){
+    const word = state.words[state.current] || '';
+    $('spelling-input').value = '';
+    speak(word);
+  }
+
+  function repeat(){ speak(state.words[state.current] || ''); }
+
+  function previous(){
+    if(state.current>0){ state.current--; updateProgress(); loadWord(); }
+  }
+
+  function check(){
+    const input = $('spelling-input').value.trim();
+    const word = (state.words[state.current] || '').trim();
+    state.attempts++;
+    if(input.toLowerCase() === word.toLowerCase()){
+      state.correct++;
+      setFeedback(`✅ ${word}`, true);
+      next();
+    }else{
+      setFeedback(`❌ ${input} → ${word}`, false);
+    }
+    updateProgress();
+  }
+
+  function next(){
+    state.current++;
+    if(state.current >= state.words.length){
+      finish();
+    }else{
+      updateProgress();
+      loadWord();
+    }
+  }
+
+  function finish(){
+    $('game-page').style.display = 'none';
+    $('results-page').style.display = 'block';
+    $('summary-area').innerHTML = `
+      <p><strong>Correct:</strong> ${state.correct}</p>
+      <p><strong>Attempts:</strong> ${state.attempts}</p>
     `;
   }
 
-  function loadWord() {
-    if (state.idx >= state.words.length) { showResults(); return; }
-    const w = state.words[state.idx];
-    wordProgress.textContent = `Word ${state.idx + 1} of ${state.words.length}`;
-    input.value = '';
-    feedback.textContent = '';
-    speak(w);
-    // Keep typing area visible
-    input.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  function setFeedback(text, ok){
+    const el = $('feedback-area');
+    if(!el) return;
+    el.textContent = text;
+    el.style.color = ok ? '#16a34a' : '#ef4444';
+    el.scrollIntoView({behavior:'smooth', block:'nearest'});
   }
 
-  function submit() {
-    const guess = (input.value || '').trim();
-    if (!guess) { speak(state.words[state.idx]); return; }
-    state.attempts++;
-    if (guess.toLowerCase() === state.words[state.idx].toLowerCase()) {
-      state.correct++;
-      feedback.textContent = '✅ Correct';
-      state.idx++;
-      setTimeout(loadWord, 400);
-    } else {
-      feedback.textContent = `❌ Try again`;
-    }
-    upStats();
+  function addWordsFromTextarea(){
+    const list = parseTextarea();
+    if(!list.length){ alert('Enter some words first.'); return; }
+    if(!canAddCustom()){ alert('Freemium: one custom list per day.'); return; }
+    state.words = list.slice(0, 50);
+    $('words-textarea').value = '';
+    markCustom();
+    alert(`Added ${state.words.length} words.`);
   }
 
-  prevBtn?.addEventListener('click', () => {
-    state.idx = Math.max(0, state.idx - 1);
-    loadWord();
-  });
-  repeatBtn?.addEventListener('click', () => speak(state.words[state.idx]));
-  submitBtn?.addEventListener('click', submit);
-  input?.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter') submit();
-    if (e.code === 'Space') { e.preventDefault(); speak(state.words[state.idx]); }
-  });
+  function addWordsFromFile(file){
+    if(!file) return;
+    if(!canAddCustom()){ alert('Freemium: one custom list per day.'); return; }
+    const r = new FileReader();
+    r.onload = () => {
+      const txt = String(r.result||'');
+      const words = txt.split(/\r?\n|,|;|\t| /).map(w=>w.trim()).filter(Boolean);
+      if(!words.length){ alert('No words found in file.'); return; }
+      state.words = words.slice(0, 50);
+      markCustom();
+      alert(`Uploaded ${state.words.length} words.`);
+    };
+    r.readAsText(file);
+  }
 
-  startBtn?.addEventListener('click', async () => {
-    await loadDefaultWordsIfNeeded();
-    state.idx = 0; state.correct = 0; state.attempts = 0;
-    upStats(); mkLettersPad(); showGame(); loadWord();
-  });
-
-  // premium links always navigate (in case any buttons remain)
-  document.querySelectorAll('.btn-primary[href="/premium.html"], #premium-button, #premium-main-btn').forEach(el => {
-    el.addEventListener('click', (e) => {
-      if (el.tagName !== 'A') { e.preventDefault(); window.location.href = '/premium.html'; }
+  function bind(){
+    // buttons
+    $('start-button')?.addEventListener('click', () => {
+      if(state.words.length===0){
+        // If user typed words but didn’t click Add Words, accept them on Start too
+        const typed = parseTextarea();
+        if(typed.length){ state.words = typed.slice(0,50); }
+      }
+      ensureWordsThenStart();
     });
-  });
 
-  showHome();
+    $('prev-button')?.addEventListener('click', previous);
+    $('repeat-button')?.addEventListener('click', repeat);
+    $('submit-button')?.addEventListener('click', check);
+    $('spelling-input')?.addEventListener('keydown', (e)=>{ if(e.key==='Enter'){ e.preventDefault(); check(); } });
+
+    // accent
+    document.querySelectorAll('.accent-btn').forEach(b=>{
+      b.addEventListener('click', ()=>{
+        document.querySelectorAll('.accent-btn').forEach(x=>x.classList.remove('active'));
+        b.classList.add('active');
+        state.accent = b.dataset.accent || 'us';
+      });
+    });
+
+    // custom words
+    $('add-words-btn')?.addEventListener('click', addWordsFromTextarea);
+    $('file-input')?.addEventListener('change', e => addWordsFromFile(e.target.files?.[0]));
+
+    // premium
+    document.querySelectorAll('a[href="/premium.html"], #premium-button, #premium-main-btn')
+      .forEach(el => el.addEventListener('click', (e)=>{
+        // ensure navigation instead of alert
+        if(el.tagName !== 'A'){ e.preventDefault(); window.location.href='/premium.html'; }
+      }));
+  }
+
+  document.addEventListener('DOMContentLoaded', bind);
 })();
