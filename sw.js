@@ -1,16 +1,15 @@
 // sw.js — network-first for HTML, stale-while-revalidate for static
-const VERSION = '2025-08-17-1';
+const VERSION = '2025-10-02';
 const STATIC_CACHE = `static-${VERSION}`;
 const HTML_CACHE = `html-${VERSION}`;
 
 self.addEventListener('install', (event) => {
   self.skipWaiting();
-  event.waitUntil(caches.open(STATIC_CACHE)); // create cache up front
+  event.waitUntil(caches.open(STATIC_CACHE));
 });
 
 self.addEventListener('activate', (event) => {
   event.waitUntil((async () => {
-    // remove old versioned caches
     const keys = await caches.keys();
     await Promise.all(keys
       .filter(k => k !== STATIC_CACHE && k !== HTML_CACHE)
@@ -23,9 +22,19 @@ self.addEventListener('message', (event) => {
   if (event.data && event.data.type === 'SKIP_WAITING') self.skipWaiting();
 });
 
-// Network-first for navigations (HTML pages)
 self.addEventListener('fetch', (event) => {
   const req = event.request;
+  const url = req.url;
+
+  // 🚫 Skip caching chrome-extension:// and third-party analytics/ads
+  if (!url.startsWith('http') ||
+      url.includes('googletagmanager.com') ||
+      url.includes('googlesyndication.com') ||
+      url.includes('google-analytics.com')) {
+    return; // Let browser handle directly
+  }
+
+  // Network-first for navigations
   if (req.mode === 'navigate') {
     event.respondWith((async () => {
       try {
@@ -34,7 +43,6 @@ self.addEventListener('fetch', (event) => {
         caches.open(HTML_CACHE).then(c => c.put(req, copy));
         return res;
       } catch {
-        // offline fallback: cached page or your offline.html if present
         return (await caches.match(req)) || (await caches.match('/offline.html'));
       }
     })());
@@ -43,7 +51,7 @@ self.addEventListener('fetch', (event) => {
 
   // Static assets: stale-while-revalidate
   const dest = req.destination;
-  if (dest === 'script' || dest === 'style' || dest === 'image' || dest === 'font') {
+  if (['script','style','image','font'].includes(dest)) {
     event.respondWith((async () => {
       const cache = await caches.open(STATIC_CACHE);
       const hit = await cache.match(req);
