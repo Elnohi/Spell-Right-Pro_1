@@ -1,14 +1,14 @@
 <!DOCTYPE html>
 <html lang="en" data-theme="light">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <title>SpellRightPro – Choose Your Practice</title>
 
-  <link rel="manifest" href="/manifest.json">
+  <link rel="manifest" href="/manifest.json"/>
 
   <!-- Styles & Icons -->
-  <link rel="stylesheet" href="/css/styles.css" />
+  <link rel="stylesheet" href="/css/styles.css"/>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"/>
 
   <!-- Firebase (compat) + Analytics -->
@@ -23,13 +23,13 @@
 </head>
 <body>
   <nav class="navbar">
-    <div class="brand">
+    <a class="brand" href="/index.html">
       <img src="/assets/logo.png" class="logo" alt="SpellRightPro Logo" loading="lazy"/>
       <div>
         <span>SpellRightPro</span>
         <span class="subtitle">Spelling Trainer</span>
       </div>
-    </div>
+    </a>
     <div class="nav-actions">
       <a class="btn-primary" href="/premium.html"><i class="fa fa-crown"></i> Premium</a>
     </div>
@@ -45,6 +45,7 @@
     <section class="training-card">
       <h1 class="card-title">Choose Your Practice</h1>
       <p class="muted">Start with the mode that suits you best.</p>
+
       <div class="mode-grid" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px;">
         <a class="card link-card" href="/freemium-bee.html">
           <h3><i class="fa fa-microphone"></i> Spelling Bee</h3>
@@ -65,5 +66,19 @@
       </div>
     </section>
   </main>
+
+  <footer class="container" style="margin:24px auto 40px; text-align:center; color:#555">
+    <a href="/terms.html">Terms</a> •
+    <a href="/privacy.html">Privacy</a> •
+    <a href="/refund_policy.html">Refunds</a> •
+    <a href="/contact.html">Contact</a>
+  </footer>
+
+  <!-- Service worker -->
+  <script>
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/sw.js').catch(console.warn);
+    }
+  </script>
 </body>
 </html>
