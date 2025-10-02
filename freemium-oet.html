@@ -2,11 +2,12 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>SpellRightPro (OET - Freemium)</title>
 
-  <link rel="manifest" href="/manifest.json"/>
+  <link rel="manifest" href="/manifest.json">
 
+  <!-- Styles -->
   <link rel="stylesheet" href="/css/styles.css"/>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"/>
 
@@ -15,27 +16,28 @@
   <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-analytics-compat.js"></script>
-  <script src="/js/config.js"></script>
+  <script src="/js/config.js" defer></script>
 
   <!-- AdSense -->
   <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7632930282249669" crossorigin="anonymous"></script>
 
   <style>
-    .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
-    .controls{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
-    .training-card{max-width:960px;margin:16px auto}
-    #trainer-area{margin-top:12px}
-    .answer-row{display:flex;gap:8px;align-items:center;position:sticky;bottom:0;background:#fff;padding:10px 0;border-top:1px solid #eee}
-    #answer{flex:1}
+    .controls{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0}
+    .answer-row{display:flex;gap:8px;align-items:center}
+    .answer-row input{flex:1}
     .hidden{display:none!important}
+    .sticky-input{position:sticky;bottom:0;background:#fff;border-top:1px solid #eee;padding:12px}
   </style>
 </head>
 <body>
   <nav class="navbar">
-    <a class="brand" href="/index.html">
-      <img src="/assets/logo.png" class="logo" alt="SpellRightPro Logo"/>
-      <div><span>SpellRightPro</span><span class="subtitle">OET Practice</span></div>
-    </a>
+    <div class="brand">
+      <img src="/assets/logo.png" alt="SpellRightPro Logo" class="logo" loading="lazy"/>
+      <div>
+        <span>SpellRightPro</span>
+        <span class="subtitle">OET Practice</span>
+      </div>
+    </div>
     <div class="nav-actions">
       <a class="btn-secondary" href="/index.html"><i class="fa fa-home"></i> Home</a>
       <a class="btn-primary" href="/premium.html"><i class="fa fa-crown"></i> Premium</a>
@@ -52,40 +54,41 @@
     <section class="training-card">
       <h1 class="card-title"><i class="fa fa-stethoscope"></i> OET Word Practice</h1>
 
-      <div class="row">
-        <div class="controls">
-          <div class="accent-picker">
-            <button class="active" data-accent="en-US">🇺🇸 US</button>
-            <button data-accent="en-GB">🇬🇧 UK</button>
-            <button data-accent="en-AU">🇦🇺 AU</button>
-          </div>
-          <select id="oet-mode" class="form-control" style="max-width:180px">
-            <option value="practice">Practice</option>
-            <option value="test">Test</option>
-          </select>
-          <button id="start-btn" class="btn-start"><i class="fa fa-play"></i> Start</button>
-        </div>
+      <div class="info-box">
+        <p>Practice healthcare-specific words. Freemium users can add one custom list per day.</p>
       </div>
 
-      <div class="custom-inputs" style="margin:12px 0">
-        <textarea id="custom-words" placeholder="Add custom words… one per line or comma-separated"></textarea>
-        <div class="row">
-          <button id="add-custom-btn" class="btn-secondary"><i class="fa fa-plus"></i> Add Words</button>
-          <label for="file-input" class="btn-secondary">📁 Upload File</label>
-          <input id="file-input" type="file" accept=".txt,.csv" hidden/>
+      <div class="controls">
+        <div class="accent-picker" aria-label="Select accent">
+          <button type="button" class="active" data-accent="en-US">🇺🇸 US</button>
+          <button type="button" data-accent="en-GB">🇬🇧 UK</button>
+          <button type="button" data-accent="en-AU">🇦🇺 AU</button>
         </div>
-        <div class="info-box"><p><strong>Freemium:</strong> one custom list per day. <a href="/premium.html">Upgrade</a> for unlimited lists.</p></div>
+        <select id="mode-select" class="form-control" style="max-width:160px;">
+          <option value="practice">Practice</option>
+          <option value="test">Test</option>
+        </select>
+        <button id="start-btn" class="btn-start"><i class="fas fa-play"></i> Start</button>
+      </div>
+
+      <div class="custom-inputs">
+        <textarea id="custom-words" placeholder="Add custom OET words… (space/comma/new lines)"></textarea>
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+          <input type="file" id="file-input" accept=".txt,.csv"/>
+          <button id="add-custom-btn" class="btn-secondary">➕ Add Custom</button>
+        </div>
       </div>
 
       <div id="trainer-area" class="hidden"></div>
+      <div class="sticky-input hidden" id="sticky-input"></div>
       <div id="summary-area" class="hidden"></div>
     </section>
   </main>
 
-  <footer class="container" style="margin:24px auto 40px; text-align:center; color:#555">
+  <footer style="margin:24px 0; text-align:center; font-size:.95rem;">
     <a href="/terms.html">Terms</a> •
     <a href="/privacy.html">Privacy</a> •
-    <a href="/refund_policy.html">Refunds</a> •
+    <a href="/refund-policy.html">Refund Policy</a> •
     <a href="/contact.html">Contact</a>
   </footer>
 
