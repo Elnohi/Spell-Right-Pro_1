@@ -1,16 +1,15 @@
 <!DOCTYPE html>
 <html lang="en" data-theme="light">
 <head>
-  <meta charset="UTF-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>SpellRightPro – Spelling Bee (Freemium)</title>
 
-  <!-- PWA -->
-  <link rel="manifest" href="/manifest.json"/>
-
-  <!-- Base styles -->
-  <link rel="stylesheet" href="/css/styles.css"/>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"/>
+  <!-- PWA / Styles -->
+  <link rel="manifest" href="/manifest.json" />
+  <link rel="stylesheet" href="/css/styles.css" />
+  <link rel="icon" href="/assets/logo.png" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" />
 
   <!-- Firebase (compat) + Analytics -->
   <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-app-compat.js"></script>
@@ -22,151 +21,113 @@
 
   <!-- AdSense -->
   <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7632930282249669" crossorigin="anonymous"></script>
-
-  <style>
-    :root{
-      --bg:#ffffff; --ink:#0f172a; --muted:#6b7280; --brand:#2563eb;
-      --ok:#16a34a; --bad:#b91c1c; --panel:#f9fafb; --border:#e5e7eb;
-    }
-    body{background:var(--bg);color:var(--ink)}
-    .nav{display:flex;justify-content:space-between;align-items:center;padding:10px 16px;border-bottom:1px solid var(--border)}
-    .nav .right a{margin-left:8px}
-    .brand-row{display:flex;align-items:center;gap:10px}
-    .logo{height:32px;width:32px}
-    .container-narrow{max-width:900px;margin:0 auto;padding:16px}
-    .hero{display:flex;flex-direction:column;align-items:center;gap:12px;margin:16px 0}
-    .pill{display:inline-flex;align-items:center;gap:8px;border:1px solid var(--border);background:#fff;padding:6px 12px;border-radius:999px;font-size:13px}
-    .accent-picker{display:flex;gap:8px;flex-wrap:wrap}
-    .accent-btn{border:1px solid var(--border);background:#fff;padding:6px 10px;border-radius:12px;cursor:pointer}
-    .accent-btn.active{border-color:var(--brand);color:var(--brand);font-weight:600}
-    .card{background:#fff;border:1px solid var(--border);border-radius:16px;padding:16px}
-    .muted{color:var(--muted)}
-    .btn{display:inline-flex;align-items:center;gap:8px;border-radius:12px;padding:10px 14px;border:1px solid var(--border);background:#fff;cursor:pointer}
-    .btn.primary{background:var(--brand);color:#fff;border-color:var(--brand)}
-    .btn.icon{padding:8px 12px}
-    .grid-2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-    @media (max-width:720px){.grid-2{grid-template-columns:1fr}}
-    .ad-wrap{margin:8px 0}
-    /* modern stage */
-    .stage{display:flex;flex-direction:column;align-items:center;text-align:center;gap:16px;padding:20px 16px}
-    .progress-bar{display:flex;gap:8px;align-items:center}
-    .progress-pill{background:#eef2ff;color:#1d4ed8;border:1px solid #bfdbfe}
-    .controls{display:flex;gap:8px;flex-wrap:wrap;justify-content:center}
-    .feedback-area{position:sticky;bottom:0;left:0;right:0;background:#fff;border-top:1px solid var(--border);padding:12px;z-index:5}
-    .correct{color:var(--ok);font-weight:600}
-    .incorrect{color:var(--bad);font-weight:600}
-    .flagged{background:#fff7ed;border:1px solid #fdba74}
-    .hidden{display:none!important}
-    .textarea{width:100%;min-height:110px;border:1px solid var(--border);border-radius:12px;padding:10px}
-    .summary-list{margin:0;padding-left:18px;text-align:left}
-    .summary-list li{margin:4px 0}
-  </style>
 </head>
 
 <body>
-  <!-- top nav -->
-  <header class="nav">
-    <div class="brand-row">
-      <img src="/assets/logo.png" class="logo" alt="Logo" loading="lazy"/>
+  <!-- Nav -->
+  <nav class="navbar">
+    <div class="brand">
+      <img src="/assets/logo.png" class="logo" alt="SpellRightPro Logo" loading="lazy" />
       <div>
-        <strong>SpellRightPro</strong><div class="muted" style="font-size:12px">Spelling Bee</div>
+        <span>SpellRightPro</span>
+        <span class="subtitle">Spelling Bee</span>
       </div>
     </div>
-    <div class="right">
-      <a class="btn" href="/index.html"><i class="fa fa-home"></i> Home</a>
-      <a class="btn primary" href="/premium.html"><i class="fa fa-crown"></i> Premium</a>
+    <div class="nav-actions">
+      <a class="btn-secondary" href="/index.html"><i class="fa fa-home"></i> Home</a>
+      <a class="btn-primary" href="/premium.html"><i class="fa fa-crown"></i> Premium</a>
     </div>
-  </header>
+  </nav>
 
   <!-- Ad -->
-  <div class="container-narrow ad-wrap">
+  <div class="container" style="padding-top: 12px; padding-bottom: 0;">
     <div class="ad-label muted" style="font-size:12px">Advertisement</div>
-    <ins class="adsbygoogle" style="display:block" data-ad-client="ca-pub-7632930282249669" data-ad-slot="3344556677" data-ad-format="auto" data-full-width-responsive="true"></ins>
+    <ins class="adsbygoogle"
+      style="display:block"
+      data-ad-client="ca-pub-7632930282249669"
+      data-ad-slot="3344556677"
+      data-ad-format="auto"
+      data-full-width-responsive="true"></ins>
     <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
   </div>
 
-  <main class="container-narrow">
-    <!-- Setup (centered) -->
-    <section id="setup-section" class="card">
-      <div class="hero">
-        <h1 style="margin:0;font-size:28px">Hands-Free Spelling Bee</h1>
-        <div class="muted">We say a word. You <strong>spell it out loud</strong>. We mark it and move on.</div>
+  <main class="container">
+    <!-- Setup -->
+    <section id="bee-setup" class="training-card">
+      <h1 class="card-title">🎤 Hands-Free Spelling Bee</h1>
+      <p class="muted" style="text-align:center">We say a word; you <strong>spell it out loud</strong>. We listen, mark, and auto-advance.</p>
 
-        <div class="accent-picker">
-          <button class="accent-btn active" data-accent="en-US">🇺🇸 US</button>
-          <button class="accent-btn" data-accent="en-GB">🇬🇧 UK</button>
-          <button class="accent-btn" data-accent="en-AU">🇦🇺 AU</button>
-        </div>
-        <div class="pill"><i class="fa fa-microphone"></i> Microphone required</div>
+      <div class="accent-picker" aria-label="Select accent" style="justify-content:center">
+        <button type="button" class="accent-btn active" data-accent="en-US">🇺🇸 US</button>
+        <button type="button" class="accent-btn" data-accent="en-GB">🇬🇧 UK</button>
+        <button type="button" class="accent-btn" data-accent="en-AU">🇦🇺 AU</button>
       </div>
 
-      <div class="grid-2">
-        <div>
-          <label class="muted">Add custom words</label>
-          <textarea id="words-textarea" class="textarea" placeholder="Enter words separated by spaces, commas or new lines…"></textarea>
-          <button id="add-words-btn" class="btn" style="margin-top:8px"><i class="fa fa-plus"></i> Add Words</button>
-          <div class="muted" style="font-size:12px;margin-top:4px">Freemium: one list/day. <a href="/premium.html">Upgrade</a> for unlimited.</div>
-        </div>
-        <div>
-          <div class="card" style="background:var(--panel)">
-            <div class="muted" style="font-size:14px;margin-bottom:8px">Tips</div>
-            <ul style="margin:0 0 0 18px;padding:0;text-align:left">
-              <li>Say letters clearly: “C-H-E-R-R-Y”.</li>
-              <li>Use <em>Repeat</em> anytime.</li>
-              <li>Flag tricky words to review later.</li>
-            </ul>
-          </div>
+      <div class="custom-words-section">
+        <label class="section-label"><i class="fa fa-list"></i> Add custom words</label>
+        <textarea id="words-textarea" placeholder="Enter words separated by spaces, commas, or new lines…"></textarea>
+        <div class="button-group" style="margin-top: 0;">
+          <button id="add-words-btn" class="btn-secondary"><i class="fa fa-plus"></i> Add Words</button>
+          <span class="muted" style="align-self:center">Freemium: one custom list/day. <a href="/premium.html">Upgrade</a> for unlimited.</span>
         </div>
       </div>
 
-      <div style="display:flex;justify-content:center;margin-top:12px">
-        <button id="start-button" class="btn primary"><i class="fa fa-play"></i> Start</button>
+      <div style="display:flex; justify-content:center;">
+        <button id="start-bee-btn" class="btn-start"><i class="fa fa-play"></i> Start Practice</button>
       </div>
 
-      <div style="text-align:center;margin-top:10px">
+      <div style="text-align:center; margin-top:10px;">
         <a id="enable-typing-link" href="#" class="muted" style="font-size:12px">Prefer typing? Enable typing box</a>
       </div>
     </section>
 
     <!-- Game -->
-    <section id="game-section" class="card hidden">
-      <div class="stage">
-        <div class="progress-bar">
-          <span class="pill progress-pill"><i class="fa fa-bullseye"></i> <span id="word-index">1</span>/<span id="word-total">0</span></span>
-          <span id="flag-indicator" class="pill flagged hidden"><i class="fa fa-flag"></i> Flagged</span>
-        </div>
-
-        <div class="controls">
-          <button id="repeat-btn" class="btn icon" title="Repeat"><i class="fa fa-volume-high"></i></button>
-          <button id="prev-btn" class="btn icon" title="Previous"><i class="fa fa-arrow-left"></i></button>
-          <button id="next-btn" class="btn icon" title="Next"><i class="fa fa-arrow-right"></i></button>
-          <button id="flag-btn" class="btn icon" title="Flag"><i class="fa fa-flag"></i></button>
-          <button id="submit-btn" class="btn primary icon" title="Submit"><i class="fa fa-check"></i></button>
-        </div>
-
-        <!-- Typing is optional, off by default -->
-        <div id="typing-area" class="hidden" style="width:100%;max-width:520px">
-          <input id="spelling-input" class="textarea" style="min-height:0" type="text" placeholder="(Optional) Type the spelling and press Enter…"/>
-        </div>
-
-        <div id="mic-status" class="muted" style="display:none"><i class="fa fa-microphone"></i> Listening… Speak now!</div>
+    <section id="bee-game" class="training-card" style="display:none;">
+      <div class="word-progress">
+        <span class="pill progress-pill"><i class="fa fa-bullseye"></i> <span id="word-count">1</span>/<span id="word-total">0</span></span>
+        <span id="flag-indicator" class="pill flagged d-none"><i class="fa fa-flag"></i> Flagged</span>
       </div>
 
-      <div class="feedback-area" id="feedback-area"></div>
+      <div class="button-group" style="justify-content:center">
+        <button id="speak-btn" class="btn-secondary" title="Repeat"><i class="fa fa-volume-high"></i> Repeat</button>
+        <button id="prev-btn" class="btn-secondary" title="Previous"><i class="fa fa-arrow-left"></i> Previous</button>
+        <button id="next-btn" class="btn-secondary" title="Next"><i class="fa fa-arrow-right"></i> Next</button>
+        <button id="flag-btn" class="btn-secondary" title="Flag"><i class="fa fa-flag"></i> Flag</button>
+        <button id="submit-btn" class="btn-primary" title="Submit"><i class="fa fa-check"></i> Submit</button>
+      </div>
+
+      <!-- Optional typing (off by default) -->
+      <div id="typing-area" class="d-none" style="max-width:560px; margin: 0 auto;">
+        <input id="spelling-input" class="form-control" type="text" placeholder="(Optional) Type the spelling and press Enter…"/>
+      </div>
+
+      <div id="mic-status" class="mic-status d-none"><i class="fa fa-microphone"></i> Listening… Speak now!</div>
+
+      <div id="feedback-area" class="feedback"></div>
     </section>
 
     <!-- Results -->
-    <section id="results-section" class="card hidden">
-      <h2 style="margin:0 0 8px 0">Session Complete 🎉</h2>
-      <div id="summary-area"></div>
-      <div style="display:flex;gap:8px;justify-content:center;margin-top:10px">
-        <button id="restart-btn" class="btn"><i class="fa fa-rotate-left"></i> Restart</button>
-        <a href="/index.html" class="btn"><i class="fa fa-home"></i> Home</a>
+    <section id="bee-results" class="training-card" style="display:none;">
+      <div class="summary-header">
+        <h2>Session Complete 🎉</h2>
+        <div id="score-summary" class="score-display">0/0</div>
+        <div id="score-percent" class="score-percent">0%</div>
+      </div>
+
+      <!-- One combined review list (incorrect + flagged) -->
+      <div class="results-card" id="review-card">
+        <h3 style="display:flex; align-items:center; gap:8px;"><i class="fa fa-clipboard-list"></i> Words to Review</h3>
+        <div id="review-list" class="word-list"></div>
+      </div>
+
+      <div class="summary-actions">
+        <button id="restart-btn" class="btn-secondary"><i class="fa fa-rotate-left"></i> Restart</button>
+        <a href="/index.html" class="btn-secondary"><i class="fa fa-home"></i> Home</a>
       </div>
     </section>
   </main>
 
-  <footer class="container-narrow" style="padding:24px 0;text-align:center">
+  <footer class="container" style="padding-top: 0;">
     <a href="/terms.html">Terms</a> ·
     <a href="/privacy.html">Privacy</a> ·
     <a href="/refund-policy.html">Refund</a> ·
@@ -174,8 +135,6 @@
   </footer>
 
   <script src="/js/main-freemium-bee.js" defer></script>
-
-  <!-- SW (optional) -->
   <script>
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('/sw.js')
