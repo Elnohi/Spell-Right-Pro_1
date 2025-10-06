@@ -1,17 +1,14 @@
-// ============================
-// SpellRightPro — Bee Freemium
-// Modern layout + robust logic
-// ============================
+// =======================================================
+// SpellRightPro — Freemium Bee (Modern, combined summary)
+// =======================================================
 (() => {
   // ---------- State ----------
   let words = [];
   let idx = 0;
   let score = 0;
   let accent = "en-US";
-
-  // local-only flags + incorrect log
-  const flagged = new Set();                   // stores indexes for this session
-  const incorrect = [];                        // { word, guess } for this session
+  const flagged = new Set();           // store current index numbers
+  const incorrect = [];                // { word, guess }
 
   // ---------- Speech ----------
   const synth = window.speechSynthesis;
@@ -19,19 +16,32 @@
   let recognition = SR ? new SR() : null;
 
   // ---------- DOM ----------
-  const setupSection   = document.getElementById("setup-section");
-  const gameSection    = document.getElementById("game-section");
-  const resultsSection = document.getElementById("results-section");
+  const setupSection   = document.getElementById("bee-setup");
+  const gameSection    = document.getElementById("bee-game");
+  const resultsSection = document.getElementById("bee-results");
 
-  const enableTypingLink = document.getElementById("enable-typing-link");
-  const typingArea    = document.getElementById("typing-area");
-  const spellingInput = document.getElementById("spelling-input");
+  const addWordsBtn    = document.getElementById("add-words-btn");
+  const startBtn       = document.getElementById("start-bee-btn");
+  const enableTyping   = document.getElementById("enable-typing-link");
 
-  const feedbackArea  = document.getElementById("feedback-area");
-  const micStatus     = document.getElementById("mic-status");
-  const wordIndexSpan = document.getElementById("word-index");
-  const wordTotalSpan = document.getElementById("word-total");
-  const flagIndicator = document.getElementById("flag-indicator");
+  const typingArea     = document.getElementById("typing-area");
+  const spellingInput  = document.getElementById("spelling-input");
+
+  const speakBtn       = document.getElementById("speak-btn");
+  const prevBtn        = document.getElementById("prev-btn");
+  const nextBtn        = document.getElementById("next-btn");
+  const flagBtn        = document.getElementById("flag-btn");
+  const submitBtn      = document.getElementById("submit-btn");
+
+  const micStatus      = document.getElementById("mic-status");
+  const feedbackArea   = document.getElementById("feedback-area");
+  const wordCount      = document.getElementById("word-count");
+  const wordTotal      = document.getElementById("word-total");
+  const flagIndicator  = document.getElementById("flag-indicator");
+
+  const scoreSummary   = document.getElementById("score-summary");
+  const scorePercent   = document.getElementById("score-percent");
+  const reviewList     = document.getElementById("review-list");
 
   // ---------- Accent ----------
   document.querySelectorAll(".accent-btn").forEach(btn => {
@@ -43,8 +53,8 @@
     });
   });
 
-  // ---------- Custom words ----------
-  document.getElementById("add-words-btn").addEventListener("click", () => {
+  // ---------- Add words ----------
+  addWordsBtn.addEventListener("click", () => {
     const raw = (document.getElementById("words-textarea").value || "").trim();
     if (!raw) return alert("Enter some words first.");
     const added = raw.split(/[\s,;|\n\r]+/).map(w => w.trim()).filter(Boolean);
@@ -53,32 +63,31 @@
     document.getElementById("words-textarea").value = "";
   });
 
-  // Optional typing (off by default)
-  enableTypingLink.addEventListener("click", (e) => {
+  // ---------- Optional typing (off by default) ----------
+  enableTyping.addEventListener("click", (e) => {
     e.preventDefault();
-    typingArea.classList.toggle("hidden");
-    if (!typingArea.classList.contains("hidden")) {
+    typingArea.classList.toggle("d-none");
+    if (!typingArea.classList.contains("d-none")) {
       spellingInput.focus();
     }
   });
 
   // ---------- Start ----------
-  document.getElementById("start-button").addEventListener("click", async () => {
+  startBtn.addEventListener("click", async () => {
     if (words.length === 0) {
       try {
         const r = await fetch("/data/spelling-bee.json", { cache: "no-cache" });
         const data = await r.json();
         words = Array.isArray(data?.words) ? data.words : Array.isArray(data) ? data : [];
       } catch {
-        words = ["apple","banana","cherry","doctor","energy","family"];
+        words = ["apple", "banana", "cherry", "doctor", "energy", "family"];
       }
     }
-    if (words.length === 0) return alert("No words available. Please add words.");
+    if (!words.length) return alert("No words available. Please add words first.");
 
-    // reset session
-    score = 0; idx = 0; flagged.clear(); incorrect.length = 0;
-
-    wordTotalSpan.textContent = String(words.length);
+    // Reset session
+    idx = 0; score = 0; incorrect.length = 0; flagged.clear();
+    wordTotal.textContent = String(words.length);
     show(setupSection, false); show(gameSection, true); show(resultsSection, false);
 
     initRecognition();
@@ -86,31 +95,29 @@
   });
 
   // ---------- Controls ----------
-  document.getElementById("repeat-btn").addEventListener("click", speakCurrent);
-  document.getElementById("prev-btn").addEventListener("click", () => {
-    if (idx > 0) { idx--; playWord(); }
-  });
-  document.getElementById("next-btn").addEventListener("click", () => {
-    if (idx < words.length - 1) { idx++; playWord(); }
-    else endSession();
-  });
-  document.getElementById("flag-btn").addEventListener("click", () => {
+  speakBtn.addEventListener("click", speakCurrent);
+  prevBtn.addEventListener("click", () => { if (idx > 0) { idx--; playWord(); } });
+  nextBtn.addEventListener("click", () => { if (idx < words.length - 1) { idx++; playWord(); } else endSession(); });
+
+  flagBtn.addEventListener("click", () => {
     if (flagged.has(idx)) flagged.delete(idx); else flagged.add(idx);
     updateFlagPill();
   });
-  document.getElementById("submit-btn").addEventListener("click", () => {
-    if (!typingArea.classList.contains("hidden")) {
+
+  submitBtn.addEventListener("click", () => {
+    if (!typingArea.classList.contains("d-none")) {
       const typed = (spellingInput.value || "").trim();
       if (typed) evaluate(typed);
       else speakAndListen();
     } else {
+      // hands-free default: replay and listen again
       speakAndListen();
     }
   });
 
   // Enter submits only if typing is enabled
   document.addEventListener("keydown", (e) => {
-    if (typingArea.classList.contains("hidden")) return;
+    if (typingArea.classList.contains("d-none")) return;
     if (e.key === "Enter") {
       e.preventDefault();
       const typed = (spellingInput.value || "").trim();
@@ -120,8 +127,9 @@
 
   // ---------- Core flow ----------
   function playWord() {
-    wordIndexSpan.textContent = String(idx + 1);
-    feedbackArea.innerHTML = "";
+    wordCount.textContent = String(idx + 1);
+    feedbackArea.className = "feedback"; // reset classes
+    feedbackArea.textContent = "";
     if (spellingInput) spellingInput.value = "";
     updateFlagPill();
     speakAndListen();
@@ -152,44 +160,40 @@
     recognition.maxAlternatives = 3;
 
     recognition.onresult = (e) => {
-      micStatus.style.display = "none";
+      hide(micStatus);
       const alts = Array.from(e.results[0]).map(r => normalize(r.transcript));
       const best = (alts[0] || "").trim();
-      evaluate(best, true);
+      evaluate(best, /*alreadyNormalized*/true);
     };
-    recognition.onerror = () => { micStatus.style.display = "none"; };
-    recognition.onend =    () => { micStatus.style.display = "none"; };
+    recognition.onerror = () => { hide(micStatus); };
+    recognition.onend =    () => { hide(micStatus); };
   }
 
   function startListening() {
     if (!recognition) return;
     try {
-      micStatus.style.display = "block";
-      recognition.abort(); // ensure fresh session
+      show(micStatus, true);
+      recognition.abort(); // fresh session
       recognition.lang = accent;
       recognition.start();
     } catch {}
   }
 
-  // ---------- Checking ----------
-  function evaluate(answer, alreadyNormalized=false) {
+  // ---------- Check / Mark ----------
+  function evaluate(answer, alreadyNormalized = false) {
     const targetRaw = (words[idx] || "");
     const target = normalize(targetRaw);
     const guess  = alreadyNormalized ? answer : normalize(answer);
 
-    const isCorrect = guess && guess === target;
-
-    if (isCorrect) {
+    if (guess && guess === target) {
       score++;
-      feedbackArea.innerHTML = `<p class="correct">✅ Correct: ${escapeHTML(String(targetRaw))}</p>`;
+      setFeedback(true, `✅ Correct: ${escapeHTML(String(targetRaw))}`);
     } else {
-      // store incorrect (for summary)
       incorrect.push({ word: String(targetRaw), guess: String(answer || "") });
-      const dispGuess = escapeHTML(stripPunct(answer || ""));
+      const dispGuess  = escapeHTML(stripPunct(answer || "")) || "(no input)";
       const dispTarget = escapeHTML(String(targetRaw));
-      feedbackArea.innerHTML = `<p class="incorrect">❌ ${dispGuess || "(no input)"} → ${dispTarget}</p>`;
+      setFeedback(false, `❌ ${dispGuess} → ${dispTarget}`);
     }
-    feedbackArea.scrollIntoView({ behavior: "smooth", block: "center" });
 
     setTimeout(() => {
       if (idx < words.length - 1) { idx++; playWord(); }
@@ -197,58 +201,94 @@
     }, 1100);
   }
 
-  // ---------- Results ----------
+  function setFeedback(ok, html) {
+    feedbackArea.className = "feedback " + (ok ? "correct" : "incorrect");
+    feedbackArea.innerHTML = html;
+    feedbackArea.scrollIntoView({ behavior: "smooth", block: "center" });
+  }
+
+  // ---------- Results (combined list) ----------
   function endSession() {
     show(gameSection, false); show(resultsSection, true);
 
     const total = words.length;
     const pct = total ? Math.round((score / total) * 100) : 0;
 
-    const flaggedList = Array.from(flagged).map(i => String(words[i])).filter(Boolean);
-    const incorrectList = incorrect.slice(); // [{word, guess}]
+    scoreSummary.textContent = `${score}/${total}`;
+    scorePercent.textContent = `${pct}%`;
 
-    const incHTML = incorrectList.length
-      ? `<h3>Words to Review</h3>
-         <ol class="summary-list">
-           ${incorrectList.map(it => `
-             <li>❌ <strong>${escapeHTML(it.word)}</strong>
-             <small class="muted"> (you: ${escapeHTML(stripPunct(it.guess)) || "—"})</small></li>
-           `).join("")}
-         </ol>`
-      : `<p class="muted">No incorrect words. Great job!</p>`;
+    // Build a combined list of words to review (incorrect OR flagged).
+    // If a word appears in both lists, display it once with both badges.
+    const reviewMap = new Map(); // word -> { incorrect?: attempt, flagged?: true }
+    incorrect.forEach(item => {
+      const key = String(item.word);
+      const prev = reviewMap.get(key) || {};
+      prev.incorrect = String(item.guess || "");
+      reviewMap.set(key, prev);
+    });
+    Array.from(flagged).forEach(i => {
+      const key = String(words[i]);
+      const prev = reviewMap.get(key) || {};
+      prev.flagged = true;
+      reviewMap.set(key, prev);
+    });
 
-    const flagHTML = flaggedList.length
-      ? `<h3>Flagged Words</h3>
-         <p>${flaggedList.map(escapeHTML).join(", ")}</p>`
-      : `<p class="muted">No flagged words.</p>`;
+    if (reviewMap.size === 0) {
+      reviewList.innerHTML = `<p class="muted">🎉 Nothing to review. Great job!</p>`;
+      return;
+    }
 
-    document.getElementById("summary-area").innerHTML = `
-      <div class="card" style="border-radius:12px">
-        <p><strong>Score:</strong> ${score}/${total} • ${pct}%</p>
-        ${incHTML}
-        ${flagHTML}
-      </div>
-    `;
+    const items = [];
+    reviewMap.forEach((val, key) => {
+      const badges = [];
+      if (val.incorrect !== undefined) badges.push(`<span class="badge incorrect">incorrect</span>`);
+      if (val.flagged) badges.push(`<span class="badge flagged">flagged</span>`);
+      const attempt = val.incorrect !== undefined
+        ? `<small class="muted"> (you: ${escapeHTML(stripPunct(val.incorrect)) || "—"})</small>`
+        : "";
+      items.push(
+        `<div class="word-item">
+          <strong>${escapeHTML(key)}</strong>
+          ${badges.join(" ")} ${attempt}
+        </div>`
+      );
+    });
+
+    reviewList.innerHTML = items.join("");
   }
 
   document.getElementById("restart-btn").addEventListener("click", () => {
+    idx = 0; score = 0; incorrect.length = 0; flagged.clear();
     show(resultsSection, false); show(setupSection, true);
-    idx = 0; score = 0; flagged.clear(); incorrect.length = 0;
   });
+
+  // ---------- Flag indicator ----------
+  function updateFlagPill() {
+    // Toggle visual state on button
+    if (flagged.has(idx)) {
+      flagBtn.classList.add("active");
+      flagIndicator.classList.remove("d-none");
+    } else {
+      flagBtn.classList.remove("active");
+      flagIndicator.classList.add("d-none");
+    }
+  }
 
   // ---------- Helpers ----------
   function normalize(s) {
     return (s || "")
-      .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+      .normalize("NFD").replace(/[\u0300-\u036f]/g, "") // strip diacritics
       .toLowerCase()
-      .replace(/[^a-z0-9]/g, ""); // remove punctuation/spaces/dots/hyphens
+      .replace(/[^a-z0-9]/g, ""); // remove punctuation/spaces
   }
-  function stripPunct(s){
+  function stripPunct(s) {
     return (s || "").replace(/[^\p{L}\p{N} ]+/gu, "").trim();
   }
-  function escapeHTML(s){
-    return (s||"").replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+  function escapeHTML(s) {
+    return (s || "").replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
   }
-  function show(el, on){ el && (el.classList[on ? "remove" : "add"]("hidden")); }
-  function unique(arr){ return Array.from(new Set(arr)); }
+  function unique(arr) { return Array.from(new Set(arr)); }
+  function show(el, on = true) { if (!el) return; el.style.display = on ? "" : "none"; }
+  function hide(el) { if (el) el.style.display = "none"; }
+
 })();
