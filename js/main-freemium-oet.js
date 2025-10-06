@@ -1,20 +1,26 @@
 // =======================================================
-// SpellRightPro — Freemium OET (Modern + 24 random words)
-// - Loads from js/oet-words.js (window.OET_WORDS)
-// - Auto-focus input after TTS speaks
-// - Enter submits (no clicking required)
-// - Summary shows incorrect + flagged (combined)
+// SpellRightPro — Freemium OET (Practice: full list; Exam: 24 random)
+// - Imports full list from oet_word_list.js (export const oetWords = [...])
+// - "⋯ More" menu with End Session + Restart Session
+// - Auto-focus input after TTS; Enter submits
+// - Summary = combined incorrect + flagged with badges
 // =======================================================
+import { oetWords } from "./oet_word_list.js";
+
 (() => {
   // ---------- State ----------
-  let WORDS = Array.isArray(window.OET_WORDS) ? window.OET_WORDS.slice() : [];
-  let setSize = 24;
+  const FULL = Array.isArray(oetWords) ? oetWords.slice() : [];
   let words = [];
   let idx = 0;
   let score = 0;
   let accent = "en-US";
-  const flagged = new Set();  // indexes of current set
-  const incorrect = [];       // { word, attempt }
+  let mode = "practice";        // "practice" | "exam"
+  const flagged = new Set();    // indexes of current set
+  const incorrect = [];         // { word, attempt }
+
+  if (!FULL.length) {
+    alert("OET word list failed to load.");
+  }
 
   // ---------- Speech ----------
   const synth = window.speechSynthesis;
@@ -38,30 +44,16 @@
   const btnFlag      = document.getElementById("oet-flag");
   const btnSubmit    = document.getElementById("oet-submit");
 
+  const btnMore      = document.getElementById("oet-more");
+  const moreMenu     = document.getElementById("oet-more-menu");
+  const btnEnd       = document.getElementById("oet-end");
+  const btnRestart   = document.getElementById("oet-restart");
+
   const scoreLbl     = document.getElementById("oet-score");
   const percentLbl   = document.getElementById("oet-percent");
   const reviewList   = document.getElementById("oet-review");
   const btnRetry     = document.getElementById("oet-retry");
   const btnNew       = document.getElementById("oet-new");
-
-  // ---------- Fallback words if js file missing ----------
-  if (!WORDS.length) {
-    WORDS = [
-      "abdomen","analgesic","anaphylaxis","anemia","antibiotic","appendicitis","arrhythmia","arthritis",
-      "asthma","atherosclerosis","auscultation","biopsy","bronchitis","cardiology","catheter","charts",
-      "cholesterol","cirrhosis","coagulation","compression","consent","contagious","contraindication",
-      "dehydration","dermatology","diagnosis","diarrhea","dilation","dysfunction","edema","embolism",
-      "endoscopy","epidural","epilepsy","femur","fever","fracture","gallbladder","glucose","hematology",
-      "hemoglobin","hepatitis","hernia","hydration","hypertension","hypotension","immunization",
-      "incision","infection","inflammation","insulin","intubation","ischemia","jaundice","laryngitis",
-      "lesion","leukemia","liver","lumbar","malignant","metastasis","migraine","nausea","nebulizer",
-      "neurology","neutrophil","nursing","obesity","obstetrics","orthopedic","oxygen","palpation",
-      "palliative","pancreas","pathology","pediatrics","pelvis","pharmacy","physiotherapy","plasma",
-      "pneumonia","potassium","pressure","prognosis","psychiatry","pulse","radiology","recovery",
-      "rehabilitation","respiration","sepsis","suture","symptom","syringe","thyroid","trachea",
-      "transfusion","trauma","ulcer","ultrasound","urology","vaccination","vascular","vertigo","wound"
-    ];
-  }
 
   // ---------- Accent ----------
   document.querySelectorAll(".accent-btn").forEach(btn => {
@@ -72,8 +64,7 @@
     });
   });
 
-  // ---------- Mode toggle (buttons, no file input) ----------
-  let mode = "practice";
+  // ---------- Mode ----------
   modePractice.addEventListener("click", () => {
     mode = "practice";
     modePractice.classList.add("active");
@@ -87,8 +78,12 @@
 
   // ---------- Start ----------
   startBtn.addEventListener("click", () => {
-    if (!WORDS.length) return alert("OET word list not found.");
-    words = pickRandom(WORDS, setSize);
+    if (!FULL.length) return alert("OET word list not found.");
+    if (mode === "practice") {
+      words = FULL.slice(); // entire list, ordered
+    } else {
+      words = pickRandom(FULL, 24); // 24 random
+    }
     idx = 0; score = 0; incorrect.length = 0; flagged.clear();
 
     setup.style.display   = "none";
@@ -117,6 +112,25 @@
     }
   });
 
+  // ---------- "More" menu ----------
+  btnMore.addEventListener("click", () => {
+    const isOpen = moreMenu.style.display === "block";
+    moreMenu.style.display = isOpen ? "none" : "block";
+    btnMore.setAttribute("aria-expanded", String(!isOpen));
+  });
+  document.addEventListener("click", (e) => {
+    if (!moreMenu.contains(e.target) && e.target !== btnMore) {
+      moreMenu.style.display = "none";
+      btnMore.setAttribute("aria-expanded", "false");
+    }
+  });
+  btnEnd.addEventListener("click", () => endSession(/*early*/true));
+  btnRestart.addEventListener("click", () => {
+    idx = 0; score = 0; incorrect.length = 0; flagged.clear();
+    moreMenu.style.display = "none";
+    onNavigate();
+  });
+
   // ---------- Core flow ----------
   function onNavigate() {
     feedback.className = "feedback";
@@ -137,17 +151,14 @@
       synth && synth.cancel();
       const u = new SpeechSynthesisUtterance(w);
       u.lang = accent;
-      u.onend = () => {
-        // auto-focus typing box when the word is spoken (as requested)
-        input.focus();
-        // put cursor at end for mobile keyboards
-        const val = input.value; input.value = ""; input.value = val;
-      };
+      u.onend = () => focusInput();
       window.speechSynthesis.speak(u);
-    } catch {
-      // even if TTS fails, focus the input
-      input.focus();
-    }
+    } catch { focusInput(); }
+  }
+
+  function focusInput() {
+    input.focus();
+    const val = input.value; input.value = ""; input.value = val;
   }
 
   // ---------- Submit / Check ----------
@@ -186,15 +197,16 @@
     }, 900);
   }
 
-  // ---------- End / Summary (combined list) ----------
-  function endSession() {
+  // ---------- End / Summary (combined) ----------
+  function endSession(early = false) {
     game.style.display = "none";
     results.style.display = "block";
+    moreMenu.style.display = "none";
 
     const total = words.length;
     const pct   = total ? Math.round((score / total) * 100) : 0;
     scoreLbl.textContent   = `${score}/${total}`;
-    percentLbl.textContent = `${pct}%`;
+    percentLbl.textContent = `${pct}%${early ? " (ended early)" : ""}`;
 
     const reviewMap = new Map(); // word -> { incorrect?: attempt, flagged?: true }
     incorrect.forEach(it => {
@@ -230,7 +242,7 @@
     reviewList.innerHTML = items.join("");
   }
 
-  // Retry: review incorrect+flagged only if any, else full 24 new random
+  // Retry: review incorrect+flagged only if any, else new random (or continue practice list head)
   btnRetry.addEventListener("click", () => {
     const reviewSet = new Set();
     incorrect.forEach(i => reviewSet.add(i.word));
@@ -239,7 +251,7 @@
     if (review.length) {
       words = review;
     } else {
-      words = pickRandom(WORDS, setSize);
+      words = mode === "exam" ? pickRandom(FULL, 24) : FULL.slice();
     }
     idx = 0; score = 0; incorrect.length = 0; flagged.clear();
     results.style.display = "none";
@@ -248,9 +260,9 @@
     speakCurrentThenFocus();
   });
 
-  // New set: always pick a fresh random 24 from the master list
+  // New set
   btnNew.addEventListener("click", () => {
-    words = pickRandom(WORDS, setSize);
+    words = mode === "exam" ? pickRandom(FULL, 24) : FULL.slice();
     idx = 0; score = 0; incorrect.length = 0; flagged.clear();
     results.style.display = "none";
     game.style.display = "block";
