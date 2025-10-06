@@ -1,115 +1,274 @@
-<!DOCTYPE html>
-<html lang="en" data-theme="light">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>SpellRightPro – OET (Freemium)</title>
+// =======================================================
+// SpellRightPro — Freemium School (Modern, no lifetime stats)
+// Typing-based trainer with TTS, clear marking, and summary
+// =======================================================
+(() => {
+  // ------------- State -------------
+  let words = [];
+  let idx = 0;
+  let accent = "en-US";
 
-  <link rel="manifest" href="/manifest.json" />
-  <link rel="stylesheet" href="/css/styles.css" />
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" />
+  // results
+  const correct = [];                   // strings
+  const incorrect = [];                 // { word, attempt }
+  const flagged = new Set();            // indexes
 
-  <!-- Firebase -->
-  <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-analytics-compat.js"></script>
-  <script src="/js/config.js" defer></script>
-  <script src="/js/analytics.js" defer></script>
+  // ------------- Speech (TTS only) -------------
+  const synth = window.speechSynthesis;
 
-  <!-- AdSense -->
-  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7632930282249669" crossorigin="anonymous"></script>
-</head>
+  // ------------- DOM -------------
+  const startBtn      = document.getElementById("start-btn");
+  const trainerArea   = document.getElementById("trainer-area");
+  const summaryArea   = document.getElementById("summary-area");
 
-<body>
-  <nav class="navbar">
-    <div class="brand">
-      <img src="/assets/logo.png" class="logo" alt="SpellRightPro Logo" loading="lazy" />
-      <div>
-        <span>SpellRightPro</span>
-        <span class="subtitle">OET Trainer</span>
-      </div>
-    </div>
-    <div class="nav-actions">
-      <a class="btn-secondary" href="/index.html"><i class="fa fa-home"></i> Home</a>
-      <a class="btn-primary" href="/premium.html"><i class="fa fa-crown"></i> Premium</a>
-    </div>
-  </nav>
+  const customWordsTA = document.getElementById("custom-words");
+  const addWordsBtn   = document.getElementById("add-words-btn");
 
-  <div class="ad-container">
-    <div class="ad-label">Advertisement</div>
-    <ins class="adsbygoogle"
-      style="display:block"
-      data-ad-client="ca-pub-7632930282249669"
-      data-ad-slot="3344556677"
-      data-ad-format="auto"
-      data-full-width-responsive="true"></ins>
-    <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
-  </div>
+  const wordProgress  = document.getElementById("word-progress");
+  const micStatus     = document.getElementById("mic-status"); // kept for UI parity
+  const spellingInput = document.getElementById("spelling-input");
+  const feedback      = document.getElementById("feedback");
 
-  <main class="container">
-    <!-- Setup Section -->
-    <section id="setup-section" class="training-card">
-      <h1 class="card-title">OET Word Practice</h1>
-      <p class="muted">Listen, type, and check your spelling accuracy with healthcare terms.</p>
+  const prevBtn       = document.getElementById("prev-btn");
+  const submitBtn     = document.getElementById("submit-btn");
+  const nextBtn       = document.getElementById("next-btn");
+  const flagBtn       = document.getElementById("flag-btn");
 
-      <div class="accent-section">
-        <label class="section-label">Select Accent:</label>
-        <div class="accent-picker">
-          <button class="accent-btn active" data-accent="en-US">🇺🇸 US</button>
-          <button class="accent-btn" data-accent="en-GB">🇬🇧 UK</button>
-          <button class="accent-btn" data-accent="en-AU">🇦🇺 AU</button>
-        </div>
-      </div>
+  const correctList   = document.getElementById("correct-list");
+  const incorrectList = document.getElementById("incorrect-list");
+  const flaggedList   = document.getElementById("flagged-list");
+  const retryBtn      = document.getElementById("retry-btn");
+  const newListBtn    = document.getElementById("new-list-btn");
 
-      <div class="custom-words-section">
-        <label class="section-label">Add custom words:</label>
-        <textarea id="words-textarea" placeholder="Enter OET words separated by commas or spaces..."></textarea>
-        <button id="add-words-btn" class="btn-secondary">Add Words</button>
-      </div>
+  // ------------- Accent picker -------------
+  document.querySelectorAll(".accent-btn").forEach(btn => {
+    btn.addEventListener("click", () => {
+      document.querySelectorAll(".accent-btn").forEach(b => b.classList.remove("active"));
+      btn.classList.add("active");
+      accent = btn.dataset.accent || "en-US";
+    });
+  });
 
-      <div class="info-box">
-        <p><strong>Freemium:</strong> one custom list per day. <a href="/premium.html">Unlock unlimited</a> with Premium.</p>
-      </div>
+  // ------------- Helpers -------------
+  const normalize = (s) =>
+    (s || "")
+      .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+      .toLowerCase()
+      .replace(/[^a-z0-9]/g, ""); // drop punctuation & spaces
 
-      <button id="start-button" class="btn-primary btn-start">🩺 Start Practice</button>
-    </section>
+  const stripPunct = (s) => (s || "").replace(/[^\p{L}\p{N} ]+/gu, "").trim();
 
-    <!-- Game Section -->
-    <section id="game-section" class="training-card" style="display:none;">
-      <h1 class="card-title">OET Practice</h1>
-      <div id="progress" class="muted">Word <span id="word-index">1</span>/<span id="word-total">0</span></div>
+  const escapeHTML = (s) =>
+    (s || "").replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
 
-      <div class="input-area">
-        <input type="text" id="spelling-input" placeholder="Type what you hear..." autofocus />
-        <button id="submit-btn" class="btn-primary">Submit</button>
-      </div>
+  const show = (el, on = true) => { if (el) el.classList[on ? "remove" : "add"]("hidden"); };
 
-      <div class="feedback-area" id="feedback-area"></div>
-    </section>
+  const speak = (text) => {
+    try {
+      if (!text) return;
+      synth && synth.cancel();
+      const u = new SpeechSynthesisUtterance(text);
+      u.lang = accent;
+      window.speechSynthesis.speak(u);
+    } catch {}
+  };
 
-    <!-- Results Section -->
-    <section id="results-section" class="training-card" style="display:none;">
-      <h1 class="card-title">Session Complete! 🎉</h1>
-      <div id="summary-area"></div>
-      <button id="restart-btn" class="btn-secondary">Restart</button>
-    </section>
-  </main>
+  const updateProgress = () => {
+    wordProgress.textContent = `Word ${idx + 1} of ${words.length}`;
+    flagBtn.classList.toggle("active", flagged.has(idx));
+  };
 
-  <footer>
-    <a href="/terms.html">Terms</a> ·
-    <a href="/privacy.html">Privacy</a> ·
-    <a href="/refund-policy.html">Refund</a> ·
-    <a href="/contact.html">Contact</a>
-  </footer>
+  const resetSession = () => {
+    idx = 0;
+    correct.length = 0;
+    incorrect.length = 0;
+    flagged.clear();
+    feedback.className = "feedback";
+    feedback.textContent = "";
+    spellingInput.value = "";
+  };
 
-  <script src="/js/main-freemium-oet.js" defer></script>
-  <script>
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('/sw.js')
-        .then(r => console.log('SW registered:', r.scope))
-        .catch(e => console.error('SW failed:', e));
+  // ------------- Load words if user didn't add any -------------
+  async function ensureWordsLoaded() {
+    if (words.length > 0) return;
+    try {
+      const r = await fetch("/data/school-words.json", { cache: "no-cache" });
+      const data = await r.json();
+      words = Array.isArray(data?.words) ? data.words : Array.isArray(data) ? data : [];
+    } catch {
+      // fallback small sample
+      words = [
+        "chalkboard", "library", "teacher", "student", "pencil",
+        "notebook", "science", "history", "geography", "playground"
+      ];
     }
-  </script>
-</body>
-</html>
+  }
+
+  // ------------- Custom words -------------
+  addWordsBtn.addEventListener("click", () => {
+    const raw = (customWordsTA.value || "").trim();
+    if (!raw) { alert("Enter one or more words first."); return; }
+    const added = raw.split(/[\s,;|\n\r]+/).map(w => w.trim()).filter(Boolean);
+    if (!added.length) { alert("No valid words found."); return; }
+    words = Array.from(new Set([ ...added ])); // for freemium: replace with the new list
+    alert(`Loaded ${words.length} words for this session.`);
+    customWordsTA.value = "";
+  });
+
+  // ------------- Start -------------
+  startBtn.addEventListener("click", async () => {
+    await ensureWordsLoaded();
+    if (!words.length) { alert("No words available."); return; }
+
+    resetSession();
+    show(trainerArea, true);
+    show(summaryArea, false);
+
+    updateProgress();
+    speak(words[idx]);
+    spellingInput.focus();
+  });
+
+  // ------------- Navigation -------------
+  prevBtn.addEventListener("click", () => {
+    if (idx > 0) { idx--; onNavigate(); }
+  });
+
+  nextBtn.addEventListener("click", () => {
+    if (idx < words.length - 1) { idx++; onNavigate(); }
+    else endSession();
+  });
+
+  function onNavigate() {
+    feedback.className = "feedback";
+    feedback.textContent = "";
+    spellingInput.value = "";
+    updateProgress();
+    speak(words[idx]);
+    spellingInput.focus();
+  }
+
+  // Flag current word (session only)
+  flagBtn.addEventListener("click", () => {
+    if (flagged.has(idx)) flagged.delete(idx); else flagged.add(idx);
+    flagBtn.classList.toggle("active", flagged.has(idx));
+  });
+
+  // ------------- Submit / Check -------------
+  submitBtn.addEventListener("click", handleSubmit);
+  spellingInput.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      handleSubmit();
+    }
+  });
+
+  function handleSubmit() {
+    const attemptRaw = spellingInput.value.trim();
+    const attempt = normalize(attemptRaw);
+    const targetRaw = String(words[idx] || "");
+    const target = normalize(targetRaw);
+
+    if (!attempt) {
+      feedback.className = "feedback incorrect";
+      feedback.innerHTML = `❌ (no input) → ${escapeHTML(targetRaw)}`;
+      postCheckAdvance();
+      return;
+    }
+
+    if (attempt === target) {
+      feedback.className = "feedback correct";
+      feedback.innerHTML = `✅ Correct: ${escapeHTML(targetRaw)}`;
+      correct.push(targetRaw);
+    } else {
+      feedback.className = "feedback incorrect";
+      feedback.innerHTML = `❌ ${escapeHTML(stripPunct(attemptRaw))} → ${escapeHTML(targetRaw)}`;
+      incorrect.push({ word: targetRaw, attempt: attemptRaw });
+    }
+
+    postCheckAdvance();
+  }
+
+  function postCheckAdvance() {
+    feedback.scrollIntoView({ behavior: "smooth", block: "center" });
+    setTimeout(() => {
+      if (idx < words.length - 1) {
+        idx++;
+        onNavigate();
+      } else {
+        endSession();
+      }
+    }, 900);
+  }
+
+  // ------------- End / Summary -------------
+  function endSession() {
+    show(trainerArea, false);
+    buildSummary();
+    show(summaryArea, true);
+  }
+
+  function buildSummary() {
+    // Correct words
+    if (correct.length) {
+      correctList.innerHTML = correct
+        .map(w => `<div class="word-item"><strong>${escapeHTML(w)}</strong> <span class="badge correct">correct</span></div>`)
+        .join("");
+    } else {
+      correctList.innerHTML = `<p class="muted">No correct words recorded this round.</p>`;
+    }
+
+    // Incorrect words
+    if (incorrect.length) {
+      incorrectList.innerHTML = incorrect
+        .map(x => `
+          <div class="word-item">
+            <strong>${escapeHTML(x.word)}</strong>
+            <span class="badge incorrect">incorrect</span>
+            <small class="muted"> (you: ${escapeHTML(stripPunct(x.attempt)) || "—"})</small>
+          </div>
+        `)
+        .join("");
+    } else {
+      incorrectList.innerHTML = `<p class="muted">No mistakes. Great job!</p>`;
+    }
+
+    // Flagged words (avoid duplicates)
+    const flaggedWords = Array.from(flagged).map(i => words[i]).filter(Boolean);
+    if (flaggedWords.length) {
+      flaggedList.innerHTML = flaggedWords
+        .map(w => `<div class="word-item"><strong>${escapeHTML(w)}</strong> <span class="badge flagged">flagged</span></div>`)
+        .join("");
+    } else {
+      flaggedList.innerHTML = `<p class="muted">No flagged words.</p>`;
+    }
+  }
+
+  // ------------- Summary actions -------------
+  retryBtn.addEventListener("click", () => {
+    // Retry on incorrect + flagged only, if any; otherwise retry entire list
+    const reviewSet = new Set();
+    incorrect.forEach(x => reviewSet.add(x.word));
+    flagged.forEach(i => reviewSet.add(words[i]));
+
+    const reviewWords = Array.from(reviewSet);
+    if (reviewWords.length) {
+      words = reviewWords;
+    }
+    resetSession();
+    show(summaryArea, false);
+    show(trainerArea, true);
+    updateProgress();
+    speak(words[idx]);
+    spellingInput.focus();
+  });
+
+  newListBtn.addEventListener("click", () => {
+    // Clear and return to top where user can paste new list
+    words = [];
+    resetSession();
+    show(summaryArea, false);
+    // keep trainer hidden until user presses Start again
+  });
+
+})();
