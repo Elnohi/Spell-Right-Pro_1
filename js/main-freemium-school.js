@@ -1,211 +1,274 @@
-// ==================== SpellRightPro — School Freemium (final) ====================
-document.addEventListener('DOMContentLoaded', () => {
-  // Controls
-  const startBtn        = document.getElementById('start-btn');
-  const replayBtn       = document.getElementById('replay-btn');
-  const clearBtn        = document.getElementById('clear-btn');
+// =======================================================
+// SpellRightPro — Freemium School (Modern, no lifetime stats)
+// Typing-based trainer with TTS, clear marking, and summary
+// =======================================================
+(() => {
+  // ------------- State -------------
+  let words = [];
+  let idx = 0;
+  let accent = "en-US";
 
-  // Main areas
-  const practice        = document.getElementById('practice-area');
-  const promptEl        = document.getElementById('prompt');
-  const tiles           = document.getElementById('word-tiles');
-  const feedback        = document.getElementById('feedback');
-  const summary         = document.getElementById('summary-area');
+  // results
+  const correct = [];                   // strings
+  const incorrect = [];                 // { word, attempt }
+  const flagged = new Set();            // indexes
 
-  // Stats
-  const lifeCorrectEl   = document.getElementById('life-correct');
-  const lifeAttemptsEl  = document.getElementById('life-attempts');
-  const lifeAccEl       = document.getElementById('life-accuracy');
-  const currentIdxEl    = document.getElementById('current-word-index');
-  const totalWordsEl    = document.getElementById('total-words');
-
-  // Sticky typing row
-  const typedInput      = document.getElementById('typed-input');
-  const typedSubmit     = document.getElementById('typed-submit');
-  const typedPreview    = document.getElementById('typed-preview');
-
-  // Custom list
-  const customBox       = document.getElementById('custom-words');
-  const addCustomBtn    = document.getElementById('add-custom-btn');
-  const schoolFileInput = document.getElementById('school-file-input'); // unique id
-
-  // Accent
-  const picker          = document.querySelector('.accent-picker');
-  let accent = 'en-US';
-
-  // Speech
+  // ------------- Speech (TTS only) -------------
   const synth = window.speechSynthesis;
-  function speak(text) {
+
+  // ------------- DOM -------------
+  const startBtn      = document.getElementById("start-btn");
+  const trainerArea   = document.getElementById("trainer-area");
+  const summaryArea   = document.getElementById("summary-area");
+
+  const customWordsTA = document.getElementById("custom-words");
+  const addWordsBtn   = document.getElementById("add-words-btn");
+
+  const wordProgress  = document.getElementById("word-progress");
+  const micStatus     = document.getElementById("mic-status"); // kept for UI parity
+  const spellingInput = document.getElementById("spelling-input");
+  const feedback      = document.getElementById("feedback");
+
+  const prevBtn       = document.getElementById("prev-btn");
+  const submitBtn     = document.getElementById("submit-btn");
+  const nextBtn       = document.getElementById("next-btn");
+  const flagBtn       = document.getElementById("flag-btn");
+
+  const correctList   = document.getElementById("correct-list");
+  const incorrectList = document.getElementById("incorrect-list");
+  const flaggedList   = document.getElementById("flagged-list");
+  const retryBtn      = document.getElementById("retry-btn");
+  const newListBtn    = document.getElementById("new-list-btn");
+
+  // ------------- Accent picker -------------
+  document.querySelectorAll(".accent-btn").forEach(btn => {
+    btn.addEventListener("click", () => {
+      document.querySelectorAll(".accent-btn").forEach(b => b.classList.remove("active"));
+      btn.classList.add("active");
+      accent = btn.dataset.accent || "en-US";
+    });
+  });
+
+  // ------------- Helpers -------------
+  const normalize = (s) =>
+    (s || "")
+      .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+      .toLowerCase()
+      .replace(/[^a-z0-9]/g, ""); // drop punctuation & spaces
+
+  const stripPunct = (s) => (s || "").replace(/[^\p{L}\p{N} ]+/gu, "").trim();
+
+  const escapeHTML = (s) =>
+    (s || "").replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+
+  const show = (el, on = true) => { if (el) el.classList[on ? "remove" : "add"]("hidden"); };
+
+  const speak = (text) => {
     try {
       if (!text) return;
-      synth.cancel();
+      synth && synth.cancel();
       const u = new SpeechSynthesisUtterance(text);
       u.lang = accent;
-      synth.speak(u);
+      window.speechSynthesis.speak(u);
     } catch {}
-  }
+  };
 
-  // Accent events — PURE buttons, no labels, so they never open file picker
-  picker?.addEventListener('click', e => {
-    const btn = e.target.closest('button[data-accent]');
-    if (!btn) return;
-    accent = btn.getAttribute('data-accent') || 'en-US';
-    picker.querySelectorAll('button').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-  });
+  const updateProgress = () => {
+    wordProgress.textContent = `Word ${idx + 1} of ${words.length}`;
+    flagBtn.classList.toggle("active", flagged.has(idx));
+  };
 
-  // --------- Lifetime counters ---------
-  let lifeCorrect  = parseInt(localStorage.getItem('school_life_correct') || '0', 10);
-  let lifeAttempts = parseInt(localStorage.getItem('school_life_attempts') || '0', 10);
-  function saveLife() {
-    localStorage.setItem('school_life_correct', lifeCorrect);
-    localStorage.setItem('school_life_attempts', lifeAttempts);
-    lifeCorrectEl.textContent  = String(lifeCorrect);
-    lifeAttemptsEl.textContent = String(lifeAttempts);
-    const acc = lifeAttempts ? Math.round((lifeCorrect / lifeAttempts) * 100) : 0;
-    lifeAccEl.textContent = `${acc}%`;
-  }
-  saveLife();
+  const resetSession = () => {
+    idx = 0;
+    correct.length = 0;
+    incorrect.length = 0;
+    flagged.clear();
+    feedback.className = "feedback";
+    feedback.textContent = "";
+    spellingInput.value = "";
+  };
 
-  // --------- Sample list (fallback) ---------
-  let sampleWords = [];
-  (async () => {
+  // ------------- Load words if user didn't add any -------------
+  async function ensureWordsLoaded() {
+    if (words.length > 0) return;
     try {
-      const res = await fetch('/data/word-lists/school.json', { cache: 'no-cache' });
-      if (res.ok) {
-        const data = await res.json();
-        sampleWords = Array.isArray(data?.words) ? data.words.filter(Boolean) : [];
-      } else throw new Error(res.status);
+      const r = await fetch("/data/school-words.json", { cache: "no-cache" });
+      const data = await r.json();
+      words = Array.isArray(data?.words) ? data.words : Array.isArray(data) ? data : [];
     } catch {
-      sampleWords = [
-        'apple','banana','computer','dictionary','elephant',
-        'friendly','garden','hospital','important','jungle',
-        'kitchen','library','mountain','notebook','ocean',
-        'pencil','question','rabbit','school','teacher'
+      // fallback small sample
+      words = [
+        "chalkboard", "library", "teacher", "student", "pencil",
+        "notebook", "science", "history", "geography", "playground"
       ];
     }
-  })();
-
-  // --------- Custom list (1/day on freemium) ---------
-  function todayISO(){ return new Date().toISOString().slice(0,10); }
-  function canAddCustom(){ return localStorage.getItem('school_custom_date') !== todayISO(); }
-  function markCustom(){ localStorage.setItem('school_custom_date', todayISO()); }
-
-  let customWords = [];
-  try {
-    const saved = localStorage.getItem('school_custom_words');
-    if (saved) customWords = JSON.parse(saved);
-  } catch {}
-
-  function saveCustom() {
-    try { localStorage.setItem('school_custom_words', JSON.stringify(customWords)); } catch {}
   }
 
-  addCustomBtn?.addEventListener('click', () => {
-    if (!canAddCustom()) { alert('Freemium: one custom list per day. Upgrade to Premium for unlimited.'); return; }
-    const raw = (customBox?.value || '').trim();
-    if (!raw) { alert('Enter some words first.'); return; }
-    const parsed = raw.split(/[\s,;]+/).map(w=>w.trim()).filter(Boolean);
-    const before = customWords.length;
-    customWords = mergeUnique(customWords, parsed);
-    const added = customWords.length - before;
-    customBox.value = '';
-    markCustom(); saveCustom();
-    alert(`Added ${added} custom words.`);
+  // ------------- Custom words -------------
+  addWordsBtn.addEventListener("click", () => {
+    const raw = (customWordsTA.value || "").trim();
+    if (!raw) { alert("Enter one or more words first."); return; }
+    const added = raw.split(/[\s,;|\n\r]+/).map(w => w.trim()).filter(Boolean);
+    if (!added.length) { alert("No valid words found."); return; }
+    words = Array.from(new Set([ ...added ])); // for freemium: replace with the new list
+    alert(`Loaded ${words.length} words for this session.`);
+    customWordsTA.value = "";
   });
 
-  schoolFileInput?.addEventListener('change', e => {
-    if (!canAddCustom()) { alert('Freemium: one custom list per day.'); e.target.value=''; return; }
-    const f = e.target.files?.[0]; if (!f) return;
-    const r = new FileReader();
-    r.onload = () => {
-      const parsed = String(r.result||'').split(/\r?\n|,|;|\t/).map(w=>w.trim()).filter(Boolean);
-      const before = customWords.length;
-      customWords = mergeUnique(customWords, parsed);
-      const added = customWords.length - before;
-      markCustom(); saveCustom();
-      alert(`Uploaded ${added} words.`);
-    };
-    r.readAsText(f);
+  // ------------- Start -------------
+  startBtn.addEventListener("click", async () => {
+    await ensureWordsLoaded();
+    if (!words.length) { alert("No words available."); return; }
+
+    resetSession();
+    show(trainerArea, true);
+    show(summaryArea, false);
+
+    updateProgress();
+    speak(words[idx]);
+    spellingInput.focus();
   });
 
-  // --------- Session state ---------
-  const CAP = 10; // per session in freemium
-  let words = [], idx = 0, running = false, currentWord = '';
-
-  startBtn?.addEventListener('click', startSession);
-  replayBtn?.addEventListener('click', ()=> speak(currentWord));
-  clearBtn?.addEventListener('click', ()=> { typedInput.value=''; typedPreview.textContent=''; typedInput.focus(); });
-
-  typedSubmit?.addEventListener('click', checkAnswer);
-  typedInput?.addEventListener('input', () => { typedPreview.textContent = typedInput.value; });
-  typedInput?.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter') checkAnswer();
-    if (e.key === ' ') { e.preventDefault(); speak(currentWord); } // space = replay
+  // ------------- Navigation -------------
+  prevBtn.addEventListener("click", () => {
+    if (idx > 0) { idx--; onNavigate(); }
   });
 
-  function startSession() {
-    // Prefer custom; else fallback to sample
-    const merged = customWords.length ? mergeUnique([], customWords) : mergeUnique(sampleWords.slice(), customWords);
-    if (!merged.length) { alert('No words available. Add custom words first.'); return; }
+  nextBtn.addEventListener("click", () => {
+    if (idx < words.length - 1) { idx++; onNavigate(); }
+    else endSession();
+  });
 
-    words = shuffleArray(merged).slice(0, CAP);
-    idx = 0; running = true;
-    currentWord = words[0];
-
-    totalWordsEl.textContent = String(words.length);
-    currentIdxEl.textContent = '1';
-    practice.classList.remove('hidden');
-    summary.classList.add('hidden');
-
-    typedInput.value = ''; typedPreview.textContent = '';
-    speak(currentWord);
-    ensureVisible();
+  function onNavigate() {
+    feedback.className = "feedback";
+    feedback.textContent = "";
+    spellingInput.value = "";
+    updateProgress();
+    speak(words[idx]);
+    spellingInput.focus();
   }
 
-  function ensureVisible(){
-    typedInput.focus();
-    feedback.scrollIntoView({behavior:'smooth', block:'center'});
+  // Flag current word (session only)
+  flagBtn.addEventListener("click", () => {
+    if (flagged.has(idx)) flagged.delete(idx); else flagged.add(idx);
+    flagBtn.classList.toggle("active", flagged.has(idx));
+  });
+
+  // ------------- Submit / Check -------------
+  submitBtn.addEventListener("click", handleSubmit);
+  spellingInput.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      handleSubmit();
+    }
+  });
+
+  function handleSubmit() {
+    const attemptRaw = spellingInput.value.trim();
+    const attempt = normalize(attemptRaw);
+    const targetRaw = String(words[idx] || "");
+    const target = normalize(targetRaw);
+
+    if (!attempt) {
+      feedback.className = "feedback incorrect";
+      feedback.innerHTML = `❌ (no input) → ${escapeHTML(targetRaw)}`;
+      postCheckAdvance();
+      return;
+    }
+
+    if (attempt === target) {
+      feedback.className = "feedback correct";
+      feedback.innerHTML = `✅ Correct: ${escapeHTML(targetRaw)}`;
+      correct.push(targetRaw);
+    } else {
+      feedback.className = "feedback incorrect";
+      feedback.innerHTML = `❌ ${escapeHTML(stripPunct(attemptRaw))} → ${escapeHTML(targetRaw)}`;
+      incorrect.push({ word: targetRaw, attempt: attemptRaw });
+    }
+
+    postCheckAdvance();
   }
 
-  function checkAnswer() {
-    if (!running) return;
-    const guess = (typedInput.value||'').trim();
-    const ok = guess.toLowerCase() === currentWord.toLowerCase();
-
-    lifeAttempts += 1; if (ok) lifeCorrect += 1; saveLife();
-
-    feedback.innerHTML = ok
-      ? `<span style="color:green">✅ Correct</span> — ${currentWord}`
-      : `<span style="color:#b91c1c">❌ Incorrect</span> — ${currentWord} <small>(You: ${guess||'—'})</small>`;
-
-    ensureVisible();
-
-    // Advance
-    idx += 1;
-    if (idx >= words.length) return endSession();
-
-    currentWord = words[idx];
-    currentIdxEl.textContent = String(idx + 1);
-    typedInput.value=''; typedPreview.textContent='';
-    setTimeout(()=> speak(currentWord), 250);
+  function postCheckAdvance() {
+    feedback.scrollIntoView({ behavior: "smooth", block: "center" });
+    setTimeout(() => {
+      if (idx < words.length - 1) {
+        idx++;
+        onNavigate();
+      } else {
+        endSession();
+      }
+    }, 900);
   }
 
+  // ------------- End / Summary -------------
   function endSession() {
-    running = false;
-    practice.classList.add('hidden');
-    summary.classList.remove('hidden');
-
-    summary.innerHTML = `
-      <div class="card">
-        <h3 class="card-title">Session Complete</h3>
-        <p>Nice work! Start another round or add more custom words.</p>
-      </div>
-    `;
-    summary.scrollIntoView({behavior:'smooth', block:'center'});
+    show(trainerArea, false);
+    buildSummary();
+    show(summaryArea, true);
   }
 
-  // --------- Utils ---------
-  function shuffleArray(a){ for(let n=a.length-1;n>0;n--){ const j=Math.floor(Math.random()*(n+1)); [a[n],a[j]]=[a[j],a[n]] } return a; }
-  function mergeUnique(a,b){ const s=new Set([...(a||[]),...(b||[])]); return Array.from(s); }
-});
+  function buildSummary() {
+    // Correct words
+    if (correct.length) {
+      correctList.innerHTML = correct
+        .map(w => `<div class="word-item"><strong>${escapeHTML(w)}</strong> <span class="badge correct">correct</span></div>`)
+        .join("");
+    } else {
+      correctList.innerHTML = `<p class="muted">No correct words recorded this round.</p>`;
+    }
+
+    // Incorrect words
+    if (incorrect.length) {
+      incorrectList.innerHTML = incorrect
+        .map(x => `
+          <div class="word-item">
+            <strong>${escapeHTML(x.word)}</strong>
+            <span class="badge incorrect">incorrect</span>
+            <small class="muted"> (you: ${escapeHTML(stripPunct(x.attempt)) || "—"})</small>
+          </div>
+        `)
+        .join("");
+    } else {
+      incorrectList.innerHTML = `<p class="muted">No mistakes. Great job!</p>`;
+    }
+
+    // Flagged words (avoid duplicates)
+    const flaggedWords = Array.from(flagged).map(i => words[i]).filter(Boolean);
+    if (flaggedWords.length) {
+      flaggedList.innerHTML = flaggedWords
+        .map(w => `<div class="word-item"><strong>${escapeHTML(w)}</strong> <span class="badge flagged">flagged</span></div>`)
+        .join("");
+    } else {
+      flaggedList.innerHTML = `<p class="muted">No flagged words.</p>`;
+    }
+  }
+
+  // ------------- Summary actions -------------
+  retryBtn.addEventListener("click", () => {
+    // Retry on incorrect + flagged only, if any; otherwise retry entire list
+    const reviewSet = new Set();
+    incorrect.forEach(x => reviewSet.add(x.word));
+    flagged.forEach(i => reviewSet.add(words[i]));
+
+    const reviewWords = Array.from(reviewSet);
+    if (reviewWords.length) {
+      words = reviewWords;
+    }
+    resetSession();
+    show(summaryArea, false);
+    show(trainerArea, true);
+    updateProgress();
+    speak(words[idx]);
+    spellingInput.focus();
+  });
+
+  newListBtn.addEventListener("click", () => {
+    // Clear and return to top where user can paste new list
+    words = [];
+    resetSession();
+    show(summaryArea, false);
+    // keep trainer hidden until user presses Start again
+  });
+
+})();
