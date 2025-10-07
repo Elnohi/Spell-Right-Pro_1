@@ -22,48 +22,47 @@
   <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7632930282249669" crossorigin="anonymous"></script>
 </head>
 <body>
-  <!-- Nav -->
   <nav class="navbar">
     <div class="brand">
-      <img src="assets/logo.png" class="logo" alt="SpellRightPro Logo" />
-      <div>
-        <span>SpellRightPro</span>
-        <span class="subtitle">OET Practice</span>
-      </div>
+      <img src="assets/logo.png" class="logo" alt="SpellRightPro" />
+      <div><span>SpellRightPro</span><span class="subtitle">OET Practice</span></div>
     </div>
     <div class="nav-actions">
       <a class="btn-secondary" href="index.html"><i class="fa fa-home"></i> Home</a>
-      <a class="btn-primary upgrade-btn"><i class="fa fa-crown"></i> Premium</a>
+      <button id="login-btn" class="btn-secondary"><i class="fa fa-user"></i> Login (optional)</button>
+      <a class="btn-primary premium-button"><i class="fa fa-crown"></i> Premium</a>
     </div>
   </nav>
 
-  <!-- Ad -->
   <div class="container" style="padding-top:12px; padding-bottom:0;">
     <ins class="adsbygoogle" style="display:block"
-         data-ad-client="ca-pub-7632930282249669"
-         data-ad-slot="3344556677"
-         data-ad-format="auto"
-         data-full-width-responsive="true"></ins>
+      data-ad-client="ca-pub-7632930282249669" data-ad-slot="3344556677"
+      data-ad-format="auto" data-full-width-responsive="true"></ins>
     <script>(adsbygoogle=window.adsbygoogle||[]).push({});</script>
   </div>
 
   <main class="container">
-    <!-- Setup -->
     <section class="training-card">
       <h1 class="card-title">🩺 OET Spelling (Freemium)</h1>
-      <p class="text-center muted">Choose mode, then type what you hear. Press Enter to submit.</p>
+      <div class="mode-selector">
+        <button id="start-practice-btn" class="btn-mode active"><i class="fa fa-lightbulb"></i> Practice (Full list)</button>
+        <button id="start-exam-btn" class="btn-mode"><i class="fa fa-clipboard-check"></i> Exam (24 random)</button>
+      </div>
 
-      <div class="mode-selector" role="tablist" aria-label="OET mode">
-        <button type="button" id="start-practice-btn" class="btn-mode active">
-          <i class="fa fa-lightbulb"></i> Practice (Full list)
-        </button>
-        <button type="button" id="start-exam-btn" class="btn-mode">
-          <i class="fa fa-clipboard-check"></i> Exam (24 random)
-        </button>
+      <!-- Unlimited custom words on OET -->
+      <div class="custom-words-section">
+        <label class="section-label">Custom Words (unlimited)</label>
+        <textarea id="custom-words" placeholder="Paste words…"></textarea>
+        <div class="file-upload">
+          <label class="btn-upload"><i class="fa fa-file-arrow-up"></i> Upload .txt/.csv
+            <input id="file-input" type="file" accept=".txt,.csv" />
+          </label>
+        </div>
+        <button id="apply-words" class="btn-secondary"><i class="fa fa-plus"></i> Use Custom List</button>
+        <small id="cw-note" class="mt-2 d-block" style="color:#6c757d;"></small>
       </div>
     </section>
 
-    <!-- Game -->
     <section id="oet-area" class="trainer-area hidden">
       <div id="word-visual" class="word-progress">Word 1 of 24</div>
 
@@ -75,56 +74,40 @@
         <button id="submit-btn" class="btn-primary"><i class="fa fa-check"></i> Submit</button>
         <button id="next-btn" class="btn-secondary"><i class="fa fa-arrow-right"></i> Next</button>
         <button id="flag-btn" class="btn-icon" title="Flag"><i class="fa fa-flag"></i></button>
-        <!-- Direct End Session -->
         <button id="end-session-btn" class="btn-secondary"><i class="fa fa-flag-checkered"></i> End Session</button>
-
-        <!-- Hidden stubs (keep JS safe if earlier code expects them) -->
-        <button id="more-btn" class="d-none" aria-hidden="true"></button>
-        <div id="more-menu" class="d-none" aria-hidden="true"></div>
       </div>
 
-      <div id="summary-area" class="feedback"></div>
+      <div id="live-feedback" class="feedback" style="display:none;"></div>
     </section>
 
-    <!-- Results -->
     <section id="results-area" class="summary-area hidden"></section>
   </main>
 
-  <footer class="container" style="padding-top:0">
-    <a href="terms.html">Terms</a> ·
-    <a href="privacy.html">Privacy</a> ·
-    <a href="refund-policy.html">Refund</a> ·
-    <a href="contact.html">Contact</a>
-  </footer>
+  <!-- Offline toast -->
+  <div id="connection-toast" class="connection-toast hidden">
+    <i class="fa fa-wifi-slash"></i> You’re offline — working in cached mode
+  </div>
 
-  <script>
-    if ('serviceWorker' in navigator) { navigator.serviceWorker.register('/sw.js').catch(()=>{}); }
-    document.querySelectorAll('.upgrade-btn,.premium-button').forEach(b=>b.addEventListener('click',()=>location.href='/premium.html'));
-  </script>
-
-  <!-- ===== Connection Status Toast ===== -->
-<div id="connection-toast" class="connection-toast hidden">
-  <i class="fa fa-wifi-slash"></i> You’re offline — working in cached mode
-</div>
-
-<script>
-  // Connection toast logic
-  const toast = document.getElementById('connection-toast');
-  let online = navigator.onLine;
-
-  function showToast(message, isOnline = true) {
-    toast.textContent = message;
-    toast.classList.remove('hidden');
-    toast.classList.toggle('offline', !isOnline);
-    toast.classList.toggle('online', isOnline);
-    setTimeout(() => toast.classList.add('hidden'), 4000);
-  }
-
-  window.addEventListener('offline', () => showToast("⚠ You're offline — working in cached mode", false));
-  window.addEventListener('online', () => showToast("✅ Back online — syncing restored", true));
-</script>
-
-  <!-- OET uses ES modules to import the full word list -->
   <script type="module" src="js/main-freemium-oet.js"></script>
+  <script>
+    if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').catch(()=>{});
+    document.querySelectorAll('.premium-button,.upgrade-btn')
+      .forEach(b=>b.addEventListener('click',()=>location.href='/premium.html'));
+    const toast=document.getElementById('connection-toast');
+    function showToast(m,ok){toast.textContent=m;toast.classList.remove('hidden');toast.classList.toggle('offline',!ok);toast.classList.toggle('online',!!ok);setTimeout(()=>toast.classList.add('hidden'),4000);}
+    addEventListener('offline',()=>showToast("⚠ You're offline — working in cached mode",false));
+    addEventListener('online',()=>showToast("✅ Back online — syncing restored",true));
+
+    // Optional auth (Email link popup or Google)
+    const loginBtn = document.getElementById('login-btn');
+    loginBtn?.addEventListener('click', async ()=> {
+      try {
+        if (!firebase?.auth) return alert('Auth not available.');
+        const provider = new firebase.auth.GoogleAuthProvider();
+        await firebase.auth().signInWithPopup(provider);
+        alert('Signed in! Progress will be saved when available.');
+      } catch (e) { alert('Login failed.'); }
+    });
+  </script>
 </body>
 </html>
