@@ -2,199 +2,131 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>SpellRightPro - Pricing</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <base href="/" />
-  <link rel="icon" href="/assets/logo.png">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SpellRightPro – Pricing</title>
 
-  <style>
-    :root{
-      --primary:#098cfb;
-      --light:#fff; --light-gray:#f3f4f6;
-      --border:#e5e7eb; --gray:#6b7280;
-      --promo:#0f9d58;
-    }
-    body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;color:#111;background:#fafafa}
-    .navbar{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;background:#fff;border-bottom:1px solid var(--border)}
-    .brand{display:flex;align-items:center;gap:10px;font-weight:700}
-    .brand img{height:34px}
+  <!-- Styles -->
+  <link rel="stylesheet" href="css/styles.css" />
+  <link rel="icon" href="assets/logo.png" />
+  <link rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" />
 
-    .pricing-container{max-width:980px;margin:40px auto;padding:0 16px}
-    .pricing-hero{text-align:center;padding:24px 0}
-    .toggle-container{margin:16px auto;display:flex;justify-content:center;gap:6px}
-    .toggle-btn{padding:10px 20px;background:var(--light-gray);border:1px solid var(--border);cursor:pointer;border-radius:10px}
-    .toggle-btn.active{background:var(--primary);color:#fff;border-color:var(--primary)}
-
-    .pricing-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:18px;margin:18px 0 28px}
-    .pricing-card{background:#fff;border:1px solid var(--border);border-radius:14px;padding:18px 16px;box-shadow:0 1px 6px rgba(0,0,0,.04)}
-    .pricing-card.featured{border-color:var(--primary);box-shadow:0 8px 34px rgba(9,140,251,.12)}
-    .badge{display:inline-block;background:var(--primary);color:#fff;font-size:.85rem;padding:2px 8px;border-radius:8px;margin-bottom:8px}
-    .price{font-size:2rem;font-weight:800;margin:6px 0 14px}
-    .price small{font-size:.9rem;font-weight:600;color:var(--gray)}
-    .hidden{display:none}
-    .strike{text-decoration:line-through;color:#777;margin-right:6px}
-
-    .btn{display:inline-block;padding:10px 16px;border-radius:10px;text-decoration:none}
-    .btn-primary{background:var(--primary);color:#fff}
-    .btn-outline{border:1px solid var(--primary);color:var(--primary);background:#fff}
-
-    footer{margin:24px auto 28px;text-align:center;color:#888}
-    footer a{color:#098cfb;margin:0 6px;text-decoration:none}
-    footer a:hover{text-decoration:underline}
-
-    /* Promo box */
-    .promo-box{border:1px solid #d7f1e3;background:#ecfff6;border-radius:14px;padding:14px;margin-bottom:22px;text-align:center}
-    .promo-box strong{color:var(--promo)}
-    .promo-box #pricing-countdown{font-feature-settings:"tnum";font-variant-numeric:tabular-nums;font-weight:700}
-  </style>
+  <!-- Analytics -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-H09MF13297"></script>
+  <script src="js/analytics.js"></script>
 </head>
+
 <body>
-  <nav class="navbar">
-    <div class="brand">
-      <img src="/assets/logo.png" alt="SpellRightPro Logo">
-      <span>SpellRightPro</span>
+  <div class="container fade-in">
+    <!-- ===== NAVBAR ===== -->
+    <nav class="navbar">
+      <div class="brand">
+        <img src="assets/logo.png" alt="Logo" class="logo" />
+        <span>SpellRightPro</span>
+      </div>
+      <div class="nav-actions">
+        <a href="index.html" class="btn-secondary"><i class="fa fa-home"></i> Home</a>
+        <a href="premium.html" class="premium-button">
+          <i class="fa fa-crown"></i> Upgrade
+        </a>
+      </div>
+    </nav>
+
+    <!-- ===== PROMO BANNER ===== -->
+    <div id="promo-banner" class="ad-banner" style="display:none;">
+      <i class="fa fa-bolt"></i>
+      <strong>Special Offer:</strong> Get Premium for only <b>CAD $39.99/year</b> (was $69.99)!
+      <br />
+      <small>Offer ends in <span id="promo-countdown"></span>.</small>
     </div>
-  </nav>
 
-  <main class="pricing-container">
-    <div class="pricing-hero">
-      <h1>Choose Your Plan</h1>
+    <!-- ===== PRICING SECTION ===== -->
+    <div class="training-card fade-in">
+      <h1 class="card-title"><i class="fa fa-tags"></i> Choose Your Plan</h1>
 
-      <!-- Promo Announcement -->
-      <div id="promo-box" class="promo-box" hidden>
-        🎉 <strong>70% OFF</strong> Premium with code <span id="pricing-code">BACK2SCHOOL70</span><br/>
-        <small>Offer ends in <span id="pricing-countdown">10d 00:00:00</span></small>
-      </div>
-
-      <div class="toggle-container" role="tablist" aria-label="Billing period">
-        <button class="toggle-btn active" data-plan="monthly" aria-selected="true">Monthly</button>
-        <button class="toggle-btn" data-plan="annual" aria-selected="false">Annual (Save 20%)</button>
-      </div>
-    </div>
-
-    <div class="pricing-grid">
-      <!-- Free Tier -->
-      <div class="pricing-card" aria-labelledby="free-title">
-        <h3 id="free-title">Free</h3>
-        <div class="price">$0<small>/forever</small></div>
-        <ul>
-          <li>✓ Basic OET/Bee practice</li>
-          <li>✓ Limited word lists</li>
-          <li>✗ With ads</li>
-          <li>✗ No progress tracking</li>
-        </ul>
-        <a href="freemium-oet.html" class="btn btn-outline">Start Free</a>
-      </div>
-
-      <!-- Premium Tier -->
-      <div class="pricing-card featured" aria-labelledby="premium-title">
-        <div class="badge">Most Popular</div>
-        <h3 id="premium-title">Premium</h3>
-
-        <div class="price monthly-price">
-          <span id="price-monthly-strike" class="strike">$9</span>
-          <span id="price-monthly-discount">$2.70</span><small>/month</small>
-        </div>
-        <div class="price annual-price hidden">
-          <span id="price-annual-strike" class="strike">$7</span>
-          <span id="price-annual-discount">$2.10</span><small>/month ($25.20 billed annually)</small>
+      <div class="results-grid">
+        <!-- Free Plan -->
+        <div class="results-card">
+          <h3><i class="fa fa-leaf"></i> Freemium</h3>
+          <p>Perfect for casual learners or first-time users.</p>
+          <ul>
+            <li>✔ OET practice word list</li>
+            <li>✔ One custom list per day</li>
+            <li>✔ Limited Bee & School modes</li>
+            <li>✖ No progress tracking</li>
+            <li>✖ Ads displayed</li>
+          </ul>
+          <div class="score-number">Free</div>
+          <button class="btn-secondary" onclick="window.location.href='index.html'">
+            Start Free
+          </button>
         </div>
 
-        <ul>
-          <li>✓ All exam modes unlocked</li>
-          <li>✓ Unlimited custom lists</li>
-          <li>✓ Ad-free experience</li>
-          <li>✓ Detailed progress tracking</li>
-        </ul>
-        <a id="pricing-upgrade-btn" href="premium.html" class="btn btn-primary">Get Premium</a>
+        <!-- Premium Plan -->
+        <div class="results-card">
+          <h3><i class="fa fa-crown"></i> Premium</h3>
+          <p>Best for dedicated learners and professionals.</p>
+          <ul>
+            <li>✔ Full OET, School, and Bee modes</li>
+            <li>✔ Unlimited custom lists</li>
+            <li>✔ Audio spelling + recognition</li>
+            <li>✔ Error tracking & flagged words</li>
+            <li>✔ Ad-free learning experience</li>
+          </ul>
+
+          <div class="score-number">
+            <span id="annual-price">CAD $69.99</span>
+            <small style="font-size:1rem; color:gray;">/year</small>
+          </div>
+
+          <button class="btn-primary" onclick="window.location.href='premium.html'">
+            Upgrade to Premium
+          </button>
+        </div>
+      </div>
+
+      <!-- ===== Pricing Toggle (Optional Future Feature) ===== -->
+      <div class="text-center mt-4">
+        <small style="color:gray;">Monthly billing available soon.</small>
       </div>
     </div>
 
-    <footer>
-      © 2025 SpellRightPro ·
-      <a href="terms.html">Terms</a> ·
-      <a href="privacy.html">Privacy</a> ·
-      <a href="refund-policy.html">Refunds</a> ·
-      <a href="contact.html">Contact</a>
+    <!-- ===== FOOTER ===== -->
+    <footer class="text-center mt-4">
+      <p>
+        <a href="terms.html">Terms</a> ·
+        <a href="privacy.html">Privacy</a> ·
+        <a href="refund.html">Refund Policy</a> ·
+        <a href="contact.html">Contact</a>
+      </p>
+      <p style="font-size: 0.8rem; color: gray;">© 2025 SpellRightPro</p>
     </footer>
-  </main>
+  </div>
 
-  <script src="js/promo.js"></script>
+  <!-- ===== PROMO COUNTDOWN SCRIPT ===== -->
   <script>
-    // Plan toggling
-    document.querySelectorAll('.toggle-btn').forEach(btn => {
-      btn.addEventListener('click', () => {
-        document.querySelectorAll('.toggle-btn').forEach(b => {
-          b.classList.remove('active');
-          b.setAttribute('aria-selected','false');
-        });
-        btn.classList.add('active');
-        btn.setAttribute('aria-selected','true');
+    const promoEnd = new Date("2025-10-15T23:59:59");
+    const banner = document.getElementById("promo-banner");
+    const countdown = document.getElementById("promo-countdown");
+    const annualPrice = document.getElementById("annual-price");
 
-        if (btn.dataset.plan === 'annual') {
-          document.querySelector('.monthly-price').classList.add('hidden');
-          document.querySelector('.annual-price').classList.remove('hidden');
-        } else {
-          document.querySelector('.annual-price').classList.add('hidden');
-          document.querySelector('.monthly-price').classList.remove('hidden');
-        }
-      });
-    });
-
-    // Promo integration with auto-hide
-    document.addEventListener('DOMContentLoaded', () => {
-      const box = document.getElementById('promo-box');
-      const code = document.getElementById('pricing-code');
-      const countdownEl = document.getElementById('pricing-countdown');
-      const btn = document.getElementById('pricing-upgrade-btn');
-      const strikeMonthly = document.getElementById('price-monthly-strike');
-      const strikeAnnual = document.getElementById('price-annual-strike');
-      const discountMonthly = document.getElementById('price-monthly-discount');
-      const discountAnnual = document.getElementById('price-annual-discount');
-
-      if (window.PROMO?.active()) {
-        if (box) box.hidden = false;
-        if (code) code.textContent = window.PROMO.code;
-
-        if (btn) {
-          if (window.PROMO.checkoutUrl) {
-            btn.href = window.PROMO.checkoutUrl;
-          } else {
-            const u = new URL(btn.href, location.href);
-            u.searchParams.set('promo', window.PROMO.code);
-            btn.href = u.toString();
-          }
-        }
-
-        function tick() {
-          const left = Math.max(0, window.PROMO.endsAt() - Date.now());
-          const d = Math.floor(left / 86400000);
-          const h = Math.floor((left % 86400000) / 3600000);
-          const m = Math.floor((left % 3600000) / 60000);
-          const s = Math.floor((left % 60000) / 1000);
-          countdownEl.textContent = `${d}d ${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
-
-          if (left <= 0) {
-            // promo expired → hide banner + revert prices
-            if (box) box.hidden = true;
-            if (strikeMonthly) strikeMonthly.classList.add('hidden');
-            if (strikeAnnual) strikeAnnual.classList.add('hidden');
-            if (discountMonthly) discountMonthly.textContent = "$9";
-            if (discountAnnual) discountAnnual.textContent = "$7";
-            clearInterval(iv);
-          }
-        }
-        tick();
-        const iv = setInterval(tick, 1000);
-      } else {
-        // Already expired
-        if (box) box.hidden = true;
-        if (strikeMonthly) strikeMonthly.classList.add('hidden');
-        if (strikeAnnual) strikeAnnual.classList.add('hidden');
-        if (discountMonthly) discountMonthly.textContent = "$9";
-        if (discountAnnual) discountAnnual.textContent = "$7";
+    function updateCountdown() {
+      const now = new Date();
+      const diff = promoEnd - now;
+      if (diff <= 0) {
+        banner.style.display = "none";
+        annualPrice.textContent = "CAD $69.99";
+        return;
       }
-    });
+      banner.style.display = "block";
+      annualPrice.textContent = "CAD $39.99";
+      const hrs = Math.floor(diff / 1000 / 60 / 60);
+      const mins = Math.floor((diff / 1000 / 60) % 60);
+      countdown.textContent = `${hrs}h ${mins}m`;
+    }
+
+    updateCountdown();
+    setInterval(updateCountdown, 60000);
   </script>
 </body>
 </html>
