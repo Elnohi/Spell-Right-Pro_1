@@ -1,14 +1,14 @@
-// sw.js — network-first for HTML, stale-while-revalidate for static
-const VERSION = '2025-10-02';
+// sw.js — Optimized caching strategy for SpellRightPro
+const VERSION = '2025-10-07';
 const STATIC_CACHE = `static-${VERSION}`;
 const HTML_CACHE = `html-${VERSION}`;
 
-self.addEventListener('install', (event) => {
+self.addEventListener('install', event => {
   self.skipWaiting();
   event.waitUntil(caches.open(STATIC_CACHE));
 });
 
-self.addEventListener('activate', (event) => {
+self.addEventListener('activate', event => {
   event.waitUntil((async () => {
     const keys = await caches.keys();
     await Promise.all(keys
@@ -18,23 +18,26 @@ self.addEventListener('activate', (event) => {
   })());
 });
 
-self.addEventListener('message', (event) => {
+self.addEventListener('message', event => {
   if (event.data && event.data.type === 'SKIP_WAITING') self.skipWaiting();
 });
 
-self.addEventListener('fetch', (event) => {
+self.addEventListener('fetch', event => {
   const req = event.request;
   const url = req.url;
 
-  // 🚫 Skip caching chrome-extension:// and third-party analytics/ads
+  // 🚫 Skip unsafe or third-party origins
   if (!url.startsWith('http') ||
+      url.startsWith('chrome-extension://') ||
       url.includes('googletagmanager.com') ||
       url.includes('googlesyndication.com') ||
-      url.includes('google-analytics.com')) {
-    return; // Let browser handle directly
+      url.includes('google-analytics.com') ||
+      url.includes('gstatic.com') ||
+      url.includes('firebaseinstallations.googleapis.com')) {
+    return;
   }
 
-  // Network-first for navigations
+  // 🧭 Network-first for navigations (HTML pages)
   if (req.mode === 'navigate') {
     event.respondWith((async () => {
       try {
@@ -49,17 +52,17 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Static assets: stale-while-revalidate
+  // 🧩 Stale-while-revalidate for assets (CSS, JS, images, fonts)
   const dest = req.destination;
-  if (['script','style','image','font'].includes(dest)) {
+  if (['script', 'style', 'image', 'font'].includes(dest)) {
     event.respondWith((async () => {
       const cache = await caches.open(STATIC_CACHE);
-      const hit = await cache.match(req);
+      const cached = await cache.match(req);
       const fetchPromise = fetch(req).then(res => {
         if (res && res.ok) cache.put(req, res.clone());
         return res;
       }).catch(() => undefined);
-      return hit || fetchPromise || fetch(req);
+      return cached || fetchPromise || fetch(req);
     })());
   }
 });
