@@ -1,62 +1,144 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="light">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Offline | SpellRightPro</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>SpellRightPro – Offline</title>
+
+  <!-- Styles -->
+  <link rel="stylesheet" href="css/styles.css" />
+  <link rel="icon" href="assets/logo.png" />
+  <link rel="manifest" href="manifest.json" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"/>
+
+  <!-- Firebase (for consistency) -->
+  <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore-compat.js"></script>
+  <script src="js/config.js" defer></script>
+
+  <!-- Analytics -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-H09MF13297"></script>
+  <script src="js/analytics.js" defer></script>
+
+  <!-- AdSense -->
+  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7632930282249669" crossorigin="anonymous"></script>
+
   <style>
-    :root {
-      --primary-color: #007bff;
-      --error-color: #dc3545;
-    }
     body {
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      font-family: 'Segoe UI', sans-serif;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
       text-align: center;
-      padding: 2rem;
+      padding: 20px;
+    }
+
+    .offline-card {
+      background: rgba(255, 255, 255, 0.12);
+      border-radius: 20px;
+      backdrop-filter: blur(20px);
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+      padding: 40px 30px;
+      max-width: 420px;
+      width: 100%;
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      animation: fadeIn 0.6s ease;
+    }
+
+    .offline-card img {
+      width: 80px;
+      height: 80px;
+      margin-bottom: 20px;
+      filter: drop-shadow(0 2px 4px rgba(0,0,0,0.2));
+    }
+
+    .offline-card h1 {
+      font-size: 1.8rem;
+      margin-bottom: 10px;
+      color: #fff;
+      font-weight: 700;
+    }
+
+    .offline-card p {
+      color: rgba(255, 255, 255, 0.9);
+      margin-bottom: 25px;
+      font-size: 1rem;
       line-height: 1.6;
-      color: #333;
     }
-    .container {
-      max-width: 600px;
-      margin: 0 auto;
-      padding: 2rem;
-      border-radius: 8px;
-      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-    }
-    h1 {
-      color: var(--error-color);
-      margin-bottom: 1.5rem;
-    }
-    .offline-icon {
-      font-size: 3rem;
-      color: var(--error-color);
-      margin-bottom: 1rem;
-    }
-    button {
-      background: var(--primary-color);
+
+    .btn-retry {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      background: linear-gradient(135deg, #4cc9f0, #4361ee);
       color: white;
       border: none;
-      padding: 0.75rem 1.5rem;
-      border-radius: 4px;
-      font-size: 1rem;
+      padding: 14px 24px;
+      border-radius: 12px;
       cursor: pointer;
-      margin-top: 1rem;
-      transition: background 0.3s;
+      font-weight: 600;
+      font-size: 1rem;
+      transition: all 0.3s ease;
+      width: 100%;
+      box-shadow: 0 4px 12px rgba(67, 97, 238, 0.3);
     }
-    button:hover {
-      background: #0069d9;
+
+    .btn-retry:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 16px rgba(67, 97, 238, 0.4);
+    }
+
+    .btn-retry i {
+      font-size: 1.2rem;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    footer {
+      margin-top: 40px;
+      font-size: 0.9rem;
+      color: rgba(255, 255, 255, 0.7);
+    }
+
+    footer a {
+      color: #fff;
+      text-decoration: underline;
+      margin: 0 6px;
     }
   </style>
 </head>
+
 <body>
-  <div class="container">
-    <div class="offline-icon">⚠️</div>
-    <h1>You're Offline</h1>
-    <p>SpellRightPro requires an internet connection for full functionality.</p>
-    <p>Basic practice features will be available once you reconnect.</p>
-    <button onclick="window.location.reload()">
-      Retry Connection
+  <div class="offline-card fade-in">
+    <img src="assets/logo.png" alt="SpellRightPro Logo" />
+    <h1>You’re Offline</h1>
+    <p>It seems you’ve lost your connection.<br>
+       Don’t worry — once you’re back online, your spelling sessions will continue.</p>
+
+    <button class="btn-retry" onclick="window.location.reload()">
+      <i class="fa fa-sync"></i> Try Again
     </button>
+
+    <footer>
+      <p>Need help? <a href="contact.html">Contact Support</a></p>
+    </footer>
   </div>
+
+  <!-- Ad (optional for offline) -->
+  <ins class="adsbygoogle"
+       style="display:block;margin-top:30px"
+       data-ad-client="ca-pub-7632930282249669"
+       data-ad-slot="3344556677"
+       data-ad-format="auto"
+       data-full-width-responsive="true"></ins>
+  <script>(adsbygoogle=window.adsbygoogle||[]).push({});</script>
 </body>
 </html>
