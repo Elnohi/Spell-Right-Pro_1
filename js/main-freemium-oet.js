@@ -1,137 +1,96 @@
-// main-freemium-oet.js — Modern Unified Version
-import { oetWords } from './oet_word_list.js';
+// OET typing trainer with Practice (full), Exam (24 random), unlimited custom, summary
+import { oetWords } from './oet_word_list.js'; // keep your existing list module
 
-document.addEventListener('DOMContentLoaded', () => {
-  const startPracticeBtn = document.getElementById('start-practice-btn');
-  const startExamBtn = document.getElementById('start-exam-btn');
-  const oetArea = document.getElementById('oet-area');
-  const summaryArea = document.getElementById('summary-area');
-  const userInput = document.getElementById('user-input');
-  const submitBtn = document.getElementById('submit-btn');
-  const nextBtn = document.getElementById('next-btn');
-  const flagBtn = document.getElementById('flag-btn');
-  const moreBtn = document.getElementById('more-btn');
-  const moreMenu = document.getElementById('more-menu');
-  const wordVisual = document.getElementById('word-visual');
+(function () {
+  const el = (id)=>document.getElementById(id);
+  const startPractice = el('start-practice-btn');
+  const startExam = el('start-exam-btn');
+  const area = el('oet-area');
+  const wordVisual = el('word-visual');
+  const input = el('user-input');
+  const submit = el('submit-btn');
+  const next = el('next-btn');
+  const flag = el('flag-btn');
+  const end = el('end-session-btn');
+  const live = el('live-feedback');
+  const results = el('results-area');
+
+  const ta = el('custom-words'); const fileInput = el('file-input'); const applyBtn = el('apply-words'); const note = el('cw-note');
 
   let words = [];
-  let currentIndex = 0;
-  let incorrectWords = [];
-  let flaggedWords = [];
-  let tts;
+  let idx=0, incorrect=[], flagged=[];
 
-  // ====== Text-to-Speech ======
-  function speak(text) {
-    if (!window.speechSynthesis) return;
-    tts = new SpeechSynthesisUtterance(text);
-    tts.lang = 'en-US';
-    window.speechSynthesis.speak(tts);
+  function setWords(list){ words=list.slice(); idx=0; incorrect=[]; flagged=[]; results.classList.add('hidden'); area.classList.remove('hidden'); update(); input.value=''; input.focus(); }
+  function update(){ wordVisual.textContent=`Word ${Math.min(idx+1,words.length)} of ${words.length}`; }
+
+  function startPracticeMode(){ setWords(oetWords); }
+  function startExamMode(){ setWords(oetWords.slice().sort(()=>0.5-Math.random()).slice(0,24)); }
+
+  function check(){
+    const expected = words[idx];
+    const v = (input.value||'').trim().toLowerCase();
+    if(!v) return;
+    const ok = v===expected.toLowerCase();
+    live.style.display='block';
+    live.className=`feedback ${ok?'correct':'incorrect'}`;
+    live.innerHTML = ok?`✅ Correct: <b>${expected}</b>`:`❌ ${v}<br>✔ <b>${expected}</b>`;
+    if(!ok) incorrect.push(expected);
+    idx++; input.value=''; if(idx>=words.length) return summary();
+    update(); input.focus();
   }
 
-  // ====== Practice Mode (Full List) ======
-  startPracticeBtn.addEventListener('click', () => {
-    words = oetWords.slice();
-    currentIndex = 0;
-    incorrectWords = [];
-    flaggedWords = [];
-    summaryArea.style.display = 'none';
-    oetArea.style.display = 'block';
-    startWord();
-  });
+  function summary(){
+    area.classList.add('hidden');
+    results.classList.remove('hidden');
+    const score = Math.round(((words.length-incorrect.length)/Math.max(1,words.length))*100);
+    results.innerHTML = `
+      <div class="summary-header">
+        <h2>Session Complete</h2>
+        <div class="score-display">${score}</div>
+        <div class="score-percent">${words.length-incorrect.length}/${words.length} correct</div>
+      </div>
+      <div class="results-grid">
+        <div class="results-card correct">
+          <h3><i class="fa fa-flag"></i> Flagged</h3>
+          <ul class="word-list">${flagged.map(w=>`<li class="word-item">${w}</li>`).join('') || '<li class="word-item">– None –</li>'}</ul>
+        </div>
+        <div class="results-card incorrect">
+          <h3><i class="fa fa-xmark"></i> Incorrect</h3>
+          <ul class="word-list">${incorrect.map(w=>`<li class="word-item">${w}</li>`).join('') || '<li class="word-item">– None –</li>'}</ul>
+        </div>
+      </div>
+      <div class="summary-actions">
+        <button id="restart" class="btn-secondary"><i class="fa fa-redo"></i> Restart</button>
+        <a class="btn-primary" href="/premium.html"><i class="fa fa-crown"></i> Go Premium</a>
+      </div>`;
+    document.getElementById('restart').addEventListener('click', startPracticeMode);
 
-  // ====== Exam Mode (24 Random Words) ======
-  startExamBtn.addEventListener('click', () => {
-    words = oetWords.sort(() => 0.5 - Math.random()).slice(0, 24);
-    currentIndex = 0;
-    incorrectWords = [];
-    flaggedWords = [];
-    summaryArea.style.display = 'none';
-    oetArea.style.display = 'block';
-    startWord();
-  });
-
-  // ====== Display Word ======
-  function startWord() {
-    if (currentIndex >= words.length) {
-      showSummary();
-      return;
-    }
-    const word = words[currentIndex];
-    wordVisual.textContent = `Word ${currentIndex + 1} of ${words.length}`;
-    userInput.value = "";
-    userInput.focus();
-    speak(word);
+    // Optional: save progress if logged in
+    try {
+      const user = firebase?.auth?.().currentUser;
+      if (user) {
+        const db = firebase.firestore();
+        db.collection('oet_sessions').add({
+          uid: user.uid, ts: Date.now(), total: words.length, incorrect, flagged, score
+        });
+      }
+    } catch {}
   }
 
-  // ====== Check Answer ======
-  function checkAnswer() {
-    const input = userInput.value.trim().toLowerCase();
-    if (!input) return;
-    const expected = words[currentIndex];
-    const correct = input === expected.toLowerCase();
+  // Events
+  startPractice.addEventListener('click', startPracticeMode);
+  startExam.addEventListener('click', startExamMode);
+  submit.addEventListener('click', check);
+  input.addEventListener('keypress', e=>{ if(e.key==='Enter'){ e.preventDefault(); check(); }});
+  next.addEventListener('click', ()=>{ incorrect.push(words[idx]); idx++; (idx>=words.length)?summary():(update(),input.focus());});
+  flag.addEventListener('click', ()=>{ if(idx<words.length) flagged.push(words[idx]); flag.classList.add('active'); setTimeout(()=>flag.classList.remove('active'),600);});
+  end.addEventListener('click', summary);
 
-    const feedback = document.createElement('div');
-    feedback.className = `feedback ${correct ? 'correct' : 'incorrect'}`;
-    feedback.innerHTML = correct
-      ? `✅ Correct: <b>${expected}</b>`
-      : `❌ Incorrect: ${input}<br>✔ Correct: <b>${expected}</b>`;
-    summaryArea.appendChild(feedback);
-    summaryArea.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  // Custom words (unlimited)
+  function parse(text){ return text.split(/[\n,]+| {2,}/g).map(s=>s.trim()).filter(Boolean).slice(0,1000); }
+  applyBtn.addEventListener('click', ()=>{ const list=parse(ta.value); if(!list.length){ note.textContent='Paste or upload words first.'; return; } setWords(list); note.textContent=`Custom list applied with ${list.length} words.`;});
+  fileInput.addEventListener('change', async e=>{ const f=e.target.files?.[0]; if(!f) return; ta.value=await f.text(); });
 
-    if (!correct) incorrectWords.push(expected);
-    currentIndex++;
-    setTimeout(startWord, 1200);
-  }
-
-  // ====== Buttons ======
-  submitBtn.addEventListener('click', checkAnswer);
-  nextBtn.addEventListener('click', () => { currentIndex++; startWord(); });
-  flagBtn.addEventListener('click', () => {
-    flaggedWords.push(words[currentIndex]);
-    alert(`Flagged: ${words[currentIndex]}`);
-  });
-
-  userInput.addEventListener('keypress', (e) => {
-    if (e.key === 'Enter') {
-      e.preventDefault();
-      submitBtn.click();
-    }
-  });
-
-  // ====== More Menu ======
-  moreBtn.addEventListener('click', () => {
-    moreMenu.classList.toggle('show');
-  });
-
-  document.getElementById('end-session-btn').addEventListener('click', () => {
-    showSummary();
-    moreMenu.classList.remove('show');
-  });
-
-  // ====== Summary ======
-  function showSummary() {
-    oetArea.style.display = 'none';
-    summaryArea.style.display = 'block';
-    summaryArea.innerHTML = `
-      <h2>Session Summary</h2>
-      <p>Total Words: ${words.length}</p>
-      <p>Incorrect: ${incorrectWords.length}</p>
-      <p>Flagged: ${flaggedWords.length}</p>
-      <hr>
-      ${incorrectWords.length ? `<h3>Incorrect Words:</h3><ul>${incorrectWords.map(w => `<li>${w}</li>`).join('')}</ul>` : ''}
-      ${flaggedWords.length ? `<h3>Flagged Words:</h3><ul>${flaggedWords.map(w => `<li>${w}</li>`).join('')}</ul>` : ''}
-      <button class="btn-secondary" id="restart-btn"><i class="fa fa-redo"></i> Restart</button>
-    `;
-    document.getElementById('restart-btn').addEventListener('click', () => {
-      summaryArea.innerHTML = '';
-      startPracticeBtn.click();
-    });
-  }
-
-  // ====== Upgrade Redirect ======
-  document.querySelectorAll('.premium-button, .upgrade-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      window.location.href = '/premium.html';
-    });
-  });
-});
+  // default landing
+  // (user must click a mode to start; nothing auto-runs here for accessibility)
+})();
