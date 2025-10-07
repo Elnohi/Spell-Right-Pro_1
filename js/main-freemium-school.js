@@ -1,125 +1,131 @@
-// =======================================================
-// Freemium School — add "⋯ More" (End/Restart) when custom list is used
-// (keeps your modern School logic from earlier; only adds More UI + handlers)
-// =======================================================
-(() => {
-  // DOM (from your modern School HTML)
-  const trainerArea = document.getElementById("trainer-area");
-  const summaryArea = document.getElementById("summary-area");
-  const startBtn    = document.getElementById("start-btn");
-  const addWordsBtn = document.getElementById("add-words-btn");
-  const spellingInput = document.getElementById("spelling-input");
-  const feedback    = document.getElementById("feedback");
-  const wordProgress= document.getElementById("word-progress");
+// main-freemium-school.js — Modern Unified Version
+document.addEventListener('DOMContentLoaded', () => {
+  // ====== DOM Elements ======
+  const startBtn = document.getElementById('start-btn');
+  const schoolArea = document.getElementById('school-area');
+  const wordDisplay = document.getElementById('word-display');
+  const userInput = document.getElementById('user-input');
+  const submitBtn = document.getElementById('submit-btn');
+  const nextBtn = document.getElementById('next-btn');
+  const flagBtn = document.getElementById('flag-btn');
+  const moreBtn = document.getElementById('more-btn');
+  const moreMenu = document.getElementById('more-menu');
+  const summaryArea = document.getElementById('summary-area');
 
-  const prevBtn     = document.getElementById("prev-btn");
-  const submitBtn   = document.getElementById("submit-btn");
-  const nextBtn     = document.getElementById("next-btn");
-  const flagBtn     = document.getElementById("flag-btn");
+  // ====== App State ======
+  let words = [];
+  let currentIndex = 0;
+  let incorrectWords = [];
+  let flaggedWords = [];
+  let tts;
 
-  const correctList   = document.getElementById("correct-list");
-  const incorrectList = document.getElementById("incorrect-list");
-  const flaggedList   = document.getElementById("flagged-list");
+  // ====== Default Sample Words ======
+  const defaultWords = [
+    "education", "library", "teacher", "student", "exam", "lesson", "pencil", "knowledge"
+  ];
 
-  // State
-  let words = window.__schoolWords || [];
-  let idx = 0;
-  const flagged = new Set();
-  const correct = [];
-  const incorrect = [];
-  let usingCustom = false;
+  // ====== Text-to-Speech ======
+  function speak(text) {
+    if (!window.speechSynthesis) return;
+    tts = new SpeechSynthesisUtterance(text);
+    tts.lang = 'en-US';
+    window.speechSynthesis.speak(tts);
+  }
 
-  // --- Add More UI dynamically when custom list is used ---
-  let moreBtn, moreMenu, endBtn, restartBtn;
-  function ensureMoreUI() {
-    if (moreBtn) return;
-    const controls = (nextBtn && nextBtn.parentElement) || trainerArea;
-    moreBtn = document.createElement("button");
-    moreBtn.id = "school-more";
-    moreBtn.className = "btn-icon";
-    moreBtn.title = "More";
-    moreBtn.innerHTML = `<i class="fa fa-ellipsis-h"></i>`;
-    controls.insertBefore(moreBtn, submitBtn.nextSibling);
+  // ====== Start Practice ======
+  startBtn.addEventListener('click', () => {
+    words = defaultWords.slice();
+    currentIndex = 0;
+    incorrectWords = [];
+    flaggedWords = [];
+    summaryArea.style.display = 'none';
+    schoolArea.style.display = 'block';
+    startWord();
+  });
 
-    moreMenu = document.createElement("div");
-    moreMenu.id = "school-more-menu";
-    moreMenu.className = "training-card";
-    moreMenu.style.cssText = "display:none; position:absolute; right:8px; top:64px; width:220px; padding:12px; z-index:5;";
-    moreMenu.innerHTML = `
-      <button id="school-end" class="btn-secondary" style="width:100%; margin-bottom:10px;">🏁 End Session</button>
-      <button id="school-restart" class="btn-secondary" style="width:100%;">🔁 Restart Session</button>
+  // ====== Show Current Word ======
+  function startWord() {
+    if (currentIndex >= words.length) {
+      showSummary();
+      return;
+    }
+    const word = words[currentIndex];
+    wordDisplay.textContent = `Word ${currentIndex + 1} of ${words.length}`;
+    userInput.value = "";
+    userInput.focus();
+    speak(word);
+  }
+
+  // ====== Check Answer ======
+  function checkAnswer() {
+    const input = userInput.value.trim().toLowerCase();
+    if (!input) return;
+    const expected = words[currentIndex];
+    const correct = input === expected.toLowerCase();
+
+    const feedback = document.createElement('div');
+    feedback.className = `feedback ${correct ? 'correct' : 'incorrect'}`;
+    feedback.innerHTML = correct
+      ? `✅ Correct: <b>${expected}</b>`
+      : `❌ Incorrect: ${input}<br>✔ Correct: <b>${expected}</b>`;
+    summaryArea.appendChild(feedback);
+    summaryArea.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+    if (!correct) incorrectWords.push(expected);
+    currentIndex++;
+    setTimeout(startWord, 1200);
+  }
+
+  // ====== Button Events ======
+  submitBtn.addEventListener('click', checkAnswer);
+  nextBtn.addEventListener('click', () => { currentIndex++; startWord(); });
+  flagBtn.addEventListener('click', () => {
+    flaggedWords.push(words[currentIndex]);
+    alert(`Flagged: ${words[currentIndex]}`);
+  });
+
+  // Allow Enter Key
+  userInput.addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      submitBtn.click();
+    }
+  });
+
+  // ====== More Menu ======
+  moreBtn.addEventListener('click', () => {
+    moreMenu.classList.toggle('show');
+  });
+
+  document.getElementById('end-session-btn').addEventListener('click', () => {
+    showSummary();
+    moreMenu.classList.remove('show');
+  });
+
+  // ====== Show Summary ======
+  function showSummary() {
+    schoolArea.style.display = 'none';
+    summaryArea.style.display = 'block';
+    summaryArea.innerHTML = `
+      <h2>Session Summary</h2>
+      <p>Total Words: ${words.length}</p>
+      <p>Incorrect: ${incorrectWords.length}</p>
+      <p>Flagged: ${flaggedWords.length}</p>
+      <hr>
+      ${incorrectWords.length ? `<h3>Incorrect Words:</h3><ul>${incorrectWords.map(w => `<li>${w}</li>`).join('')}</ul>` : ''}
+      ${flaggedWords.length ? `<h3>Flagged Words:</h3><ul>${flaggedWords.map(w => `<li>${w}</li>`).join('')}</ul>` : ''}
+      <button class="btn-secondary" id="restart-btn"><i class="fa fa-redo"></i> Restart</button>
     `;
-    controls.style.position = "relative";
-    controls.appendChild(moreMenu);
-
-    endBtn = moreMenu.querySelector("#school-end");
-    restartBtn = moreMenu.querySelector("#school-restart");
-
-    moreBtn.addEventListener("click", () => {
-      moreMenu.style.display = moreMenu.style.display === "block" ? "none" : "block";
-    });
-    document.addEventListener("click", (e) => {
-      if (!moreMenu.contains(e.target) && e.target !== moreBtn) {
-        moreMenu.style.display = "none";
-      }
-    });
-
-    endBtn.addEventListener("click", () => endSession(true));
-    restartBtn.addEventListener("click", () => {
-      idx = 0; correct.length = 0; incorrect.length = 0; flagged.clear();
-      moreMenu.style.display = "none";
-      onNavigate();
+    document.getElementById('restart-btn').addEventListener('click', () => {
+      summaryArea.innerHTML = '';
+      startBtn.click();
     });
   }
 
-  if (addWordsBtn) {
-    addWordsBtn.addEventListener("click", () => { usingCustom = true; ensureMoreUI(); });
-  }
-  if (startBtn) {
-    startBtn.addEventListener("click", () => { if (usingCustom) ensureMoreUI(); });
-  }
-
-  // ---- minimal glue (use your existing School logic for these) ----
-  const synth = window.speechSynthesis;
-  function speak(text) { try { synth && synth.cancel(); const u = new SpeechSynthesisUtterance(text); u.lang = "en-US"; synth.speak(u);} catch{} }
-
-  function updateProgress() {
-    wordProgress && (wordProgress.textContent = `Word ${idx + 1} of ${words.length}`);
-    flagBtn && flagBtn.classList.toggle("active", flagged.has(idx));
-  }
-  function onNavigate() {
-    feedback.className = "feedback";
-    feedback.textContent = "";
-    spellingInput.value = "";
-    updateProgress();
-    if (words[idx]) speak(words[idx]);
-    spellingInput.focus();
-  }
-
-  function endSession(early=false) {
-    trainerArea.classList.add("hidden");
-    renderSummary(early);
-    summaryArea.classList.remove("hidden");
-  }
-
-  function renderSummary(early) {
-    // Correct
-    correctList.innerHTML = correct.length
-      ? correct.map(w => `<div class="word-item"><strong>${w}</strong> <span class="badge correct">correct</span></div>`).join("")
-      : `<p class="muted">No correct words this round.</p>`;
-
-    // Incorrect
-    incorrectList.innerHTML = incorrect.length
-      ? incorrect.map(x => `<div class="word-item"><strong>${x.word}</strong> <span class="badge incorrect">incorrect</span><small class="muted"> (you: ${(x.attempt||"").replace(/[^\p{L}\p{N} ]+/gu,"") || "—"})</small></div>`).join("")
-      : `<p class="muted">No mistakes. Great job!</p>`;
-
-    // Flagged
-    const flaggedWords = Array.from(flagged).map(i => words[i]).filter(Boolean);
-    flaggedList.innerHTML = flaggedWords.length
-      ? flaggedWords.map(w => `<div class="word-item"><strong>${w}</strong> <span class="badge flagged">flagged</span></div>`).join("")
-      : `<p class="muted">No flagged words.</p>`;
-  }
-
-  // Expose for potential reuse
-  window.__schoolEndSession = endSession;
-})();
+  // ====== Upgrade Redirect ======
+  document.querySelectorAll('.premium-button, .upgrade-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      window.location.href = '/premium.html';
+    });
+  });
+});
