@@ -1,131 +1,96 @@
-// main-freemium-school.js — Modern Unified Version
-document.addEventListener('DOMContentLoaded', () => {
-  // ====== DOM Elements ======
-  const startBtn = document.getElementById('start-btn');
-  const schoolArea = document.getElementById('school-area');
-  const wordDisplay = document.getElementById('word-display');
-  const userInput = document.getElementById('user-input');
-  const submitBtn = document.getElementById('submit-btn');
-  const nextBtn = document.getElementById('next-btn');
-  const flagBtn = document.getElementById('flag-btn');
-  const moreBtn = document.getElementById('more-btn');
-  const moreMenu = document.getElementById('more-menu');
-  const summaryArea = document.getElementById('summary-area');
+// Typing trainer with live marking + summary + custom words (1 list/day)
+(function () {
+  const el = (id)=>document.getElementById(id);
+  const startBtn = el('start-btn');
+  const area = el('school-area');
+  const wordDisplay = el('word-display');
+  const input = el('user-input');
+  const submit = el('submit-btn');
+  const next = el('next-btn');
+  const flag = el('flag-btn');
+  const end = el('end-session-btn');
+  const live = el('live-feedback');
+  const results = el('results-area');
 
-  // ====== App State ======
-  let words = [];
-  let currentIndex = 0;
-  let incorrectWords = [];
-  let flaggedWords = [];
-  let tts;
+  const ta = el('custom-words');
+  const fileInput = el('file-input');
+  const applyBtn = el('apply-words');
+  const note = el('cw-note');
 
-  // ====== Default Sample Words ======
-  const defaultWords = [
-    "education", "library", "teacher", "student", "exam", "lesson", "pencil", "knowledge"
-  ];
+  const CW_KEY='school_cw_last';
+  function canApply(){const t=localStorage.getItem(CW_KEY); if(!t) return true; return new Date(+t).toDateString()!==new Date().toDateString();}
+  function markApplied(){localStorage.setItem(CW_KEY,Date.now().toString());}
 
-  // ====== Text-to-Speech ======
-  function speak(text) {
-    if (!window.speechSynthesis) return;
-    tts = new SpeechSynthesisUtterance(text);
-    tts.lang = 'en-US';
-    window.speechSynthesis.speak(tts);
+  let defaultWords = ["education","library","teacher","student","exam","lesson","pencil","knowledge"];
+  let words = defaultWords.slice();
+  let idx=0, incorrect=[], flagged=[];
+
+  function update(){ wordDisplay.textContent = `Word ${Math.min(idx+1,words.length)} of ${words.length}`; }
+
+  function start() {
+    idx=0; incorrect=[]; flagged=[];
+    results.classList.add('hidden');
+    area.classList.remove('hidden');
+    update();
+    input.value=''; input.focus();
   }
 
-  // ====== Start Practice ======
-  startBtn.addEventListener('click', () => {
-    words = defaultWords.slice();
-    currentIndex = 0;
-    incorrectWords = [];
-    flaggedWords = [];
-    summaryArea.style.display = 'none';
-    schoolArea.style.display = 'block';
-    startWord();
-  });
+  function check() {
+    const expected = words[idx];
+    const v = (input.value||'').trim().toLowerCase();
+    if (!v) return;
+    const ok = v===expected.toLowerCase();
 
-  // ====== Show Current Word ======
-  function startWord() {
-    if (currentIndex >= words.length) {
-      showSummary();
-      return;
-    }
-    const word = words[currentIndex];
-    wordDisplay.textContent = `Word ${currentIndex + 1} of ${words.length}`;
-    userInput.value = "";
-    userInput.focus();
-    speak(word);
+    live.style.display='block';
+    live.className = `feedback ${ok?'correct':'incorrect'}`;
+    live.innerHTML = ok ? `✅ Correct: <b>${expected}</b>` : `❌ ${v}<br>✔ <b>${expected}</b>`;
+
+    if (!ok) incorrect.push(expected);
+    idx++; input.value=''; if (idx>=words.length) return summary();
+    update(); input.focus();
   }
 
-  // ====== Check Answer ======
-  function checkAnswer() {
-    const input = userInput.value.trim().toLowerCase();
-    if (!input) return;
-    const expected = words[currentIndex];
-    const correct = input === expected.toLowerCase();
-
-    const feedback = document.createElement('div');
-    feedback.className = `feedback ${correct ? 'correct' : 'incorrect'}`;
-    feedback.innerHTML = correct
-      ? `✅ Correct: <b>${expected}</b>`
-      : `❌ Incorrect: ${input}<br>✔ Correct: <b>${expected}</b>`;
-    summaryArea.appendChild(feedback);
-    summaryArea.scrollIntoView({ behavior: 'smooth', block: 'center' });
-
-    if (!correct) incorrectWords.push(expected);
-    currentIndex++;
-    setTimeout(startWord, 1200);
+  function summary(){
+    area.classList.add('hidden');
+    results.classList.remove('hidden');
+    const score = Math.round(((words.length-incorrect.length)/Math.max(1,words.length))*100);
+    results.innerHTML = `
+      <div class="summary-header">
+        <h2>Session Complete</h2>
+        <div class="score-display">${score}</div>
+        <div class="score-percent">${words.length-incorrect.length}/${words.length} correct</div>
+      </div>
+      <div class="results-grid">
+        <div class="results-card correct">
+          <h3><i class="fa fa-flag"></i> Flagged</h3>
+          <ul class="word-list">${flagged.map(w=>`<li class="word-item">${w}</li>`).join('') || '<li class="word-item">– None –</li>'}</ul>
+        </div>
+        <div class="results-card incorrect">
+          <h3><i class="fa fa-xmark"></i> Incorrect</h3>
+          <ul class="word-list">${incorrect.map(w=>`<li class="word-item">${w}</li>`).join('') || '<li class="word-item">– None –</li>'}</ul>
+        </div>
+      </div>
+      <div class="summary-actions">
+        <button id="restart" class="btn-secondary"><i class="fa fa-redo"></i> Restart</button>
+        <a class="btn-primary" href="/premium.html"><i class="fa fa-crown"></i> Go Premium</a>
+      </div>`;
+    document.getElementById('restart').addEventListener('click',start);
   }
 
-  // ====== Button Events ======
-  submitBtn.addEventListener('click', checkAnswer);
-  nextBtn.addEventListener('click', () => { currentIndex++; startWord(); });
-  flagBtn.addEventListener('click', () => {
-    flaggedWords.push(words[currentIndex]);
-    alert(`Flagged: ${words[currentIndex]}`);
-  });
+  // events
+  startBtn.addEventListener('click', start);
+  submit.addEventListener('click', check);
+  input.addEventListener('keypress', e=>{ if(e.key==='Enter'){e.preventDefault();check();}});
+  next.addEventListener('click', ()=>{ incorrect.push(words[idx]); idx++; (idx>=words.length)?summary():(update(),input.focus()); });
+  flag.addEventListener('click', ()=>{ if(idx<words.length) flagged.push(words[idx]); flag.classList.add('active'); setTimeout(()=>flag.classList.remove('active'),600);});
+  end.addEventListener('click', summary);
 
-  // Allow Enter Key
-  userInput.addEventListener('keypress', (e) => {
-    if (e.key === 'Enter') {
-      e.preventDefault();
-      submitBtn.click();
-    }
+  // custom words
+  function parse(text){ return text.split(/[\n,]+| {2,}/g).map(s=>s.trim()).filter(Boolean).slice(0,300); }
+  applyBtn.addEventListener('click', ()=>{
+    if(!canApply()){ note.textContent='Limit reached: one list per day on School (freemium).'; return; }
+    const list = parse(ta.value); if(!list.length){ note.textContent='Paste or upload words first.'; return; }
+    words = list; markApplied(); note.textContent=`Custom list applied with ${words.length} words.`; 
   });
-
-  // ====== More Menu ======
-  moreBtn.addEventListener('click', () => {
-    moreMenu.classList.toggle('show');
-  });
-
-  document.getElementById('end-session-btn').addEventListener('click', () => {
-    showSummary();
-    moreMenu.classList.remove('show');
-  });
-
-  // ====== Show Summary ======
-  function showSummary() {
-    schoolArea.style.display = 'none';
-    summaryArea.style.display = 'block';
-    summaryArea.innerHTML = `
-      <h2>Session Summary</h2>
-      <p>Total Words: ${words.length}</p>
-      <p>Incorrect: ${incorrectWords.length}</p>
-      <p>Flagged: ${flaggedWords.length}</p>
-      <hr>
-      ${incorrectWords.length ? `<h3>Incorrect Words:</h3><ul>${incorrectWords.map(w => `<li>${w}</li>`).join('')}</ul>` : ''}
-      ${flaggedWords.length ? `<h3>Flagged Words:</h3><ul>${flaggedWords.map(w => `<li>${w}</li>`).join('')}</ul>` : ''}
-      <button class="btn-secondary" id="restart-btn"><i class="fa fa-redo"></i> Restart</button>
-    `;
-    document.getElementById('restart-btn').addEventListener('click', () => {
-      summaryArea.innerHTML = '';
-      startBtn.click();
-    });
-  }
-
-  // ====== Upgrade Redirect ======
-  document.querySelectorAll('.premium-button, .upgrade-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      window.location.href = '/premium.html';
-    });
-  });
-});
+  fileInput.addEventListener('change', async e=>{ const f=e.target.files?.[0]; if(!f) return; ta.value=await f.text(); });
+})();
