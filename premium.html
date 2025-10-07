@@ -154,5 +154,28 @@
       });
     }
   </script>
+
+  <!-- ===== Connection Status Toast ===== -->
+<div id="connection-toast" class="connection-toast hidden">
+  <i class="fa fa-wifi-slash"></i> You’re offline — working in cached mode
+</div>
+
+<script>
+  // Connection toast logic
+  const toast = document.getElementById('connection-toast');
+  let online = navigator.onLine;
+
+  function showToast(message, isOnline = true) {
+    toast.textContent = message;
+    toast.classList.remove('hidden');
+    toast.classList.toggle('offline', !isOnline);
+    toast.classList.toggle('online', isOnline);
+    setTimeout(() => toast.classList.add('hidden'), 4000);
+  }
+
+  window.addEventListener('offline', () => showToast("⚠ You're offline — working in cached mode", false));
+  window.addEventListener('online', () => showToast("✅ Back online — syncing restored", true));
+</script>
+
 </body>
 </html>
