@@ -1,153 +1,99 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="light">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>SpellRightPro – School (Freemium)</title>
 
-  <!-- Styles -->
+  <link rel="manifest" href="manifest.json" />
   <link rel="stylesheet" href="css/styles.css" />
   <link rel="icon" href="assets/logo.png" />
-  <link rel="stylesheet"
-        href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"/>
 
-  <!-- Firebase -->
+  <!-- Firebase + Analytics -->
   <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore-compat.js"></script>
-
-  <!-- Analytics -->
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-H09MF13297"></script>
-  <script src="js/analytics.js"></script>
+  <script src="js/config.js" defer></script>
+  <script src="js/analytics.js" defer></script>
 
-  <!-- Config -->
-  <script src="js/config.js"></script>
+  <!-- AdSense -->
+  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7632930282249669" crossorigin="anonymous"></script>
 </head>
-
 <body>
-  <div class="container fade-in">
-    <!-- ===== NAVBAR ===== -->
-    <nav class="navbar">
-      <div class="brand">
-        <img src="assets/logo.png" alt="Logo" class="logo" />
+  <!-- Nav -->
+  <nav class="navbar">
+    <div class="brand">
+      <img src="assets/logo.png" class="logo" alt="SpellRightPro Logo" />
+      <div>
         <span>SpellRightPro</span>
-      </div>
-      <div class="nav-actions">
-        <a href="index.html" class="btn-secondary"><i class="fa fa-home"></i> Home</a>
-        <a href="premium.html" class="premium-button">
-          <i class="fa fa-crown"></i> Upgrade
-        </a>
-      </div>
-    </nav>
-
-    <!-- ===== MAIN CARD ===== -->
-    <div class="training-card fade-in">
-      <h1 class="card-title"><i class="fa fa-school"></i> School Practice</h1>
-
-      <!-- Accent Picker -->
-      <div class="accent-picker">
-        <button data-accent="en-US" class="accent-btn active">
-          <i class="fa-solid fa-flag-usa flag-icon"></i> US
-        </button>
-        <button data-accent="en-GB" class="accent-btn">
-          <i class="fa-solid fa-flag-uk flag-icon"></i> UK
-        </button>
-        <button data-accent="en-AU" class="accent-btn">
-          <i class="fa-solid fa-flag-australia flag-icon"></i> AU
-        </button>
-      </div>
-
-      <!-- Custom Words Section -->
-      <div class="custom-words-section">
-        <label for="custom-words" class="section-label">
-          Enter or paste your spelling words
-        </label>
-        <textarea id="custom-words" placeholder="Enter one word per line..."></textarea>
-        <button id="add-words-btn" class="btn-secondary">
-          <i class="fa fa-plus"></i> Add Words
-        </button>
-        <p class="info-box">
-          You can use one custom list per day in this freemium version.
-        </p>
-      </div>
-
-      <!-- Trainer Area -->
-      <div id="trainer-area" class="trainer-area hidden">
-        <p id="word-progress" class="word-progress"></p>
-
-        <div id="mic-status" class="mic-status hidden"></div>
-
-        <div class="input-group">
-          <input id="spelling-input" type="text" class="form-control"
-                 placeholder="Type the spelling here..." autocomplete="off" />
-        </div>
-
-        <div id="feedback" class="feedback"></div>
-
-        <div class="button-group">
-          <button id="prev-btn" class="btn-secondary"><i class="fa fa-arrow-left"></i> Prev</button>
-          <button id="submit-btn" class="btn-primary"><i class="fa fa-check"></i> Submit</button>
-          <button id="next-btn" class="btn-secondary">Next <i class="fa fa-arrow-right"></i></button>
-          <button id="flag-btn" class="btn-icon" title="Flag Word"><i class="fa fa-flag"></i></button>
-        </div>
-      </div>
-
-      <!-- Summary Area -->
-      <div id="summary-area" class="summary-area hidden">
-        <div class="summary-header">
-          <h2><i class="fa fa-clipboard-check"></i> Session Summary</h2>
-        </div>
-
-        <div class="results-grid">
-          <div class="results-card correct">
-            <h3><i class="fa fa-check-circle"></i> Correct Words</h3>
-            <div id="correct-list" class="word-list"></div>
-          </div>
-          <div class="results-card incorrect">
-            <h3><i class="fa fa-times-circle"></i> Incorrect Words</h3>
-            <div id="incorrect-list" class="word-list"></div>
-          </div>
-          <div class="results-card flagged">
-            <h3><i class="fa fa-flag"></i> Flagged Words</h3>
-            <div id="flagged-list" class="word-list"></div>
-          </div>
-        </div>
-
-        <div class="summary-actions">
-          <button id="retry-btn" class="btn-primary">
-            <i class="fa fa-redo"></i> Retry Session
-          </button>
-          <button id="new-list-btn" class="btn-secondary">
-            <i class="fa fa-list"></i> New List
-          </button>
-        </div>
-      </div>
-
-      <!-- Start Button -->
-      <button id="start-btn" class="btn-start">
-        <i class="fa fa-play-circle"></i> Start Practice
-      </button>
-
-      <!-- Ad Placeholder -->
-      <div class="ad-banner" id="ad-banner">
-        <p><i class="fa fa-ad"></i> Advertisement</p>
-        <script async src="adsense/adsense-desktop.html"></script>
+        <span class="subtitle">School Mode</span>
       </div>
     </div>
+    <div class="nav-actions">
+      <a class="btn-secondary" href="index.html"><i class="fa fa-home"></i> Home</a>
+      <a class="btn-primary upgrade-btn"><i class="fa fa-crown"></i> Premium</a>
+    </div>
+  </nav>
 
-    <!-- ===== FOOTER ===== -->
-    <footer class="text-center mt-4">
-      <p>
-        <a href="terms.html">Terms</a> ·
-        <a href="privacy.html">Privacy</a> ·
-        <a href="refund.html">Refund Policy</a> ·
-        <a href="contact.html">Contact</a>
-      </p>
-      <p style="font-size: 0.8rem; color: gray;">© 2025 SpellRightPro</p>
-    </footer>
+  <!-- Ad -->
+  <div class="container" style="padding-top:12px; padding-bottom:0;">
+    <ins class="adsbygoogle" style="display:block"
+         data-ad-client="ca-pub-7632930282249669"
+         data-ad-slot="3344556677"
+         data-ad-format="auto"
+         data-full-width-responsive="true"></ins>
+    <script>(adsbygoogle=window.adsbygoogle||[]).push({});</script>
   </div>
 
-  <!-- Scripts -->
+  <main class="container">
+    <!-- Setup -->
+    <section class="training-card">
+      <h1 class="card-title">🏫 School Spelling (Freemium)</h1>
+      <p class="text-center muted">Type what you hear. Press Enter to submit.</p>
+      <div class="text-center">
+        <button id="start-btn" class="btn-start"><i class="fa fa-play"></i> Start</button>
+      </div>
+    </section>
+
+    <!-- Trainer -->
+    <section id="school-area" class="trainer-area hidden">
+      <div id="word-display" class="word-progress">Word 1 of 10</div>
+
+      <div class="input-group" style="max-width:560px;margin:0 auto">
+        <input id="user-input" type="text" class="form-control" placeholder="Type the word and press Enter…" autocomplete="off"/>
+      </div>
+
+      <div class="button-group">
+        <button id="submit-btn" class="btn-primary"><i class="fa fa-check"></i> Submit</button>
+        <button id="next-btn" class="btn-secondary"><i class="fa fa-arrow-right"></i> Next</button>
+        <button id="flag-btn" class="btn-icon" title="Flag"><i class="fa fa-flag"></i></button>
+        <!-- Direct End Session -->
+        <button id="end-session-btn" class="btn-secondary"><i class="fa fa-flag-checkered"></i> End Session</button>
+
+        <!-- Hidden stubs (keep JS safe) -->
+        <button id="more-btn" class="d-none" aria-hidden="true"></button>
+        <div id="more-menu" class="d-none" aria-hidden="true"></div>
+      </div>
+
+      <div id="summary-area" class="feedback"></div>
+    </section>
+
+    <section id="results-area" class="summary-area hidden"></section>
+  </main>
+
+  <footer class="container" style="padding-top:0">
+    <a href="terms.html">Terms</a> ·
+    <a href="privacy.html">Privacy</a> ·
+    <a href="refund-policy.html">Refund</a> ·
+    <a href="contact.html">Contact</a>
+  </footer>
+
+  <script>
+    if ('serviceWorker' in navigator) { navigator.serviceWorker.register('/sw.js').catch(()=>{}); }
+    document.querySelectorAll('.upgrade-btn,.premium-button').forEach(b=>b.addEventListener('click',()=>location.href='/premium.html'));
+  </script>
   <script src="js/main-freemium-school.js"></script>
 </body>
 </html>
