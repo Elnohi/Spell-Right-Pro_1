@@ -1,172 +1,222 @@
-// main-freemium-bee.js — Modern Unified Version
-document.addEventListener('DOMContentLoaded', () => {
-  // ====== DOM Elements ======
-  const startBtn = document.getElementById('start-btn');
-  const beeArea = document.getElementById('bee-area');
-  const spellingVisual = document.getElementById('spelling-visual');
-  const summaryArea = document.getElementById('summary-area');
-  const userInput = document.getElementById('user-input');
-  const submitBtn = document.getElementById('submit-btn');
-  const nextBtn = document.getElementById('next-btn');
-  const flagBtn = document.getElementById('flag-btn');
-  const moreBtn = document.getElementById('more-btn');
-  const moreMenu = document.getElementById('more-menu');
+// Voice spelling with SpeechRecognition + summary + custom words (1 list/day)
+(function () {
+  const el = (id) => document.getElementById(id);
 
-  // ====== App State ======
-  let words = [];
-  let currentIndex = 0;
-  let incorrectWords = [];
-  let flaggedWords = [];
-  let recognizing = false;
-  let recognition;
-  let tts;
+  const startBtn = el('start-btn');
+  const beeArea = el('bee-area');
+  const spellingVisual = el('spelling-visual');
+  const repeatBtn = el('repeat-btn');
+  const skipBtn = el('skip-btn');
+  const flagBtn = el('flag-btn');
+  const endBtn = el('end-session-btn');
+  const liveFeedback = el('live-feedback');
+  const results = el('results-area');
 
-  // ====== Load Default Sample Words ======
-  const sampleWords = [
-    "apple", "banana", "cherry", "orange", "grape",
-    "pineapple", "strawberry", "blueberry", "watermelon",
-    "mango", "papaya", "peach", "pear", "plum"
+  const applyBtn = el('apply-words');
+  const ta = el('custom-words');
+  const fileInput = el('file-input');
+  const cwNote = el('cw-note');
+
+  // 1 list / day limiter
+  const CW_KEY = 'bee_cw_last';
+  function canApplyCustom() {
+    const last = localStorage.getItem(CW_KEY);
+    if (!last) return true;
+    const then = new Date(+last);
+    const now = new Date();
+    return then.toDateString() !== now.toDateString();
+  }
+  function markApplied() { localStorage.setItem(CW_KEY, Date.now().toString()); }
+
+  // default sample
+  let baseWords = [
+    "apple","banana","cherry","orange","grape","mango","peach","pear","plum","papaya",
+    "strawberry","blueberry","watermelon","kiwi","lemon"
   ];
+  let words = baseWords.slice();
+  let idx = 0;
+  let incorrect = [];
+  let flagged = [];
 
-  // ====== Initialize Speech ======
+  // TTS
   function speak(text) {
-    if (!window.speechSynthesis) return;
-    tts = new SpeechSynthesisUtterance(text);
-    tts.lang = 'en-US';
-    window.speechSynthesis.speak(tts);
+    if (!('speechSynthesis' in window)) return;
+    const u = new SpeechSynthesisUtterance(text);
+    u.lang = 'en-US';
+    speechSynthesis.speak(u);
   }
 
-  function initRecognition() {
-    if (!('webkitSpeechRecognition' in window)) return null;
-    const r = new webkitSpeechRecognition();
+  // Robust letter mapping for ASR quirks
+  const LETTERS = {
+    a:'a', 'ay':'a', 'hey':'a',
+    b:'b', 'bee':'b', 'be':'b',
+    c:'c', 'see':'c', 'sea':'c',
+    d:'d', 'dee':'d',
+    e:'e', 'ee':'e',
+    f:'f', 'ef':'f',
+    g:'g', 'gee':'g',
+    h:'h', 'aitch':'h', 'age':'h',
+    i:'i', 'eye':'i',
+    j:'j', 'jay':'j',
+    k:'k', 'kay':'k',
+    l:'l', 'el':'l',
+    m:'m', 'em':'m',
+    n:'n', 'en':'n',
+    o:'o', 'oh':'o',
+    p:'p', 'pee':'p',
+    q:'q', 'cue':'q', 'queue':'q',
+    r:'r', 'ar':'r',
+    s:'s', 'ess':'s',
+    t:'t', 'tee':'t',
+    u:'u', 'you':'u', 'yu':'u',
+    v:'v', 'vee':'v',
+    w:'w', 'double u':'w', 'double-you':'w',
+    x:'x', 'ex':'x',
+    y:'y', 'why':'y',
+    z:'z', 'zee':'z', 'zed':'z'
+  };
+  function parseSpelling(transcript) {
+    // accept “c h e r r y”, also handles commas/periods
+    return transcript
+      .toLowerCase()
+      .replace(/[,.;:!?]/g,' ')
+      .split(/\s+/)
+      .map(tok => LETTERS[tok] || tok.replace(/[^a-z]/g,''))
+      .join('')
+      .trim();
+  }
+
+  // SpeechRecognition
+  let rec;
+  function initRec() {
+    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SR) return null;
+    const r = new SR();
     r.lang = 'en-US';
     r.continuous = false;
     r.interimResults = false;
     return r;
   }
 
-  // ====== Start Practice ======
-  startBtn.addEventListener('click', () => {
-    words = sampleWords.slice(); // default sample if none uploaded
-    currentIndex = 0;
-    incorrectWords = [];
-    flaggedWords = [];
-    summaryArea.style.display = 'none';
-    beeArea.style.display = 'block';
-    startWord();
-  });
+  function updateProgress() {
+    spellingVisual.textContent = `Word ${Math.min(idx+1, words.length)} of ${words.length}`;
+  }
 
-  // ====== Play Current Word ======
   function startWord() {
-    if (currentIndex >= words.length) {
-      showSummary();
+    if (idx >= words.length) return showSummary();
+    const w = words[idx];
+    updateProgress();
+    speak(w);
+
+    // record spelling
+    rec = initRec();
+    if (!rec) {
+      liveFeedback.style.display = 'block';
+      liveFeedback.className = 'feedback incorrect';
+      liveFeedback.textContent = '⚠️ Speech recognition not supported in this browser. Try Chrome.';
       return;
     }
-    const word = words[currentIndex];
-    spellingVisual.textContent = `Word ${currentIndex + 1} of ${words.length}`;
-    userInput.value = "";
-    userInput.focus();
-    speak(word);
-    recognizeSpeech(word);
-  }
+    liveFeedback.style.display = 'none';
 
-  // ====== Speech Recognition ======
-  function recognizeSpeech(expectedWord) {
-    recognition = initRecognition();
-    if (!recognition) return;
-    recognizing = true;
-    recognition.start();
+    rec.onresult = (e) => {
+      const said = e.results[0][0].transcript;
+      const spelled = parseSpelling(said);
+      const correct = spelled === w.toLowerCase();
 
-    recognition.onresult = (event) => {
-      const spoken = event.results[0][0].transcript.trim().toLowerCase();
-      checkAnswer(spoken, expectedWord);
-      recognizing = false;
+      liveFeedback.style.display = 'block';
+      liveFeedback.className = `feedback ${correct?'correct':'incorrect'}`;
+      liveFeedback.innerHTML = correct
+        ? `✅ Correct: <b>${w}</b>`
+        : `❌ Heard: <code>${spelled || said}</code> • ✔ Correct: <b>${w}</b>`;
+
+      if (!correct) incorrect.push(w);
+      idx += 1;
+      setTimeout(startWord, 900);
     };
-    recognition.onerror = () => { recognizing = false; };
-    recognition.onend = () => { recognizing = false; };
+    rec.onerror = () => {
+      liveFeedback.style.display = 'block';
+      liveFeedback.className = 'feedback incorrect';
+      liveFeedback.textContent = 'Couldn’t hear you. Tap “Hear Again” and try spelling the letters clearly.';
+    };
+    rec.onend = () => {};
+    rec.start();
   }
 
-  // ====== Check Answer ======
-  function checkAnswer(answer, expected) {
-    const normalized = answer.replace(/\./g, '').trim();
-    const correct = normalized === expected.toLowerCase();
-
-    const feedback = document.createElement('div');
-    feedback.className = `feedback ${correct ? 'correct' : 'incorrect'}`;
-    feedback.innerHTML = correct
-      ? `✅ Correct: <b>${expected}</b>`
-      : `❌ Incorrect: ${answer}<br>✔ Correct spelling: <b>${expected}</b>`;
-    summaryArea.appendChild(feedback);
-    summaryArea.scrollIntoView({ behavior: 'smooth', block: 'center' });
-
-    if (!correct) incorrectWords.push(expected);
-    currentIndex++;
-    setTimeout(startWord, 1500);
+  function showSummary() {
+    beeArea.classList.add('hidden');
+    results.classList.remove('hidden');
+    const score = Math.round(((words.length - incorrect.length)/Math.max(1,words.length))*100);
+    results.innerHTML = `
+      <div class="summary-header">
+        <h2>Session Complete</h2>
+        <div class="score-display">${score}</div>
+        <div class="score-percent">${words.length - incorrect.length}/${words.length} correct</div>
+      </div>
+      <div class="results-grid">
+        <div class="results-card correct">
+          <h3><i class="fa fa-check"></i> Flagged Words</h3>
+          <ul class="word-list">${flagged.map(w=>`<li class="word-item">${w}</li>`).join('') || '<li class="word-item">– None –</li>'}</ul>
+        </div>
+        <div class="results-card incorrect">
+          <h3><i class="fa fa-xmark"></i> Incorrect Words</h3>
+          <ul class="word-list">${incorrect.map(w=>`<li class="word-item">${w}</li>`).join('') || '<li class="word-item">– None –</li>'}</ul>
+        </div>
+      </div>
+      <div class="summary-actions">
+        <button id="restart" class="btn-secondary"><i class="fa fa-redo"></i> Restart</button>
+        <a class="btn-primary" href="/premium.html"><i class="fa fa-crown"></i> Go Premium</a>
+      </div>
+    `;
+    document.getElementById('restart').addEventListener('click', () => {
+      results.classList.add('hidden');
+      idx = 0; incorrect = []; flagged = [];
+      beeArea.classList.remove('hidden');
+      startWord();
+    });
   }
 
-  // ====== Manual Submission ======
-  submitBtn.addEventListener('click', () => {
-    const input = userInput.value.trim().toLowerCase();
-    if (!input) return;
-    checkAnswer(input, words[currentIndex]);
-  });
-
-  // Allow Enter key
-  userInput.addEventListener('keypress', (e) => {
-    if (e.key === 'Enter') {
-      e.preventDefault();
-      submitBtn.click();
-    }
-  });
-
-  // ====== Flag Button ======
-  flagBtn.addEventListener('click', () => {
-    if (!words[currentIndex]) return;
-    flaggedWords.push(words[currentIndex]);
-    alert(`Flagged: ${words[currentIndex]}`);
-  });
-
-  // ====== Next Button ======
-  nextBtn.addEventListener('click', () => {
-    currentIndex++;
+  // UI events
+  startBtn.addEventListener('click', () => {
+    idx = 0; incorrect = []; flagged = [];
+    results.classList.add('hidden');
+    beeArea.classList.remove('hidden');
     startWord();
   });
 
-  // ====== More Menu ======
-  moreBtn.addEventListener('click', () => {
-    moreMenu.classList.toggle('show');
+  repeatBtn.addEventListener('click', () => {
+    if (idx < words.length) speak(words[idx]);
   });
-
-  document.getElementById('end-session-btn').addEventListener('click', () => {
-    showSummary();
-    moreMenu.classList.remove('show');
+  skipBtn.addEventListener('click', () => {
+    incorrect.push(words[idx]); idx += 1; startWord();
   });
+  flagBtn.addEventListener('click', () => {
+    if (idx < words.length) flagged.push(words[idx]);
+    flagBtn.classList.add('active');
+    setTimeout(()=>flagBtn.classList.remove('active'),600);
+  });
+  endBtn.addEventListener('click', showSummary);
 
-  // ====== Summary ======
-  function showSummary() {
-    beeArea.style.display = 'none';
-    summaryArea.style.display = 'block';
-    summaryArea.innerHTML = `
-      <h2>Session Summary</h2>
-      <p>Total Words: ${words.length}</p>
-      <p>Incorrect: ${incorrectWords.length}</p>
-      <p>Flagged: ${flaggedWords.length}</p>
-      <hr>
-      ${incorrectWords.length ? `<h3>Incorrect Words:</h3><ul>${incorrectWords.map(w => `<li>${w}</li>`).join('')}</ul>` : ''}
-      ${flaggedWords.length ? `<h3>Flagged Words:</h3><ul>${flaggedWords.map(w => `<li>${w}</li>`).join('')}</ul>` : ''}
-      <button class="btn-secondary" id="restart-btn"><i class="fa fa-redo"></i> Restart</button>
-    `;
-
-    document.getElementById('restart-btn').addEventListener('click', () => {
-      summaryArea.innerHTML = '';
-      startBtn.click();
-    });
+  // custom words
+  function parseWords(text) {
+    return text
+      .split(/[\n,]+| {2,}/g)
+      .map(s=>s.trim())
+      .filter(Boolean)
+      .slice(0, 200); // safety
   }
-
-  // ====== Upgrade Redirect (Unified) ======
-  document.querySelectorAll('.premium-button, .upgrade-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      window.location.href = '/premium.html';
-    });
+  applyBtn.addEventListener('click', () => {
+    if (!canApplyCustom()) {
+      cwNote.textContent = 'Limit reached: you can apply one list per day on Bee (freemium).';
+      return;
+    }
+    const list = parseWords(ta.value);
+    if (!list.length) { cwNote.textContent = 'Please paste or upload words first.'; return; }
+    words = list; markApplied();
+    cwNote.textContent = `Custom list applied with ${words.length} words.`;
   });
-});
+  fileInput.addEventListener('change', async (e) => {
+    const f = e.target.files?.[0]; if (!f) return;
+    const txt = await f.text();
+    ta.value = txt;
+  });
+})();
