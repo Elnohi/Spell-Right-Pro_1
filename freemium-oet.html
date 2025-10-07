@@ -5,29 +5,27 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>SpellRightPro – OET (Freemium)</title>
 
-  <!-- PWA / Styles -->
   <link rel="manifest" href="manifest.json" />
   <link rel="stylesheet" href="css/styles.css" />
   <link rel="icon" href="assets/logo.png" />
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"/>
 
-  <!-- Firebase (compat) + Analytics -->
+  <!-- Firebase + Analytics -->
   <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-analytics-compat.js"></script>
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-H09MF13297"></script>
   <script src="js/config.js" defer></script>
   <script src="js/analytics.js" defer></script>
 
   <!-- AdSense -->
   <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7632930282249669" crossorigin="anonymous"></script>
 </head>
-
 <body>
   <!-- Nav -->
   <nav class="navbar">
     <div class="brand">
-      <img src="assets/logo.png" class="logo" alt="SpellRightPro Logo" loading="lazy" />
+      <img src="assets/logo.png" class="logo" alt="SpellRightPro Logo" />
       <div>
         <span>SpellRightPro</span>
         <span class="subtitle">OET Practice</span>
@@ -35,105 +33,61 @@
     </div>
     <div class="nav-actions">
       <a class="btn-secondary" href="index.html"><i class="fa fa-home"></i> Home</a>
-      <a class="btn-primary" href="premium.html"><i class="fa fa-crown"></i> Premium</a>
+      <a class="btn-primary upgrade-btn"><i class="fa fa-crown"></i> Premium</a>
     </div>
   </nav>
 
   <!-- Ad -->
-  <div class="container" style="padding-top: 12px; padding-bottom: 0;">
-    <div class="ad-label muted" style="font-size:12px">Advertisement</div>
-    <ins class="adsbygoogle"
-      style="display:block"
-      data-ad-client="ca-pub-7632930282249669"
-      data-ad-slot="3344556677"
-      data-ad-format="auto"
-      data-full-width-responsive="true"></ins>
-    <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
+  <div class="container" style="padding-top:12px; padding-bottom:0;">
+    <ins class="adsbygoogle" style="display:block"
+         data-ad-client="ca-pub-7632930282249669"
+         data-ad-slot="3344556677"
+         data-ad-format="auto"
+         data-full-width-responsive="true"></ins>
+    <script>(adsbygoogle=window.adsbygoogle||[]).push({});</script>
   </div>
 
   <main class="container">
     <!-- Setup -->
-    <section id="oet-setup" class="training-card">
-      <h1 class="card-title">🩺 OET Spelling Practice (Freemium)</h1>
-      <p class="muted" style="text-align:center">We say a medical term; you type it. We mark it and auto-advance.</p>
+    <section class="training-card">
+      <h1 class="card-title">🩺 OET Spelling (Freemium)</h1>
+      <p class="text-center muted">Choose mode, then type what you hear. Press Enter to submit.</p>
 
-      <!-- Mode (buttons — no file picker) -->
       <div class="mode-selector" role="tablist" aria-label="OET mode">
-        <button type="button" id="mode-practice" class="btn-mode active" aria-selected="true">
-          <i class="fa fa-lightbulb"></i> Practice (full list)
+        <button type="button" id="start-practice-btn" class="btn-mode active">
+          <i class="fa fa-lightbulb"></i> Practice (Full list)
         </button>
-        <button type="button" id="mode-exam" class="btn-mode" aria-selected="false">
+        <button type="button" id="start-exam-btn" class="btn-mode">
           <i class="fa fa-clipboard-check"></i> Exam (24 random)
         </button>
-      </div>
-
-      <!-- Accent -->
-      <div class="accent-picker" aria-label="Select accent">
-        <button type="button" class="accent-btn active" data-accent="en-US">🇺🇸 US</button>
-        <button type="button" class="accent-btn" data-accent="en-GB">🇬🇧 UK</button>
-        <button type="button" class="accent-btn" data-accent="en-AU">🇦🇺 AU</button>
-      </div>
-
-      <!-- Start -->
-      <div style="display:flex;justify-content:center;">
-        <button id="start-oet-btn" class="btn-start"><i class="fa fa-play"></i> Start</button>
       </div>
     </section>
 
     <!-- Game -->
-    <section id="oet-game" class="training-card" style="display:none;">
-      <div class="word-progress" id="oet-progress">Word 1 of 24</div>
-
-      <div class="button-group" style="justify-content:center; position: relative;">
-        <button id="oet-repeat" class="btn-secondary" title="Repeat"><i class="fa fa-volume-high"></i> Repeat</button>
-        <button id="oet-prev" class="btn-secondary" title="Previous"><i class="fa fa-arrow-left"></i> Previous</button>
-        <button id="oet-next" class="btn-secondary" title="Next"><i class="fa fa-arrow-right"></i> Next</button>
-        <button id="oet-flag" class="btn-icon" title="Flag"><i class="fa fa-flag"></i></button>
-
-        <!-- More menu trigger -->
-        <button id="oet-more" class="btn-icon" aria-haspopup="true" aria-expanded="false" title="More">
-          <i class="fa fa-ellipsis-h"></i>
-        </button>
-
-        <!-- More menu content -->
-        <div id="oet-more-menu" class="training-card" style="display:none; position:absolute; right:0; top:64px; width:220px; padding:12px;">
-          <button id="oet-end" class="btn-secondary" style="width:100%; margin-bottom:10px;">
-            🏁 End Session
-          </button>
-          <button id="oet-restart" class="btn-secondary" style="width:100%;">
-            🔁 Restart Session
-          </button>
-        </div>
-
-        <button id="oet-submit" class="btn-primary" title="Submit"><i class="fa fa-check"></i> Submit</button>
-      </div>
+    <section id="oet-area" class="trainer-area hidden">
+      <div id="word-visual" class="word-progress">Word 1 of 24</div>
 
       <div class="input-group" style="max-width:560px;margin:0 auto">
-        <input id="oet-input" type="text" class="form-control"
-               placeholder="Type the medical term and press Enter…" autocomplete="off" />
+        <input id="user-input" type="text" class="form-control" placeholder="Type the medical term and press Enter…" autocomplete="off"/>
       </div>
 
-      <div id="oet-feedback" class="feedback"></div>
+      <div class="button-group">
+        <button id="submit-btn" class="btn-primary"><i class="fa fa-check"></i> Submit</button>
+        <button id="next-btn" class="btn-secondary"><i class="fa fa-arrow-right"></i> Next</button>
+        <button id="flag-btn" class="btn-icon" title="Flag"><i class="fa fa-flag"></i></button>
+        <!-- Direct End Session -->
+        <button id="end-session-btn" class="btn-secondary"><i class="fa fa-flag-checkered"></i> End Session</button>
+
+        <!-- Hidden stubs (keep JS safe if earlier code expects them) -->
+        <button id="more-btn" class="d-none" aria-hidden="true"></button>
+        <div id="more-menu" class="d-none" aria-hidden="true"></div>
+      </div>
+
+      <div id="summary-area" class="feedback"></div>
     </section>
 
     <!-- Results -->
-    <section id="oet-results" class="training-card" style="display:none;">
-      <div class="summary-header">
-        <h2>Session Complete 🎉</h2>
-        <div id="oet-score" class="score-display">0/24</div>
-        <div id="oet-percent" class="score-percent">0%</div>
-      </div>
-
-      <div class="results-card" id="oet-review-card">
-        <h3 style="display:flex;align-items:center;gap:8px;"><i class="fa fa-clipboard-list"></i> Words to Review</h3>
-        <div id="oet-review" class="word-list"></div>
-      </div>
-
-      <div class="summary-actions">
-        <button id="oet-retry" class="btn-primary"><i class="fa fa-redo"></i> Retry</button>
-        <button id="oet-new" class="btn-secondary"><i class="fa fa-list"></i> New Set</button>
-      </div>
-    </section>
+    <section id="results-area" class="summary-area hidden"></section>
   </main>
 
   <footer class="container" style="padding-top:0">
@@ -144,14 +98,11 @@
   </footer>
 
   <script>
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('/sw.js')
-        .then(r => console.log('SW registered:', r.scope))
-        .catch(e => console.error('SW failed:', e));
-    }
+    if ('serviceWorker' in navigator) { navigator.serviceWorker.register('/sw.js').catch(()=>{}); }
+    document.querySelectorAll('.upgrade-btn,.premium-button').forEach(b=>b.addEventListener('click',()=>location.href='/premium.html'));
   </script>
 
-  <!-- Load main as ES module so we can import your oet_word_list.js -->
+  <!-- OET uses ES modules to import the full word list -->
   <script type="module" src="js/main-freemium-oet.js"></script>
 </body>
 </html>
