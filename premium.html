@@ -2,180 +2,66 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>SpellRightPro Premium</title>
 
-  <!-- Styles -->
   <link rel="stylesheet" href="css/styles.css" />
-  <link rel="stylesheet" href="css/premium.css" />
   <link rel="icon" href="assets/logo.png" />
-  <link rel="stylesheet"
-        href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" />
 
-  <!-- Firebase -->
+  <!-- Firebase + Analytics -->
   <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore-compat.js"></script>
-
-  <!-- Analytics -->
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-H09MF13297"></script>
-  <script src="js/analytics.js"></script>
-
-  <!-- Config -->
-  <script src="js/config.js"></script>
+  <script src="js/config.js" defer></script>
+  <script src="js/analytics.js" defer></script>
 </head>
-
 <body>
   <div class="container fade-in">
-    <!-- ===== NAVBAR ===== -->
     <nav class="navbar">
       <div class="brand">
-        <img src="assets/logo.png" alt="Logo" class="logo" />
+        <img src="assets/logo.png" class="logo" alt="SpellRightPro"/>
         <span>SpellRightPro</span>
       </div>
       <div class="nav-actions">
         <a href="index.html" class="btn-secondary"><i class="fa fa-home"></i> Home</a>
-        <a href="pricing.html" class="btn-secondary"><i class="fa fa-tags"></i> Pricing</a>
+        <button id="auth-btn" class="btn-secondary"><i class="fa fa-user"></i> Sign in</button>
       </div>
     </nav>
 
-    <!-- ===== PROMO BANNER (SYNCHRONIZED WITH PRICING) ===== -->
     <div id="promo-banner" class="ad-banner" style="display:none;">
       <i class="fa fa-bolt"></i>
-      <strong>Limited-time Offer:</strong> Get Premium for <b>CAD $39.99/year</b> (was $69.99)!
-      <br />
-      <small>Offer ends in <span id="promo-countdown"></span>.</small>
+      Limited-time Offer: <b id="price-badge">CAD $39.99/year</b> (was $69.99). <small>Ends soon.</small>
     </div>
 
-    <!-- ===== MAIN CARD ===== -->
-    <div class="training-card fade-in">
+    <div class="training-card">
       <h1 class="card-title"><i class="fa fa-crown"></i> Premium Access</h1>
-      <p class="text-center mb-4">
-        Unlock full access to all spelling modes, custom lists, and ad-free practice.
-      </p>
+      <p class="text-center">Unlock full access to Bee, School, and OET modes, unlimited lists, ad-free, and progress tracking.</p>
 
-      <!-- Features -->
-      <div class="results-grid">
-        <div class="results-card correct">
-          <h3><i class="fa fa-star"></i> What You Get</h3>
-          <ul>
-            <li>✔ Unlimited OET, School & Bee modes</li>
-            <li>✔ Unlimited custom word lists</li>
-            <li>✔ Ad-free experience</li>
-            <li>✔ Progress tracking & analytics</li>
-            <li>✔ Flagged-word review</li>
-          </ul>
-        </div>
-
-        <div class="results-card incorrect">
-          <h3><i class="fa fa-lock-open"></i> Why Upgrade</h3>
-          <ul>
-            <li>✨ Access all practice types instantly</li>
-            <li>🎤 Use voice spelling & auto-marking</li>
-            <li>📊 Track your accuracy over time</li>
-            <li>🧠 Build mastery with unlimited attempts</li>
-          </ul>
-        </div>
+      <div class="summary-area text-center">
+        <h2>Premium Plan</h2>
+        <div id="premium-price" class="score-number">CAD $69.99/year</div>
+        <button id="upgrade-btn" class="btn-primary"><i class="fa fa-arrow-up-right-from-square"></i> Upgrade Now</button>
+        <p class="mt-2" style="color:gray;font-size:.9rem">Payments secured by Stripe • Cancel anytime</p>
       </div>
 
-      <!-- ===== PRICING BOX ===== -->
-      <div class="summary-area text-center mt-4">
-        <h2><i class="fa fa-gem"></i> Premium Plan</h2>
-        <p>One subscription covers all devices — no hidden fees.</p>
-        <div class="score-number" id="premium-price">CAD $69.99/year</div>
-
-        <!-- Upgrade Button -->
-        <button id="upgrade-btn" class="btn-primary mt-3">
-          <i class="fa fa-crown"></i> Upgrade Now
-        </button>
-
-        <p class="mt-2" style="color: gray; font-size: 0.9rem;">
-          Payments secured via Stripe • Cancel anytime
-        </p>
-      </div>
-
-      <!-- ===== Support Section ===== -->
       <div class="info-box mt-4">
-        <p>
-          Need help with your subscription? Contact us at
-          <a href="mailto:spellrightpro@gmail.com">spellrightpro@gmail.com</a>
-        </p>
+        <p id="status-line">Sign in to continue to checkout.</p>
       </div>
     </div>
 
-    <!-- ===== FOOTER ===== -->
     <footer class="text-center mt-4">
-      <p>
-        <a href="terms.html">Terms</a> ·
-        <a href="privacy.html">Privacy</a> ·
-        <a href="refund.html">Refund Policy</a> ·
-        <a href="contact.html">Contact</a>
-      </p>
-      <p style="font-size: 0.8rem; color: gray;">© 2025 SpellRightPro</p>
+      <p><a href="terms.html">Terms</a> · <a href="privacy.html">Privacy</a> · <a href="refund.html">Refund Policy</a> · <a href="contact.html">Contact</a></p>
+      <p style="font-size: .8rem; color: gray;">© 2025 SpellRightPro</p>
     </footer>
   </div>
 
-  <!-- ===== UPGRADE SCRIPT ===== -->
-  <script>
-    const promoEnd = new Date("2025-10-15T23:59:59");
-    const banner = document.getElementById("promo-banner");
-    const countdown = document.getElementById("promo-countdown");
-    const price = document.getElementById("premium-price");
-    const upgradeBtn = document.getElementById("upgrade-btn");
+  <!-- Offline toast -->
+  <div id="connection-toast" class="connection-toast hidden">
+    <i class="fa fa-wifi-slash"></i> You’re offline — working in cached mode
+  </div>
 
-    function updatePromo() {
-      const now = new Date();
-      const diff = promoEnd - now;
-      if (diff <= 0) {
-        banner.style.display = "none";
-        price.textContent = "CAD $69.99/year";
-        return;
-      }
-      banner.style.display = "block";
-      price.textContent = "CAD $39.99/year";
-      const hrs = Math.floor(diff / 1000 / 60 / 60);
-      const mins = Math.floor((diff / 1000 / 60) % 60);
-      countdown.textContent = `${hrs}h ${mins}m`;
-    }
-
-    updatePromo();
-    setInterval(updatePromo, 60000);
-
-    // ===== Redirect to Stripe Checkout =====
-    if (upgradeBtn) {
-      upgradeBtn.addEventListener("click", () => {
-        upgradeBtn.innerHTML = '<i class="fa fa-spinner fa-spin"></i> Redirecting...';
-        upgradeBtn.disabled = true;
-
-        setTimeout(() => {
-          // Your live Stripe Checkout link here:
-          window.location.href = "https://buy.stripe.com/9AQ5nA2V3dJfa7a4gg"; 
-        }, 600);
-      });
-    }
-  </script>
-
-  <!-- ===== Connection Status Toast ===== -->
-<div id="connection-toast" class="connection-toast hidden">
-  <i class="fa fa-wifi-slash"></i> You’re offline — working in cached mode
-</div>
-
-<script>
-  // Connection toast logic
-  const toast = document.getElementById('connection-toast');
-  let online = navigator.onLine;
-
-  function showToast(message, isOnline = true) {
-    toast.textContent = message;
-    toast.classList.remove('hidden');
-    toast.classList.toggle('offline', !isOnline);
-    toast.classList.toggle('online', isOnline);
-    setTimeout(() => toast.classList.add('hidden'), 4000);
-  }
-
-  window.addEventListener('offline', () => showToast("⚠ You're offline — working in cached mode", false));
-  window.addEventListener('online', () => showToast("✅ Back online — syncing restored", true));
-</script>
-
+  <script src="js/main-premium.js"></script>
 </body>
 </html>
