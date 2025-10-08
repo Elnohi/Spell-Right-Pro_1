@@ -2,27 +2,81 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Thank You!</title>
+  <title>SpellRightPro – Thank You!</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 
-  <!-- Don't index thank-you pages -->
-  <meta name="robots" content="noindex, nofollow">
-
-  <!-- PWA bits -->
-  <link rel="manifest" href="manifest.json">
-  <meta name="theme-color" content="#4361ee">
+  <meta name="robots" content="noindex, nofollow" />
+  <link rel="manifest" href="manifest.json" />
+  <meta name="theme-color" content="#4361ee" />
 
   <!-- Styles -->
   <link rel="stylesheet" href="css/styles.css" />
   <link rel="stylesheet" href="css/premium.css" />
-  <link rel="icon" href="assets/logo.png">
-  <link rel="apple-touch-icon" href="assets/icons/icon-192x192.png">
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <link rel="icon" href="assets/logo.png" />
+  <link rel="apple-touch-icon" href="assets/icons/icon-192x192.png" />
 
-  <!-- (No ads on thank-you page) -->
+  <!-- Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
 
-  <!-- Register SW (works on Netlify and subpaths) -->
+  <style>
+    body {
+      background: linear-gradient(180deg, #f9f9ff, #eef1ff);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Inter', sans-serif;
+    }
+    .thank-container {
+      background: #fff;
+      padding: 3rem 2rem;
+      text-align: center;
+      border-radius: 16px;
+      box-shadow: 0 10px 20px rgba(0,0,0,0.05);
+      max-width: 600px;
+      width: 90%;
+    }
+    .thank-icon {
+      font-size: 4rem;
+      color: #4cc9f0;
+      margin-bottom: 1rem;
+    }
+    .thank-container h1 {
+      font-size: 1.8rem;
+      margin-bottom: 0.5rem;
+      color: #212529;
+    }
+    .thank-container p {
+      color: #6c757d;
+      font-size: 1rem;
+      margin-bottom: 2rem;
+    }
+    .btn-primary, .btn-outline {
+      display: inline-block;
+      padding: 0.75rem 1.5rem;
+      border-radius: 8px;
+      font-weight: 600;
+      text-decoration: none;
+      transition: all 0.2s ease;
+      margin: 0.3rem;
+    }
+    .btn-primary {
+      background: #4361ee;
+      color: #fff;
+    }
+    .btn-primary:hover {
+      background: #364ed9;
+    }
+    .btn-outline {
+      border: 2px solid #4361ee;
+      color: #4361ee;
+    }
+    .btn-outline:hover {
+      background: #4361ee;
+      color: #fff;
+    }
+  </style>
+
   <script>
     if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
       const base = location.pathname.split('/')[1] ? `/${location.pathname.split('/')[1]}` : '';
@@ -31,55 +85,16 @@
       );
     }
   </script>
-
-  <style>
-    .thank-you-container {
-      max-width: 600px;
-      margin: 5rem auto;
-      padding: 2rem;
-      text-align: center;
-      background: var(--light);
-      border-radius: var(--radius-lg);
-      box-shadow: var(--shadow-md);
-    }
-    .thank-you-icon {
-      font-size: 4rem;
-      color: var(--success);
-      margin-bottom: 1.5rem;
-    }
-    .btn-success {
-      display: inline-flex;
-      align-items: center;
-      gap: 0.5rem;
-      padding: 0.75rem 1.5rem;
-      background: var(--success);
-      color: white;
-      text-decoration: none;
-      border-radius: var(--radius);
-      font-weight: 500;
-      margin-top: 1.5rem;
-      transition: all 0.2s ease;
-    }
-    .btn-success:hover {
-      background: var(--success-dark);
-      transform: translateY(-2px);
-      box-shadow: var(--shadow);
-    }
-  </style>
-
-  <!-- Icons (only if you want the check icon; otherwise you can remove this CDN) -->
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
 </head>
 <body>
-  <main class="thank-you-container" aria-labelledby="thanks-title">
-    <div class="thank-you-icon" aria-hidden="true">
-      <i class="fas fa-check-circle"></i>
-    </div>
-    <h1 id="thanks-title">Thank you for contacting us!</h1>
-    <p>We've received your message and will get back to you soon.</p>
-    <a href="index.html" class="btn-success">
-      <i class="fas fa-arrow-left"></i> Back to Home
-    </a>
+  <main class="thank-container">
+    <div class="thank-icon"><i class="fa-solid fa-crown"></i></div>
+    <h1>Thank You for Upgrading!</h1>
+    <p>Your SpellRightPro Premium plan is now active.<br>
+    Enjoy unlimited access to all spelling modes and features.</p>
+
+    <a href="premium.html" class="btn-primary"><i class="fa-solid fa-star"></i> Go to Premium</a>
+    <a href="index.html" class="btn-outline"><i class="fa-solid fa-house"></i> Back to Home</a>
   </main>
 </body>
 </html>
