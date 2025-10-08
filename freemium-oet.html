@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="light">
+<html lang="en" data-theme="dark">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -20,6 +20,7 @@
 
   <!-- AdSense -->
   <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7632930282249669" crossorigin="anonymous"></script>
+  <script>document.addEventListener('DOMContentLoaded',()=>document.body.classList.add('dark-mode'));</script>
 </head>
 <body>
   <nav class="navbar">
@@ -28,9 +29,8 @@
       <div><span>SpellRightPro</span><span class="subtitle">OET Practice</span></div>
     </div>
     <div class="nav-actions">
-      <a class="btn-secondary" href="index.html"><i class="fa fa-home"></i> Home</a>
-      <button id="login-btn" class="btn-secondary"><i class="fa fa-user"></i> Login (optional)</button>
-      <a class="btn-primary premium-button"><i class="fa fa-crown"></i> Premium</a>
+      <a id="home-btn" class="btn-secondary"><i class="fa fa-home"></i> Home</a>
+      <a id="premium-btn" class="btn-primary"><i class="fa fa-crown"></i> Premium</a>
     </div>
   </nav>
 
@@ -44,22 +44,22 @@
   <main class="container">
     <section class="training-card">
       <h1 class="card-title">🩺 OET Spelling (Freemium)</h1>
-      <div class="mode-selector">
-        <button id="start-practice-btn" class="btn-mode active"><i class="fa fa-lightbulb"></i> Practice (Full list)</button>
-        <button id="start-exam-btn" class="btn-mode"><i class="fa fa-clipboard-check"></i> Exam (24 random)</button>
+      <div class="mode-selector" role="tablist" aria-label="OET mode">
+        <button type="button" id="start-practice-btn" class="btn-mode active"><i class="fa fa-lightbulb"></i> Practice (Full list)</button>
+        <button type="button" id="start-exam-btn" class="btn-mode"><i class="fa fa-clipboard-check"></i> Exam (24 random)</button>
       </div>
 
-      <!-- Unlimited custom words on OET -->
+      <!-- Unlimited custom words -->
       <div class="custom-words-section">
         <label class="section-label">Custom Words (unlimited)</label>
-        <textarea id="custom-words" placeholder="Paste words…"></textarea>
+        <textarea id="custom-words" placeholder="Paste words separated by commas/newlines"></textarea>
         <div class="file-upload">
           <label class="btn-upload"><i class="fa fa-file-arrow-up"></i> Upload .txt/.csv
             <input id="file-input" type="file" accept=".txt,.csv" />
           </label>
         </div>
         <button id="apply-words" class="btn-secondary"><i class="fa fa-plus"></i> Use Custom List</button>
-        <small id="cw-note" class="mt-2 d-block" style="color:#6c757d;"></small>
+        <small id="cw-note" class="mt-2 d-block" style="color:#9aa4b2;"></small>
       </div>
     </section>
 
@@ -77,13 +77,12 @@
         <button id="end-session-btn" class="btn-secondary"><i class="fa fa-flag-checkered"></i> End Session</button>
       </div>
 
-      <div id="live-feedback" class="feedback" style="display:none;"></div>
+      <div id="live-feedback" class="feedback" style="display:none; position:sticky; bottom:20px;"></div>
     </section>
 
     <section id="results-area" class="summary-area hidden"></section>
   </main>
 
-  <!-- Offline toast -->
   <div id="connection-toast" class="connection-toast hidden">
     <i class="fa fa-wifi-slash"></i> You’re offline — working in cached mode
   </div>
@@ -91,23 +90,13 @@
   <script type="module" src="js/main-freemium-oet.js"></script>
   <script>
     if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').catch(()=>{});
-    document.querySelectorAll('.premium-button,.upgrade-btn')
-      .forEach(b=>b.addEventListener('click',()=>location.href='/premium.html'));
+    function goTo(p){ window.location.href=`https://incandescent-kataifi-622903.netlify.app/${p}`; }
+    document.getElementById('home-btn').addEventListener('click',()=>goTo('index.html'));
+    document.getElementById('premium-btn').addEventListener('click',()=>goTo('premium.html'));
     const toast=document.getElementById('connection-toast');
     function showToast(m,ok){toast.textContent=m;toast.classList.remove('hidden');toast.classList.toggle('offline',!ok);toast.classList.toggle('online',!!ok);setTimeout(()=>toast.classList.add('hidden'),4000);}
     addEventListener('offline',()=>showToast("⚠ You're offline — working in cached mode",false));
     addEventListener('online',()=>showToast("✅ Back online — syncing restored",true));
-
-    // Optional auth (Email link popup or Google)
-    const loginBtn = document.getElementById('login-btn');
-    loginBtn?.addEventListener('click', async ()=> {
-      try {
-        if (!firebase?.auth) return alert('Auth not available.');
-        const provider = new firebase.auth.GoogleAuthProvider();
-        await firebase.auth().signInWithPopup(provider);
-        alert('Signed in! Progress will be saved when available.');
-      } catch (e) { alert('Login failed.'); }
-    });
   </script>
 </body>
 </html>
