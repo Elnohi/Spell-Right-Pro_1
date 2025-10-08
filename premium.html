@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
@@ -16,6 +16,7 @@
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-H09MF13297"></script>
   <script src="js/config.js" defer></script>
   <script src="js/analytics.js" defer></script>
+  <script>document.addEventListener('DOMContentLoaded',()=>document.body.classList.add('dark-mode'));</script>
 </head>
 <body>
   <div class="container fade-in">
@@ -25,7 +26,7 @@
         <span>SpellRightPro</span>
       </div>
       <div class="nav-actions">
-        <a href="index.html" class="btn-secondary"><i class="fa fa-home"></i> Home</a>
+        <a id="home-btn" class="btn-secondary"><i class="fa fa-home"></i> Home</a>
         <button id="auth-btn" class="btn-secondary"><i class="fa fa-user"></i> Sign in</button>
       </div>
     </nav>
@@ -57,10 +58,20 @@
     </footer>
   </div>
 
-  <!-- Offline toast -->
+  <!-- Connection toast -->
   <div id="connection-toast" class="connection-toast hidden">
     <i class="fa fa-wifi-slash"></i> You’re offline — working in cached mode
   </div>
+
+  <script>
+    if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').catch(()=>{});
+    function goTo(p){ window.location.href=`https://incandescent-kataifi-622903.netlify.app/${p}`; }
+    document.getElementById('home-btn').addEventListener('click',()=>goTo('index.html'));
+    const toast=document.getElementById('connection-toast');
+    function showToast(m,ok){toast.textContent=m;toast.classList.remove('hidden');toast.classList.toggle('offline',!ok);toast.classList.toggle('online',!!ok);setTimeout(()=>toast.classList.add('hidden'),4000);}
+    addEventListener('offline',()=>showToast("⚠ You're offline — working in cached mode",false));
+    addEventListener('online',()=>showToast("✅ Back online — syncing restored",true));
+  </script>
 
   <script src="js/main-premium.js"></script>
 </body>
