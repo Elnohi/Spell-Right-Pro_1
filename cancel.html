@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Payment Canceled – SpellRightPro</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="icon" href="assets/logo.png" />
+  <link rel="stylesheet" href="css/styles.css" />
+  <link rel="stylesheet" href="css/premium.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+
+  <style>
+    body {
+      background: linear-gradient(135deg, #0b0d17, #1a1f33);
+      color: #fff;
+      font-family: 'Inter', sans-serif;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 2rem;
+    }
+    .cancel-box {
+      background: rgba(255,255,255,0.08);
+      border: 1px solid rgba(255,255,255,0.15);
+      border-radius: 16px;
+      padding: 3rem 2rem;
+      text-align: center;
+      max-width: 600px;
+      width: 100%;
+      backdrop-filter: blur(20px);
+      box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+    }
+    .cancel-box i {
+      font-size: 3.5rem;
+      color: #f72585;
+      margin-bottom: 1rem;
+    }
+    .cancel-box h1 {
+      font-size: 1.8rem;
+      margin-bottom: 0.8rem;
+    }
+    .cancel-box p {
+      font-size: 1rem;
+      color: #adb5bd;
+      margin-bottom: 2rem;
+    }
+    .cancel-box a {
+      display: inline-block;
+      padding: 0.75rem 1.5rem;
+      border-radius: 10px;
+      margin: 0.3rem;
+      font-weight: 600;
+      text-decoration: none;
+      transition: all 0.3s ease;
+    }
+    .btn-try {
+      background: #4361ee;
+      color: white;
+    }
+    .btn-try:hover {
+      background: #3651cc;
+    }
+    .btn-home {
+      border: 2px solid #adb5bd;
+      color: #adb5bd;
+    }
+    .btn-home:hover {
+      background: #adb5bd;
+      color: #1a1f33;
+    }
+  </style>
+</head>
+<body>
+  <div class="cancel-box fade-in">
+    <i class="fa-solid fa-circle-xmark"></i>
+    <h1>Payment Canceled</h1>
+    <p>Your payment was not completed.<br>
+    You can retry the upgrade or return to the homepage.</p>
+    <a href="premium.html" class="btn-try"><i class="fa-solid fa-arrow-rotate-right"></i> Try Again</a>
+    <a href="index.html" class="btn-home"><i class="fa-solid fa-house"></i> Home</a>
+  </div>
+</body>
+</html>
