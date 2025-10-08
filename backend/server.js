@@ -9,7 +9,7 @@ const app = express();
 app.disable('x-powered-by');
 
 /* ---------- CORS (strict, dynamic, with preflight) ---------- */
-const FRONTEND_URL = (process.env.FRONTEND_URL || '').replace(/\/+$/, '');
+const FRONTEND_URL = process.env.FRONTEND_URL || 'https://spellrightpro.org';
 if (!FRONTEND_URL) throw new Error('Missing env var FRONTEND_URL');
 
 const extraHosts = (process.env.EXTRA_FRONTEND_HOSTS || '')
