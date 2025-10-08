@@ -1,12 +1,13 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="dark">
+<html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>SpellRightPro Premium</title>
 
-  <link rel="stylesheet" href="css/styles.css" />
+  <!-- Styles -->
   <link rel="icon" href="assets/logo.png" />
+  <link rel="stylesheet" href="css/styles.css" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" />
 
   <!-- Firebase + Analytics -->
@@ -14,65 +15,260 @@
   <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore-compat.js"></script>
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-H09MF13297"></script>
-  <script src="js/config.js" defer></script>
-  <script src="js/analytics.js" defer></script>
-  <script>document.addEventListener('DOMContentLoaded',()=>document.body.classList.add('dark-mode'));</script>
+  <script src="js/config.js"></script>
+  <script src="js/analytics.js"></script>
+
+  <style>
+    /* Background & global theme */
+    body {
+      font-family: 'Inter', sans-serif;
+      margin: 0;
+      background: linear-gradient(145deg, #020617, #0a1b3c, #1a237e);
+      color: #f8f9fa;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      text-align: center;
+      overflow-x: hidden;
+    }
+
+    .navbar {
+      position: absolute;
+      top: 1rem;
+      left: 0;
+      width: 100%;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0 2rem;
+      box-sizing: border-box;
+    }
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: .6rem;
+      font-size: 1.2rem;
+      color: #fff;
+    }
+    .brand img {
+      width: 36px;
+      height: 36px;
+    }
+    .nav-actions button {
+      background: transparent;
+      border: 2px solid #f5c518;
+      color: #f5c518;
+      padding: 0.4rem 1rem;
+      border-radius: 10px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      margin-left: .6rem;
+    }
+    .nav-actions button:hover {
+      background: #f5c518;
+      color: #000;
+    }
+
+    /* Premium Card */
+    .premium-card {
+      background: rgba(255,255,255,0.07);
+      border: 1px solid rgba(255,255,255,0.15);
+      border-radius: 18px;
+      backdrop-filter: blur(20px);
+      box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+      padding: 3rem 2rem;
+      max-width: 550px;
+      width: 90%;
+      animation: floatIn 1s ease;
+    }
+    @keyframes floatIn {
+      from { opacity: 0; transform: translateY(30px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .premium-card h1 {
+      font-size: 2rem;
+      color: #f5c518;
+      margin-bottom: 0.5rem;
+    }
+    .premium-card p {
+      color: #d1d5db;
+      margin-bottom: 2rem;
+    }
+
+    /* Pricing area */
+    .pricing {
+      background: rgba(255,255,255,0.1);
+      border-radius: 12px;
+      padding: 1.5rem;
+      margin-bottom: 2rem;
+    }
+    .price-value {
+      font-size: 2rem;
+      color: #fff;
+      font-weight: 700;
+    }
+    .switch {
+      margin: 1rem 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+    }
+    .switch input {
+      accent-color: #f5c518;
+      width: 22px;
+      height: 22px;
+    }
+    label {
+      color: #f5c518;
+      font-weight: 600;
+    }
+
+    /* Promo badge */
+    #promo-banner {
+      margin-bottom: 1.2rem;
+      color: #f5c518;
+      background: rgba(245,197,24,0.1);
+      border: 1px solid rgba(245,197,24,0.3);
+      border-radius: 10px;
+      padding: 0.6rem 1rem;
+      display: inline-block;
+      animation: glow 2s infinite;
+    }
+    @keyframes glow {
+      0%,100% { box-shadow: 0 0 10px #f5c518; }
+      50% { box-shadow: 0 0 25px #f5c518; }
+    }
+
+    /* Buttons */
+    .btn-primary {
+      background: #f5c518;
+      color: #000;
+      border: none;
+      border-radius: 10px;
+      padding: 0.8rem 1.8rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+    .btn-primary:hover {
+      transform: scale(1.05);
+      box-shadow: 0 0 20px rgba(245,197,24,0.6);
+    }
+
+    .features {
+      text-align: left;
+      margin-top: 1.5rem;
+      color: #d1d5db;
+    }
+    .features li {
+      list-style: none;
+      margin: 0.4rem 0;
+    }
+    .features li i {
+      color: #f5c518;
+      margin-right: 0.6rem;
+    }
+
+    footer {
+      margin-top: 3rem;
+      font-size: 0.9rem;
+      color: #aaa;
+    }
+    footer a {
+      color: #f5c518;
+      text-decoration: none;
+    }
+    footer a:hover { text-decoration: underline; }
+
+    @media (max-width: 600px) {
+      .premium-card { padding: 2rem 1.2rem; }
+      h1 { font-size: 1.6rem; }
+      .btn-primary { width: 100%; }
+      .nav-actions button { padding: 0.5rem 0.8rem; }
+    }
+  </style>
 </head>
+
 <body>
-  <div class="container fade-in">
-    <nav class="navbar">
-      <div class="brand">
-        <img src="assets/logo.png" class="logo" alt="SpellRightPro"/>
-        <span>SpellRightPro</span>
-      </div>
-      <div class="nav-actions">
-        <a id="home-btn" class="btn-secondary"><i class="fa fa-home"></i> Home</a>
-        <button id="auth-btn" class="btn-secondary"><i class="fa fa-user"></i> Sign in</button>
-      </div>
-    </nav>
+  <!-- Navbar -->
+  <nav class="navbar">
+    <div class="brand">
+      <img src="assets/logo.png" alt="SpellRightPro logo">
+      <span>SpellRightPro</span>
+    </div>
+    <div class="nav-actions">
+      <button id="home-btn"><i class="fa-solid fa-house"></i> Home</button>
+      <button id="auth-btn"><i class="fa-solid fa-user"></i> Sign in</button>
+    </div>
+  </nav>
 
-    <div id="promo-banner" class="ad-banner" style="display:none;">
-      <i class="fa fa-bolt"></i>
-      Limited-time Offer: <b id="price-badge">CAD $39.99/year</b> (was $69.99). <small>Ends soon.</small>
+  <!-- Premium Card -->
+  <div class="premium-card fade-in">
+    <h1><i class="fa-solid fa-crown"></i> Premium Access</h1>
+    <p>Upgrade to enjoy unlimited spelling practice, custom word lists, detailed performance tracking, and ad-free learning.</p>
+
+    <div id="promo-banner" style="display:none;">
+      <i class="fa-solid fa-bolt"></i> Limited-time offer: <span id="price-badge">CAD $39.99/year</span>
     </div>
 
-    <div class="training-card">
-      <h1 class="card-title"><i class="fa fa-crown"></i> Premium Access</h1>
-      <p class="text-center">Unlock full access to Bee, School, and OET modes, unlimited lists, ad-free, and progress tracking.</p>
-
-      <div class="summary-area text-center">
-        <h2>Premium Plan</h2>
-        <div id="premium-price" class="score-number">CAD $69.99/year</div>
-        <button id="upgrade-btn" class="btn-primary"><i class="fa fa-arrow-up-right-from-square"></i> Upgrade Now</button>
-        <p class="mt-2" style="color:gray;font-size:.9rem">Payments secured by Stripe • Cancel anytime</p>
+    <div class="pricing">
+      <div class="price-value" id="premium-price">CAD $69.99/year</div>
+      <div class="switch">
+        <label for="plan-toggle">Monthly</label>
+        <input type="checkbox" id="plan-toggle" checked />
+        <label for="plan-toggle">Annual</label>
       </div>
-
-      <div class="info-box mt-4">
-        <p id="status-line">Sign in to continue to checkout.</p>
-      </div>
+      <button id="upgrade-btn" class="btn-primary" data-plan="annual">
+        <i class="fa-solid fa-arrow-up-right-from-square"></i> Upgrade Now
+      </button>
     </div>
 
-    <footer class="text-center mt-4">
-      <p><a href="terms.html">Terms</a> · <a href="privacy.html">Privacy</a> · <a href="refund.html">Refund Policy</a> · <a href="contact.html">Contact</a></p>
-      <p style="font-size: .8rem; color: gray;">© 2025 SpellRightPro</p>
-    </footer>
+    <ul class="features">
+      <li><i class="fa-solid fa-check"></i> Unlimited OET & Spelling Bee practice</li>
+      <li><i class="fa-solid fa-check"></i> Custom word lists & session saving</li>
+      <li><i class="fa-solid fa-check"></i> Real-time voice & writing evaluation</li>
+      <li><i class="fa-solid fa-check"></i> Offline access with progress sync</li>
+      <li><i class="fa-solid fa-check"></i> No ads — distraction-free learning</li>
+    </ul>
+
+    <p id="status-line" style="margin-top:1.5rem;">Sign in to continue to checkout.</p>
   </div>
 
-  <!-- Connection toast -->
-  <div id="connection-toast" class="connection-toast hidden">
-    <i class="fa fa-wifi-slash"></i> You’re offline — working in cached mode
-  </div>
+  <footer>
+    <p>
+      <a href="terms.html">Terms</a> ·
+      <a href="privacy.html">Privacy</a> ·
+      <a href="refund.html">Refund</a> ·
+      <a href="contact.html">Contact</a>
+    </p>
+    <p>© 2025 SpellRightPro</p>
+  </footer>
 
+  <!-- Navigation + Login logic -->
   <script>
-    if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').catch(()=>{});
-    function goTo(p){ window.location.href=`https://incandescent-kataifi-622903.netlify.app/${p}`; }
+    function goTo(page){ window.location.href = page; }
     document.getElementById('home-btn').addEventListener('click',()=>goTo('index.html'));
-    const toast=document.getElementById('connection-toast');
-    function showToast(m,ok){toast.textContent=m;toast.classList.remove('hidden');toast.classList.toggle('offline',!ok);toast.classList.toggle('online',!!ok);setTimeout(()=>toast.classList.add('hidden'),4000);}
-    addEventListener('offline',()=>showToast("⚠ You're offline — working in cached mode",false));
-    addEventListener('online',()=>showToast("✅ Back online — syncing restored",true));
   </script>
 
+  <!-- Premium Logic -->
   <script src="js/main-premium.js"></script>
+
+  <!-- Plan toggle -->
+  <script>
+    const toggle = document.getElementById('plan-toggle');
+    const price = document.getElementById('premium-price');
+    const upgradeBtn = document.getElementById('upgrade-btn');
+
+    toggle.addEventListener('change', () => {
+      const annual = toggle.checked;
+      price.textContent = annual ? 'CAD $69.99/year' : 'CAD $10.99/month';
+      upgradeBtn.dataset.plan = annual ? 'annual' : 'monthly';
+    });
+  </script>
 </body>
 </html>
