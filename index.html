@@ -23,6 +23,12 @@
   <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7632930282249669" crossorigin="anonymous"></script>
 </head>
 <body>
+  <script>
+  const params = new URLSearchParams(window.location.search);
+  if (params.get("login") === "required") {
+    alert("🔐 Please sign in to access SpellRightPro Premium features.");
+  }
+</script>
   <nav class="navbar">
     <div class="brand">
       <img src="/assets/logo.png" class="logo" alt="SpellRightPro Logo" loading="lazy"/>
