@@ -110,7 +110,6 @@ inputField?.addEventListener("keydown", (e) => {
 endSessionBtn?.addEventListener("click", endSession);
 
 // Audio guard init
-document.addEventListener("DOMContentLoaded", () => {
-  if (typeof initAudioGuards === "function")
-    initAudioGuards(window.currentRecognition);
+document.addEventListener('DOMContentLoaded', () => {
+  if (typeof initAudioGuards === "function") initAudioGuards(window.currentRecognition);
 });
