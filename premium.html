@@ -11,10 +11,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"/>
 
-  <script src="js/audio-guards.js"></script>
-<script src="js/main-premium.js"></script>
-
-  <!-- Firebase + Analytics (keep order) -->
+  <!-- Firebase + Analytics -->
   <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore-compat.js"></script>
@@ -22,113 +19,64 @@
   <script src="js/config.js"></script>
   <script src="js/analytics.js"></script>
 
+  <script src="js/audio-guards.js" defer></script>
+  <script src="js/main-premium.js" defer></script>
+
   <style>
     :root{
-      --blue:#4361ee;
-      --blue-2:#3f37c9;
-      --gold:#f9c94b;
-      --bg:#f6f8ff;
-      --ink:#1f2937;
-      --muted:#6b7280;
-      --card:#ffffff;
-      --ring:rgba(67,97,238,.15);
+      --blue:#4361ee; --blue-2:#3f37c9; --gold:#f9c94b; --bg:#f6f8ff;
+      --ink:#1f2937; --muted:#6b7280; --card:#ffffff; --ring:rgba(67,97,238,.15);
     }
-    *{box-sizing:border-box}
-    html,body{margin:0}
-    body{
-      font-family: "Inter",system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantarell,sans-serif;
-      color:var(--ink);
-      background:linear-gradient(180deg,#ffffff, var(--bg) 120%);
-      min-height:100vh;
-    }
+    body{margin:0;font-family:"Inter",system-ui,sans-serif;color:var(--ink);
+      background:linear-gradient(180deg,#ffffff,var(--bg) 120%);min-height:100vh;}
 
     /* Navbar */
-    .navbar{
-      position:sticky;top:0;z-index:20;
-      background:rgba(255,255,255,.92);
-      backdrop-filter: blur(10px);
-      border-bottom:1px solid #eef2ff;
-    }
-    .nav-inner{
-      max-width:1100px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;
-      padding:14px 20px;
-    }
+    .navbar{position:sticky;top:0;z-index:20;background:rgba(255,255,255,.92);
+      backdrop-filter:blur(10px);border-bottom:1px solid #eef2ff;}
+    .nav-inner{max-width:1100px;margin:0 auto;display:flex;align-items:center;
+      justify-content:space-between;padding:14px 20px;}
     .brand{display:flex;gap:10px;align-items:center}
     .brand img{width:40px;height:40px}
-    .brand span{font-weight:800;font-size:1.1rem;background:linear-gradient(135deg,var(--blue),var(--blue-2));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
-    .nav-actions a, .nav-actions button{
-      appearance:none;background:transparent;border:2px solid var(--blue);
-      color:var(--blue); padding:10px 14px;border-radius:12px;font-weight:700;cursor:pointer;
-      transition:.2s;
-    }
-    .nav-actions a:hover, .nav-actions button:hover{background:var(--blue);color:#fff; transform: translateY(-1px)}
+    .brand span{font-weight:800;font-size:1.1rem;background:linear-gradient(135deg,var(--blue),var(--blue-2));
+      -webkit-background-clip:text;-webkit-text-fill-color:transparent}
+    .nav-actions a,.nav-actions button{appearance:none;background:transparent;border:2px solid var(--blue);
+      color:var(--blue);padding:10px 14px;border-radius:12px;font-weight:700;cursor:pointer;transition:.2s;}
+    .nav-actions a:hover,.nav-actions button:hover{background:var(--blue);color:#fff;transform:translateY(-1px)}
     .nav-actions{display:flex;gap:10px}
 
-    /* Banner */
-    .promo{
-      background:linear-gradient(180deg,#fff9e8,#fff4d1);
-      border:1px solid #fde68a;
-      color:#7a5d00;
-      padding:10px 14px;
-      margin:18px auto 0;
-      width: min(980px, 92vw);
-      border-radius:12px;
-      display:flex;align-items:center;gap:10px;
-      box-shadow:0 6px 18px rgba(0,0,0,.05);
-    }
+    .promo{background:linear-gradient(180deg,#fff9e8,#fff4d1);border:1px solid #fde68a;
+      color:#7a5d00;padding:10px 14px;margin:18px auto 0;width:min(980px,92vw);border-radius:12px;
+      display:flex;align-items:center;gap:10px;box-shadow:0 6px 18px rgba(0,0,0,.05);}
     .promo i{color:#eab308}
 
-    /* Hero */
-    .hero{
-      max-width:980px;margin:18px auto 0;padding:18px 0 6px 0;
-      display:flex;align-items:center;gap:14px;
-    }
+    .hero{max-width:980px;margin:18px auto 0;padding:18px 0 6px 0;display:flex;align-items:center;gap:14px;}
     .hero h1{margin:0;font-size:clamp(1.6rem,3.2vw,2.2rem);font-weight:800}
     .hero p{margin:.4rem 0 0;color:var(--muted)}
 
-    /* Pricing grid */
-    .grid{
-      max-width:980px;margin:18px auto;padding:6px 0 30px;
-      display:grid;grid-template-columns:repeat(2,1fr);gap:18px;
-    }
-    .card{
-      background:var(--card);
-      border:1px solid #e6e9ff;border-radius:18px;padding:22px;
-      box-shadow:0 12px 30px rgba(67,97,238,.06);
-      display:flex;flex-direction:column;gap:14px;
-    }
+    .grid{max-width:980px;margin:18px auto;padding:6px 0 30px;
+      display:grid;grid-template-columns:repeat(2,1fr);gap:18px;}
+    .card{background:var(--card);border:1px solid #e6e9ff;border-radius:18px;padding:22px;
+      box-shadow:0 12px 30px rgba(67,97,238,.06);display:flex;flex-direction:column;gap:14px;}
     .card h3{margin:0;font-size:1.2rem}
     .price{font-size:2rem;font-weight:800}
     .strike{color:#9ca3af;text-decoration:line-through;font-weight:600;margin-left:8px;font-size:1rem}
-    .chip{
-      display:inline-flex;align-items:center;gap:6px;background:#eef2ff;color:var(--blue);
-      padding:6px 10px;border-radius:999px;font-weight:700;font-size:.85rem
-    }
+    .chip{display:inline-flex;align-items:center;gap:6px;background:#eef2ff;color:var(--blue);
+      padding:6px 10px;border-radius:999px;font-weight:700;font-size:.85rem}
     .features{list-style:none;padding:0;margin:6px 0 0;display:flex;flex-direction:column;gap:6px;color:#374151}
     .features i{color:var(--blue);margin-right:6px}
-
-    .btn{
-      appearance:none;border:none;border-radius:14px;padding:14px 16px;font-weight:800;
+    .btn{appearance:none;border:none;border-radius:14px;padding:14px 16px;font-weight:800;
       background:linear-gradient(135deg,var(--blue),var(--blue-2));color:#fff;cursor:pointer;
-      box-shadow:0 10px 20px var(--ring);transition:.2s;margin-top:6px
-    }
+      box-shadow:0 10px 20px var(--ring);transition:.2s;margin-top:6px}
     .btn:hover{transform:translateY(-1px);box-shadow:0 14px 26px var(--ring)}
-    .btn:active{transform:translateY(0)}
 
-    /* Ads slot (kept for consistency; script loads elsewhere in app) */
-    .ad-slot{
-      max-width:980px;margin:10px auto;border:1px dashed #e5e7eb;border-radius:12px;padding:10px;text-align:center;color:#9ca3af
-    }
+    .ad-slot{max-width:980px;margin:10px auto;border:1px dashed #e5e7eb;
+      border-radius:12px;padding:10px;text-align:center;color:#9ca3af}
 
-    /* Footer */
-    footer{max-width:980px;margin:20px auto 40px;color:#6b7280}
+    footer{max-width:980px;margin:20px auto 40px;color:#6b7280;text-align:center}
     footer a{color:var(--blue);text-decoration:none}
     footer a:hover{text-decoration:underline}
 
-    @media (max-width: 760px){
-      .grid{grid-template-columns:1fr}
-      .nav-actions{gap:8px}
-    }
+    @media (max-width:760px){.grid{grid-template-columns:1fr}.nav-actions{gap:8px}}
   </style>
 </head>
 <body>
@@ -159,34 +107,28 @@
 
   <div class="ad-slot">Advertisement</div>
 
-  <section class="grid" aria-label="Pricing plans">
-    <!-- Monthly -->
+  <section class="grid">
     <article class="card">
       <div class="chip"><i class="fa-solid fa-bolt"></i> 70% OFF</div>
       <h3>Monthly</h3>
-      <div>
-        <span class="price">CAD $3.29</span><span class="strike">CAD $10.99</span>
-      </div>
+      <div><span class="price">CAD $3.29</span><span class="strike">CAD $10.99</span></div>
       <ul class="features">
         <li><i class="fa-solid fa-check"></i> Unlimited Bee, School & OET practice</li>
         <li><i class="fa-solid fa-check"></i> Voice recognition + writing evaluation</li>
-        <li><i class="fa-solid fa-check"></i> Custom lists & session summary</li>
+        <li><i class="fa-solid fa-check"></i> Custom lists & summaries</li>
         <li><i class="fa-solid fa-check"></i> No ads, cancel anytime</li>
       </ul>
       <button class="btn" id="buy-monthly"><i class="fa-solid fa-arrow-up-right-from-square"></i> Upgrade – Monthly</button>
     </article>
 
-    <!-- Annual -->
     <article class="card">
       <div class="chip"><i class="fa-solid fa-crown"></i> Best Value</div>
       <h3>Annual</h3>
-      <div>
-        <span class="price">CAD $20.99</span><span class="strike">CAD $69.99</span>
-      </div>
+      <div><span class="price">CAD $20.99</span><span class="strike">CAD $69.99</span></div>
       <ul class="features">
         <li><i class="fa-solid fa-check"></i> Everything in Monthly</li>
         <li><i class="fa-solid fa-check"></i> 12 months for the price of 2.2</li>
-        <li><i class="fa-solid fa-check"></i> Priority fixes and feature access</li>
+        <li><i class="fa-solid fa-check"></i> Priority fixes and new features</li>
         <li><i class="fa-solid fa-check"></i> Dedicated support</li>
       </ul>
       <button class="btn" id="buy-annual"><i class="fa-solid fa-arrow-up-right-from-square"></i> Upgrade – Annual</button>
@@ -194,27 +136,16 @@
   </section>
 
   <footer>
-    <p>
-      <a href="terms.html">Terms</a> ·
-      <a href="privacy.html">Privacy</a> ·
-      <a href="refund.html">Refund Policy</a> ·
-      <a href="contact.html">Contact</a>
-    </p>
+    <p><a href="terms.html">Terms</a> · <a href="privacy.html">Privacy</a> ·
+       <a href="refund.html">Refund Policy</a> · <a href="contact.html">Contact</a></p>
     <p style="font-size:.9rem">© 2025 SpellRightPro</p>
   </footer>
 
-  <!-- Safety: stop any TTS before navigating away (prevents “hanging” audio) -->
   <script>
     window.addEventListener('beforeunload', () => {
       try { if ('speechSynthesis' in window) speechSynthesis.cancel(); } catch(e){}
     });
-    // Register SW safely
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('/sw.js').catch(()=>{});
-    }
+    if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').catch(()=>{});
   </script>
-
-  <!-- Premium wiring -->
-  <script src="js/main-premium.js"></script>
 </body>
 </html>
