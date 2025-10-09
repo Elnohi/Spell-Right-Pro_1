@@ -5,8 +5,9 @@
 */
 
 // REAL Stripe Payment Links (Back-to-School 70% OFF)
-const STRIPE_MONTHLY_URL = 'https://buy.stripe.com/cNi6oHbXE34ybVE4uq83C03';
-const STRIPE_ANNUAL_URL  = 'https://buy.stripe.com/cNieVd9PwbB42l4aSO83C04';
+const STRIPE_MONTHLY_URL = 'https://buy.stripe.com/cNieVd9PwbB42l4aSO83C04';
+const STRIPE_ANNUAL_URL  = 'https://buy.stripe.com/cNi6oHbXE34ybVE4uq83C03';
+   
 
 // Buttons
 const btnMonthly = document.getElementById('buy-monthly');
@@ -40,5 +41,6 @@ window.addEventListener('unhandledrejection', (e) => {
 
 // Note: login is intentionally removed from this page per your decision.
 // If later needed, auth UI can be added on a separate settings/profile page.
+
 
 
