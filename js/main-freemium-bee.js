@@ -58,6 +58,8 @@ function setupRecognition() {
 
   recognition.onerror = () => {
     feedback("Could not understand. Try again.", false);
+    isListening = false;
+    setTimeout(startRecognition, 800);
   };
 
   recognition.onend = () => {
@@ -71,11 +73,15 @@ function setupRecognition() {
 // ========== LOAD WORDS ==========
 async function loadWords() {
   try {
-    const res = await fetch("oet.json");
+    const res = await fetch("data/word-lists/spelling-bee.json");
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const data = await res.json();
     words = data.sort(() => Math.random() - 0.5);
+    console.log(`🐝 Loaded ${words.length} Bee words`);
   } catch (err) {
-    console.error("Error loading words:", err);
+    console.error("Error loading spelling-bee.json:", err);
+    feedback("⚠️ Error loading Bee word list. Using fallback words.", false);
+    words = ["apple", "banana", "cherry", "orange"]; // fallback
   }
 }
 
@@ -108,16 +114,23 @@ function speakNextWord() {
   }
   const word = words[currentIndex];
   progressText.textContent = `Word ${currentIndex + 1} of ${words.length}`;
+  stopSpeech();
+  safeStopRecognition(recognition);
   speakWord(word);
-  startRecognition();
+  setTimeout(startRecognition, 800);
 }
 
 // ========== RECOGNITION CONTROL ==========
 function startRecognition() {
   if (!recognition) setupRecognition();
   if (isListening) return;
-  isListening = true;
-  recognition.start();
+  try {
+    isListening = true;
+    recognition.start();
+  } catch (e) {
+    console.warn("Recognition start blocked:", e);
+    isListening = false;
+  }
 }
 
 function handleAnswer(answer) {
@@ -131,7 +144,7 @@ function handleAnswer(answer) {
     incorrectWords.push(correct);
   }
   currentIndex++;
-  setTimeout(speakNextWord, 1500);
+  setTimeout(speakNextWord, 1600);
 }
 
 function feedback(msg, correct) {
@@ -150,9 +163,7 @@ function endSession() {
 function showSummary() {
   summaryArea.classList.remove("hidden");
   correctList.innerHTML = `<li>${score} correct words</li>`;
-  incorrectList.innerHTML = incorrectWords
-    .map((w) => `<li>${w}</li>`)
-    .join("");
+  incorrectList.innerHTML = incorrectWords.map((w) => `<li>${w}</li>`).join("");
   flaggedList.innerHTML = flaggedWords.map((w) => `<li>${w}</li>`).join("");
   scoreDisplay.textContent = `${Math.round(
     (score / words.length) * 100
@@ -167,7 +178,7 @@ flagBtn?.addEventListener("click", () => {
 });
 
 // ========== AUDIO GUARDS INIT ==========
-document.addEventListener('DOMContentLoaded', () => {
-  if (typeof initAudioGuards === "function") initAudioGuards(window.currentRecognition);
+document.addEventListener("DOMContentLoaded", () => {
+  if (typeof initAudioGuards === "function")
+    initAudioGuards(window.currentRecognition);
 });
-
