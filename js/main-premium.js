@@ -1,46 +1,69 @@
-/* main-premium.js
-   - Wires Upgrade buttons to Stripe Payment Links (70% promo)
-   - Keeps Firebase/Analytics intact (loaded earlier)
-   - Small stability guards for smoother UX
-*/
+// ==========================================================
+// SpellRightPro - main-premium.js
+// Enforces login before access
+// ==========================================================
 
-// REAL Stripe Payment Links (Back-to-School 70% OFF)
-const STRIPE_MONTHLY_URL = 'https://buy.stripe.com/cNieVd9PwbB42l4aSO83C04';
-const STRIPE_ANNUAL_URL  = 'https://buy.stripe.com/cNi6oHbXE34ybVE4uq83C03';
-   
-
-// Buttons
-const btnMonthly = document.getElementById('buy-monthly');
-const btnAnnual  = document.getElementById('buy-annual');
-const helpBtn    = document.getElementById('help-btn');
-
-function openCheckout(url){
-  try {
-    // extra safety: stop any speech, which sometimes “sticks” on mobile
-    if ('speechSynthesis' in window) speechSynthesis.cancel();
-  } catch(e) {}
-  // use top-level navigation (avoids sandboxing in some browsers)
-  window.location.assign(url);
+// ==== Initialize Firebase (from config.js) ====
+if (typeof firebase === "undefined") {
+  console.error("Firebase not loaded. Check script order in premium.html");
 }
 
-btnMonthly?.addEventListener('click', () => openCheckout(STRIPE_MONTHLY_URL));
-btnAnnual?.addEventListener('click',  () => openCheckout(STRIPE_ANNUAL_URL));
-helpBtn?.addEventListener('click',   () => window.location.href = 'contact.html');
+let auth;
+try {
+  const app = firebase.initializeApp(firebaseConfig);
+  auth = firebase.auth();
+} catch (e) {
+  console.log("Firebase already initialized or unavailable", e);
+  auth = firebase.auth();
+}
 
-// ---- Robustness: recover from hidden/visible changes (audio + timers) ----
-document.addEventListener('DOMContentLoaded', () => {
-  if (typeof initAudioGuards === "function") initAudioGuards(window.currentRecognition);
+// ==== DOM Elements ====
+const upgradeMonthlyBtn = document.getElementById("upgrade-monthly");
+const upgradeAnnualBtn = document.getElementById("upgrade-annual");
+const helpBtn = document.getElementById("help-btn");
+
+// ==== Stripe Payment Links (Live URLs) ====
+const STRIPE_MONTHLY = "https://buy.stripe.com/cNi6oHbXE34ybVE4uq83C03";
+const STRIPE_ANNUAL = "https://buy.stripe.com/cNieVd9PwbB42l4aSO83C04";
+
+// ==== Require Login ====
+auth.onAuthStateChanged((user) => {
+  if (!user) {
+    // Not logged in → redirect
+    alert("🔒 Please log in to access Premium features.");
+    window.location.href = "index.html?login=required";
+  } else {
+    console.log(`✅ Logged in as: ${user.email}`);
+  }
 });
 
-// Guard: catch unhandled promise rejections (prevents silent hangs)
-window.addEventListener('unhandledrejection', (e) => {
-  // You could log to analytics if desired:
-  // gtag('event', 'unhandled_rejection', { message: String(e.reason) });
-  // avoid default console noise in production
+// ==== Stripe Buttons ====
+upgradeMonthlyBtn?.addEventListener("click", () => {
+  window.location.href = STRIPE_MONTHLY;
 });
 
-// Note: login is intentionally removed from this page per your decision.
-// If later needed, auth UI can be added on a separate settings/profile page.
+upgradeAnnualBtn?.addEventListener("click", () => {
+  window.location.href = STRIPE_ANNUAL;
+});
 
+helpBtn?.addEventListener("click", () => {
+  window.location.href = "mailto:support@spellrightpro.org?subject=Premium%20Support";
+});
 
+// ==== Audio Safety Guards ====
+window.addEventListener("beforeunload", () => {
+  if (window.speechSynthesis) window.speechSynthesis.cancel();
+  if (window.currentRecognition) {
+    try {
+      window.currentRecognition.stop();
+    } catch {}
+  }
+});
 
+document.addEventListener("visibilitychange", () => {
+  if (document.hidden && window.speechSynthesis) {
+    window.speechSynthesis.cancel();
+  }
+});
+
+console.log("✅ Premium JS loaded successfully with login protection");
