@@ -167,7 +167,7 @@ flagBtn?.addEventListener("click", () => {
 });
 
 // ========== AUDIO GUARDS INIT ==========
-document.addEventListener("DOMContentLoaded", () => {
-  if (typeof initAudioGuards === "function")
-    initAudioGuards(window.currentRecognition);
+document.addEventListener('DOMContentLoaded', () => {
+  if (typeof initAudioGuards === "function") initAudioGuards(window.currentRecognition);
 });
+
