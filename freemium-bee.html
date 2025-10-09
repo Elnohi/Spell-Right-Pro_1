@@ -106,5 +106,22 @@
   </script>
 
   <script src="js/main-freemium-bee.js"></script>
+  <!-- Audio safety (speech & recognition) -->
+<script src="js/audio-guards.js"></script>
+
+<!-- Existing mode logic -->
+<script src="js/main-freemium-bee.js"></script>
+
+<script>
+  // Wait for main JS to create its recognition instance
+  document.addEventListener('DOMContentLoaded', () => {
+    if (window.currentRecognition) {
+      initAudioGuards(window.currentRecognition);
+    } else {
+      initAudioGuards(); // fallback guard even if not defined yet
+    }
+  });
+</script>
+
 </body>
 </html>
