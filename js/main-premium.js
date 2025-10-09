@@ -27,10 +27,8 @@ btnAnnual?.addEventListener('click',  () => openCheckout(STRIPE_ANNUAL_URL));
 helpBtn?.addEventListener('click',   () => window.location.href = 'contact.html');
 
 // ---- Robustness: recover from hidden/visible changes (audio + timers) ----
-document.addEventListener('visibilitychange', () => {
-  if (document.visibilityState === 'hidden') {
-    try { if ('speechSynthesis' in window) speechSynthesis.cancel(); } catch(e){}
-  }
+document.addEventListener('DOMContentLoaded', () => {
+  if (typeof initAudioGuards === "function") initAudioGuards(window.currentRecognition);
 });
 
 // Guard: catch unhandled promise rejections (prevents silent hangs)
@@ -42,3 +40,5 @@ window.addEventListener('unhandledrejection', (e) => {
 
 // Note: login is intentionally removed from this page per your decision.
 // If later needed, auth UI can be added on a separate settings/profile page.
+
+
