@@ -2,15 +2,16 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>SpellRightPro Premium</title>
-
-  <!-- Styles -->
+  <title>SpellRightPro – Premium</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <link rel="icon" href="assets/logo.png" />
   <link rel="stylesheet" href="css/styles.css" />
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"/>
 
-  <!-- Firebase + Analytics -->
+  <!-- Firebase + Analytics (keep order) -->
   <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore-compat.js"></script>
@@ -19,256 +20,198 @@
   <script src="js/analytics.js"></script>
 
   <style>
-    /* Background & global theme */
-    body {
-      font-family: 'Inter', sans-serif;
-      margin: 0;
-      background: linear-gradient(145deg, #020617, #0a1b3c, #1a237e);
-      color: #f8f9fa;
-      min-height: 100vh;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      flex-direction: column;
-      text-align: center;
-      overflow-x: hidden;
+    :root{
+      --blue:#4361ee;
+      --blue-2:#3f37c9;
+      --gold:#f9c94b;
+      --bg:#f6f8ff;
+      --ink:#1f2937;
+      --muted:#6b7280;
+      --card:#ffffff;
+      --ring:rgba(67,97,238,.15);
+    }
+    *{box-sizing:border-box}
+    html,body{margin:0}
+    body{
+      font-family: "Inter",system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantarell,sans-serif;
+      color:var(--ink);
+      background:linear-gradient(180deg,#ffffff, var(--bg) 120%);
+      min-height:100vh;
     }
 
-    .navbar {
-      position: absolute;
-      top: 1rem;
-      left: 0;
-      width: 100%;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 0 2rem;
-      box-sizing: border-box;
+    /* Navbar */
+    .navbar{
+      position:sticky;top:0;z-index:20;
+      background:rgba(255,255,255,.92);
+      backdrop-filter: blur(10px);
+      border-bottom:1px solid #eef2ff;
     }
-    .brand {
-      display: flex;
-      align-items: center;
-      gap: .6rem;
-      font-size: 1.2rem;
-      color: #fff;
+    .nav-inner{
+      max-width:1100px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;
+      padding:14px 20px;
     }
-    .brand img {
-      width: 36px;
-      height: 36px;
+    .brand{display:flex;gap:10px;align-items:center}
+    .brand img{width:40px;height:40px}
+    .brand span{font-weight:800;font-size:1.1rem;background:linear-gradient(135deg,var(--blue),var(--blue-2));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+    .nav-actions a, .nav-actions button{
+      appearance:none;background:transparent;border:2px solid var(--blue);
+      color:var(--blue); padding:10px 14px;border-radius:12px;font-weight:700;cursor:pointer;
+      transition:.2s;
     }
-    .nav-actions button {
-      background: transparent;
-      border: 2px solid #f5c518;
-      color: #f5c518;
-      padding: 0.4rem 1rem;
-      border-radius: 10px;
-      font-weight: 600;
-      cursor: pointer;
-      transition: all 0.3s ease;
-      margin-left: .6rem;
+    .nav-actions a:hover, .nav-actions button:hover{background:var(--blue);color:#fff; transform: translateY(-1px)}
+    .nav-actions{display:flex;gap:10px}
+
+    /* Banner */
+    .promo{
+      background:linear-gradient(180deg,#fff9e8,#fff4d1);
+      border:1px solid #fde68a;
+      color:#7a5d00;
+      padding:10px 14px;
+      margin:18px auto 0;
+      width: min(980px, 92vw);
+      border-radius:12px;
+      display:flex;align-items:center;gap:10px;
+      box-shadow:0 6px 18px rgba(0,0,0,.05);
     }
-    .nav-actions button:hover {
-      background: #f5c518;
-      color: #000;
+    .promo i{color:#eab308}
+
+    /* Hero */
+    .hero{
+      max-width:980px;margin:18px auto 0;padding:18px 0 6px 0;
+      display:flex;align-items:center;gap:14px;
+    }
+    .hero h1{margin:0;font-size:clamp(1.6rem,3.2vw,2.2rem);font-weight:800}
+    .hero p{margin:.4rem 0 0;color:var(--muted)}
+
+    /* Pricing grid */
+    .grid{
+      max-width:980px;margin:18px auto;padding:6px 0 30px;
+      display:grid;grid-template-columns:repeat(2,1fr);gap:18px;
+    }
+    .card{
+      background:var(--card);
+      border:1px solid #e6e9ff;border-radius:18px;padding:22px;
+      box-shadow:0 12px 30px rgba(67,97,238,.06);
+      display:flex;flex-direction:column;gap:14px;
+    }
+    .card h3{margin:0;font-size:1.2rem}
+    .price{font-size:2rem;font-weight:800}
+    .strike{color:#9ca3af;text-decoration:line-through;font-weight:600;margin-left:8px;font-size:1rem}
+    .chip{
+      display:inline-flex;align-items:center;gap:6px;background:#eef2ff;color:var(--blue);
+      padding:6px 10px;border-radius:999px;font-weight:700;font-size:.85rem
+    }
+    .features{list-style:none;padding:0;margin:6px 0 0;display:flex;flex-direction:column;gap:6px;color:#374151}
+    .features i{color:var(--blue);margin-right:6px}
+
+    .btn{
+      appearance:none;border:none;border-radius:14px;padding:14px 16px;font-weight:800;
+      background:linear-gradient(135deg,var(--blue),var(--blue-2));color:#fff;cursor:pointer;
+      box-shadow:0 10px 20px var(--ring);transition:.2s;margin-top:6px
+    }
+    .btn:hover{transform:translateY(-1px);box-shadow:0 14px 26px var(--ring)}
+    .btn:active{transform:translateY(0)}
+
+    /* Ads slot (kept for consistency; script loads elsewhere in app) */
+    .ad-slot{
+      max-width:980px;margin:10px auto;border:1px dashed #e5e7eb;border-radius:12px;padding:10px;text-align:center;color:#9ca3af
     }
 
-    /* Premium Card */
-    .premium-card {
-      background: rgba(255,255,255,0.07);
-      border: 1px solid rgba(255,255,255,0.15);
-      border-radius: 18px;
-      backdrop-filter: blur(20px);
-      box-shadow: 0 10px 30px rgba(0,0,0,0.4);
-      padding: 3rem 2rem;
-      max-width: 550px;
-      width: 90%;
-      animation: floatIn 1s ease;
-    }
-    @keyframes floatIn {
-      from { opacity: 0; transform: translateY(30px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
+    /* Footer */
+    footer{max-width:980px;margin:20px auto 40px;color:#6b7280}
+    footer a{color:var(--blue);text-decoration:none}
+    footer a:hover{text-decoration:underline}
 
-    .premium-card h1 {
-      font-size: 2rem;
-      color: #f5c518;
-      margin-bottom: 0.5rem;
-    }
-    .premium-card p {
-      color: #d1d5db;
-      margin-bottom: 2rem;
-    }
-
-    /* Pricing area */
-    .pricing {
-      background: rgba(255,255,255,0.1);
-      border-radius: 12px;
-      padding: 1.5rem;
-      margin-bottom: 2rem;
-    }
-    .price-value {
-      font-size: 2rem;
-      color: #fff;
-      font-weight: 700;
-    }
-    .switch {
-      margin: 1rem 0;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 0.5rem;
-    }
-    .switch input {
-      accent-color: #f5c518;
-      width: 22px;
-      height: 22px;
-    }
-    label {
-      color: #f5c518;
-      font-weight: 600;
-    }
-
-    /* Promo badge */
-    #promo-banner {
-      margin-bottom: 1.2rem;
-      color: #f5c518;
-      background: rgba(245,197,24,0.1);
-      border: 1px solid rgba(245,197,24,0.3);
-      border-radius: 10px;
-      padding: 0.6rem 1rem;
-      display: inline-block;
-      animation: glow 2s infinite;
-    }
-    @keyframes glow {
-      0%,100% { box-shadow: 0 0 10px #f5c518; }
-      50% { box-shadow: 0 0 25px #f5c518; }
-    }
-
-    /* Buttons */
-    .btn-primary {
-      background: #f5c518;
-      color: #000;
-      border: none;
-      border-radius: 10px;
-      padding: 0.8rem 1.8rem;
-      font-weight: 700;
-      cursor: pointer;
-      transition: transform 0.2s ease, box-shadow 0.2s ease;
-    }
-    .btn-primary:hover {
-      transform: scale(1.05);
-      box-shadow: 0 0 20px rgba(245,197,24,0.6);
-    }
-
-    .features {
-      text-align: left;
-      margin-top: 1.5rem;
-      color: #d1d5db;
-    }
-    .features li {
-      list-style: none;
-      margin: 0.4rem 0;
-    }
-    .features li i {
-      color: #f5c518;
-      margin-right: 0.6rem;
-    }
-
-    footer {
-      margin-top: 3rem;
-      font-size: 0.9rem;
-      color: #aaa;
-    }
-    footer a {
-      color: #f5c518;
-      text-decoration: none;
-    }
-    footer a:hover { text-decoration: underline; }
-
-    @media (max-width: 600px) {
-      .premium-card { padding: 2rem 1.2rem; }
-      h1 { font-size: 1.6rem; }
-      .btn-primary { width: 100%; }
-      .nav-actions button { padding: 0.5rem 0.8rem; }
+    @media (max-width: 760px){
+      .grid{grid-template-columns:1fr}
+      .nav-actions{gap:8px}
     }
   </style>
 </head>
-
 <body>
-  <!-- Navbar -->
-  <nav class="navbar">
-    <div class="brand">
-      <img src="assets/logo.png" alt="SpellRightPro logo">
-      <span>SpellRightPro</span>
-    </div>
-    <div class="nav-actions">
-      <button id="home-btn"><i class="fa-solid fa-house"></i> Home</button>
-      <button id="auth-btn"><i class="fa-solid fa-user"></i> Sign in</button>
-    </div>
-  </nav>
-
-  <!-- Premium Card -->
-  <div class="premium-card fade-in">
-    <h1><i class="fa-solid fa-crown"></i> Premium Access</h1>
-    <p>Upgrade to enjoy unlimited spelling practice, custom word lists, detailed performance tracking, and ad-free learning.</p>
-
-    <div id="promo-banner" style="display:none;">
-      <i class="fa-solid fa-bolt"></i> Limited-time offer: <span id="price-badge">CAD $39.99/year</span>
-    </div>
-
-    <div class="pricing">
-      <div class="price-value" id="premium-price">CAD $69.99/year</div>
-      <div class="switch">
-        <label for="plan-toggle">Monthly</label>
-        <input type="checkbox" id="plan-toggle" checked />
-        <label for="plan-toggle">Annual</label>
+  <header class="navbar">
+    <div class="nav-inner">
+      <div class="brand">
+        <img src="assets/logo.png" alt="SpellRightPro logo">
+        <span>SpellRightPro</span>
       </div>
-      <button id="upgrade-btn" class="btn-primary" data-plan="annual">
-        <i class="fa-solid fa-arrow-up-right-from-square"></i> Upgrade Now
-      </button>
+      <div class="nav-actions">
+        <a href="index.html"><i class="fa-solid fa-house"></i> Home</a>
+        <button id="help-btn"><i class="fa-solid fa-circle-info"></i> Help</button>
+      </div>
     </div>
+  </header>
 
-    <ul class="features">
-      <li><i class="fa-solid fa-check"></i> Unlimited OET & Spelling Bee practice</li>
-      <li><i class="fa-solid fa-check"></i> Custom word lists & session saving</li>
-      <li><i class="fa-solid fa-check"></i> Real-time voice & writing evaluation</li>
-      <li><i class="fa-solid fa-check"></i> Offline access with progress sync</li>
-      <li><i class="fa-solid fa-check"></i> No ads — distraction-free learning</li>
-    </ul>
-
-    <p id="status-line" style="margin-top:1.5rem;">Sign in to continue to checkout.</p>
+  <div class="promo">
+    <i class="fa-solid fa-graduation-cap"></i>
+    <strong>Back to School Promo — Save 70% on Premium!</strong>
   </div>
+
+  <section class="hero">
+    <div>
+      <h1>Go Premium: Unlimited practice, voice & writing evaluation, ad-free, and progress saving.</h1>
+      <p>Choose a plan below. Secure checkout via Stripe. Cancel anytime.</p>
+    </div>
+  </section>
+
+  <div class="ad-slot">Advertisement</div>
+
+  <section class="grid" aria-label="Pricing plans">
+    <!-- Monthly -->
+    <article class="card">
+      <div class="chip"><i class="fa-solid fa-bolt"></i> 70% OFF</div>
+      <h3>Monthly</h3>
+      <div>
+        <span class="price">CAD $3.29</span><span class="strike">CAD $10.99</span>
+      </div>
+      <ul class="features">
+        <li><i class="fa-solid fa-check"></i> Unlimited Bee, School & OET practice</li>
+        <li><i class="fa-solid fa-check"></i> Voice recognition + writing evaluation</li>
+        <li><i class="fa-solid fa-check"></i> Custom lists & session summary</li>
+        <li><i class="fa-solid fa-check"></i> No ads, cancel anytime</li>
+      </ul>
+      <button class="btn" id="buy-monthly"><i class="fa-solid fa-arrow-up-right-from-square"></i> Upgrade – Monthly</button>
+    </article>
+
+    <!-- Annual -->
+    <article class="card">
+      <div class="chip"><i class="fa-solid fa-crown"></i> Best Value</div>
+      <h3>Annual</h3>
+      <div>
+        <span class="price">CAD $20.99</span><span class="strike">CAD $69.99</span>
+      </div>
+      <ul class="features">
+        <li><i class="fa-solid fa-check"></i> Everything in Monthly</li>
+        <li><i class="fa-solid fa-check"></i> 12 months for the price of 2.2</li>
+        <li><i class="fa-solid fa-check"></i> Priority fixes and feature access</li>
+        <li><i class="fa-solid fa-check"></i> Dedicated support</li>
+      </ul>
+      <button class="btn" id="buy-annual"><i class="fa-solid fa-arrow-up-right-from-square"></i> Upgrade – Annual</button>
+    </article>
+  </section>
 
   <footer>
     <p>
       <a href="terms.html">Terms</a> ·
       <a href="privacy.html">Privacy</a> ·
-      <a href="refund.html">Refund</a> ·
+      <a href="refund.html">Refund Policy</a> ·
       <a href="contact.html">Contact</a>
     </p>
-    <p>© 2025 SpellRightPro</p>
+    <p style="font-size:.9rem">© 2025 SpellRightPro</p>
   </footer>
 
-  <!-- Navigation + Login logic -->
+  <!-- Safety: stop any TTS before navigating away (prevents “hanging” audio) -->
   <script>
-    function goTo(page){ window.location.href = page; }
-    document.getElementById('home-btn').addEventListener('click',()=>goTo('index.html'));
-  </script>
-
-  <!-- Premium Logic -->
-  <script src="js/main-premium.js"></script>
-
-  <!-- Plan toggle -->
-  <script>
-    const toggle = document.getElementById('plan-toggle');
-    const price = document.getElementById('premium-price');
-    const upgradeBtn = document.getElementById('upgrade-btn');
-
-    toggle.addEventListener('change', () => {
-      const annual = toggle.checked;
-      price.textContent = annual ? 'CAD $69.99/year' : 'CAD $10.99/month';
-      upgradeBtn.dataset.plan = annual ? 'annual' : 'monthly';
+    window.addEventListener('beforeunload', () => {
+      try { if ('speechSynthesis' in window) speechSynthesis.cancel(); } catch(e){}
     });
+    // Register SW safely
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/sw.js').catch(()=>{});
+    }
   </script>
+
+  <!-- Premium wiring -->
+  <script src="js/main-premium.js"></script>
 </body>
 </html>
