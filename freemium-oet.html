@@ -1,105 +1,108 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="dark">
+<html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>SpellRightPro – OET (Freemium)</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SpellRightPro – OET Practice</title>
 
-  <link rel="manifest" href="manifest.json" />
-  <link rel="stylesheet" href="css/styles.css" />
-  <link rel="icon" href="assets/logo.png" />
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"/>
+  <link rel="stylesheet" href="styles/premium.css" />
+  <link rel="stylesheet" href="styles/styles.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" />
 
-  <script src="js/audio-guards.js"></script>
-<script src="js/main-freemium-oet.js"></script>
-
-  <!-- Firebase + Analytics -->
+  <!-- Firebase -->
   <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore-compat.js"></script>
-  <script async src="https://www.googletagmanager.com/gtag/js?id=G-H09MF13297"></script>
-  <script src="js/config.js" defer></script>
-  <script src="js/analytics.js" defer></script>
+
+  <script src="js/config.js"></script>
 
   <!-- AdSense -->
-  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7632930282249669" crossorigin="anonymous"></script>
-  <script>document.addEventListener('DOMContentLoaded',()=>document.body.classList.add('dark-mode'));</script>
+  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-1894570090762726" crossorigin="anonymous"></script>
 </head>
-<body>
-  <nav class="navbar">
-    <div class="brand">
-      <img src="assets/logo.png" class="logo" alt="SpellRightPro" />
-      <div><span>SpellRightPro</span><span class="subtitle">OET Practice</span></div>
-    </div>
-    <div class="nav-actions">
-      <a id="home-btn" class="btn-secondary"><i class="fa fa-home"></i> Home</a>
-      <a id="premium-btn" class="btn-primary"><i class="fa fa-crown"></i> Premium</a>
-    </div>
-  </nav>
-
-  <div class="container" style="padding-top:12px; padding-bottom:0;">
-    <ins class="adsbygoogle" style="display:block"
-      data-ad-client="ca-pub-7632930282249669" data-ad-slot="3344556677"
-      data-ad-format="auto" data-full-width-responsive="true"></ins>
-    <script>(adsbygoogle=window.adsbygoogle||[]).push({});</script>
-  </div>
-
-  <main class="container">
-    <section class="training-card">
-      <h1 class="card-title">🩺 OET Spelling (Freemium)</h1>
-      <div class="mode-selector" role="tablist" aria-label="OET mode">
-        <button type="button" id="start-practice-btn" class="btn-mode active"><i class="fa fa-lightbulb"></i> Practice (Full list)</button>
-        <button type="button" id="start-exam-btn" class="btn-mode"><i class="fa fa-clipboard-check"></i> Exam (24 random)</button>
+<body data-mode="oet">
+  <header class="app-header gradient-header">
+    <div class="logo-area">
+      <img src="assets/logo.png" class="logo" alt="SpellRightPro Logo" />
+      <div>
+        <h1>SpellRightPro</h1>
+        <h2>OET Practice</h2>
       </div>
+    </div>
+    <nav>
+      <a href="index.html" class="btn-home"><i class="fa fa-home"></i> Home</a>
+      <a href="premium.html" class="btn-premium"><i class="fa fa-crown"></i> Premium</a>
+    </nav>
+  </header>
 
-      <!-- Unlimited custom words -->
-      <div class="custom-words-section">
-        <label class="section-label">Custom Words (unlimited)</label>
-        <textarea id="custom-words" placeholder="Paste words separated by commas/newlines"></textarea>
-        <div class="file-upload">
-          <label class="btn-upload"><i class="fa fa-file-arrow-up"></i> Upload .txt/.csv
-            <input id="file-input" type="file" accept=".txt,.csv" />
-          </label>
-        </div>
-        <button id="apply-words" class="btn-secondary"><i class="fa fa-plus"></i> Use Custom List</button>
-        <small id="cw-note" class="mt-2 d-block" style="color:#9aa4b2;"></small>
+  <!-- Top Ad -->
+  <section class="adsense-top">
+    <ins class="adsbygoogle"
+         style="display:block"
+         data-ad-client="ca-pub-1894570090762726"
+         data-ad-slot="7259876123"
+         data-ad-format="auto"
+         data-full-width-responsive="true"></ins>
+    <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
+  </section>
+
+  <main class="trainer-area">
+    <section class="intro-card">
+      <p>Practice healthcare-related words aligned with the OET exam. Choose full practice or exam mode below.</p>
+    </section>
+
+    <div class="mode-tabs">
+      <button id="tabPractice" class="btn-secondary">Practice (Full list)</button>
+      <button id="tabExam" class="btn-secondary">Exam (24 random)</button>
+    </div>
+
+    <section class="custom-section">
+      <h3>Custom Words (unlimited)</h3>
+      <textarea id="customWords" placeholder="Paste words separated by commas/newlines"></textarea>
+      <div class="upload-row">
+        <input type="file" id="file-input" accept=".txt,.csv" />
+        <button id="useCustomList" class="btn-secondary">+ Use Custom List</button>
       </div>
     </section>
 
-    <section id="oet-area" class="trainer-area hidden">
-      <div id="word-visual" class="word-progress">Word 1 of 24</div>
-
-      <div class="input-group" style="max-width:560px;margin:0 auto">
-        <input id="user-input" type="text" class="form-control" placeholder="Type the medical term and press Enter…" autocomplete="off"/>
-      </div>
-
-      <div class="button-group">
-        <button id="submit-btn" class="btn-primary"><i class="fa fa-check"></i> Submit</button>
-        <button id="next-btn" class="btn-secondary"><i class="fa fa-arrow-right"></i> Next</button>
-        <button id="flag-btn" class="btn-icon" title="Flag"><i class="fa fa-flag"></i></button>
-        <button id="end-session-btn" class="btn-secondary"><i class="fa fa-flag-checkered"></i> End Session</button>
-      </div>
-
-      <div id="live-feedback" class="feedback" style="display:none; position:sticky; bottom:20px;"></div>
+    <section class="controls">
+      <button id="start" class="btn-primary"><i class="fa fa-play"></i> Start Practice</button>
+      <input id="answer" type="text" class="form-control" placeholder="Type your spelling here" />
+      <button id="submit" class="btn-primary"><i class="fa fa-check"></i> Submit</button>
+      <button id="flag" class="btn-icon"><i class="fa fa-flag"></i></button>
+      <button id="end" class="btn-secondary"><i class="fa fa-stop"></i> End Session</button>
     </section>
 
-    <section id="results-area" class="summary-area hidden"></section>
+    <section class="feedback-section">
+      <div id="progress"></div>
+      <div id="feedback"></div>
+    </section>
+
+    <!-- Mid Ad -->
+    <section class="adsense-mid">
+      <ins class="adsbygoogle"
+           style="display:block; text-align:center;"
+           data-ad-client="ca-pub-1894570090762726"
+           data-ad-slot="4847632215"
+           data-ad-format="auto"
+           data-full-width-responsive="true"></ins>
+      <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
+    </section>
+
+    <section class="summary-area hidden"></section>
   </main>
 
-  <div id="connection-toast" class="connection-toast hidden">
-    <i class="fa fa-wifi-slash"></i> You’re offline — working in cached mode
-  </div>
+  <!-- Bottom Ad -->
+  <footer class="footer gradient-footer">
+    <p>Freemium OET: practice core medical spelling sets. <a href="premium.html">Upgrade for unlimited exams, error tracking, and analytics.</a></p>
+    <ins class="adsbygoogle"
+         style="display:block"
+         data-ad-client="ca-pub-1894570090762726"
+         data-ad-slot="6427638123"
+         data-ad-format="auto"
+         data-full-width-responsive="true"></ins>
+    <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
+  </footer>
 
-  <script type="module" src="js/main-freemium-oet.js"></script>
-  <script>
-    if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').catch(()=>{});
-    function goTo(p){ window.location.href=`https://incandescent-kataifi-622903.netlify.app/${p}`; }
-    document.getElementById('home-btn').addEventListener('click',()=>goTo('index.html'));
-    document.getElementById('premium-btn').addEventListener('click',()=>goTo('premium.html'));
-    const toast=document.getElementById('connection-toast');
-    function showToast(m,ok){toast.textContent=m;toast.classList.remove('hidden');toast.classList.toggle('offline',!ok);toast.classList.toggle('online',!!ok);setTimeout(()=>toast.classList.add('hidden'),4000);}
-    addEventListener('offline',()=>showToast("⚠ You're offline — working in cached mode",false));
-    addEventListener('online',()=>showToast("✅ Back online — syncing restored",true));
-  </script>
+  <script src="js/main-freemium.js" defer></script>
 </body>
 </html>
