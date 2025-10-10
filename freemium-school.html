@@ -1,103 +1,128 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>SpellRightPro – School Mode</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta name="color-scheme" content="light dark" />
+  <meta name="theme-color" content="#5a3ef2" />
+  <meta name="google-adsense-account" content="ca-pub-1894570090762726" />
 
-  <link rel="stylesheet" href="/css/styles.css" />
-  <link rel="stylesheet" href="/css/premium.css" />
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" />
+  <title>SpellRightPro — School Mode (Freemium)</title>
 
-  <!-- Firebase -->
-  <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore-compat.js"></script>
+  <link rel="preload" href="css/styles.css" as="style" />
+  <link rel="preload" href="css/premium.css" as="style" />
+  <link rel="stylesheet" href="css/styles.css" />
+  <link rel="stylesheet" href="css/premium.css" />
 
-  <script src="js/config.js"></script>
-
-  <!-- AdSense -->
+  <!-- AdSense Auto Ads -->
   <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-1894570090762726" crossorigin="anonymous"></script>
 </head>
-<body data-mode="school">
-  <header class="app-header gradient-header">
-    <div class="logo-area">
-      <img src="assets/logo.png" class="logo" alt="SpellRightPro Logo" />
-      <div>
-        <h1>SpellRightPro</h1>
-        <h2>School Mode</h2>
-      </div>
+
+<body>
+  <header class="navbar">
+    <div class="brand">
+      <img class="logo" src="assets/logo.png" alt="SpellRightPro" />
+      <span>SpellRightPro</span>
+      <small class="subtitle">School Mode</small>
     </div>
-    <nav>
-      <a href="index.html" class="btn-home"><i class="fa fa-home"></i> Home</a>
-      <a href="premium.html" class="btn-premium"><i class="fa fa-crown"></i> Premium</a>
-    </nav>
+
+    <div class="nav-actions">
+      <a class="btn btn-secondary" href="index.html">🏠 Home</a>
+      <a class="btn btn-primary" href="premium.html">👑 Premium</a>
+    </div>
   </header>
 
-  <!-- Top Ad -->
-  <section class="adsense-top">
-    <ins class="adsbygoogle"
-         style="display:block"
-         data-ad-client="ca-pub-1894570090762726"
-         data-ad-slot="7259876123"
-         data-ad-format="auto"
-         data-full-width-responsive="true"></ins>
-    <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
-  </section>
+  <main class="container">
+    <!-- TOP AD -->
+    <section class="ad-banner" data-ad-region="top"></section>
 
-  <main class="trainer-area">
-    <section class="intro-card">
-      <p>Upload or paste your classroom word list below. Practice by typing what you hear.</p>
-    </section>
+    <section class="training-card fade-in">
+      <h1 class="card-title">Classroom-friendly Spelling Trainer</h1>
 
-    <section class="custom-section">
-      <h3>Custom Words (one list per day)</h3>
-      <textarea id="customWords" placeholder="Paste words separated by commas/newlines"></textarea>
-      <div class="upload-row">
-        <input type="file" id="file-input" accept=".txt,.csv" />
-        <button id="useCustomList" class="btn-secondary">+ Use Custom List</button>
+      <div class="accent-picker" role="group" aria-label="Choose accent">
+        <button id="schAccentUS" class="accent-btn btn-mode active" type="button">🇺🇸 US</button>
+        <button id="schAccentUK" class="accent-btn btn-mode" type="button">🇬🇧 UK</button>
+        <button id="schAccentAU" class="accent-btn btn-mode" type="button">🇦🇺 AU</button>
+      </div>
+
+      <!-- Custom words -->
+      <div class="custom-words-section">
+        <label for="schCustomWords" class="section-label">Custom Words (one list per day)</label>
+        <textarea id="schCustomWords" placeholder="Paste words separated by commas/newlines"></textarea>
+
+        <div class="file-upload">
+          <label class="btn-upload" for="schFileInput">📄 Upload .txt/.csv</label>
+          <input id="schFileInput" type="file" accept=".txt,.csv" />
+        </div>
+
+        <button id="schUseCustomBtn" class="btn-secondary" type="button">➕ Use Custom List</button>
+      </div>
+
+      <!-- Trainer -->
+      <div id="schTrainer" class="trainer-area">
+        <div id="schProgress" class="word-progress">Word 1</div>
+
+        <div class="input-group">
+          <input id="schAnswer" class="form-control" type="text" inputmode="latin" autocomplete="off"
+                 placeholder="Type the word and press Enter…" />
+        </div>
+
+        <div class="button-group">
+          <button id="schSpeakBtn" class="btn-secondary" type="button">🔊 Say Again</button>
+          <button id="schPrevBtn" class="btn-secondary" type="button">← Prev</button>
+          <button id="schNextBtn" class="btn-secondary" type="button">→ Next</button>
+          <button id="schFlagBtn" class="btn-icon" type="button" aria-label="Flag word">🚩</button>
+          <button id="schSubmitBtn" class="btn-primary" type="button">✔ Submit</button>
+          <button id="schEndBtn" class="btn-secondary" type="button">⏹ End Session</button>
+        </div>
+
+        <button id="schStartBtn" class="btn-start" type="button">▶ Start Training</button>
+
+        <div id="schFeedback" class="feedback d-none" role="status" aria-live="polite"></div>
       </div>
     </section>
 
-    <section class="controls">
-      <button id="start" class="btn-primary"><i class="fa fa-play"></i> Start Training</button>
-      <input id="answer" type="text" class="form-control" placeholder="Type your spelling here" />
-      <button id="submit" class="btn-primary"><i class="fa fa-check"></i> Submit</button>
-      <button id="flag" class="btn-icon"><i class="fa fa-flag"></i></button>
-      <button id="end" class="btn-secondary"><i class="fa fa-stop"></i> End Session</button>
+    <!-- MID AD -->
+    <section class="ad-banner" data-ad-region="mid"></section>
+
+    <!-- Summary -->
+    <section id="schSummary" class="summary-area hidden" aria-labelledby="schSummaryTitle">
+      <div class="summary-header">
+        <h2 id="schSummaryTitle">Session Summary</h2>
+        <div class="score-display" id="schScore">0 / 0</div>
+        <div class="score-percent" id="schPercent">0%</div>
+      </div>
+
+      <div class="results-grid">
+        <article class="results-card correct">
+          <h3>✅ Correct</h3>
+          <div id="schCorrectList" class="word-list"></div>
+        </article>
+
+        <article class="results-card incorrect">
+          <h3>❌ Incorrect / 🚩 Flagged</h3>
+          <div id="schIncorrectList" class="word-list"></div>
+        </article>
+      </div>
+
+      <div class="summary-actions">
+        <button id="schRetryBtn" class="btn-secondary" type="button">↻ Try Again</button>
+        <button id="schReviewFlaggedBtn" class="btn-primary" type="button">🚩 Review Flagged</button>
+      </div>
     </section>
 
-    <section class="feedback-section">
-      <div id="progress"></div>
-      <div id="feedback"></div>
-    </section>
-
-    <!-- Mid Ad -->
-    <section class="adsense-mid">
-      <ins class="adsbygoogle"
-           style="display:block; text-align:center;"
-           data-ad-client="ca-pub-1894570090762726"
-           data-ad-slot="4847632215"
-           data-ad-format="auto"
-           data-full-width-responsive="true"></ins>
-      <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
-    </section>
-
-    <section class="summary-area hidden"></section>
+    <!-- BOTTOM AD -->
+    <section class="ad-banner" data-ad-region="bottom"></section>
   </main>
 
-  <!-- Bottom Ad -->
-  <footer class="footer gradient-footer">
-    <p>Freemium: one custom list per day. <a href="premium.html">Upgrade for unlimited lists and advanced stats.</a></p>
-    <ins class="adsbygoogle"
-         style="display:block"
-         data-ad-client="ca-pub-1894570090762726"
-         data-ad-slot="6427638123"
-         data-ad-format="auto"
-         data-full-width-responsive="true"></ins>
-    <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
+  <footer class="text-center mt-3 mb-3">
+    <a href="terms.html">Terms</a> ·
+    <a href="privacy.html">Privacy</a> ·
+    <a href="refund.html">Refund</a> ·
+    <a href="contact.html">Contact</a>
+    <div class="mt-2">© 2025 SpellRightPro</div>
   </footer>
 
-  <script src="js/main-freemium.js" defer></script>
+  <script defer src="js/main-freemium.js"></script>
 </body>
 </html>
