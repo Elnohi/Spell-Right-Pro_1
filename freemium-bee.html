@@ -1,131 +1,97 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>SpellRightPro – Spelling Bee (Freemium)</title>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>SpellRightPro – Bee Mode (Freemium)</title>
 
   <!-- Styles -->
-  <link rel="stylesheet" href="css/styles.css" />
-  <link rel="stylesheet" href="css/premium.css" />
-  <link rel="icon" type="image/png" href="assets/logo.png" />
+  <link rel="stylesheet" href="/css/styles.css"/>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"/>
 
   <!-- Google Fonts -->
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet"/>
 
   <!-- AdSense -->
-  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-1894570090762726" crossorigin="anonymous"></script>
-
-  <!-- Firebase -->
-  <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore-compat.js"></script>
-  <script src="js/config.js"></script>
-
-  <!-- Analytics -->
-  <script src="js/analytics.js" defer></script>
+  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-4670761653568502"
+    crossorigin="anonymous"></script>
 </head>
 
-<body class="freemium-bee">
-
-  <!-- ===== Header / Navbar ===== -->
-  <header class="topbar">
-    <div class="logo-area">
-      <img src="assets/logo.png" alt="SpellRightPro" class="logo" />
-      <h1>SpellRightPro</h1>
+<body class="bee-mode">
+  <header class="app-header">
+    <div class="logo">
+      <img src="/assets/logo.png" alt="SpellRightPro Logo"/>
+      <div>
+        <h1>SpellRightPro</h1>
+        <p>Bee Mode</p>
+      </div>
     </div>
-    <nav class="nav-links">
-      <a href="index.html">Home</a>
-      <a href="freemium-oet.html">OET</a>
-      <a href="freemium-school.html">School</a>
-      <a href="premium.html" class="upgrade-btn">Upgrade to Premium</a>
+    <nav class="top-nav">
+      <a href="/index.html" class="btn-home"><i class="fa fa-home"></i> Home</a>
+      <a href="/premium.html" class="btn-premium"><i class="fa fa-crown"></i> Premium</a>
     </nav>
   </header>
 
-  <!-- ===== Top Ad ===== -->
-  <div class="ad-banner top-ad">
-    <ins class="adsbygoogle"
-         style="display:block"
-         data-ad-client="ca-pub-1894570090762726"
-         data-ad-slot="7259876123"
-         data-ad-format="auto"
-         data-full-width-responsive="true"></ins>
-    <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
-  </div>
+  <main class="app-main">
+    <section class="intro">
+      <h2>Spelling Bee Practice 🐝</h2>
+      <p>Listen to each word and spell it aloud. The app will recognize your spoken spelling, mark it correct or incorrect, and automatically continue.</p>
+    </section>
 
-  <!-- ===== Main Content ===== -->
-  <main class="content-container">
-    <section class="bee-section card shadow-lg">
-      <h2 class="section-title">Spelling Bee Practice 🐝</h2>
+    <section class="practice-card">
+      <div class="practice-status">
+        <p id="wordProgress" data-role="progress">Word 1 of 20</p>
+        <p id="feedback" data-role="feedback">Press “Start Voice Session” to begin.</p>
+      </div>
 
-      <!-- Instructions -->
-      <p class="instruction">
-        Listen to each word and spell it aloud. The app will recognize your spoken spelling, mark it correct or incorrect, and automatically continue.
-      </p>
+      <div class="practice-buttons">
+        <button id="btnPrev" data-action="prev" class="btn btn-secondary"><i class="fa fa-arrow-left"></i> Prev</button>
+        <button id="btnSayAgain" data-action="say" class="btn btn-secondary"><i class="fa fa-volume-high"></i> Say Again</button>
+        <button id="btnNext" data-action="next" class="btn btn-secondary">Next <i class="fa fa-arrow-right"></i></button>
+      </div>
 
-      <!-- Progress & Feedback -->
-      <div id="beeProgress" class="progress-text">Ready?</div>
-      <div id="beeFeedback" class="feedback-text"></div>
+      <div class="session-controls">
+        <button id="btnStart" data-action="start" class="btn btn-primary"><i class="fa fa-play"></i> Start Voice Session</button>
+        <button id="btnFlag" data-action="flag" class="btn btn-warning"><i class="fa fa-flag"></i> Flag Word</button>
+        <button id="btnEnd" data-action="end" class="btn btn-danger"><i class="fa fa-stop"></i> End Session</button>
+      </div>
 
-      <!-- Controls -->
-      <div class="controls">
-        <button id="beeStartBtn" class="btn btn-primary"><i class="fa fa-play"></i> Start</button>
-        <button id="beePrevBtn" class="btn btn-secondary">Previous</button>
-        <button id="beeNextBtn" class="btn btn-secondary">Next</button>
-        <button id="beeFlagBtn" class="btn btn-warning"><i class="fa fa-flag"></i> Flag</button>
-        <button id="beeEndBtn" class="btn btn-danger"><i class="fa fa-stop"></i> End</button>
+      <div class="custom-list">
+        <h4>Custom Words (one list per day)</h4>
+        <textarea id="customWords" placeholder="Paste words separated by commas or new lines" rows="4"></textarea>
+        <div class="upload-group">
+          <label class="btn-upload">
+            <i class="fa fa-file-arrow-up"></i> Upload .txt/.csv
+            <input type="file" id="fileInput" accept=".txt,.csv" hidden>
+          </label>
+        </div>
       </div>
     </section>
 
-    <!-- ===== Mid Ad ===== -->
-    <div class="ad-banner mid-ad">
+    <!-- AdSense -->
+    <section class="ads-section">
       <ins class="adsbygoogle"
-           style="display:block"
-           data-ad-client="ca-pub-1894570090762726"
-           data-ad-slot="4847632215"
-           data-ad-format="auto"
-           data-full-width-responsive="true"></ins>
-      <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
-    </div>
-
-    <!-- ===== Summary Section ===== -->
-    <section id="beeSummary" class="card summary hidden">
-      <h3>Session Summary</h3>
-      <p>Score: <span id="beeScore">0/0</span> — Accuracy: <span id="beePercent">0%</span></p>
-
-      <div class="summary-lists">
-        <h4>Incorrect Words</h4>
-        <ul id="beeIncorrectList"></ul>
-      </div>
-
-      <div class="summary-actions">
-        <button id="beeRetryBtn" class="btn btn-primary"><i class="fa fa-refresh"></i> Retry</button>
-        <button id="beeReviewFlaggedBtn" class="btn btn-secondary"><i class="fa fa-flag"></i> Practice Flagged</button>
-      </div>
+          style="display:block; text-align:center; margin:20px auto;"
+          data-ad-layout="in-article"
+          data-ad-format="fluid"
+          data-ad-client="ca-pub-4670761653568502"
+          data-ad-slot="2489992273"></ins>
+      <script>
+        (adsbygoogle = window.adsbygoogle || []).push({});
+      </script>
     </section>
 
-    <!-- ===== Bottom Ad ===== -->
-    <div class="ad-banner bottom-ad">
-      <ins class="adsbygoogle"
-           style="display:block"
-           data-ad-client="ca-pub-1894570090762726"
-           data-ad-slot="6427638123"
-           data-ad-format="auto"
-           data-full-width-responsive="true"></ins>
-      <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
-    </div>
+    <section class="upgrade-banner">
+      <p>Freemium: one custom list per day. <a href="/premium.html" class="link-upgrade">Upgrade for unlimited lists and advanced stats</a>.</p>
+    </section>
   </main>
 
-  <!-- ===== Footer ===== -->
-  <footer class="footer">
-    <p>&copy; 2025 SpellRightPro | <a href="privacy.html">Privacy</a> | <a href="terms.html">Terms</a> | <a href="contact.html">Contact</a></p>
+  <footer class="app-footer">
+    <p>© 2025 SpellRightPro. All rights reserved.</p>
   </footer>
 
-  <!-- ===== JS Files ===== -->
-  <script src="js/audio-guards.js"></script>
-  <script src="js/main-freemium-bee.js" defer></script>
-
-  <!-- FontAwesome -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/js/all.min.js" crossorigin="anonymous"></script>
+  <!-- Scripts -->
+  <script src="/js/audio-guards.js"></script>
+  <script src="/js/main-freemium-bee.js"></script>
 </body>
 </html>
