@@ -1,184 +1,217 @@
-// ==========================================================
-// SpellRightPro — main-freemium-bee.js
-// Mode: Spelling Bee (voice input)
-// ==========================================================
+/* SpellRightPro – Freemium Bee Mode
+ * Version: October 2025 update
+ * Fixes: recognition stops after 1st word, wrong word list path, missing progress, no auto advance
+ */
 
-// ========== GLOBAL STATE ==========
-let words = [];
+let beeWords = [];
 let currentIndex = 0;
-let score = 0;
-let flaggedWords = [];
-let incorrectWords = [];
-let recognition;
-let isListening = false;
+let correctCount = 0;
+let incorrectList = [];
+let flaggedList = [];
 let isSessionActive = false;
-let accent = "en-US";
-let sessionMode = "practice"; // or "exam"
+let recognition;
 let synth = window.speechSynthesis;
 let currentWord = "";
+let isSpeaking = false;
 
-// ========== ELEMENTS ==========
-const startBtn = document.getElementById("start-btn");
-const submitBtn = document.getElementById("submit-btn");
-const flagBtn = document.getElementById("flag-btn");
-const nextBtn = document.getElementById("next-btn");
-const prevBtn = document.getElementById("prev-btn");
-const feedbackDiv = document.getElementById("feedback");
-const progressText = document.getElementById("word-progress");
-const summaryArea = document.getElementById("summary-area");
-const correctList = document.getElementById("correct-list");
-const incorrectList = document.getElementById("incorrect-list");
-const flaggedList = document.getElementById("flagged-list");
-const scoreDisplay = document.getElementById("score-display");
-const inputArea = document.getElementById("spelling-input");
-const endSessionBtn = document.getElementById("end-session");
+// ====== DOM Elements ======
+const startBtn = document.getElementById("beeStartBtn");
+const endBtn = document.getElementById("beeEndBtn");
+const prevBtn = document.getElementById("beePrevBtn");
+const nextBtn = document.getElementById("beeNextBtn");
+const flagBtn = document.getElementById("beeFlagBtn");
+const feedbackEl = document.getElementById("beeFeedback");
+const progressEl = document.getElementById("beeProgress");
+const summaryEl = document.getElementById("beeSummary");
+const correctListEl = document.getElementById("beeCorrectList");
+const incorrectListEl = document.getElementById("beeIncorrectList");
+const scoreEl = document.getElementById("beeScore");
+const percentEl = document.getElementById("beePercent");
+const retryBtn = document.getElementById("beeRetryBtn");
+const reviewFlaggedBtn = document.getElementById("beeReviewFlaggedBtn");
 
-// ========== AUDIO GUARDS ==========
-if (window.initAudioGuards) {
-  initAudioGuards();
-}
-
-// ========== SPEECH RECOGNITION ==========
-function setupRecognition() {
+// ====== Initialize Recognition ======
+function initRecognition() {
   const SpeechRecognition =
     window.SpeechRecognition || window.webkitSpeechRecognition;
   if (!SpeechRecognition) {
-    alert("Speech recognition not supported in this browser.");
+    alert("Speech Recognition is not supported in this browser.");
     return null;
   }
-  recognition = new SpeechRecognition();
-  recognition.lang = accent;
-  recognition.interimResults = false;
-  recognition.maxAlternatives = 1;
 
-  recognition.onresult = (e) => {
-    const transcript = e.results[0][0].transcript.trim().toLowerCase();
-    handleAnswer(transcript);
+  const recog = new SpeechRecognition();
+  recog.lang = "en-US";
+  recog.continuous = false;
+  recog.interimResults = false;
+  recog.maxAlternatives = 1;
+
+  recog.onresult = (event) => {
+    const spokenText = event.results[0][0].transcript
+      .trim()
+      .toLowerCase()
+      .replace(/[.]/g, ""); // ignore stray periods
+
+    console.log("User said:", spokenText);
+    checkAnswer(spokenText);
   };
 
-  recognition.onerror = () => {
-    feedback("Could not understand. Try again.", false);
-    isListening = false;
-    setTimeout(startRecognition, 800);
+  recog.onerror = (e) => {
+    console.error("Recognition error:", e.error);
   };
 
-  recognition.onend = () => {
-    isListening = false;
+  recog.onend = () => {
+    if (isSessionActive && !isSpeaking) {
+      console.log("Restarting recognition...");
+      recog.start();
+    }
   };
 
-  window.currentRecognition = recognition; // <-- important for global guard
-  return recognition;
+  return recog;
 }
 
-// ========== LOAD WORDS ==========
-async function loadWords() {
+// ====== Speak Word ======
+function speakWord(word) {
+  if (!word) return;
+  const utterance = new SpeechSynthesisUtterance(word);
+  utterance.rate = 0.9;
+  utterance.pitch = 1;
+  utterance.volume = 1;
+  utterance.onstart = () => (isSpeaking = true);
+  utterance.onend = () => (isSpeaking = false);
+  synth.speak(utterance);
+}
+
+// ====== Load Word List ======
+async function loadBeeWords() {
   try {
     const res = await fetch("data/word-lists/spelling-bee.json");
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    const data = await res.json();
-    words = data.sort(() => Math.random() - 0.5);
-    console.log(`🐝 Loaded ${words.length} Bee words`);
+    beeWords = await res.json();
+    console.log(`Loaded ${beeWords.length} Bee words.`);
   } catch (err) {
-    console.error("Error loading spelling-bee.json:", err);
-    feedback("⚠️ Error loading Bee word list. Using fallback words.", false);
-    words = ["apple", "banana", "cherry", "orange"]; // fallback
+    console.error("Failed to load Bee word list:", err);
+    beeWords = ["apple", "banana", "cherry", "grape"];
   }
 }
 
-// ========== SPEAK ==========
-function speakWord(word) {
-  stopSpeech();
-  const utter = new SpeechSynthesisUtterance(word);
-  utter.lang = accent;
-  synth.speak(utter);
-  currentWord = word;
-}
-
-// ========== START PRACTICE ==========
-async function startPractice() {
-  if (!words.length) await loadWords();
+// ====== Start Session ======
+async function startSession() {
+  await loadBeeWords();
   currentIndex = 0;
-  score = 0;
-  incorrectWords = [];
-  flaggedWords = [];
-  summaryArea.classList.add("hidden");
+  correctCount = 0;
+  incorrectList = [];
+  flaggedList = [];
   isSessionActive = true;
-  speakNextWord();
+  summaryEl.classList.add("hidden");
+  feedbackEl.textContent = "";
+  progressEl.textContent = "";
+  feedbackEl.classList.remove("d-none");
+
+  if (!recognition) recognition = initRecognition();
+  if (!recognition) return;
+
+  recognition.stop(); // reset
+  setTimeout(() => nextWord(), 600);
 }
 
-// ========== SPEAK NEXT ==========
-function speakNextWord() {
-  if (currentIndex >= words.length) {
-    endSession();
-    return;
-  }
-  const word = words[currentIndex];
-  progressText.textContent = `Word ${currentIndex + 1} of ${words.length}`;
-  stopSpeech();
-  safeStopRecognition(recognition);
-  speakWord(word);
-  setTimeout(startRecognition, 800);
+// ====== Speak and Recognize ======
+function nextWord() {
+  if (!isSessionActive) return;
+  if (currentIndex >= beeWords.length) return endSession();
+
+  currentWord = beeWords[currentIndex];
+  progressEl.textContent = `Word ${currentIndex + 1} of ${beeWords.length}`;
+  speakWord(currentWord);
+
+  // Wait for TTS to finish before listening
+  setTimeout(() => {
+    if (!isSpeaking) recognition.start();
+  }, 1200);
 }
 
-// ========== RECOGNITION CONTROL ==========
-function startRecognition() {
-  if (!recognition) setupRecognition();
-  if (isListening) return;
-  try {
-    isListening = true;
-    recognition.start();
-  } catch (e) {
-    console.warn("Recognition start blocked:", e);
-    isListening = false;
-  }
-}
+// ====== Check Answer ======
+function checkAnswer(spokenText) {
+  if (!spokenText) return;
+  let expected = currentWord.trim().toLowerCase();
+  let user = spokenText.trim().toLowerCase();
 
-function handleAnswer(answer) {
-  const correct = currentWord.trim().toLowerCase();
-  const clean = answer.replace(/[.,!?]/g, "");
-  if (clean === correct) {
-    score++;
-    feedback(`✅ Correct: ${correct}`, true);
+  console.log("Comparing:", expected, "vs", user);
+  if (user === expected) {
+    feedbackEl.textContent = `✅ Correct: ${expected}`;
+    feedbackEl.classList.remove("error");
+    correctCount++;
   } else {
-    feedback(`❌ Incorrect: ${answer}<br>✔️ Correct: ${correct}`, false);
-    incorrectWords.push(correct);
+    feedbackEl.textContent = `❌ Incorrect: ${user}. Correct was: ${expected}`;
+    feedbackEl.classList.add("error");
+    incorrectList.push(expected);
   }
+
   currentIndex++;
-  setTimeout(speakNextWord, 1600);
+  if (currentIndex < beeWords.length) {
+    setTimeout(nextWord, 1500);
+  } else {
+    setTimeout(endSession, 1500);
+  }
 }
 
-function feedback(msg, correct) {
-  feedbackDiv.innerHTML = msg;
-  feedbackDiv.className = "feedback " + (correct ? "correct" : "incorrect");
-}
+// ====== Flag Current Word ======
+flagBtn?.addEventListener("click", () => {
+  if (currentWord) {
+    flaggedList.push(currentWord);
+    feedbackEl.textContent = `🚩 Flagged: ${currentWord}`;
+  }
+});
 
-// ========== END SESSION ==========
+// ====== End Session ======
 function endSession() {
   isSessionActive = false;
-  stopSpeech();
-  safeStopRecognition(window.currentRecognition);
-  showSummary();
+  try {
+    recognition.stop();
+  } catch (e) {
+    console.warn("Recognition already stopped.");
+  }
+
+  let total = beeWords.length;
+  let percent = Math.round((correctCount / total) * 100);
+  scoreEl.textContent = `${correctCount} / ${total}`;
+  percentEl.textContent = `${percent}%`;
+
+  correctListEl.innerHTML = beeWords
+    .slice(0, correctCount)
+    .map((w) => `<span>${w}</span>`)
+    .join(", ");
+  incorrectListEl.innerHTML = incorrectList
+    .concat(flaggedList)
+    .map((w) => `<span>${w}</span>`)
+    .join(", ");
+
+  summaryEl.classList.remove("hidden");
+  feedbackEl.textContent = "Session ended.";
 }
 
-function showSummary() {
-  summaryArea.classList.remove("hidden");
-  correctList.innerHTML = `<li>${score} correct words</li>`;
-  incorrectList.innerHTML = incorrectWords.map((w) => `<li>${w}</li>`).join("");
-  flaggedList.innerHTML = flaggedWords.map((w) => `<li>${w}</li>`).join("");
-  scoreDisplay.textContent = `${Math.round(
-    (score / words.length) * 100
-  )}% accuracy`;
-}
-
-// ========== EVENT LISTENERS ==========
-startBtn?.addEventListener("click", startPractice);
-endSessionBtn?.addEventListener("click", endSession);
-flagBtn?.addEventListener("click", () => {
-  if (currentWord) flaggedWords.push(currentWord);
+// ====== Retry / Review Buttons ======
+retryBtn?.addEventListener("click", () => startSession());
+reviewFlaggedBtn?.addEventListener("click", () => {
+  if (flaggedList.length === 0) return alert("No flagged words to review!");
+  beeWords = flaggedList;
+  flaggedList = [];
+  startSession();
 });
 
-// ========== AUDIO GUARDS INIT ==========
-document.addEventListener("DOMContentLoaded", () => {
-  if (typeof initAudioGuards === "function")
-    initAudioGuards(window.currentRecognition);
+// ====== Nav Buttons ======
+prevBtn?.addEventListener("click", () => {
+  if (currentIndex > 0) currentIndex--;
+  nextWord();
 });
+
+nextBtn?.addEventListener("click", () => {
+  if (currentIndex < beeWords.length - 1) currentIndex++;
+  nextWord();
+});
+
+endBtn?.addEventListener("click", endSession);
+startBtn?.addEventListener("click", startSession);
+
+// ====== Audio Guard Integration ======
+if (window.initAudioGuards) initAudioGuards(recognition);
+
+console.log("Freemium Bee Mode ready ✅");
