@@ -1,4 +1,4 @@
-/* SpellRightPro – Freemium Bee Mode (Finalized October 2025)
+/* SpellRightPro – Freemium Bee Mode (2025-10)
    Fixes: first word freeze, no recognition, no next on click
 */
 
@@ -32,7 +32,7 @@ const reviewFlaggedBtn = document.getElementById("beeReviewFlaggedBtn");
 function initRecognition() {
   const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
   if (!SpeechRecognition) {
-    alert("Speech Recognition not supported in this browser.");
+    alert("Speech Recognition is not supported in this browser. Please use Chrome/Edge on desktop or Android.");
     return null;
   }
   const recog = new SpeechRecognition();
@@ -43,21 +43,20 @@ function initRecognition() {
 
   recog.onresult = (e) => {
     const result = e.results[0][0].transcript.trim().toLowerCase();
-    console.log("User said:", result);
     handleAnswer(result);
   };
 
   recog.onerror = (err) => {
     console.warn("Recognition error:", err.error);
-    // Retry after 1.5s if active
-    if (isSessionActive) setTimeout(() => startListening(), 1500);
+    // Retry gently during an active session
+    if (isSessionActive) setTimeout(() => startListening(), 1200);
   };
 
   recog.onend = () => {
     isListening = false;
     if (isSessionActive && !isSpeaking) {
-      console.log("Restarting recognition...");
-      setTimeout(() => startListening(), 1000);
+      // Keep listening between words while the session is active
+      setTimeout(() => startListening(), 800);
     }
   };
 
@@ -67,7 +66,10 @@ function initRecognition() {
 // === Speak Word ===
 function speakWord(word, callback) {
   const synth = window.speechSynthesis;
-  if (!synth) return;
+  if (!synth) {
+    callback?.();
+    return;
+  }
 
   const utter = new SpeechSynthesisUtterance(word);
   utter.rate = 0.9;
@@ -77,22 +79,24 @@ function speakWord(word, callback) {
 
   utter.onend = () => {
     isSpeaking = false;
-    if (callback) callback();
+    callback?.();
   };
 
-  synth.cancel(); // Clear queue
+  // Clear any queued utterances then speak
+  try { synth.cancel(); } catch {}
   synth.speak(utter);
 }
 
-// === Load Words ===
+// === Load Bee Words ===
 async function loadBeeWords() {
   try {
-    const res = await fetch("data/word-lists/spelling-bee.json");
+    const res = await fetch("data/word-lists/spelling-bee.json", { cache: "no-store" });
     beeWords = await res.json();
+    if (!Array.isArray(beeWords) || beeWords.length === 0) throw new Error("Empty list");
     console.log(`Bee words loaded: ${beeWords.length}`);
   } catch (e) {
     console.error("Word list load failed:", e);
-    beeWords = ["apple", "banana", "cherry"];
+    beeWords = ["apple", "banana", "cherry"]; // safe fallback
   }
 }
 
@@ -108,17 +112,16 @@ async function startSession() {
   correctCount = 0;
   incorrectList = [];
   flaggedList = [];
-  summaryEl.classList.add("hidden");
+  summaryEl?.classList.add("hidden");
   feedbackEl.textContent = "";
   isSessionActive = true;
 
-  console.log("Session started.");
   nextWord();
 }
 
 function endSession() {
   isSessionActive = false;
-  try { recognition.stop(); } catch {}
+  try { recognition?.stop(); } catch {}
   showSummary();
 }
 
@@ -129,21 +132,22 @@ function nextWord() {
 
   const word = beeWords[currentIndex];
   progressEl.textContent = `Word ${currentIndex + 1} of ${beeWords.length}`;
-  feedbackEl.textContent = "Listen carefully...";
+  feedbackEl.textContent = "Listen carefully…";
 
   speakWord(word, () => {
-    console.log("Speaking done, now listening...");
     startListening();
   });
 }
 
 function startListening() {
   if (!isSessionActive || !recognition) return;
+
   try {
     recognition.stop(); // ensure clean state
+  } catch {}
+  try {
     recognition.start();
     isListening = true;
-    console.log("Listening...");
   } catch (err) {
     console.warn("Could not start recognition:", err);
   }
@@ -160,12 +164,12 @@ function handleAnswer(spoken) {
     correctCount++;
   } else {
     feedbackEl.textContent = `❌ Incorrect: ${user} → ${expected}`;
-    incorrectList.push(expected);
+    if (!incorrectList.includes(expected)) incorrectList.push(expected);
   }
 
   currentIndex++;
   if (currentIndex < beeWords.length) {
-    setTimeout(nextWord, 1500);
+    setTimeout(nextWord, 1000);
   } else {
     endSession();
   }
@@ -180,15 +184,12 @@ flagBtn?.addEventListener("click", () => {
 
 function showSummary() {
   const total = beeWords.length;
-  const percent = Math.round((correctCount / total) * 100);
+  const percent = total ? Math.round((correctCount / total) * 100) : 0;
   scoreEl.textContent = `${correctCount}/${total}`;
   percentEl.textContent = `${percent}%`;
-  correctListEl.innerHTML = beeWords
-    .slice(0, correctCount)
-    .map((w) => `<span>${w}</span>`)
-    .join(", ");
-  incorrectListEl.innerHTML = incorrectList.map((w) => `<span>${w}</span>`).join(", ");
-  summaryEl.classList.remove("hidden");
+
+  incorrectListEl.innerHTML = incorrectList.map((w) => `<li>${w}</li>`).join("");
+  summaryEl?.classList.remove("hidden");
   feedbackEl.textContent = "Session complete.";
 }
 
@@ -197,26 +198,26 @@ startBtn?.addEventListener("click", startSession);
 endBtn?.addEventListener("click", endSession);
 nextBtn?.addEventListener("click", () => {
   if (!isSessionActive) return;
-  recognition?.stop();
+  try { recognition?.stop(); } catch {}
   currentIndex++;
   if (currentIndex >= beeWords.length) return endSession();
   nextWord();
 });
 prevBtn?.addEventListener("click", () => {
   if (!isSessionActive) return;
-  recognition?.stop();
+  try { recognition?.stop(); } catch {}
   if (currentIndex > 0) currentIndex--;
   nextWord();
 });
 retryBtn?.addEventListener("click", startSession);
 reviewFlaggedBtn?.addEventListener("click", () => {
   if (!flaggedList.length) return alert("No flagged words.");
-  beeWords = flaggedList;
+  beeWords = [...flaggedList];
   flaggedList = [];
   startSession();
 });
 
-// === Audio Guards (optional) ===
+// === Audio Guards Hook ===
 if (window.initAudioGuards) initAudioGuards(recognition);
 
 console.log("Bee Mode Ready ✅");
