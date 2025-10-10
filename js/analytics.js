@@ -1,66 +1,49 @@
-import { analytics } from './firebase-config.js';
+// ==========================================================
+// SpellRightPro – Analytics Configuration
+// ==========================================================
 
-const startTime = Date.now();
-let sessionWords = [];
-let performanceMetrics = {
-  timePerWord: [],
-  retriesPerWord: []
+window.dataLayer = window.dataLayer || [];
+function gtag(){dataLayer.push(arguments);}
+gtag('js', new Date());
+gtag('config', 'G-H09MF13297');
+
+// Custom event tracking
+function trackEvent(eventName, eventCategory, eventLabel) {
+  if (typeof gtag !== 'undefined') {
+    gtag('event', eventName, {
+      'event_category': eventCategory,
+      'event_label': eventLabel
+    });
+  }
+  console.log(`📊 Analytics Event: ${eventCategory} - ${eventName} - ${eventLabel}`);
+}
+
+// Track page views
+function trackPageView(pageTitle) {
+  if (typeof gtag !== 'undefined') {
+    gtag('event', 'page_view', {
+      'page_title': pageTitle,
+      'page_location': window.location.href
+    });
+  }
+}
+
+// Track mode usage
+function trackModeUsage(mode, action) {
+  trackEvent(action, 'mode_usage', mode);
+}
+
+// Track session events
+function trackSessionEvent(sessionType, wordCount, score) {
+  trackEvent('session_complete', 'training', `${sessionType}_${wordCount}_${score}`);
+}
+
+// Export for use in other scripts
+window.SpellRightAnalytics = {
+  trackEvent,
+  trackPageView,
+  trackModeUsage,
+  trackSessionEvent
 };
 
-export function trackEvent(eventName, params = {}) {
-  const enhancedParams = {
-    ...params,
-    sessionDuration: (Date.now() - startTime) / 1000,
-    darkMode: localStorage.getItem('darkMode') === 'enabled',
-    userAgent: navigator.userAgent
-  };
-  
-  analytics.logEvent(eventName, enhancedParams);
-  
-  if (eventName === 'word_answered') {
-    sessionWords.push(params.word);
-    if (params.status === 'incorrect') {
-      performanceMetrics.retriesPerWord.push({
-        word: params.word,
-        attempts: 1
-      });
-    }
-  }
-  
-  if (eventName === 'word_spoken') {
-    performanceMetrics.timePerWord.push({
-      word: params.word,
-      timestamp: Date.now()
-    });
-  }
-  
-  if (eventName === 'session_completed') {
-    const avgTimePerWord = performanceMetrics.timePerWord.length > 1 ? 
-      (performanceMetrics.timePerWord[performanceMetrics.timePerWord.length - 1].timestamp - 
-       performanceMetrics.timePerWord[0].timestamp) / performanceMetrics.timePerWord.length : 0;
-    
-    trackEvent('session_performance', {
-      avgTimePerWord,
-      uniqueWords: [...new Set(sessionWords)].length,
-      retries: performanceMetrics.retriesPerWord.length
-    });
-    
-    sessionWords = [];
-    performanceMetrics = {
-      timePerWord: [],
-      retriesPerWord: []
-    };
-  }
-}
-
-export function trackError(error, context = {}) {
-  trackEvent('error_occurred', {
-    error_message: error.message,
-    error_stack: error.stack,
-    ...context
-  });
-  
-  if (window.console && console.error) {
-    console.error(error);
-  }
-}
+console.log("✅ Analytics configured");
