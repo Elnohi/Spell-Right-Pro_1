@@ -1,7 +1,7 @@
 /*!
  * main-freemium.js
  * Unified Freemium logic for Bee, OET, and School modes
- * Detects mode via <body data-mode="">
+ * Auto-advance after correct response (2s delay)
  */
 
 (function () {
@@ -88,10 +88,17 @@
         const normalized = said.replace(/[^\p{L}]+/gu, "");
         const target = targetWord.toLowerCase().replace(/[^\p{L}]+/gu, "");
         const ok = normalized === target;
+
         els.feedback.textContent = ok
-          ? "✅ Correct"
+          ? "✅ Correct (voice)"
           : `❌ Incorrect — ${targetWord}`;
         (ok ? state.correct : state.incorrect).push(targetWord);
+
+        // auto-advance after 2s if correct
+        if (ok && (state.mode === "oet" || state.mode === "school")) {
+          setTimeout(next, 2000);
+        }
+
         resolve(ok);
       };
 
@@ -129,7 +136,6 @@
     els.feedback.textContent = "🎧 Listen carefully...";
     await speakWord(word);
 
-    // In OET/School, allow typing in textarea
     if (state.mode === "bee") {
       await recognizeSpeech(word);
       next();
@@ -139,7 +145,6 @@
       els.input.value = "";
       els.input.focus();
 
-      // Wait for typing
       els.input.onkeydown = async (e) => {
         if (e.key === "Enter") {
           e.preventDefault();
@@ -147,14 +152,14 @@
           const target = word.toLowerCase();
           const ok = typed === target;
           els.feedback.textContent = ok
-            ? "✅ Correct"
+            ? "✅ Correct (typed)"
             : `❌ Incorrect — ${word}`;
           (ok ? state.correct : state.incorrect).push(word);
-          next();
+          if (ok) setTimeout(next, 2000); // auto-advance after 2s
+          else next();
         }
       };
 
-      // Also trigger voice
       await recognizeSpeech(word);
     }
   }
