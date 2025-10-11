@@ -1,59 +1,54 @@
-<script>
 /*!
  * audio-guards.js
- * A tiny singleton to safely share / guard audio resources across pages.
- * Works in plain <script> (no modules). Exposes window.AudioGuards.
+ * Lightweight cross-browser wrapper for SpeechRecognition
+ * Used by all freemium and premium SpellRightPro modes.
  */
-(function (w) {
-  if (w.AudioGuards) return; // already loaded
 
-  const SUPPORTED =
-    'SpeechRecognition' in w || 'webkitSpeechRecognition' in w;
+window.AudioGuards = (function () {
+  const guards = {};
+  const SpeechRecognition =
+    window.SpeechRecognition || window.webkitSpeechRecognition;
 
-  let recognition = null;
-  let _primed = false;
+  let activeRecognition = null;
 
   function primeAudio() {
-    if (_primed) return Promise.resolve();
-    _primed = true;
-    // request mic permission once up-front to avoid blocked starts
-    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-      console.warn('Mic API not available');
-      return Promise.resolve();
+    console.log("Audio guards active");
+    if (!SpeechRecognition) {
+      console.warn("SpeechRecognition not supported in this browser.");
+      return;
     }
-    return navigator.mediaDevices.getUserMedia({ audio: true })
-      .then(() => console.log('[AudioGuards] mic primed'))
-      .catch(() => {
-        _primed = false;
-        alert('Please allow microphone access for voice spelling.');
-      });
+    // Preload a silent utterance to activate audio permissions (Chrome fix)
+    const utter = new SpeechSynthesisUtterance("Ready");
+    utter.volume = 0;
+    try {
+      speechSynthesis.speak(utter);
+    } catch (_) {}
   }
 
   function getRecognition() {
-    if (!SUPPORTED) return null;
-    if (recognition) return recognition;
-
-    const SR = w.SpeechRecognition || w.webkitSpeechRecognition;
-    recognition = new SR();
-    recognition.lang = 'en-US';          // can be changed by caller
-    recognition.interimResults = false;
-    recognition.maxAlternatives = 1;
-
-    return recognition;
+    if (!SpeechRecognition) return null;
+    if (activeRecognition) return activeRecognition;
+    try {
+      const rec = new SpeechRecognition();
+      rec.continuous = false;
+      rec.interimResults = false;
+      rec.lang = "en-US";
+      activeRecognition = rec;
+      return rec;
+    } catch (err) {
+      console.error("Failed to create recognition:", err);
+      return null;
+    }
   }
 
   function stopAll() {
-    try { if (recognition) recognition.stop(); } catch(e){}
-    try { if (window.speechSynthesis) speechSynthesis.cancel(); } catch(e){}
+    if (activeRecognition) {
+      try {
+        activeRecognition.stop();
+      } catch (_) {}
+      activeRecognition = null;
+    }
   }
 
-  w.AudioGuards = {
-    supported: SUPPORTED,
-    primeAudio,
-    getRecognition,
-    stopAll
-  };
-
-  console.log('🔊 Audio guards active');
-})(window);
-</script>
+  return { primeAudio, getRecognition, stopAll };
+})();
