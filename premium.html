@@ -1,68 +1,71 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>SpellRightPro Premium</title>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>SpellRightPro — Premium</title>
 
-  <!-- Styles -->
-  <link rel="stylesheet" href="css/premium.css" />
-  <link rel="icon" type="image/png" href="assets/logo.png" />
+  <link rel="stylesheet" href="/css/premium.css"/>
 
-  <!-- Firebase -->
+  <!-- Firebase (compat) -->
   <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore-compat.js"></script>
 
-  <!-- Google Analytics -->
+  <!-- GA -->
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-H09MF13297"></script>
   <script>
-    window.dataLayer = window.dataLayer || [];
-    function gtag(){dataLayer.push(arguments);}
-    gtag('js', new Date());
-    gtag('config', 'G-H09MF13297');
+    window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments)}
+    gtag('js', new Date()); gtag('config', 'G-H09MF13297');
   </script>
 
-  <!-- AdSense -->
-  <script async
-    src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-4670761653568502"
-    crossorigin="anonymous"></script>
+  <style>
+    /* Glass overlay for login */
+    .glass-backdrop{
+      position:fixed;inset:0;background:rgba(10,10,20,.55);
+      backdrop-filter: blur(10px); display:none; align-items:center;justify-content:center; z-index:9999;
+    }
+    .glass-card{
+      width:min(92vw,440px); background:rgba(255,255,255,.08);
+      border:1px solid rgba(255,255,255,.25); color:#fff; border-radius:18px; padding:22px 18px;
+      box-shadow:0 20px 60px rgba(0,0,0,.4)
+    }
+    .glass-card h3{margin:.2rem 0 0.5rem;font-size:1.4rem}
+    .glass-card p{opacity:.9;margin:.2rem 0 1rem}
+    .glass-card input{
+      width:100%; padding:12px 14px; border-radius:12px; border:1px solid rgba(255,255,255,.35);
+      background:rgba(0,0,0,.25); color:#fff; margin:.35rem 0 .6rem
+    }
+    .glass-card button{
+      width:100%; padding:12px 14px; border:none; border-radius:12px; cursor:pointer;
+      font-weight:700; margin-top:.4rem;
+      background:linear-gradient(135deg,#7b2ff7,#f107a3); color:#fff;
+    }
+    .muted-link{display:inline-block;margin-top:.5rem;opacity:.85;cursor:pointer}
+  </style>
 </head>
-
 <body data-mode="premium">
-
   <!-- Header -->
   <header>
-    <img src="assets/logo.png" alt="SpellRightPro Logo" />
+    <img src="/assets/logo.png" alt="SpellRightPro Logo"/>
     <h1>SpellRightPro Premium</h1>
-    <button class="nav-btn" onclick="window.location.href='index.html'">Home</button>
+    <div>
+      <button class="nav-btn" onclick="location.href='/index.html'">Home</button>
+      <button id="btnDarkMode" class="nav-btn" aria-pressed="false" title="Toggle dark mode">🌙</button>
+    </div>
   </header>
 
-  <!-- Main Container -->
+  <!-- Main -->
   <main>
     <h2>Premium Spelling Practice</h2>
-    <p class="subtitle">Advanced tools, personalized learning, and no ads.</p>
+    <p class="subtitle">Advanced tools, personalized learning — and no ads.</p>
 
-    <!-- AdSense Top -->
-    <div class="ad-container">
-      <ins class="adsbygoogle"
-           style="display:block"
-           data-ad-client="ca-pub-4670761653568502"
-           data-ad-slot="7587629391"
-           data-ad-format="auto"
-           data-full-width-responsive="true"></ins>
-      <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
-    </div>
-
-    <!-- Training Card -->
-    <section class="main-card">
+    <section class="main-card" style="width:100%;max-width:720px">
       <div id="wordProgress">Word 0 of 0</div>
-      <div id="feedback">Welcome to Premium Mode</div>
+      <div id="feedback">Sign in to start your premium session.</div>
 
-      <!-- Typing Area -->
       <textarea id="userInput" placeholder="Type the spelling here..."></textarea>
 
-      <!-- Controls -->
       <div class="controls">
         <button id="btnStart">Start</button>
         <button id="btnSayAgain">Say Again</button>
@@ -71,38 +74,128 @@
         <button id="btnFlag">Flag</button>
         <button id="btnEnd">End Session</button>
       </div>
+
+      <div id="summary" class="summary-box" style="display:none;">
+        <h3>Session Summary</h3>
+        <p id="summaryContent"></p>
+      </div>
     </section>
-
-    <!-- Summary -->
-    <div id="summary" class="summary-box" style="display:none;">
-      <h3>Session Summary</h3>
-      <p id="summaryContent"></p>
-    </div>
-
-    <!-- AdSense Bottom -->
-    <div class="ad-container">
-      <ins class="adsbygoogle"
-           style="display:block"
-           data-ad-client="ca-pub-4670761653568502"
-           data-ad-slot="1265398320"
-           data-ad-format="auto"
-           data-full-width-responsive="true"></ins>
-      <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
-    </div>
   </main>
 
   <footer>© 2025 SpellRightPro — All rights reserved.</footer>
 
-  <!-- Firebase Config -->
-  <script src="js/config.js"></script>
+  <!-- Glass Login Overlay -->
+  <div id="loginOverlay" class="glass-backdrop" role="dialog" aria-modal="true" aria-labelledby="loginTitle">
+    <div class="glass-card">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px">
+        <img src="/assets/logo.png" alt="" style="height:46px;width:auto;border-radius:10px"/>
+        <div>
+          <h3 id="loginTitle" style="margin:0">Welcome to Premium</h3>
+          <p style="margin:0;opacity:.85">Sign in to unlock full features</p>
+        </div>
+      </div>
 
-  <!-- App Logic -->
-  <script src="js/audio-guards.js"></script>
-  <script src="js/main-premium.js"></script>
+      <input id="email" type="email" placeholder="Email"/>
+      <input id="password" type="password" placeholder="Password"/>
+      <button id="btnLoginEmail">Sign in</button>
+      <button id="btnGoogle" style="margin-top:10px;background:#fff;color:#111">Sign in with Google</button>
 
-  <!-- Service Worker -->
+      <div style="display:flex;justify-content:space-between">
+        <span id="linkCreate" class="muted-link">Create account</span>
+        <span id="linkReset" class="muted-link">Forgot password?</span>
+      </div>
+      <div id="loginMsg" style="margin-top:.5rem;min-height:1.2rem;opacity:.95"></div>
+    </div>
+  </div>
+
+  <!-- Config & App Scripts -->
+  <script src="/js/config.js"></script>
+  <script src="/js/audio-guards.js"></script>
+  <script src="/js/main-premium.js"></script>
+
+  <!-- UI wiring: dark mode + auth overlay -->
   <script>
-    if ('serviceWorker' in navigator) {
+    // Dark mode
+    (function(){
+      const btn = document.getElementById('btnDarkMode');
+      const key = 'srp-dark';
+      const apply = v => document.body.classList.toggle('dark-mode', v);
+      apply(localStorage.getItem(key)==='1');
+      btn.setAttribute('aria-pressed', localStorage.getItem(key)==='1');
+      btn.addEventListener('click', ()=>{
+        const v = !(localStorage.getItem(key)==='1');
+        localStorage.setItem(key, v?'1':'0');
+        btn.setAttribute('aria-pressed', v);
+        apply(v);
+      });
+    })();
+
+    // Firebase Auth UI for premium
+    (function(){
+      if(!firebase || !firebase.auth) return;
+
+      const overlay = document.getElementById('loginOverlay');
+      const msg = document.getElementById('loginMsg');
+      const email = document.getElementById('email');
+      const password = document.getElementById('password');
+      const btnEmail = document.getElementById('btnLoginEmail');
+      const btnGoogle = document.getElementById('btnGoogle');
+      const linkCreate = document.getElementById('linkCreate');
+      const linkReset = document.getElementById('linkReset');
+
+      const showOverlay = (on) => { overlay.style.display = on ? 'flex' : 'none'; };
+
+      firebase.auth().onAuthStateChanged(user => {
+        showOverlay(!user);
+        if(user){
+          document.getElementById('feedback').textContent = 'Welcome back — press Start to begin.';
+        } else {
+          msg.textContent = '';
+        }
+      });
+
+      btnEmail.addEventListener('click', async ()=>{
+        msg.textContent = 'Signing in...';
+        try {
+          await firebase.auth().signInWithEmailAndPassword(email.value.trim(), password.value.trim());
+          msg.textContent = 'Signed in.';
+        } catch(err){
+          msg.textContent = err && err.message ? err.message : 'Sign-in failed.';
+        }
+      });
+
+      btnGoogle.addEventListener('click', async ()=>{
+        msg.textContent = 'Signing in with Google...';
+        try {
+          const provider = new firebase.auth.GoogleAuthProvider();
+          await firebase.auth().signInWithPopup(provider);
+          msg.textContent = 'Signed in with Google.';
+        } catch(err){
+          msg.textContent = err && err.message ? err.message : 'Google sign-in failed.';
+        }
+      });
+
+      linkCreate.addEventListener('click', async ()=>{
+        if(!email.value || !password.value){ msg.textContent='Enter email & password first.'; return; }
+        try{
+          await firebase.auth().createUserWithEmailAndPassword(email.value.trim(), password.value.trim());
+          msg.textContent='Account created.';
+        }catch(err){ msg.textContent=err.message || 'Sign-up failed.'; }
+      });
+
+      linkReset.addEventListener('click', async ()=>{
+        if(!email.value){ msg.textContent='Enter your email above first.'; return; }
+        try{
+          await firebase.auth().sendPasswordResetEmail(email.value.trim());
+          msg.textContent='Password reset email sent.';
+        }catch(err){ msg.textContent=err.message || 'Reset failed.'; }
+      });
+    })();
+  </script>
+
+  <!-- Service Worker registration -->
+  <script>
+    if('serviceWorker' in navigator){
       navigator.serviceWorker.register('/sw.js').catch(console.error);
     }
   </script>
