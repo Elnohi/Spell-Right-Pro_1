@@ -1,114 +1,237 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="light">
+<html lang="en">
 <head>
-  <meta charset="UTF-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>SpellRightPro – Choose Your Practice</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SpellRightPro — Home</title>
 
-  <!-- PWA -->
-  <link rel="manifest" href="manifest.json">
+  <link rel="stylesheet" href="/css/styles.css" />
+  <link rel="icon" type="image/png" href="/assets/logo.png" />
 
-  <!-- Styles & Icons -->
-  <link rel="stylesheet" href="css/styles.css"/>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"/>
+  <!-- Google AdSense -->
+  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-4670761653568502" crossorigin="anonymous"></script>
 
-  <!-- Firebase (compat) + Analytics -->
-  <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-analytics-compat.js"></script>
-  <script src="js/config.js" defer></script>
+  <!-- Google Analytics -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-H09MF13297"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){ dataLayer.push(arguments); }
+    gtag('js', new Date());
+    gtag('config', 'G-H09MF13297');
+  </script>
 
-  <!-- AdSense -->
-  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7632930282249669" crossorigin="anonymous"></script>
+  <style>
+    /* Navigation */
+    header.navbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 18px;
+      background: var(--primary-light);
+      box-shadow: var(--shadow);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .brand .logo {
+      max-height: 60px;
+      width: auto;
+      object-fit: contain;
+      border-radius: 8px;
+    }
+
+    .brand span {
+      display: block;
+      line-height: 1.2;
+      color: var(--dark);
+      font-weight: 700;
+    }
+
+    .brand .subtitle {
+      font-size: 0.85rem;
+      color: var(--gray);
+      font-weight: 400;
+    }
+
+    .nav-actions button {
+      background: var(--primary);
+      color: #fff;
+      border: none;
+      padding: 8px 14px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 600;
+      margin-left: 10px;
+      transition: background 0.2s;
+    }
+
+    .nav-actions button:hover {
+      background: var(--primary-dark);
+    }
+
+    /* Hero Section */
+    main.hero {
+      text-align: center;
+      padding: 80px 16px 40px;
+      color: var(--dark);
+    }
+
+    main.hero h1 {
+      font-size: 2.2rem;
+      margin-bottom: 12px;
+      color: var(--primary-dark);
+    }
+
+    main.hero p {
+      font-size: 1.1rem;
+      color: var(--gray);
+      max-width: 600px;
+      margin: 0 auto 32px;
+    }
+
+    .mode-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+      gap: 20px;
+      max-width: 900px;
+      margin: 0 auto;
+    }
+
+    .mode-card {
+      background: #fff;
+      border-radius: 12px;
+      box-shadow: var(--shadow-md);
+      padding: 20px;
+      transition: transform 0.25s ease, box-shadow 0.25s ease;
+      cursor: pointer;
+    }
+
+    .mode-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+    }
+
+    .mode-card h3 {
+      color: var(--primary-dark);
+      margin-bottom: 8px;
+    }
+
+    .mode-card p {
+      color: var(--gray);
+      font-size: 0.95rem;
+    }
+
+    footer {
+      text-align: center;
+      padding: 20px;
+      font-size: 0.9rem;
+      color: var(--gray);
+    }
+
+    /* Dark Mode */
+    body.dark-mode {
+      background: var(--dark);
+      color: #eee;
+    }
+
+    body.dark-mode main.hero h1 {
+      color: var(--light);
+    }
+
+    body.dark-mode .mode-card {
+      background: #2b2b3c;
+      color: #eee;
+    }
+
+    body.dark-mode .mode-card h3 {
+      color: var(--success);
+    }
+
+    body.dark-mode .brand span {
+      color: var(--light);
+    }
+
+    @media (max-width: 768px) {
+      .brand .logo {
+        max-height: 45px;
+      }
+      main.hero {
+        padding-top: 60px;
+      }
+    }
+  </style>
 </head>
+
 <body>
-<script>
-  const params = new URLSearchParams(window.location.search);
-  if (params.get("login") === "required") {
-    alert("🔐 Please sign in to access SpellRightPro Premium features.");
-  }
-</script>
-
-<nav class="navbar">
-  <div class="brand">
-    <img src="assets/logo.png" class="logo" alt="SpellRightPro Logo" loading="lazy"/>
-    <div>
-      <span>SpellRightPro</span>
-      <span class="subtitle">Spelling Trainer</span>
+  <!-- Navigation -->
+  <header class="navbar">
+    <div class="brand">
+      <img src="/assets/logo.png" class="logo" alt="SpellRightPro Logo" />
+      <div>
+        <span>SpellRightPro</span>
+        <span class="subtitle">Spelling Confidence, Simplified</span>
+      </div>
     </div>
-  </div>
-  <div class="nav-actions">
-    <a class="btn-primary" href="premium.html"><i class="fa fa-crown"></i> Premium</a>
-  </div>
-</nav>
+    <nav class="nav-actions">
+      <button onclick="window.location.href='/premium.html'">Premium</button>
+      <button id="btnDarkMode" aria-pressed="false" title="Toggle dark mode">🌙</button>
+    </nav>
+  </header>
 
-<div class="ad-container">
-  <div class="ad-label">Advertisement</div>
-  <ins class="adsbygoogle"
-       style="display:block"
-       data-ad-client="ca-pub-7632930282249669"
-       data-ad-slot="3344556677"
-       data-ad-format="auto"
-       data-full-width-responsive="true"></ins>
-  <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
-</div>
+  <!-- Hero Section -->
+  <main class="hero">
+    <h1>Welcome to SpellRightPro</h1>
+    <p>Master spelling with smart voice recognition and interactive modes for students, professionals, and Spelling Bee champions!</p>
 
-<main class="container">
-  <section class="training-card">
-    <h1 class="card-title">Choose Your Practice</h1>
-    <p class="muted">Start with the mode that suits you best.</p>
+    <div class="mode-grid">
+      <div class="mode-card" onclick="window.location.href='/freemium-bee.html'">
+        <h3>🐝 Spelling Bee Mode</h3>
+        <p>Speak and spell hands-free. Designed for competitions and fun practice.</p>
+      </div>
 
-    <div class="mode-grid" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px;">
-      <a class="card link-card" href="freemium-bee.html">
-        <h3><i class="fa fa-microphone"></i> Spelling Bee</h3>
-        <p>Hands-free voice practice with letter pad.</p>
-      </a>
-      <a class="card link-card" href="freemium-oet.html">
-        <h3><i class="fa fa-stethoscope"></i> OET</h3>
-        <p>Healthcare words aligned to OET practice.</p>
-      </a>
-      <a class="card link-card" href="freemium-school.html">
-        <h3><i class="fa fa-graduation-cap"></i> School</h3>
-        <p>Upload lists and practice classroom sets.</p>
-      </a>
+      <div class="mode-card" onclick="window.location.href='/freemium-school.html'">
+        <h3>🏫 School Mode</h3>
+        <p>Train students interactively with immediate feedback and progress tracking.</p>
+      </div>
+
+      <div class="mode-card" onclick="window.location.href='/freemium-oet.html'">
+        <h3>⚕️ OET Mode</h3>
+        <p>Focus on medical and healthcare spelling words for OET and IELTS exams.</p>
+      </div>
+
+      <div class="mode-card" onclick="window.location.href='/premium.html'">
+        <h3>💎 Premium</h3>
+        <p>Access full word banks, streak tracking, stats, and ad-free experience.</p>
+      </div>
     </div>
+  </main>
 
-    <div class="info-box" style="margin-top:16px">
-      <p>Freemium: one custom list per day. <a href="premium.html">Upgrade</a> for unlimited lists and advanced stats.</p>
-    </div>
-  </section>
-</main>
+  <footer>
+    © 2025 SpellRightPro — All Rights Reserved.
+  </footer>
 
-<footer style="margin:24px 0; text-align:center; font-size:.95rem;">
-  <a href="terms.html">Terms</a> •
-  <a href="privacy.html">Privacy</a> •
-  <a href="refund.html">Refund Policy</a> •
-  <a href="contact.html">Contact</a>
-</footer>
-
-<!-- ===== Connection Status Toast ===== -->
-<div id="connection-toast" class="connection-toast hidden">
-  <i class="fa fa-wifi-slash"></i> You’re offline — working in cached mode
-</div>
-
-<script>
-  const toast = document.getElementById('connection-toast');
-  function showToast(message, isOnline = true) {
-    toast.textContent = message;
-    toast.classList.remove('hidden');
-    toast.classList.toggle('offline', !isOnline);
-    toast.classList.toggle('online', isOnline);
-    setTimeout(() => toast.classList.add('hidden'), 4000);
-  }
-  window.addEventListener('offline', () => showToast("⚠ You're offline — working in cached mode", false));
-  window.addEventListener('online', () => showToast("✅ Back online — syncing restored", true));
-</script>
-
-<script>
-  if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('sw.js').catch(console.warn);
-  }
-</script>
+  <!-- Dark Mode Toggle -->
+  <script>
+    (function () {
+      const btn = document.getElementById("btnDarkMode");
+      const key = "srp-dark";
+      const apply = (v) => document.body.classList.toggle("dark-mode", v);
+      apply(localStorage.getItem(key) === "1");
+      btn.setAttribute("aria-pressed", localStorage.getItem(key) === "1");
+      btn.addEventListener("click", () => {
+        const v = !(localStorage.getItem(key) === "1");
+        localStorage.setItem(key, v ? "1" : "0");
+        btn.setAttribute("aria-pressed", v);
+        apply(v);
+      });
+    })();
+  </script>
 </body>
 </html>
