@@ -2,150 +2,109 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>SpellRightPro – Premium</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <link rel="icon" href="assets/logo.png" />
-  <link rel="stylesheet" href="css/styles.css" />
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SpellRightPro Premium</title>
 
-  <!-- Firebase + Analytics -->
+  <!-- Styles -->
+  <link rel="stylesheet" href="css/premium.css" />
+  <link rel="icon" type="image/png" href="assets/logo.png" />
+
+  <!-- Firebase -->
   <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore-compat.js"></script>
+
+  <!-- Google Analytics -->
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-H09MF13297"></script>
-  <script src="js/config.js"></script>
-  <script src="js/analytics.js"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-H09MF13297');
+  </script>
 
-  <script src="js/audio-guards.js" defer></script>
-  <script src="js/main-premium.js" defer></script>
-
-  <style>
-    :root{
-      --blue:#4361ee; --blue-2:#3f37c9; --gold:#f9c94b; --bg:#f6f8ff;
-      --ink:#1f2937; --muted:#6b7280; --card:#ffffff; --ring:rgba(67,97,238,.15);
-    }
-    body{margin:0;font-family:"Inter",system-ui,sans-serif;color:var(--ink);
-      background:linear-gradient(180deg,#ffffff,var(--bg) 120%);min-height:100vh;}
-
-    /* Navbar */
-    .navbar{position:sticky;top:0;z-index:20;background:rgba(255,255,255,.92);
-      backdrop-filter:blur(10px);border-bottom:1px solid #eef2ff;}
-    .nav-inner{max-width:1100px;margin:0 auto;display:flex;align-items:center;
-      justify-content:space-between;padding:14px 20px;}
-    .brand{display:flex;gap:10px;align-items:center}
-    .brand img{width:40px;height:40px}
-    .brand span{font-weight:800;font-size:1.1rem;background:linear-gradient(135deg,var(--blue),var(--blue-2));
-      -webkit-background-clip:text;-webkit-text-fill-color:transparent}
-    .nav-actions a,.nav-actions button{appearance:none;background:transparent;border:2px solid var(--blue);
-      color:var(--blue);padding:10px 14px;border-radius:12px;font-weight:700;cursor:pointer;transition:.2s;}
-    .nav-actions a:hover,.nav-actions button:hover{background:var(--blue);color:#fff;transform:translateY(-1px)}
-    .nav-actions{display:flex;gap:10px}
-
-    .promo{background:linear-gradient(180deg,#fff9e8,#fff4d1);border:1px solid #fde68a;
-      color:#7a5d00;padding:10px 14px;margin:18px auto 0;width:min(980px,92vw);border-radius:12px;
-      display:flex;align-items:center;gap:10px;box-shadow:0 6px 18px rgba(0,0,0,.05);}
-    .promo i{color:#eab308}
-
-    .hero{max-width:980px;margin:18px auto 0;padding:18px 0 6px 0;display:flex;align-items:center;gap:14px;}
-    .hero h1{margin:0;font-size:clamp(1.6rem,3.2vw,2.2rem);font-weight:800}
-    .hero p{margin:.4rem 0 0;color:var(--muted)}
-
-    .grid{max-width:980px;margin:18px auto;padding:6px 0 30px;
-      display:grid;grid-template-columns:repeat(2,1fr);gap:18px;}
-    .card{background:var(--card);border:1px solid #e6e9ff;border-radius:18px;padding:22px;
-      box-shadow:0 12px 30px rgba(67,97,238,.06);display:flex;flex-direction:column;gap:14px;}
-    .card h3{margin:0;font-size:1.2rem}
-    .price{font-size:2rem;font-weight:800}
-    .strike{color:#9ca3af;text-decoration:line-through;font-weight:600;margin-left:8px;font-size:1rem}
-    .chip{display:inline-flex;align-items:center;gap:6px;background:#eef2ff;color:var(--blue);
-      padding:6px 10px;border-radius:999px;font-weight:700;font-size:.85rem}
-    .features{list-style:none;padding:0;margin:6px 0 0;display:flex;flex-direction:column;gap:6px;color:#374151}
-    .features i{color:var(--blue);margin-right:6px}
-    .btn{appearance:none;border:none;border-radius:14px;padding:14px 16px;font-weight:800;
-      background:linear-gradient(135deg,var(--blue),var(--blue-2));color:#fff;cursor:pointer;
-      box-shadow:0 10px 20px var(--ring);transition:.2s;margin-top:6px}
-    .btn:hover{transform:translateY(-1px);box-shadow:0 14px 26px var(--ring)}
-
-    .ad-slot{max-width:980px;margin:10px auto;border:1px dashed #e5e7eb;
-      border-radius:12px;padding:10px;text-align:center;color:#9ca3af}
-
-    footer{max-width:980px;margin:20px auto 40px;color:#6b7280;text-align:center}
-    footer a{color:var(--blue);text-decoration:none}
-    footer a:hover{text-decoration:underline}
-
-    @media (max-width:760px){.grid{grid-template-columns:1fr}.nav-actions{gap:8px}}
-  </style>
+  <!-- AdSense -->
+  <script async
+    src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-4670761653568502"
+    crossorigin="anonymous"></script>
 </head>
-<body>
-  <header class="navbar">
-    <div class="nav-inner">
-      <div class="brand">
-        <img src="assets/logo.png" alt="SpellRightPro logo">
-        <span>SpellRightPro</span>
-      </div>
-      <div class="nav-actions">
-        <a href="index.html"><i class="fa-solid fa-house"></i> Home</a>
-        <button id="help-btn"><i class="fa-solid fa-circle-info"></i> Help</button>
-      </div>
-    </div>
+
+<body data-mode="premium">
+
+  <!-- Header -->
+  <header>
+    <img src="assets/logo.png" alt="SpellRightPro Logo" />
+    <h1>SpellRightPro Premium</h1>
+    <button class="nav-btn" onclick="window.location.href='index.html'">Home</button>
   </header>
 
-  <div class="promo">
-    <i class="fa-solid fa-graduation-cap"></i>
-    <strong>Back to School Promo — Save 70% on Premium!</strong>
-  </div>
+  <!-- Main Container -->
+  <main>
+    <h2>Premium Spelling Practice</h2>
+    <p class="subtitle">Advanced tools, personalized learning, and no ads.</p>
 
-  <section class="hero">
-    <div>
-      <h1>Go Premium: Unlimited practice, voice & writing evaluation, ad-free, and progress saving.</h1>
-      <p>Choose a plan below. Secure checkout via Stripe. Cancel anytime.</p>
+    <!-- AdSense Top -->
+    <div class="ad-container">
+      <ins class="adsbygoogle"
+           style="display:block"
+           data-ad-client="ca-pub-4670761653568502"
+           data-ad-slot="7587629391"
+           data-ad-format="auto"
+           data-full-width-responsive="true"></ins>
+      <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
     </div>
-  </section>
 
-  <div class="ad-slot">Advertisement</div>
+    <!-- Training Card -->
+    <section class="main-card">
+      <div id="wordProgress">Word 0 of 0</div>
+      <div id="feedback">Welcome to Premium Mode</div>
 
-  <section class="grid">
-    <article class="card">
-      <div class="chip"><i class="fa-solid fa-bolt"></i> 70% OFF</div>
-      <h3>Monthly</h3>
-      <div><span class="price">CAD $3.29</span><span class="strike">CAD $10.99</span></div>
-      <ul class="features">
-        <li><i class="fa-solid fa-check"></i> Unlimited Bee, School & OET practice</li>
-        <li><i class="fa-solid fa-check"></i> Voice recognition + writing evaluation</li>
-        <li><i class="fa-solid fa-check"></i> Custom lists & summaries</li>
-        <li><i class="fa-solid fa-check"></i> No ads, cancel anytime</li>
-      </ul>
-      <button class="btn" id="buy-monthly"><i class="fa-solid fa-arrow-up-right-from-square"></i> Upgrade – Monthly</button>
-    </article>
+      <!-- Typing Area -->
+      <textarea id="userInput" placeholder="Type the spelling here..."></textarea>
 
-    <article class="card">
-      <div class="chip"><i class="fa-solid fa-crown"></i> Best Value</div>
-      <h3>Annual</h3>
-      <div><span class="price">CAD $20.99</span><span class="strike">CAD $69.99</span></div>
-      <ul class="features">
-        <li><i class="fa-solid fa-check"></i> Everything in Monthly</li>
-        <li><i class="fa-solid fa-check"></i> 12 months for the price of 2.2</li>
-        <li><i class="fa-solid fa-check"></i> Priority fixes and new features</li>
-        <li><i class="fa-solid fa-check"></i> Dedicated support</li>
-      </ul>
-      <button class="btn" id="buy-annual"><i class="fa-solid fa-arrow-up-right-from-square"></i> Upgrade – Annual</button>
-    </article>
-  </section>
+      <!-- Controls -->
+      <div class="controls">
+        <button id="btnStart">Start</button>
+        <button id="btnSayAgain">Say Again</button>
+        <button id="btnPrev">Prev</button>
+        <button id="btnNext">Next</button>
+        <button id="btnFlag">Flag</button>
+        <button id="btnEnd">End Session</button>
+      </div>
+    </section>
 
-  <footer>
-    <p><a href="terms.html">Terms</a> · <a href="privacy.html">Privacy</a> ·
-       <a href="refund.html">Refund Policy</a> · <a href="contact.html">Contact</a></p>
-    <p style="font-size:.9rem">© 2025 SpellRightPro</p>
-  </footer>
+    <!-- Summary -->
+    <div id="summary" class="summary-box" style="display:none;">
+      <h3>Session Summary</h3>
+      <p id="summaryContent"></p>
+    </div>
 
+    <!-- AdSense Bottom -->
+    <div class="ad-container">
+      <ins class="adsbygoogle"
+           style="display:block"
+           data-ad-client="ca-pub-4670761653568502"
+           data-ad-slot="1265398320"
+           data-ad-format="auto"
+           data-full-width-responsive="true"></ins>
+      <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
+    </div>
+  </main>
+
+  <footer>© 2025 SpellRightPro — All rights reserved.</footer>
+
+  <!-- Firebase Config -->
+  <script src="js/config.js"></script>
+
+  <!-- App Logic -->
+  <script src="js/audio-guards.js"></script>
+  <script src="js/main-premium.js"></script>
+
+  <!-- Service Worker -->
   <script>
-    window.addEventListener('beforeunload', () => {
-      try { if ('speechSynthesis' in window) speechSynthesis.cancel(); } catch(e){}
-    });
-    if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').catch(()=>{});
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/sw.js').catch(console.error);
+    }
   </script>
 </body>
 </html>
