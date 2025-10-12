@@ -1,203 +1,161 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
-  <title>SpellRightPro — Premium</title>
+  <title>SpellRightPro Premium</title>
 
   <link rel="stylesheet" href="/css/premium.css"/>
-
-  <!-- Firebase (compat) -->
-  <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore-compat.js"></script>
-
-  <!-- GA -->
-  <script async src="https://www.googletagmanager.com/gtag/js?id=G-H09MF13297"></script>
-  <script>
-    window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments)}
-    gtag('js', new Date()); gtag('config', 'G-H09MF13297');
-  </script>
+  <link rel="stylesheet" href="/css/styles.css"/>
+  <script src="/js/audio-guards.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+  <script src="/js/config.js"></script>
 
   <style>
-    /* Glass overlay for login */
-    .glass-backdrop{
-      position:fixed;inset:0;background:rgba(10,10,20,.55);
-      backdrop-filter: blur(10px); display:none; align-items:center;justify-content:center; z-index:9999;
+    body {
+      margin: 0;
+      font-family: 'Poppins', sans-serif;
+      background: linear-gradient(135deg, #4a00e0, #8e2de2);
+      color: #fff;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
     }
-    .glass-card{
-      width:min(92vw,440px); background:rgba(255,255,255,.08);
-      border:1px solid rgba(255,255,255,.25); color:#fff; border-radius:18px; padding:22px 18px;
-      box-shadow:0 20px 60px rgba(0,0,0,.4)
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px 20px;
     }
-    .glass-card h3{margin:.2rem 0 0.5rem;font-size:1.4rem}
-    .glass-card p{opacity:.9;margin:.2rem 0 1rem}
-    .glass-card input{
-      width:100%; padding:12px 14px; border-radius:12px; border:1px solid rgba(255,255,255,.35);
-      background:rgba(0,0,0,.25); color:#fff; margin:.35rem 0 .6rem
+    .btn { background: rgba(255,255,255,.1); border: none; color: #fff; padding: 8px 14px; border-radius: 6px; cursor: pointer; font-weight: 500; }
+    .btn:hover { background: rgba(255,255,255,.25); }
+    .card {
+      margin: auto;
+      max-width: 520px;
+      width: 92%;
+      background: rgba(255,255,255,0.15);
+      border: 1px solid rgba(255,255,255,0.25);
+      border-radius: 16px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+      backdrop-filter: blur(12px);
+      padding: 24px;
+      text-align: center;
     }
-    .glass-card button{
-      width:100%; padding:12px 14px; border:none; border-radius:12px; cursor:pointer;
-      font-weight:700; margin-top:.4rem;
-      background:linear-gradient(135deg,#7b2ff7,#f107a3); color:#fff;
+    h1 { margin-top: 0; font-size: 1.8rem; }
+    input, textarea {
+      width: 100%;
+      border-radius: 10px;
+      border: none;
+      padding: 10px;
+      margin-top: 10px;
     }
-    .muted-link{display:inline-block;margin-top:.5rem;opacity:.85;cursor:pointer}
+    .actions { margin-top: 16px; display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; }
+    .overlay {
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,0.6);
+      backdrop-filter: blur(10px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 9999;
+    }
+    .login-card {
+      background: rgba(255,255,255,0.15);
+      border: 1px solid rgba(255,255,255,0.25);
+      border-radius: 14px;
+      padding: 26px;
+      width: min(90%, 380px);
+      color: #fff;
+      text-align: center;
+      box-shadow: 0 6px 25px rgba(0,0,0,0.35);
+    }
+    .btn-google {
+      display: inline-flex; align-items: center; gap: 10px;
+      background: #fff; color: #333;
+      border: none; border-radius: 10px;
+      padding: 10px 14px; font-weight: 600; cursor: pointer;
+      box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+    }
+    .btn-google img { width: 22px; height: 22px; }
+    .dark { background: linear-gradient(135deg, #121212, #3f3f3f); color: #eee; }
   </style>
 </head>
-<body data-mode="premium">
-  <!-- Header -->
+
+<body>
   <header>
-    <img src="/assets/logo.png" alt="SpellRightPro Logo"/>
-    <h1>SpellRightPro Premium</h1>
-    <div>
-      <button class="nav-btn" onclick="location.href='/index.html'">Home</button>
-      <button id="btnDarkMode" class="nav-btn" aria-pressed="false" title="Toggle dark mode">🌙</button>
-    </div>
+    <a href="/index.html" class="btn">🏠 Home</a>
+    <button id="toggleDark" class="btn">🌙 Dark Mode</button>
   </header>
 
-  <!-- Main -->
   <main>
-    <h2>Premium Spelling Practice</h2>
-    <p class="subtitle">Advanced tools, personalized learning — and no ads.</p>
+    <div class="card">
+      <h1>SpellRightPro Premium</h1>
+      <p>Unlock full features, advanced tracking, and ad-free experience.</p>
 
-    <section class="main-card" style="width:100%;max-width:720px">
-      <div id="wordProgress">Word 0 of 0</div>
-      <div id="feedback">Sign in to start your premium session.</div>
+      <div data-role="progress" style="margin:10px 0;font-weight:600;"></div>
+      <input id="wordInput" placeholder="Type your answer..." />
 
-      <textarea id="userInput" placeholder="Type the spelling here..."></textarea>
-
-      <div class="controls">
-        <button id="btnStart">Start</button>
-        <button id="btnSayAgain">Say Again</button>
-        <button id="btnPrev">Prev</button>
-        <button id="btnNext">Next</button>
-        <button id="btnFlag">Flag</button>
-        <button id="btnEnd">End Session</button>
+      <div class="actions">
+        <button id="btnStart" class="btn">Start</button>
+        <button id="btnSay" class="btn">Say Again</button>
+        <button id="btnPrev" class="btn">Prev</button>
+        <button id="btnNext" class="btn">Next</button>
+        <button id="btnFlag" class="btn">Flag</button>
+        <button id="btnEnd" class="btn">End</button>
       </div>
-
-      <div id="summary" class="summary-box" style="display:none;">
-        <h3>Session Summary</h3>
-        <p id="summaryContent"></p>
-      </div>
-    </section>
+      <div data-role="feedback" style="margin-top:12px;min-height:20px;"></div>
+    </div>
   </main>
 
-  <footer>© 2025 SpellRightPro — All rights reserved.</footer>
-
-  <!-- Glass Login Overlay -->
-  <div id="loginOverlay" class="glass-backdrop" role="dialog" aria-modal="true" aria-labelledby="loginTitle">
-    <div class="glass-card">
-      <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px">
-        <img src="/assets/logo.png" alt="" style="height:46px;width:auto;border-radius:10px"/>
-        <div>
-          <h3 id="loginTitle" style="margin:0">Welcome to Premium</h3>
-          <p style="margin:0;opacity:.85">Sign in to unlock full features</p>
-        </div>
-      </div>
-
-      <input id="email" type="email" placeholder="Email"/>
-      <input id="password" type="password" placeholder="Password"/>
-      <button id="btnLoginEmail">Sign in</button>
-      <button id="btnGoogle" style="margin-top:10px;background:#fff;color:#111">Sign in with Google</button>
-
-      <div style="display:flex;justify-content:space-between">
-        <span id="linkCreate" class="muted-link">Create account</span>
-        <span id="linkReset" class="muted-link">Forgot password?</span>
-      </div>
-      <div id="loginMsg" style="margin-top:.5rem;min-height:1.2rem;opacity:.95"></div>
+  <!-- Login Overlay -->
+  <div id="authOverlay" class="overlay" hidden>
+    <div class="login-card">
+      <h2>Sign in to Premium</h2>
+      <p>Use your Google account to access your premium session.</p>
+      <button id="btnGoogle" class="btn-google">
+        <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="">
+        Continue with Google
+      </button>
+      <p style="margin-top:10px;"><a href="/index.html" style="color:#fff;">Back to Home</a></p>
     </div>
   </div>
 
-  <!-- Config & App Scripts -->
-  <script src="/js/config.js"></script>
-  <script src="/js/audio-guards.js"></script>
-  <script src="/js/main-premium.js"></script>
-
-  <!-- UI wiring: dark mode + auth overlay -->
   <script>
-    // Dark mode
-    (function(){
-      const btn = document.getElementById('btnDarkMode');
-      const key = 'srp-dark';
-      const apply = v => document.body.classList.toggle('dark-mode', v);
-      apply(localStorage.getItem(key)==='1');
-      btn.setAttribute('aria-pressed', localStorage.getItem(key)==='1');
-      btn.addEventListener('click', ()=>{
-        const v = !(localStorage.getItem(key)==='1');
-        localStorage.setItem(key, v?'1':'0');
-        btn.setAttribute('aria-pressed', v);
-        apply(v);
-      });
-    })();
+    const auth = firebase.auth();
+    const overlay = document.getElementById('authOverlay');
 
-    // Firebase Auth UI for premium
-    (function(){
-      if(!firebase || !firebase.auth) return;
-
-      const overlay = document.getElementById('loginOverlay');
-      const msg = document.getElementById('loginMsg');
-      const email = document.getElementById('email');
-      const password = document.getElementById('password');
-      const btnEmail = document.getElementById('btnLoginEmail');
-      const btnGoogle = document.getElementById('btnGoogle');
-      const linkCreate = document.getElementById('linkCreate');
-      const linkReset = document.getElementById('linkReset');
-
-      const showOverlay = (on) => { overlay.style.display = on ? 'flex' : 'none'; };
-
-      firebase.auth().onAuthStateChanged(user => {
-        showOverlay(!user);
-        if(user){
-          document.getElementById('feedback').textContent = 'Welcome back — press Start to begin.';
-        } else {
-          msg.textContent = '';
-        }
-      });
-
-      btnEmail.addEventListener('click', async ()=>{
-        msg.textContent = 'Signing in...';
-        try {
-          await firebase.auth().signInWithEmailAndPassword(email.value.trim(), password.value.trim());
-          msg.textContent = 'Signed in.';
-        } catch(err){
-          msg.textContent = err && err.message ? err.message : 'Sign-in failed.';
-        }
-      });
-
-      btnGoogle.addEventListener('click', async ()=>{
-        msg.textContent = 'Signing in with Google...';
-        try {
-          const provider = new firebase.auth.GoogleAuthProvider();
-          await firebase.auth().signInWithPopup(provider);
-          msg.textContent = 'Signed in with Google.';
-        } catch(err){
-          msg.textContent = err && err.message ? err.message : 'Google sign-in failed.';
-        }
-      });
-
-      linkCreate.addEventListener('click', async ()=>{
-        if(!email.value || !password.value){ msg.textContent='Enter email & password first.'; return; }
-        try{
-          await firebase.auth().createUserWithEmailAndPassword(email.value.trim(), password.value.trim());
-          msg.textContent='Account created.';
-        }catch(err){ msg.textContent=err.message || 'Sign-up failed.'; }
-      });
-
-      linkReset.addEventListener('click', async ()=>{
-        if(!email.value){ msg.textContent='Enter your email above first.'; return; }
-        try{
-          await firebase.auth().sendPasswordResetEmail(email.value.trim());
-          msg.textContent='Password reset email sent.';
-        }catch(err){ msg.textContent=err.message || 'Reset failed.'; }
-      });
-    })();
-  </script>
-
-  <!-- Service Worker registration -->
-  <script>
-    if('serviceWorker' in navigator){
-      navigator.serviceWorker.register('/sw.js').catch(console.error);
+    function showOverlay(show) {
+      overlay.hidden = !show;
     }
+
+    // Dark mode toggle
+    const darkToggle = document.getElementById('toggleDark');
+    function applyDark(enabled) {
+      document.body.classList.toggle('dark', enabled);
+      localStorage.setItem('srp_dark', enabled ? '1' : '0');
+    }
+    applyDark(localStorage.getItem('srp_dark') === '1');
+    darkToggle.addEventListener('click', () => {
+      const dark = !document.body.classList.contains('dark');
+      applyDark(dark);
+    });
+
+    // Firebase Auth flow
+    auth.onAuthStateChanged(user => {
+      showOverlay(!user);
+    });
+
+    document.getElementById('btnGoogle').addEventListener('click', async () => {
+      try {
+        const provider = new firebase.auth.GoogleAuthProvider();
+        await auth.signInWithPopup(provider);
+        showOverlay(false);
+      } catch (e) {
+        alert("Sign-in failed. Please try again.");
+        console.error(e);
+      }
+    });
   </script>
 </body>
 </html>
