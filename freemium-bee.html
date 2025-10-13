@@ -1,103 +1,97 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1"/>
-  <title>SpellRightPro — Bee Mode (Freemium)</title>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>SpellRightPro – Spelling Bee</title>
 
-  <!-- Styles -->
   <link rel="stylesheet" href="/css/styles.css"/>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"/>
 
-  <!-- Live AdSense (Freemium pages only) -->
-  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-4670761653568502" crossorigin="anonymous"></script>
+  <script src="/js/audio-guards.js"></script>
+  <script src="/js/main-freemium-bee.js" defer></script>
 
-  <!-- GA (kept as is) -->
-  <script async src="https://www.googletagmanager.com/gtag/js?id=G-H09MF13297"></script>
-  <script>
-    window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments)}
-    gtag('js', new Date()); gtag('config', 'G-H09MF13297');
-  </script>
+  <style>
+    body {
+      font-family: "Poppins", sans-serif;
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      color: #fff; margin:0; min-height:100vh;
+      display:flex; flex-direction:column; align-items:center; justify-content:center;
+    }
+    header {
+      position: absolute; top: 10px; left: 0; right: 0;
+      display: flex; justify-content: space-between; align-items:center;
+      padding: 10px 20px;
+    }
+    .btn {
+      background: rgba(255,255,255,0.15);
+      border: none; color:#fff;
+      padding:8px 14px; border-radius:6px; cursor:pointer;
+      transition:0.2s;
+    }
+    .btn:hover { background: rgba(255,255,255,0.3); }
+    main {
+      background: rgba(255,255,255,0.15);
+      border: 1px solid rgba(255,255,255,0.25);
+      backdrop-filter: blur(10px);
+      border-radius: 16px;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.2);
+      padding: 24px;
+      width: min(90%, 480px);
+      text-align: center;
+    }
+    h1 { margin-top: 0; }
+    textarea {
+      width: 100%; min-height: 80px;
+      border-radius: 10px; border: none;
+      margin-top: 10px; padding: 10px;
+    }
+    .actions { margin-top: 16px; display:flex; flex-wrap:wrap; justify-content:center; gap:10px; }
+    [data-role="feedback"] { margin-top: 14px; min-height: 20px; }
+    .dark { background: linear-gradient(135deg,#121212,#3f3f3f); color:#eee; }
+  </style>
 </head>
-<body class="bee-mode" data-mode="bee">
-  <!-- Top Bar -->
-  <header class="nav">
-    <div class="brand">
-      <img src="/assets/logo.png" alt="SpellRightPro logo" style="height:64px;width:auto"/>
-      <h1>SpellRightPro</h1>
-    </div>
-    <nav class="nav-actions">
-      <button id="btnHome" class="btn-premium" onclick="location.href='/index.html'">Home</button>
-      <button id="btnDarkMode" class="btn-premium" aria-pressed="false" title="Toggle dark mode">🌙</button>
-    </nav>
+<body>
+  <header>
+    <a href="/index.html" class="btn"><i class="fa fa-home"></i> Home</a>
+    <button id="toggleDark" class="btn">🌙</button>
   </header>
 
-  <!-- Top Ad -->
-  <section class="ads-section" style="text-align:center;margin:12px 0">
-    <ins class="adsbygoogle"
-         style="display:block"
-         data-ad-client="ca-pub-4670761653568502"
-         data-ad-slot="3466908794"
-         data-ad-format="auto"
-         data-full-width-responsive="true"></ins>
-    <script>(adsbygoogle=window.adsbygoogle||[]).push({});</script>
-  </section>
+  <main>
+    <h1>Spelling Bee (Freemium)</h1>
+    <p>Listen carefully and spell the word aloud!</p>
 
-  <!-- Main Card -->
-  <main class="main-card">
-    <h2>Spelling Bee Practice 🐝</h2>
-    <p class="muted">Speak the letters (e.g., “c h e r r y”). We’ll grade and auto-advance.</p>
+    <textarea id="customWords" placeholder="Add custom words here (optional)..."></textarea>
 
-    <div id="wordProgress">Word 0 of 0</div>
-    <div id="feedback">Press “Start” to begin.</div>
-
-    <div class="controls">
-      <button id="btnSayAgain">🔊 Say Again</button>
-      <button id="btnPrev">← Prev</button>
-      <button id="btnNext">→ Next</button>
-      <button id="btnFlag">🚩 Flag</button>
-      <button id="btnEnd">■ End</button>
+    <div data-role="progress"></div>
+    <div class="actions">
+      <button data-action="start" class="btn">Start</button>
+      <button data-action="say" class="btn">Say Again</button>
+      <button data-action="prev" class="btn">Prev</button>
+      <button data-action="next" class="btn">Next</button>
+      <button data-action="flag" class="btn">Flag</button>
+      <button data-action="end" class="btn">End Session</button>
     </div>
-
-    <div class="controls" style="margin-top:8px">
-      <button id="btnStart">🎙️ Start</button>
-    </div>
-
-    <h3 style="margin-top:18px">Custom Words (1 list/day on Freemium)</h3>
-    <textarea id="customWords" placeholder="Paste words separated by commas or new lines"></textarea>
-    <p class="muted">Upgrade to Premium for unlimited lists and detailed stats.</p>
+    <div data-role="feedback"></div>
   </main>
 
-  <!-- Bottom Ad -->
-  <section class="ads-section" style="text-align:center;margin:12px 0 0">
+  <!-- AdSense -->
+  <div style="margin-top:20px; text-align:center;">
     <ins class="adsbygoogle"
          style="display:block"
          data-ad-client="ca-pub-4670761653568502"
-         data-ad-slot="9150610871"
+         data-ad-slot="3089395247"
          data-ad-format="auto"
          data-full-width-responsive="true"></ins>
     <script>(adsbygoogle=window.adsbygoogle||[]).push({});</script>
-  </section>
+    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js"></script>
+  </div>
 
-  <footer style="text-align:center;color:#eee;margin:18px 0">© 2025 SpellRightPro</footer>
-
-  <!-- Scripts -->
   <script>
-    // Dark mode toggle (top nav)
-    (function(){
-      const btn = document.getElementById('btnDarkMode');
-      const key = 'srp-dark';
-      const apply = v => document.body.classList.toggle('dark-mode', v);
-      apply(localStorage.getItem(key)==='1');
-      btn.setAttribute('aria-pressed', localStorage.getItem(key)==='1');
-      btn.addEventListener('click', ()=>{
-        const v = !(localStorage.getItem(key)==='1');
-        localStorage.setItem(key, v?'1':'0');
-        btn.setAttribute('aria-pressed', v);
-        apply(v);
-      });
-    })();
+    const toggle = document.getElementById('toggleDark');
+    function applyDarkMode(on){document.body.classList.toggle('dark',on);localStorage.setItem('srp_dark',on?'1':'0');}
+    applyDarkMode(localStorage.getItem('srp_dark')==='1');
+    toggle.addEventListener('click',()=>applyDarkMode(!document.body.classList.contains('dark')));
   </script>
-  <script src="/js/audio-guards.js"></script>
-  <script src="/js/main-freemium.js"></script>
 </body>
 </html>
