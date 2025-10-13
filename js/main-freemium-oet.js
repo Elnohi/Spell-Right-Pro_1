@@ -1,106 +1,92 @@
-// ==========================================================
-// SpellRightPro — main-freemium-oet.js
-// Mode: OET Practice (typing + TTS)
-// ==========================================================
+/* /js/main-freemium-oet.js */
+(() => {
+  const $ = s => document.querySelector(s);
+  const ui = {
+    area: document.querySelector('#answer') || (()=>{const ta=document.createElement('textarea'); ta.id='answer'; ta.placeholder='Type the spelling here…'; ta.style.width='100%'; ta.style.minHeight='56px'; ta.style.borderRadius='10px'; ta.style.padding='12px'; (document.querySelector('.training-card')||document.body).appendChild(ta); return ta;})(),
+    submit: document.querySelector('#btnSubmit') || (()=>{const b=document.createElement('button'); b.id='btnSubmit'; b.textContent='Submit'; b.className='btn-secondary'; (document.querySelector('.button-group')||document.querySelector('.training-card')||document.body).appendChild(b); return b;})(),
+    upload: document.querySelector('#fileInput') || (()=>{const i=document.createElement('input'); i.type='file'; i.accept='.txt,.json'; i.id='fileInput'; i.style.marginTop='8px'; (document.querySelector('.training-card')||document.body).appendChild(i); return i;})(),
+    start:  document.querySelector('[data-action="start"], #btnStart'),
+    say:    document.querySelector('[data-action="say"],   #btnSay'),
+    progress: document.querySelector('[data-role="progress"]') || (()=>{const d=document.createElement('div'); d.setAttribute('data-role','progress'); d.style.fontWeight='700'; d.style.marginTop='8px'; (document.querySelector('.training-card')||document.body).prepend(d); return d;})(),
+    feedback: document.querySelector('[data-role="feedback"]') || (()=>{const d=document.createElement('div'); d.setAttribute('data-role','feedback'); d.style.minHeight='22px'; d.style.marginTop='8px'; (document.querySelector('.training-card')||document.body).appendChild(d); return d;})(),
+    testTypeExam: document.querySelector('input[name="testType"][value="exam"]'),
+    testTypePractice: document.querySelector('input[name="testType"][value="practice"]'),
+  };
 
-let words = [];
-let currentIndex = 0;
-let score = 0;
-let flaggedWords = [];
-let incorrectWords = [];
-let accent = "en-US";
-let synth = window.speechSynthesis;
-let recognition;
+  const LIST='/data/word-lists/oet.json';
+  const state={ words:[], i:0, correct:[], incorrect:[], flags:new Set(), active:false };
 
-// Elements
-const startBtn = document.getElementById("start-btn");
-const inputField = document.getElementById("spelling-input");
-const feedbackDiv = document.getElementById("feedback");
-const progressText = document.getElementById("word-progress");
-const summaryArea = document.getElementById("summary-area");
-const correctList = document.getElementById("correct-list");
-const incorrectList = document.getElementById("incorrect-list");
-const flaggedList = document.getElementById("flagged-list");
-const endSessionBtn = document.getElementById("end-session");
+  function t(el,s){ if(el) el.textContent=s; }
+  function norm(s){ return (s||'').toLowerCase().trim(); }
+  function show(){ t(ui.progress, `Word ${Math.min(state.i+1,state.words.length)} of ${state.words.length}`); }
 
-// Audio guards
-if (window.initAudioGuards) initAudioGuards();
-
-// Load OET words
-async function loadWords() {
-  const res = await fetch("oet.json");
-  const data = await res.json();
-  words = data;
-}
-
-// Speak
-function speakWord(word) {
-  stopSpeech();
-  const utter = new SpeechSynthesisUtterance(word);
-  utter.lang = accent;
-  synth.speak(utter);
-}
-
-// Start
-async function startPractice() {
-  if (!words.length) await loadWords();
-  currentIndex = 0;
-  score = 0;
-  incorrectWords = [];
-  flaggedWords = [];
-  summaryArea.classList.add("hidden");
-  nextWord();
-}
-
-// Next
-function nextWord() {
-  if (currentIndex >= words.length) return endSession();
-  const word = words[currentIndex];
-  progressText.textContent = `Word ${currentIndex + 1} / ${words.length}`;
-  speakWord(word);
-  inputField.focus();
-}
-
-// Check
-function checkAnswer() {
-  const input = inputField.value.trim().toLowerCase();
-  const correct = words[currentIndex].trim().toLowerCase();
-  if (input === correct) {
-    score++;
-    feedback("✅ Correct", true);
-  } else {
-    feedback(`❌ Incorrect (${correct})`, false);
-    incorrectWords.push(correct);
+  function randomPick(arr, n){
+    const a=[...arr]; const out=[];
+    while(out.length<Math.min(n,a.length)){
+      const i=Math.floor(Math.random()*a.length); out.push(a.splice(i,1)[0]);
+    }
+    return out;
   }
-  inputField.value = "";
-  currentIndex++;
-  nextWord();
-}
 
-// Feedback
-function feedback(msg, correct) {
-  feedbackDiv.innerHTML = msg;
-  feedbackDiv.className = "feedback " + (correct ? "correct" : "incorrect");
-}
+  async function loadDefault(){
+    try{
+      const r=await fetch(`${LIST}?v=${Date.now()}`,{cache:'no-store'});
+      if(!r.ok) throw 0; const j=await r.json();
+      const arr=Array.isArray(j?.words)?j.words:Array.isArray(j)?j:[];
+      return arr;
+    }catch(_){ return []; }
+  }
 
-// End
-function endSession() {
-  stopSpeech();
-  safeStopRecognition(window.currentRecognition);
-  summaryArea.classList.remove("hidden");
-  correctList.innerHTML = `<li>${score} correct</li>`;
-  incorrectList.innerHTML = incorrectWords.map((w) => `<li>${w}</li>`).join("");
-  flaggedList.innerHTML = flaggedWords.map((w) => `<li>${w}</li>`).join("");
-}
+  async function start(){
+    const custom = (ui.area.value||'').trim();
+    let list = custom ? custom.split(/[\n,]+/).map(s=>s.trim()).filter(Boolean) : await loadDefault();
+    // exam/practice
+    const isExam = ui.testTypeExam ? ui.testTypeExam.checked : (document.querySelector('[data-test-type="exam"].active')!=null);
+    state.words = isExam ? randomPick(list, 24) : list; // exam=24, practice=full
+    state.i=0; state.correct=[]; state.incorrect=[]; state.flags.clear(); state.active=true;
+    if(!state.words.length){ t(ui.feedback,'No words loaded. Paste or upload a list.'); return; }
+    t(ui.feedback,''); show(); say();
+  }
 
-// Events
-startBtn?.addEventListener("click", startPractice);
-inputField?.addEventListener("keydown", (e) => {
-  if (e.key === "Enter") checkAnswer();
-});
-endSessionBtn?.addEventListener("click", endSession);
+  function check(){
+    if(!state.active) return;
+    const target = (state.words[state.i]||'').trim();
+    const ans = (ui.area.value||'').trim();
+    if(!target) return;
+    if(!ans){ t(ui.feedback,'Type your answer, then press Enter or Submit.'); return; }
 
-// Audio guard init
-document.addEventListener('DOMContentLoaded', () => {
-  if (typeof initAudioGuards === "function") initAudioGuards(window.currentRecognition);
-});
+    if(norm(ans)===norm(target)){ state.correct.push(target); t(ui.feedback,'✅ Correct'); }
+    else { state.incorrect.push(target); t(ui.feedback,`❌ Incorrect — ${target}`); }
+
+    ui.area.value='';
+    state.i++;
+    if(state.i>=state.words.length){ end(); }
+    else { show(); say(); }
+  }
+
+  function say(){ const w=state.words[state.i]; if(!w) return; window.AudioGuards?.speakOnce(w); }
+  function end(){
+    state.active=false; window.AudioGuards?.stopAll();
+    const lines = [
+      'Session Complete',
+      `✅ ${state.correct.length}`,
+      `❌ ${state.incorrect.length}`,
+      state.flags.size?`🚩 ${[...state.flags].join(', ')}`:'No flagged'
+    ];
+    t(ui.feedback, lines.join(' • '));
+  }
+
+  // wire
+  ui.start && ui.start.addEventListener('click', start);
+  ui.submit.addEventListener('click', check);
+  ui.area.addEventListener('keydown', e=>{ if(e.key==='Enter'){ e.preventDefault(); check(); }});
+  ui.say && ui.say.addEventListener('click', say);
+  ui.upload.addEventListener('change', async ev=>{
+    const f=ev.target.files?.[0]; if(!f) return; const txt=await f.text();
+    try{ const j=JSON.parse(txt); state.words=Array.isArray(j?.words)?j.words:Array.isArray(j)?j:[]; }
+    catch(_){ state.words=txt.split(/[\n,]+/).map(s=>s.trim()).filter(Boolean); }
+    t(ui.feedback, `Loaded ${state.words.length} words. Choose Exam/Practice, then Start.`);
+  });
+
+  console.log('OET ready');
+})();
