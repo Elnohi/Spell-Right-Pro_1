@@ -5,179 +5,81 @@
   <meta name="viewport" content="width=device-width,initial-scale=1"/>
   <title>SpellRightPro — Premium</title>
 
-  <link rel="stylesheet" href="/css/styles.css"/>
+  <link rel="stylesheet" href="/css/premium.css"/>
   <link rel="icon" href="/assets/logo.png"/>
 
-  <!-- Firebase (compat, uses your existing /js/config.js with spellrightpro-firebase) -->
+  <!-- Firebase -->
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
   <script src="/js/config.js"></script>
 
-  <!-- Shared audio -->
-  <script src="/js/audio-guards.js"></script>
+  <!-- Shared Audio + Premium JS -->
+  <script src="/js/audio-guards.js" defer></script>
   <script src="/js/main-premium.js" defer></script>
-
-  <style>
-    body{margin:0; min-height:100vh; display:flex; flex-direction:column;
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color:#fff; font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;}
-    header{display:flex; justify-content:space-between; align-items:center; padding:12px 16px}
-    .btn{background: rgba(255,255,255,.14); color:#fff; border:none; border-radius:10px; padding:8px 12px; font-weight:600; cursor:pointer}
-    .btn:hover{background: rgba(255,255,255,.28)}
-    .container{flex:1; display:flex; align-items:center; justify-content:center; padding:16px}
-    .card{width:min(560px, 94vw); padding:22px; text-align:center; border-radius:18px;
-      background: rgba(255,255,255,.14); border:1px solid rgba(255,255,255,.25); backdrop-filter: blur(12px);
-      box-shadow: 0 12px 30px rgba(0,0,0,.25);}
-    input{width:100%; padding:12px; border-radius:10px; border:none; margin-top:10px}
-    .actions{display:flex; flex-wrap:wrap; gap:10px; justify-content:center; margin-top:12px}
-    .overlay{position:fixed; inset:0; display:flex; align-items:center; justify-content:center; background: rgba(0,0,0,.55); backdrop-filter: blur(10px); z-index:9999}
-    .login-card{width:min(420px, 92vw); color:#fff; background: rgba(255,255,255,.14); border: 1px solid rgba(255,255,255,.25);
-      border-radius:16px; padding:20px; text-align:center; box-shadow:0 10px 30px rgba(0,0,0,.3)}
-    .row{display:flex; flex-direction:column; gap:8px; margin:10px 0}
-    .btn-google{display:inline-flex; align-items:center; gap:10px; background:#fff; color:#333; border:none; border-radius:10px; padding:10px 12px; font-weight:700; cursor:pointer}
-    .btn-google img{width:22px;height:22px}
-    .muted{opacity:.85}
-    .warn{color:#ffe08a}
-  </style>
 </head>
+
 <body>
   <header>
-    <a href="/index.html" class="btn">🏠 Home</a>
-    <button id="toggleDark" class="btn">🌙</button>
+    <button onclick="window.location.href='index.html'" class="nav-btn">🏠 Home</button>
+    <button id="toggleDark" class="nav-btn">🌙</button>
   </header>
 
-  <main class="container">
-    <section class="card">
-      <h1>Premium Spelling Practice</h1>
-      <p class="muted">Advanced tools, personalized progress — and no ads.</p>
+  <main>
+    <h2>Premium Spelling Practice</h2>
+    <p class="subtitle">Advanced tools, personalized progress — and no ads.</p>
 
-      <div data-role="progress" style="margin:10px 0;font-weight:700"></div>
-      <input id="wordInput" placeholder="Type the spelling here…"/>
+    <div id="wordProgress"></div>
+    <input id="wordInput" placeholder="Type the spelling here…"/>
 
-      <div class="actions">
-        <button id="btnStart" class="btn">Start</button>
-        <button id="btnSay" class="btn">Say Again</button>
-        <button id="btnPrev" class="btn">Prev</button>
-        <button id="btnNext" class="btn">Next</button>
-        <button id="btnFlag" class="btn">Flag</button>
-        <button id="btnEnd" class="btn">End Session</button>
-      </div>
+    <div>
+      <button id="btnStart">Start</button>
+      <button id="btnSayAgain">Say Again</button>
+      <button id="btnPrev">Prev</button>
+      <button id="btnNext">Next</button>
+      <button id="btnFlag">Flag</button>
+      <button id="btnEnd">End Session</button>
+    </div>
 
-      <div data-role="feedback" style="min-height:22px;margin-top:12px"></div>
-    </section>
+    <div id="feedback"></div>
   </main>
 
-  <!-- Auth overlay -->
-  <div id="authOverlay" class="overlay" hidden>
-    <div class="login-card">
-      <h2>Sign in to Premium</h2>
-      <p class="muted">Choose Google or use email & password</p>
+  <!-- Auth Overlay -->
+  <div id="authOverlay" class="glass-overlay">
+    <div class="glass-card">
+      <h3>Sign in to Premium</h3>
+      <p>Continue with Google or use Email</p>
 
-      <div class="row">
-        <button id="btnGoogle" class="btn-google">
-          <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="">
-          Continue with Google
-        </button>
+      <button id="googleBtn" class="btn-google">
+        <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt=""/>
+        Continue with Google
+      </button>
+
+      <input type="email" id="email" placeholder="Email"/>
+      <input type="password" id="password" placeholder="Password"/>
+
+      <div>
+        <button id="loginBtn" class="btn-main">Login</button>
+        <button id="registerBtn" class="btn-main">Register</button>
+        <button id="resetBtn" class="btn-sub">Reset Password</button>
       </div>
 
-      <div class="row">
-        <input id="email" type="email" placeholder="Email"/>
-        <input id="password" type="password" placeholder="Password"/>
-        <div style="display:flex; gap:8px; justify-content:center; flex-wrap:wrap">
-          <button id="btnEmailLogin" class="btn">Login</button>
-          <button id="btnEmailRegister" class="btn">Register</button>
-          <button id="btnReset" class="btn">Reset Password</button>
-        </div>
-        <div id="verifyNote" class="warn" style="display:none">Verification email sent. Please check your inbox, then click “I’ve verified”.</div>
-        <div style="margin-top:6px">
-          <button id="btnIVerified" class="btn" style="display:none">I’ve verified</button>
-        </div>
-      </div>
+      <p id="statusText" class="auth-status"></p>
+      <button id="verifyBtn" class="btn-verify" style="display:none;">I’ve verified</button>
 
-      <p style="margin-top:10px"><a href="/index.html" class="muted" style="color:#fff">Back to Home</a></p>
+      <button id="backHome" class="btn-sub">Back to Home</button>
     </div>
   </div>
 
   <script>
-    // Dark mode
-    const k='srp_dark'; const on = localStorage.getItem(k)==='1';
-    document.body.classList.toggle('dark-mode', on);
+    // --- Dark Mode ---
+    const darkKey = 'srp_dark';
+    const isDark = localStorage.getItem(darkKey)==='1';
+    document.body.classList.toggle('dark-mode', isDark);
     document.getElementById('toggleDark').addEventListener('click', ()=>{
-      const v=!document.body.classList.contains('dark-mode');
-      document.body.classList.toggle('dark-mode', v);
-      localStorage.setItem(k, v?'1':'0');
-    });
-
-    // Auth
-    const auth = firebase.auth();
-    const overlay = document.getElementById('authOverlay');
-    const verifyNote = document.getElementById('verifyNote');
-    const btnIVerified = document.getElementById('btnIVerified');
-
-    function showOverlay(v){ overlay.hidden = !v; }
-
-    // Wait for Firebase init then attach
-    document.addEventListener('DOMContentLoaded', () => {
-      auth.onAuthStateChanged(async (user)=>{
-        if (!user) { showOverlay(true); return; }
-        // Require verification for email/password accounts
-        if (user.providerData.some(p=>p.providerId==='password') && !user.emailVerified){
-          showOverlay(true);
-          verifyNote.style.display='block';
-          btnIVerified.style.display='inline-block';
-        } else {
-          verifyNote.style.display='none';
-          btnIVerified.style.display='none';
-          showOverlay(false);
-        }
-      });
-    });
-
-    // Providers
-    document.getElementById('btnGoogle').addEventListener('click', async ()=>{
-      try{
-        await auth.signInWithPopup(new firebase.auth.GoogleAuthProvider());
-      }catch(e){ alert('Sign-in failed. Try again.'); console.warn(e); }
-    });
-
-    const emailEl = document.getElementById('email');
-    const passEl  = document.getElementById('password');
-
-    document.getElementById('btnEmailLogin').addEventListener('click', async ()=>{
-      try{
-        await auth.signInWithEmailAndPassword(emailEl.value, passEl.value);
-      }catch(e){ alert(e.message || 'Login failed'); }
-    });
-
-    document.getElementById('btnEmailRegister').addEventListener('click', async ()=>{
-      try{
-        const cred = await auth.createUserWithEmailAndPassword(emailEl.value, passEl.value);
-        await cred.user.sendEmailVerification();
-        verifyNote.style.display='block';
-        btnIVerified.style.display='inline-block';
-      }catch(e){ alert(e.message || 'Registration failed'); }
-    });
-
-    document.getElementById('btnReset').addEventListener('click', async ()=>{
-      try{
-        await auth.sendPasswordResetEmail(emailEl.value);
-        alert('Password reset email sent.');
-      }catch(e){ alert(e.message || 'Unable to send reset email'); }
-    });
-
-    btnIVerified.addEventListener('click', async ()=>{
-      const u = auth.currentUser;
-      if (!u) return;
-      try{
-        await u.reload();
-        if (u.emailVerified){
-          verifyNote.style.display='none';
-          btnIVerified.style.display='none';
-          showOverlay(false);
-        } else {
-          alert('Still not verified. Please check your email.');
-        }
-      }catch(e){ console.warn(e); }
+      const on = !document.body.classList.contains('dark-mode');
+      document.body.classList.toggle('dark-mode', on);
+      localStorage.setItem(darkKey, on ? '1':'0');
     });
   </script>
 </body>
