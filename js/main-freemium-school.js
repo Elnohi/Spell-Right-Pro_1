@@ -1,145 +1,67 @@
-// ==========================================================
-// SpellRightPro — main-freemium-school.js
-// Mode: School (typing input, OET-based words)
-// ==========================================================
+/* /js/main-freemium-school.js */
+(() => {
+  const $ = s => document.querySelector(s);
+  const ui = {
+    area: document.querySelector('#answer') || (()=>{const ta=document.createElement('textarea'); ta.id='answer'; ta.placeholder='Type the spelling here…'; ta.style.width='100%'; ta.style.minHeight='56px'; ta.style.borderRadius='10px'; ta.style.padding='12px'; (document.querySelector('.training-card')||document.body).appendChild(ta); return ta;})(),
+    submit: document.querySelector('#btnSubmit') || (()=>{const b=document.createElement('button'); b.id='btnSubmit'; b.textContent='Submit'; b.className='btn-secondary'; (document.querySelector('.button-group')||document.querySelector('.training-card')||document.body).appendChild(b); return b;})(),
+    upload: document.querySelector('#fileInput') || (()=>{const i=document.createElement('input'); i.type='file'; i.accept='.txt,.json'; i.id='fileInput'; i.style.marginTop='8px'; (document.querySelector('.training-card')||document.body).appendChild(i); return i;})(),
+    start:  document.querySelector('[data-action="start"], #btnStart'),
+    say:    document.querySelector('[data-action="say"],   #btnSay'),
+    progress: document.querySelector('[data-role="progress"]') || (()=>{const d=document.createElement('div'); d.setAttribute('data-role','progress'); d.style.fontWeight='700'; d.style.marginTop='8px'; (document.querySelector('.training-card')||document.body).prepend(d); return d;})(),
+    feedback: document.querySelector('[data-role="feedback"]') || (()=>{const d=document.createElement('div'); d.setAttribute('data-role','feedback'); d.style.minHeight='22px'; d.style.marginTop='8px'; (document.querySelector('.training-card')||document.body).appendChild(d); return d;})()
+  };
 
-let words = [];
-let currentIndex = 0;
-let score = 0;
-let incorrectWords = [];
-let flaggedWords = [];
-let accent = "en-US";
-let recognition;
-let synth = window.speechSynthesis;
-let isSessionActive = false;
+  const LIST='/data/word-lists/school.json';
+  const state={ words:[], i:0, correct:[], incorrect:[], flags:new Set(), active:false };
 
-// ==== Elements ====
-const startBtn = document.getElementById("start-btn");
-const inputField = document.getElementById("spelling-input");
-const feedbackDiv = document.getElementById("feedback");
-const progressText = document.getElementById("word-progress");
-const summaryArea = document.getElementById("summary-area");
-const correctList = document.getElementById("correct-list");
-const incorrectList = document.getElementById("incorrect-list");
-const flaggedList = document.getElementById("flagged-list");
-const endSessionBtn = document.getElementById("end-session");
-const flagBtn = document.getElementById("flag-btn");
+  function t(el,s){ if(el) el.textContent=s; }
+  function norm(s){ return (s||'').toLowerCase().trim(); }
+  function show(){ t(ui.progress, `Word ${Math.min(state.i+1,state.words.length)} of ${state.words.length}`); }
 
-// ==== Audio Guards ====
-if (window.initAudioGuards) initAudioGuards();
-
-// ==== Speech Recognition Setup ====
-function setupRecognition() {
-  const SpeechRecognition =
-    window.SpeechRecognition || window.webkitSpeechRecognition;
-  if (!SpeechRecognition) return null;
-  recognition = new SpeechRecognition();
-  recognition.lang = accent;
-  recognition.interimResults = false;
-  recognition.maxAlternatives = 1;
-  window.currentRecognition = recognition;
-  return recognition;
-}
-
-// ==== Load Words ====
-async function loadWords() {
-  try {
-    const res = await fetch("data/word-lists/oet.json");
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    const data = await res.json();
-    words = data;
-    console.log(`📘 Loaded ${words.length} School/OET words`);
-  } catch (err) {
-    console.error("❌ Error loading oet.json:", err);
-    feedback("⚠️ Could not load words. Using fallback.", false);
-    words = ["patient", "nurse", "doctor", "hospital"]; // fallback
-  }
-}
-
-// ==== Speak Word ====
-function speakWord(word) {
-  stopSpeech();
-  const utter = new SpeechSynthesisUtterance(word);
-  utter.lang = accent;
-  synth.speak(utter);
-}
-
-// ==== Start Session ====
-async function startPractice() {
-  if (!words.length) await loadWords();
-  currentIndex = 0;
-  score = 0;
-  incorrectWords = [];
-  flaggedWords = [];
-  summaryArea.classList.add("hidden");
-  isSessionActive = true;
-  nextWord();
-}
-
-// ==== Next Word ====
-function nextWord() {
-  if (currentIndex >= words.length) return endSession();
-  const word = words[currentIndex];
-  progressText.textContent = `Word ${currentIndex + 1} of ${words.length}`;
-  stopSpeech();
-  safeStopRecognition(window.currentRecognition);
-  speakWord(word);
-  setTimeout(() => inputField.focus(), 400);
-}
-
-// ==== Check Answer ====
-function checkAnswer() {
-  const input = inputField.value.trim().toLowerCase();
-  const correct = words[currentIndex].trim().toLowerCase();
-  if (!input) return;
-
-  if (input === correct) {
-    score++;
-    feedback(`✅ Correct: ${correct}`, true);
-  } else {
-    feedback(`❌ Incorrect: ${input}<br>✔️ Correct: ${correct}`, false);
-    incorrectWords.push(correct);
+  async function loadDefault(){
+    try{ const r=await fetch(`${LIST}?v=${Date.now()}`,{cache:'no-store'});
+      if(!r.ok) throw 0; const j=await r.json();
+      const arr=Array.isArray(j?.words)?j.words:Array.isArray(j)?j:[]; return arr;
+    }catch(_){ return []; }
   }
 
-  inputField.value = "";
-  currentIndex++;
-  setTimeout(nextWord, 1000);
-}
+  async function start(){
+    const custom=(ui.area.value||'').trim();
+    state.words = custom ? custom.split(/[\n,]+/).map(s=>s.trim()).filter(Boolean) : await loadDefault();
+    state.i=0; state.correct=[]; state.incorrect=[]; state.flags.clear(); state.active=true;
+    if(!state.words.length){ t(ui.feedback,'No words loaded. Paste or upload a list.'); return; }
+    t(ui.feedback,''); show(); say();
+  }
 
-// ==== Feedback ====
-function feedback(msg, correct) {
-  feedbackDiv.innerHTML = msg;
-  feedbackDiv.className = "feedback " + (correct ? "correct" : "incorrect");
-}
+  function check(){
+    if(!state.active) return;
+    const target=(state.words[state.i]||'').trim();
+    const ans=(ui.area.value||'').trim();
+    if(!target) return;
+    if(!ans){ t(ui.feedback,'Type your answer, then press Enter or Submit.'); return; }
+    if(norm(ans)===norm(target)){ state.correct.push(target); t(ui.feedback,'✅ Correct'); }
+    else { state.incorrect.push(target); t(ui.feedback,`❌ Incorrect — ${target}`); }
+    ui.area.value=''; state.i++;
+    if(state.i>=state.words.length){ end(); } else { show(); say(); }
+  }
 
-// ==== End Session ====
-function endSession() {
-  stopSpeech();
-  safeStopRecognition(window.currentRecognition);
-  isSessionActive = false;
-  summaryArea.classList.remove("hidden");
+  function say(){ const w=state.words[state.i]; if(!w) return; window.AudioGuards?.speakOnce(w); }
+  function end(){
+    state.active=false; window.AudioGuards?.stopAll();
+    const lines=['Session Complete',`✅ ${state.correct.length}`,`❌ ${state.incorrect.length}`, state.flags.size?`🚩 ${[...state.flags].join(', ')}`:'No flagged'];
+    t(ui.feedback, lines.join(' • '));
+  }
 
-  correctList.innerHTML = `<li>${score} correct</li>`;
-  incorrectList.innerHTML = incorrectWords.map((w) => `<li>${w}</li>`).join("");
-  flaggedList.innerHTML = flaggedWords.map((w) => `<li>${w}</li>`).join("");
-}
+  ui.start && ui.start.addEventListener('click', start);
+  ui.submit.addEventListener('click', check);
+  ui.area.addEventListener('keydown', e=>{ if(e.key==='Enter'){ e.preventDefault(); check(); }});
+  ui.say && ui.say.addEventListener('click', say);
+  ui.upload.addEventListener('change', async ev=>{
+    const f=ev.target.files?.[0]; if(!f) return; const txt=await f.text();
+    try{ const j=JSON.parse(txt); state.words=Array.isArray(j?.words)?j.words:Array.isArray(j)?j:[]; }
+    catch(_){ state.words=txt.split(/[\n,]+/).map(s=>s.trim()).filter(Boolean); }
+    t(ui.feedback, `Loaded ${state.words.length} words. Press Start.`);
+  });
 
-// ==== Flag Word ====
-function flagWord() {
-  const word = words[currentIndex];
-  if (word && !flaggedWords.includes(word)) flaggedWords.push(word);
-}
-
-// ==== Event Listeners ====
-startBtn?.addEventListener("click", startPractice);
-inputField?.addEventListener("keydown", (e) => {
-  if (e.key === "Enter") checkAnswer();
-});
-endSessionBtn?.addEventListener("click", endSession);
-flagBtn?.addEventListener("click", flagWord);
-
-// ==== Audio Guards Init ====
-document.addEventListener("DOMContentLoaded", () => {
-  if (typeof initAudioGuards === "function")
-    initAudioGuards(window.currentRecognition);
-});
+  console.log('School ready');
+})();
