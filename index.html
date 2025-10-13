@@ -2,236 +2,105 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>SpellRightPro — Home</title>
 
-  <link rel="stylesheet" href="/css/styles.css" />
-  <link rel="icon" type="image/png" href="/assets/logo.png" />
+  <link rel="stylesheet" href="/css/styles.css"/>
+  <link rel="icon" type="image/png" href="/assets/logo.png"/>
 
-  <!-- Google AdSense -->
+  <!-- AdSense (live) -->
   <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-4670761653568502" crossorigin="anonymous"></script>
 
-  <!-- Google Analytics -->
+  <!-- GA -->
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-H09MF13297"></script>
   <script>
     window.dataLayer = window.dataLayer || [];
-    function gtag(){ dataLayer.push(arguments); }
-    gtag('js', new Date());
-    gtag('config', 'G-H09MF13297');
+    function gtag(){dataLayer.push(arguments);} gtag('js', new Date()); gtag('config', 'G-H09MF13297');
   </script>
 
   <style>
-    /* Navigation */
+    :root {
+      --pad: clamp(12px, 4vw, 24px);
+      --hero-gap: clamp(16px, 5vw, 28px);
+    }
+    body { margin:0; min-height:100vh; display:flex; flex-direction:column;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
     header.navbar {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 10px 18px;
-      background: var(--primary-light);
-      box-shadow: var(--shadow);
-      position: sticky;
-      top: 0;
-      z-index: 100;
+      display:flex; justify-content:space-between; align-items:center;
+      padding: 10px var(--pad); background: rgba(255,255,255,.9); backdrop-filter: blur(10px);
+      position: sticky; top:0; z-index:10; box-shadow: 0 4px 18px rgba(0,0,0,.08);
     }
+    .brand { display:flex; align-items:center; gap:12px; }
+    .brand .logo { max-height:60px; width:auto; object-fit:contain; }
+    .brand .title { font-weight:800; color:#2a2a2a; }
+    .brand .subtitle { color:#6c757d; font-size:.9rem; }
+    .nav-actions { display:flex; gap:8px; }
+    .nav-actions .btn { background:#4361ee; color:#fff; border:none; border-radius:10px; padding:8px 12px; font-weight:600; cursor:pointer; }
+    main.hero { flex:1; display:flex; align-items:center; justify-content:center; padding: var(--pad); }
+    .hero-inner { width:min(980px, 95vw); display:flex; flex-direction:column; align-items:center; gap:var(--hero-gap); }
+    .hero-inner h1 { color:#fff; text-align:center; margin:0; font-size: clamp(1.6rem, 3.6vw, 2.3rem); }
+    .hero-inner p { color: #f1f1f1; text-align:center; margin:0; max-width:760px; }
+    .mode-grid { display:grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap:14px; width:100%; }
+    .mode-card { background:#fff; border-radius:14px; padding:18px; box-shadow: 0 8px 18px rgba(0,0,0,.12); cursor:pointer; transition:.2s; }
+    .mode-card:hover { transform: translateY(-4px); }
+    .mode-card h3 { margin:0 0 6px; color:#343a40; }
+    .mode-card p { margin:0; color:#6c757d; }
+    footer { color:#e9e9e9; text-align:center; padding: 14px var(--pad) 22px; }
 
-    .brand {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-    }
-
-    .brand .logo {
-      max-height: 60px;
-      width: auto;
-      object-fit: contain;
-      border-radius: 8px;
-    }
-
-    .brand span {
-      display: block;
-      line-height: 1.2;
-      color: var(--dark);
-      font-weight: 700;
-    }
-
-    .brand .subtitle {
-      font-size: 0.85rem;
-      color: var(--gray);
-      font-weight: 400;
-    }
-
-    .nav-actions button {
-      background: var(--primary);
-      color: #fff;
-      border: none;
-      padding: 8px 14px;
-      border-radius: 8px;
-      cursor: pointer;
-      font-weight: 600;
-      margin-left: 10px;
-      transition: background 0.2s;
-    }
-
-    .nav-actions button:hover {
-      background: var(--primary-dark);
-    }
-
-    /* Hero Section */
-    main.hero {
-      text-align: center;
-      padding: 80px 16px 40px;
-      color: var(--dark);
-    }
-
-    main.hero h1 {
-      font-size: 2.2rem;
-      margin-bottom: 12px;
-      color: var(--primary-dark);
-    }
-
-    main.hero p {
-      font-size: 1.1rem;
-      color: var(--gray);
-      max-width: 600px;
-      margin: 0 auto 32px;
-    }
-
-    .mode-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
-      gap: 20px;
-      max-width: 900px;
-      margin: 0 auto;
-    }
-
-    .mode-card {
-      background: #fff;
-      border-radius: 12px;
-      box-shadow: var(--shadow-md);
-      padding: 20px;
-      transition: transform 0.25s ease, box-shadow 0.25s ease;
-      cursor: pointer;
-    }
-
-    .mode-card:hover {
-      transform: translateY(-5px);
-      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
-    }
-
-    .mode-card h3 {
-      color: var(--primary-dark);
-      margin-bottom: 8px;
-    }
-
-    .mode-card p {
-      color: var(--gray);
-      font-size: 0.95rem;
-    }
-
-    footer {
-      text-align: center;
-      padding: 20px;
-      font-size: 0.9rem;
-      color: var(--gray);
-    }
-
-    /* Dark Mode */
-    body.dark-mode {
-      background: var(--dark);
-      color: #eee;
-    }
-
-    body.dark-mode main.hero h1 {
-      color: var(--light);
-    }
-
-    body.dark-mode .mode-card {
-      background: #2b2b3c;
-      color: #eee;
-    }
-
-    body.dark-mode .mode-card h3 {
-      color: var(--success);
-    }
-
-    body.dark-mode .brand span {
-      color: var(--light);
-    }
-
-    @media (max-width: 768px) {
-      .brand .logo {
-        max-height: 45px;
-      }
-      main.hero {
-        padding-top: 60px;
-      }
+    @media (max-width: 700px){
+      .brand .logo { max-height:40px; }
+      .mode-grid { grid-template-columns: 1fr; }
     }
   </style>
 </head>
-
 <body>
-  <!-- Navigation -->
   <header class="navbar">
     <div class="brand">
-      <img src="/assets/logo.png" class="logo" alt="SpellRightPro Logo" />
+      <img src="/assets/logo.png" alt="SpellRightPro" class="logo"/>
       <div>
-        <span>SpellRightPro</span>
-        <span class="subtitle">Spelling Confidence, Simplified</span>
+        <div class="title">SpellRightPro</div>
+        <div class="subtitle">Spelling Confidence, Simplified</div>
       </div>
     </div>
-    <nav class="nav-actions">
-      <button onclick="window.location.href='/premium.html'">Premium</button>
-      <button id="btnDarkMode" aria-pressed="false" title="Toggle dark mode">🌙</button>
-    </nav>
+    <div class="nav-actions">
+      <button class="btn" onclick="location.href='/premium.html'">Premium</button>
+      <button class="btn" id="toggleDark">🌙</button>
+    </div>
   </header>
 
-  <!-- Hero Section -->
   <main class="hero">
-    <h1>Welcome to SpellRightPro</h1>
-    <p>Master spelling with smart voice recognition and interactive modes for students, professionals, and Spelling Bee champions!</p>
+    <div class="hero-inner">
+      <h1>Master spelling with smart voice recognition and interactive modes.</h1>
+      <p>Choose a mode to get started — Bee for competitions, School for class practice, and OET for medical vocabulary.</p>
 
-    <div class="mode-grid">
-      <div class="mode-card" onclick="window.location.href='/freemium-bee.html'">
-        <h3>🐝 Spelling Bee Mode</h3>
-        <p>Speak and spell hands-free. Designed for competitions and fun practice.</p>
-      </div>
-
-      <div class="mode-card" onclick="window.location.href='/freemium-school.html'">
-        <h3>🏫 School Mode</h3>
-        <p>Train students interactively with immediate feedback and progress tracking.</p>
-      </div>
-
-      <div class="mode-card" onclick="window.location.href='/freemium-oet.html'">
-        <h3>⚕️ OET Mode</h3>
-        <p>Focus on medical and healthcare spelling words for OET and IELTS exams.</p>
-      </div>
-
-      <div class="mode-card" onclick="window.location.href='/premium.html'">
-        <h3>💎 Premium</h3>
-        <p>Access full word banks, streak tracking, stats, and ad-free experience.</p>
+      <div class="mode-grid">
+        <div class="mode-card" onclick="location.href='/freemium-bee.html'">
+          <h3>🐝 Spelling Bee</h3><p>Hands-free spelling: hear, speak, and get instant marking.</p>
+        </div>
+        <div class="mode-card" onclick="location.href='/freemium-school.html'">
+          <h3>🏫 School</h3><p>Type answers, upload lists, and train with clear feedback.</p>
+        </div>
+        <div class="mode-card" onclick="location.href='/freemium-oet.html'">
+          <h3>⚕️ OET</h3><p>Healthcare wordlists with exam/practice options.</p>
+        </div>
+        <div class="mode-card" onclick="location.href='/premium.html'">
+          <h3>💎 Premium</h3><p>Full libraries, stats, streaks, and no ads.</p>
+        </div>
       </div>
     </div>
   </main>
 
-  <footer>
-    © 2025 SpellRightPro — All Rights Reserved.
-  </footer>
+  <footer>© 2025 SpellRightPro — All Rights Reserved.</footer>
 
-  <!-- Dark Mode Toggle -->
   <script>
-    (function () {
-      const btn = document.getElementById("btnDarkMode");
-      const key = "srp-dark";
-      const apply = (v) => document.body.classList.toggle("dark-mode", v);
-      apply(localStorage.getItem(key) === "1");
-      btn.setAttribute("aria-pressed", localStorage.getItem(key) === "1");
-      btn.addEventListener("click", () => {
-        const v = !(localStorage.getItem(key) === "1");
-        localStorage.setItem(key, v ? "1" : "0");
-        btn.setAttribute("aria-pressed", v);
-        apply(v);
-      });
-    })();
+    // Dark mode (simple body class flag reused across pages)
+    const k='srp_dark'; const on = localStorage.getItem(k)==='1';
+    document.body.classList.toggle('dark-mode', on);
+    document.getElementById('toggleDark').addEventListener('click', ()=>{
+      const v=!document.body.classList.contains('dark-mode');
+      document.body.classList.toggle('dark-mode', v);
+      localStorage.setItem(k, v?'1':'0');
+    });
   </script>
 </body>
 </html>
