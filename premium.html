@@ -1,86 +1,68 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8"/>
-  <meta name="viewport" content="width=device-width,initial-scale=1"/>
-  <title>SpellRightPro — Premium</title>
-
-  <link rel="stylesheet" href="/css/premium.css"/>
-  <link rel="icon" href="/assets/logo.png"/>
-
-  <!-- Firebase -->
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
-  <script src="/js/config.js"></script>
-
-  <!-- Shared Audio + Premium JS -->
-  <script src="/js/audio-guards.js" defer></script>
-  <script src="/js/main-premium.js" defer></script>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>SpellRightPro Premium</title>
+<link rel="stylesheet" href="/css/styles.css"/>
 </head>
-
 <body>
-  <header>
-    <button onclick="window.location.href='index.html'" class="nav-btn">🏠 Home</button>
-    <button id="toggleDark" class="nav-btn">🌙</button>
-  </header>
+<main class="container" style="display:grid;place-items:center;min-height:100vh">
+<section class="glass" style="max-width:720px;padding:24px;width:90%">
+<header style="display:flex;justify-content:space-between;align-items:center">
+<h1>Premium Spelling Practice</h1>
+<div style="display:flex;gap:.5rem">
+<a href="/index.html" class="btn">Home</a>
+<button id="darkBtn" class="btn btn-secondary">🌙</button>
+<button id="logoutBtn" class="btn" style="display:none">Logout</button>
+</div>
+</header>
+<p style="opacity:.8">Advanced tools — unlimited words, detailed summary, no ads.</p>
 
-  <main>
-    <h2>Premium Spelling Practice</h2>
-    <p class="subtitle">Advanced tools, personalized progress — and no ads.</p>
+<!-- Auth -->
+<div id="authBox" class="glass" style="padding:16px;margin-top:12px">
+<p><b>Sign in</b> with Google or use email + password</p>
+<button id="gLogin" class="btn" style="width:100%">Continue with Google</button>
+<input id="email" class="input" placeholder="Email"/>
+<input id="pass" class="input" type="password" placeholder="Password"/>
+<div style="display:flex;gap:.5rem;flex-wrap:wrap;margin:.5rem 0">
+<button id="emailLogin" class="btn">Login</button>
+<button id="emailReg" class="btn btn-secondary">Register</button>
+<button id="resetPw" class="btn btn-secondary">Reset Password</button>
+</div>
+<p id="authMsg" style="color:#e66"></p>
+</div>
 
-    <div id="wordProgress"></div>
-    <input id="wordInput" placeholder="Type the spelling here…"/>
+<!-- App area -->
+<div id="appArea" style="display:none">
+<textarea id="customWords" rows="4" placeholder="Unlimited custom words…"></textarea>
+<p><input id="uploadList" type="file" accept=".txt,.csv"/></p>
+<input id="answer" class="input" placeholder="Type the spelling here…" autocomplete="off"/>
+<div id="progress">Word 0 of 0</div>
+<div id="feedback"></div>
+<div style="display:flex;gap:.6rem;flex-wrap:wrap;margin-top:.5rem">
+<button class="btn" data-action="start">Start</button>
+<button class="btn" data-action="say">Say Again</button>
+<button class="btn btn-secondary" data-action="prev">Prev</button>
+<button class="btn btn-secondary" data-action="next">Next</button>
+<button class="btn" data-action="flag">Flag</button>
+<button class="btn danger" data-action="end">End Session</button>
+</div>
+<div id="summary" style="margin-top:1rem"></div>
+</div>
+</section>
+</main>
 
-    <div>
-      <button id="btnStart">Start</button>
-      <button id="btnSayAgain">Say Again</button>
-      <button id="btnPrev">Prev</button>
-      <button id="btnNext">Next</button>
-      <button id="btnFlag">Flag</button>
-      <button id="btnEnd">End Session</button>
-    </div>
+<!-- Firebase -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script>
+const firebaseConfig={/* your spellrightpro-firebase config */};
+firebase.initializeApp(firebaseConfig);
+const auth=firebase.auth();
 
-    <div id="feedback"></div>
-  </main>
+function q(id){return document.getElementById(id);}
 
-  <!-- Auth Overlay -->
-  <div id="authOverlay" class="glass-overlay">
-    <div class="glass-card">
-      <h3>Sign in to Premium</h3>
-      <p>Continue with Google or use Email</p>
-
-      <button id="googleBtn" class="btn-google">
-        <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt=""/>
-        Continue with Google
-      </button>
-
-      <input type="email" id="email" placeholder="Email"/>
-      <input type="password" id="password" placeholder="Password"/>
-
-      <div>
-        <button id="loginBtn" class="btn-main">Login</button>
-        <button id="registerBtn" class="btn-main">Register</button>
-        <button id="resetBtn" class="btn-sub">Reset Password</button>
-      </div>
-
-      <p id="statusText" class="auth-status"></p>
-      <button id="verifyBtn" class="btn-verify" style="display:none;">I’ve verified</button>
-
-      <button id="backHome" class="btn-sub">Back to Home</button>
-    </div>
-  </div>
-
-  <script>
-    // --- Dark Mode ---
-    const darkKey = 'srp_dark';
-    const isDark = localStorage.getItem(darkKey)==='1';
-    document.body.classList.toggle('dark-mode', isDark);
-    document.getElementById('toggleDark').addEventListener('click', ()=>{
-      const on = !document.body.classList.contains('dark-mode');
-      document.body.classList.toggle('dark-mode', on);
-      localStorage.setItem(darkKey, on ? '1':'0');
-    });
-  </script>
-</body>
-</html>
+// dark
+(function(){const k="srp.dark";if(localStorage.getItem(k)==="1")document.documentElement.classList.add("dark");
+q("darkBtn").onclick=()=>{document
