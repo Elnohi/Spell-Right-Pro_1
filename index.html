@@ -93,14 +93,22 @@
   <footer>© 2025 SpellRightPro — All Rights Reserved.</footer>
 
   <script>
-    // Dark mode (simple body class flag reused across pages)
-    const k='srp_dark'; const on = localStorage.getItem(k)==='1';
-    document.body.classList.toggle('dark-mode', on);
-    document.getElementById('toggleDark').addEventListener('click', ()=>{
-      const v=!document.body.classList.contains('dark-mode');
-      document.body.classList.toggle('dark-mode', v);
-      localStorage.setItem(k, v?'1':'0');
+<!-- Contact button just above footer -->
+<p style="text-align:center;margin-top:24px">
+  <a class="btn" href="/contact.html">Contact us</a>
+</p>
+
+<!-- Dark mode toggle (site-wide) -->
+<script>
+  (function(){
+    const key='srp.dark';
+    if (localStorage.getItem(key)==='1') document.documentElement.classList.add('dark');
+    const btn=document.querySelector('[data-global-dark]');
+    if (btn) btn.addEventListener('click', ()=>{
+      document.documentElement.classList.toggle('dark');
+      localStorage.setItem(key, document.documentElement.classList.contains('dark')?'1':'0');
     });
-  </script>
+  })();
+</script>
 </body>
 </html>
