@@ -1,170 +1,149 @@
-/* ============================================================
-   SpellRightPro Premium - Auth + Core Logic
-   Firebase Project: spellrightpro-firebase
-   Last Updated: Oct 2025
-============================================================ */
+/*!
+ * main-premium.js
+ * Unified premium controller for Bee / School / OET tabs
+ * Self-contained (includes internal TTS + SpeechRecognition)
+ */
 
-// Firebase initialization (from config.js)
-firebase.initializeApp(firebaseConfig);
-const auth = firebase.auth();
-const db = firebase.firestore();
+(function(){
+  document.addEventListener("DOMContentLoaded", init);
 
-let currentUser = null;
+  // ---------- utilities ----------
+  const $ = sel => document.querySelector(sel);
+  const sleep = ms => new Promise(r=>setTimeout(r,ms));
+  const clean = s => s.toLowerCase().replace(/[^\p{L}]/gu,"");
 
-/* ============================================================
-   AUTH OVERLAY LOGIC
-============================================================ */
-const overlay = document.getElementById("authOverlay");
-const loginBtn = document.getElementById("loginBtn");
-const registerBtn = document.getElementById("registerBtn");
-const resetBtn = document.getElementById("resetBtn");
-const googleBtn = document.getElementById("googleBtn");
-const verifyBtn = document.getElementById("verifyBtn");
-const backHome = document.getElementById("backHome");
-const emailInput = document.getElementById("email");
-const passwordInput = document.getElementById("password");
-const statusText = document.getElementById("statusText");
-
-// Helper to show messages in overlay
-function showStatus(msg, color = "#fff") {
-  if (statusText) {
-    statusText.textContent = msg;
-    statusText.style.color = color;
+  // ---------- Speech & TTS ----------
+  function speak(text){
+    return new Promise(res=>{
+      if(!("speechSynthesis" in window)) return res();
+      const u = new SpeechSynthesisUtterance(text);
+      u.rate = 0.9;
+      const v = speechSynthesis.getVoices().find(v=>/^en/i.test(v.lang)) || null;
+      if(v) u.voice=v;
+      u.onend=res;
+      speechSynthesis.cancel();
+      speechSynthesis.speak(u);
+    });
   }
-}
 
-/* ============================================================
-   EMAIL/PASSWORD REGISTRATION + LOGIN
-============================================================ */
-registerBtn?.addEventListener("click", async () => {
-  const email = emailInput.value.trim();
-  const password = passwordInput.value.trim();
-  if (!email || !password) return alert("Enter both email and password.");
+  function listen(){
+    return new Promise(resolve=>{
+      const SR = window.SpeechRecognition||window.webkitSpeechRecognition;
+      if(!SR){ console.warn("SpeechRecognition unsupported"); return resolve("");}
+      const rec = new SR();
+      rec.lang="en-US"; rec.interimResults=false; rec.maxAlternatives=1;
+      let done=false;
+      rec.onresult=e=>{done=true; resolve(e.results[0][0].transcript);}
+      rec.onerror=e=>{console.warn("rec err",e.error); if(!done)resolve("");}
+      rec.onend=()=>{if(!done)resolve("");}
+      rec.start();
+    });
+  }
 
-  try {
-    const userCredential = await auth.createUserWithEmailAndPassword(email, password);
-    const user = userCredential.user;
+  // ---------- mode states ----------
+  const modes = {
+    bee:{words:[],i:0,correct:[],wrong:[],flags:new Set(),active:false},
+    school:{words:[],i:0,correct:[],wrong:[],flags:new Set(),active:false},
+    oet:{words:[],i:0,correct:[],wrong:[],flags:new Set(),active:false}
+  };
 
-    // Send verification only for email/password users
-    if (user && !user.emailVerified) {
-      await user.sendEmailVerification();
-      showStatus("Verification email sent. Please check your inbox.", "gold");
-      verifyBtn.style.display = "block";
+  // ---------- load words ----------
+  async function loadWords(area,upload,defaultList){
+    let words=[];
+    const txt = area.value.trim();
+    if(txt) words = txt.split(/[\n,]+/).map(w=>w.trim()).filter(Boolean);
+    if(!words.length && upload.files[0]){
+      const f = await upload.files[0].text();
+      words = f.split(/[\n,]+/).map(w=>w.trim()).filter(Boolean);
     }
-  } catch (err) {
-    console.error("Registration failed:", err);
-    alert(err.message);
+    if(!words.length) words = defaultList;
+    return words;
   }
-});
 
-loginBtn?.addEventListener("click", async () => {
-  const email = emailInput.value.trim();
-  const password = passwordInput.value.trim();
-  if (!email || !password) return alert("Enter both email and password.");
-
-  try {
-    const result = await auth.signInWithEmailAndPassword(email, password);
-    const user = result.user;
-    if (!user.emailVerified) {
-      showStatus("Please verify your email before proceeding.", "orange");
-      verifyBtn.style.display = "block";
-    } else {
-      proceedToPremium(user);
-    }
-  } catch (err) {
-    console.error("Login failed:", err);
-    alert("Sign-in failed. Try again.");
+  // ---------- summaries ----------
+  function showSummary(mode){
+    const s = modes[mode];
+    const flagged=[...s.flags];
+    const html = `
+      <h3>${mode.toUpperCase()} Summary</h3>
+      <p>✅ Correct: ${s.correct.length}</p>
+      <p>❌ Incorrect: ${s.wrong.join(", ")||"None"}</p>
+      <p>🚩 Flagged: ${flagged.join(", ")||"None"}</p>`;
+    $("#summary").innerHTML=html;
   }
-});
 
-/* ============================================================
-   GOOGLE SIGN-IN (No verification required)
-============================================================ */
-googleBtn?.addEventListener("click", async () => {
-  const provider = new firebase.auth.GoogleAuthProvider();
-  try {
-    const result = await auth.signInWithPopup(provider);
-    const user = result.user;
-    if (user) {
-      console.log("Google user logged in:", user.displayName);
-      showStatus(`Welcome ${user.displayName}! Redirecting...`, "lightgreen");
-      proceedToPremium(user);
-    }
-  } catch (err) {
-    console.error("Google sign-in failed:", err);
-    alert("Sign-in failed. Try again.");
+  // ---------- Bee logic ----------
+  async function beeNext(auto){
+    const s=modes.bee; if(!s.active) return;
+    if(s.i>=s.words.length){ s.active=false; return showSummary("bee"); }
+    const w=s.words[s.i];
+    $("#beeFeedback").textContent=`🎧 Listen: ${w}`;
+    await speak(w);
+    const heard=clean(await listen());
+    const target=clean(w);
+    if(heard===target){$("#beeFeedback").textContent="✅ Correct";s.correct.push(w);}
+    else {$("#beeFeedback").textContent=`❌ Incorrect — ${w}`;s.wrong.push(w);}
+    s.i++;
+    await sleep(1000);
+    beeNext(true);
   }
-});
 
-/* ============================================================
-   PASSWORD RESET
-============================================================ */
-resetBtn?.addEventListener("click", async () => {
-  const email = emailInput.value.trim();
-  if (!email) return alert("Enter your email first.");
-  try {
-    await auth.sendPasswordResetEmail(email);
-    showStatus("Password reset email sent.", "gold");
-  } catch (err) {
-    console.error("Reset failed:", err);
-    alert(err.message);
+  // ---------- School & OET logic ----------
+  async function startTypingMode(mode,inputEl,feedbackEl){
+    const s=modes[mode]; if(!s.active)return;
+    if(s.i>=s.words.length){ s.active=false; return showSummary(mode); }
+    const w=s.words[s.i];
+    feedbackEl.textContent=`🎧 Listen carefully…`;
+    await speak(w);
+    inputEl.value="";
+    inputEl.focus();
+    const check=()=>{ 
+      const ans=clean(inputEl.value);
+      const target=clean(w);
+      if(!ans)return;
+      if(ans===target){feedbackEl.textContent="✅ Correct";s.correct.push(w);}
+      else{feedbackEl.textContent=`❌ Incorrect — ${w}`;s.wrong.push(w);}
+      s.i++; 
+      setTimeout(()=>startTypingMode(mode,inputEl,feedbackEl),800);
+    };
+    inputEl.onkeydown=e=>{if(e.key==="Enter"){e.preventDefault();check();}};
   }
-});
 
-/* ============================================================
-   VERIFY BUTTON
-============================================================ */
-verifyBtn?.addEventListener("click", async () => {
-  const user = auth.currentUser;
-  if (!user) return;
-  await user.reload();
+  // ---------- init -------------
+  function init(){
+    console.log("Premium JS loaded");
 
-  if (user.emailVerified) {
-    showStatus("Email verified! Redirecting...", "lightgreen");
-    proceedToPremium(user);
-  } else {
-    showStatus("Still not verified. Please check inbox.", "red");
+    // Bee
+    $("#beeStart").onclick=async()=>{
+      const s=modes.bee;
+      s.words=await loadWords($("#beeCustom"),$("#beeUpload"),
+        ["accommodate","rhythm","necessary","separate","recommend"]);
+      s.i=0;s.correct=[];s.wrong=[];s.flags.clear();s.active=true;
+      $("#summary").innerHTML=""; beeNext();
+    };
+    $("#beeSay").onclick=()=>speak(modes.bee.words[modes.bee.i]||"");
+    $("#beeEnd").onclick=()=>{modes.bee.active=false;showSummary("bee");};
+
+    // School
+    $("#schoolStart").onclick=async()=>{
+      const s=modes.school;
+      s.words=await loadWords($("#schoolCustom"),$("#schoolUpload"),
+        ["biology","anatomy","physiology","neuron","surgery"]);
+      s.i=0;s.correct=[];s.wrong=[];s.flags.clear();s.active=true;
+      $("#summary").innerHTML=""; startTypingMode("school",$("#schoolInput"),$("#schoolFeedback"));
+    };
+    $("#schoolNext").onclick=()=>startTypingMode("school",$("#schoolInput"),$("#schoolFeedback"));
+    $("#schoolEnd").onclick=()=>{modes.school.active=false;showSummary("school");};
+
+    // OET
+    $("#oetStart").onclick=async()=>{
+      const s=modes.oet;
+      s.words=await loadWords($("#oetCustom"),$("#oetUpload"),
+        ["diagnosis","prescription","stethoscope","patient","symptom"]);
+      s.i=0;s.correct=[];s.wrong=[];s.flags.clear();s.active=true;
+      $("#summary").innerHTML=""; startTypingMode("oet",$("#oetInput"),$("#oetFeedback"));
+    };
+    $("#oetNext").onclick=()=>startTypingMode("oet",$("#oetInput"),$("#oetFeedback"));
+    $("#oetEnd").onclick=()=>{modes.oet.active=false;showSummary("oet");};
   }
-});
-
-/* ============================================================
-   AUTH STATE OBSERVER
-============================================================ */
-auth.onAuthStateChanged((user) => {
-  if (user) {
-    const provider = user.providerData[0]?.providerId;
-
-    // Allow Google users instantly, email users only if verified
-    if (provider === "google.com" || user.emailVerified) {
-      proceedToPremium(user);
-    } else {
-      overlay.style.display = "flex";
-      showStatus("Please verify your email to continue.", "orange");
-    }
-  } else {
-    overlay.style.display = "flex";
-  }
-});
-
-/* ============================================================
-   PREMIUM MAIN APP LOGIC
-============================================================ */
-function proceedToPremium(user) {
-  currentUser = user;
-  overlay.style.display = "none";
-  document.body.classList.add("authenticated");
-
-  // Load user-specific data (custom words, stats, etc.)
-  console.log("Logged in:", user.email);
-
-  // Example: Load welcome message
-  const welcome = document.getElementById("welcomeUser");
-  if (welcome) welcome.textContent = `Welcome, ${user.displayName || user.email}`;
-}
-
-/* ============================================================
-   BACK TO HOME
-============================================================ */
-backHome?.addEventListener("click", () => {
-  window.location.href = "index.html";
-});
+})();
