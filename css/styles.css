@@ -199,4 +199,26 @@ footer {
   .main-card {
     padding: 20px;
   }
+
+   /* --- Accessibility: stronger contrast for secondary buttons --- */
+.btn-secondary {
+  background: #eceffd;
+  color: #222;
+  border: 1px solid #cfd7ff;
+}
+.btn-secondary:hover { filter: brightness(0.98); }
+
+/* Summary list */
+.summary-list {
+  margin: .5rem 0 0;
+  padding-left: 1.2rem;
+}
+.summary-list li { margin: .15rem 0; }
+
+/* Dark mode (kept consistent) */
+:root { color-scheme: light dark; }
+html.dark body { background: #0e0b1a; color: #f4f2ff; }
+html.dark .glass { background: rgba(255,255,255,.06); border-color: rgba(255,255,255,.12); }
+html.dark .btn-secondary { background: #2a2740; color: #f4f2ff; border-color: #3b3661; }
+
 }
