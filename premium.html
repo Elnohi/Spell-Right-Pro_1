@@ -1,68 +1,187 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="utf-8"/>
-<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
 <title>SpellRightPro Premium</title>
-<link rel="stylesheet" href="/css/styles.css"/>
-</head>
-<body>
-<main class="container" style="display:grid;place-items:center;min-height:100vh">
-<section class="glass" style="max-width:720px;padding:24px;width:90%">
-<header style="display:flex;justify-content:space-between;align-items:center">
-<h1>Premium Spelling Practice</h1>
-<div style="display:flex;gap:.5rem">
-<a href="/index.html" class="btn">Home</a>
-<button id="darkBtn" class="btn btn-secondary">🌙</button>
-<button id="logoutBtn" class="btn" style="display:none">Logout</button>
-</div>
-</header>
-<p style="opacity:.8">Advanced tools — unlimited words, detailed summary, no ads.</p>
 
-<!-- Auth -->
-<div id="authBox" class="glass" style="padding:16px;margin-top:12px">
-<p><b>Sign in</b> with Google or use email + password</p>
-<button id="gLogin" class="btn" style="width:100%">Continue with Google</button>
-<input id="email" class="input" placeholder="Email"/>
-<input id="pass" class="input" type="password" placeholder="Password"/>
-<div style="display:flex;gap:.5rem;flex-wrap:wrap;margin:.5rem 0">
-<button id="emailLogin" class="btn">Login</button>
-<button id="emailReg" class="btn btn-secondary">Register</button>
-<button id="resetPw" class="btn btn-secondary">Reset Password</button>
-</div>
-<p id="authMsg" style="color:#e66"></p>
-</div>
-
-<!-- App area -->
-<div id="appArea" style="display:none">
-<textarea id="customWords" rows="4" placeholder="Unlimited custom words…"></textarea>
-<p><input id="uploadList" type="file" accept=".txt,.csv"/></p>
-<input id="answer" class="input" placeholder="Type the spelling here…" autocomplete="off"/>
-<div id="progress">Word 0 of 0</div>
-<div id="feedback"></div>
-<div style="display:flex;gap:.6rem;flex-wrap:wrap;margin-top:.5rem">
-<button class="btn" data-action="start">Start</button>
-<button class="btn" data-action="say">Say Again</button>
-<button class="btn btn-secondary" data-action="prev">Prev</button>
-<button class="btn btn-secondary" data-action="next">Next</button>
-<button class="btn" data-action="flag">Flag</button>
-<button class="btn danger" data-action="end">End Session</button>
-</div>
-<div id="summary" style="margin-top:1rem"></div>
-</div>
-</section>
-</main>
+<link rel="stylesheet" href="/css/premium.css"/>
+<link rel="icon" href="/assets/logo.png"/>
 
 <!-- Firebase -->
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script src="/js/config.js"></script>
+
+<!-- Audio / Main Logic -->
+<script src="/js/audio-guards.js" defer></script>
+<script src="/js/main-premium.js" defer></script>
+
+<style>
+body {
+  margin:0; font-family:"Inter",sans-serif;
+  background:linear-gradient(135deg,#7b2ff7,#f107a3);
+  min-height:100vh; display:flex; flex-direction:column; align-items:center;
+  color:#fff;
+}
+header{
+  display:flex; justify-content:space-between; align-items:center;
+  width:100%; max-width:900px; padding:15px 25px;
+}
+.nav-btn{background:rgba(255,255,255,0.2);color:#fff;border:none;
+  border-radius:12px;padding:8px 18px;font-weight:600;cursor:pointer}
+main{
+  background:rgba(255,255,255,0.12);backdrop-filter:blur(10px);
+  border-radius:18px;box-shadow:0 8px 20px rgba(0,0,0,0.2);
+  width:100%;max-width:900px;margin:20px;padding:25px;text-align:center;
+}
+.tabs{display:flex;justify-content:center;gap:15px;margin-bottom:20px}
+.tab{
+  background:rgba(255,255,255,0.15);border:none;border-radius:10px;
+  padding:10px 20px;color:#fff;font-weight:600;cursor:pointer;
+  transition:0.2s ease;
+}
+.tab.active{background:#fff;color:#7b2ff7}
+.section{display:none}
+.section.active{display:block;animation:fade 0.3s}
+@keyframes fade{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:none}}
+input,textarea{width:100%;max-width:500px;border:none;border-radius:10px;
+  padding:10px;margin:10px 0;font-size:1rem}
+button.action{
+  background:#4895ef;color:#fff;border:none;border-radius:10px;
+  padding:10px 20px;margin:5px;cursor:pointer;font-weight:600;
+}
+#feedback{min-height:30px;margin:10px;font-weight:500}
+.glass-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.6);
+  backdrop-filter:blur(8px);display:none;justify-content:center;align-items:center;z-index:999}
+.glass-card{background:rgba(255,255,255,0.1);padding:2rem;border-radius:16px;width:320px;text-align:center}
+.dark-mode{background:#121212;color:#eee}
+@media(max-width:700px){.tab{padding:8px 10px}}
+</style>
+</head>
+<body>
+
+<header>
+  <button onclick="location.href='index.html'" class="nav-btn">🏠 Home</button>
+  <div>
+    <button id="toggleDark" class="nav-btn">🌙</button>
+    <button id="logoutBtn" class="nav-btn">Logout</button>
+  </div>
+</header>
+
+<main>
+  <h2>Premium Spelling Practice</h2>
+  <div class="tabs">
+    <button class="tab" data-tab="bee">🐝 Bee</button>
+    <button class="tab" data-tab="school">🏫 School</button>
+    <button class="tab" data-tab="oet">💊 OET</button>
+  </div>
+
+  <!-- Bee Section -->
+  <section id="bee" class="section">
+    <p>Speak the spelling of each word.</p>
+    <textarea id="beeCustom" placeholder="Enter custom words (comma or newline separated)"></textarea>
+    <input type="file" id="beeUpload" accept=".txt,.json"/>
+    <div>
+      <button id="beeStart" class="action">Start</button>
+      <button id="beeSay" class="action">Say Again</button>
+      <button id="beeEnd" class="action">End Session</button>
+    </div>
+    <div id="beeFeedback"></div>
+  </section>
+
+  <!-- School Section -->
+  <section id="school" class="section">
+    <p>Write the spelling as you hear it.</p>
+    <textarea id="schoolCustom" placeholder="Enter custom words"></textarea>
+    <input type="file" id="schoolUpload" accept=".txt,.json"/>
+    <input type="text" id="schoolInput" placeholder="Type spelling here…"/>
+    <div>
+      <button id="schoolStart" class="action">Start</button>
+      <button id="schoolNext" class="action">Next</button>
+      <button id="schoolEnd" class="action">End Session</button>
+    </div>
+    <div id="schoolFeedback"></div>
+  </section>
+
+  <!-- OET Section -->
+  <section id="oet" class="section">
+    <p>Medical spelling mode.</p>
+    <textarea id="oetCustom" placeholder="Add or upload OET terms"></textarea>
+    <input type="file" id="oetUpload" accept=".txt,.json"/>
+    <input type="text" id="oetInput" placeholder="Type spelling here…"/>
+    <div>
+      <button id="oetStart" class="action">Start</button>
+      <button id="oetNext" class="action">Next</button>
+      <button id="oetEnd" class="action">End Session</button>
+    </div>
+    <div id="oetFeedback"></div>
+  </section>
+
+  <div id="summary"></div>
+</main>
+
+<!-- Auth Overlay -->
+<div id="authOverlay" class="glass-overlay">
+  <div class="glass-card">
+    <h3>Sign in to Premium</h3>
+    <button id="googleBtn" class="nav-btn" style="background:#fff;color:#333">Continue with Google</button>
+    <input id="email" type="email" placeholder="Email"/>
+    <input id="password" type="password" placeholder="Password"/>
+    <div>
+      <button id="loginBtn" class="action">Login</button>
+      <button id="registerBtn" class="action">Register</button>
+    </div>
+    <p id="authStatus"></p>
+  </div>
+</div>
+
 <script>
-const firebaseConfig={/* your spellrightpro-firebase config */};
+// -------- Tab handling -------------
+const tabs=document.querySelectorAll('.tab'),sections=document.querySelectorAll('.section');
+function showTab(id){
+  tabs.forEach(t=>t.classList.toggle('active',t.dataset.tab===id));
+  sections.forEach(s=>s.classList.toggle('active',s.id===id));
+  localStorage.setItem('srp_lastTab',id);
+}
+const saved=localStorage.getItem('srp_lastTab')||'bee';
+showTab(saved);
+tabs.forEach(t=>t.addEventListener('click',()=>showTab(t.dataset.tab)));
+
+// -------- Dark mode -------------
+const darkKey='srp_dark';
+function applyDark(on){document.body.classList.toggle('dark-mode',on);localStorage.setItem(darkKey,on?'1':'0');}
+applyDark(localStorage.getItem(darkKey)==='1');
+document.getElementById('toggleDark').onclick=()=>applyDark(!document.body.classList.contains('dark-mode'));
+
+// -------- Auth -------------
 firebase.initializeApp(firebaseConfig);
 const auth=firebase.auth();
+const overlay=document.getElementById('authOverlay');
+function showAuth(){overlay.style.display='flex'}
+function hideAuth(){overlay.style.display='none'}
 
-function q(id){return document.getElementById(id);}
+auth.onAuthStateChanged(u=>{if(u){hideAuth();}else{showAuth();}});
+document.getElementById('googleBtn').onclick=()=>auth.signInWithPopup(new firebase.auth.GoogleAuthProvider());
+document.getElementById('loginBtn').onclick=()=>{
+  auth.signInWithEmailAndPassword(email.value,password.value).catch(e=>authStatus.textContent=e.message);
+};
+document.getElementById('registerBtn').onclick=()=>{
+  auth.createUserWithEmailAndPassword(email.value,password.value).catch(e=>authStatus.textContent=e.message);
+};
+document.getElementById('logoutBtn').onclick=()=>auth.signOut();
 
-// dark
-(function(){const k="srp.dark";if(localStorage.getItem(k)==="1")document.documentElement.classList.add("dark");
-q("darkBtn").onclick=()=>{document
+// -------- Summary placeholder ----
+function showSummary(mode,correct,incorrect,flagged){
+  const out=[
+    `<h3>${mode} Summary</h3>`,
+    `<p>Correct: ${correct.length}</p>`,
+    `<p>Incorrect: ${incorrect.join(', ')||'None'}</p>`,
+    `<p>Flagged: ${flagged.join(', ')||'None'}</p>`
+  ].join('');
+  document.getElementById('summary').innerHTML=out;
+}
+</script>
+</body>
+</html>
