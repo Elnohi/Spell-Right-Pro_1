@@ -1,97 +1,36 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>SpellRightPro – Spelling Bee</title>
-
-  <link rel="stylesheet" href="/css/styles.css"/>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"/>
-
-  <script src="/js/audio-guards.js"></script>
-  <script src="/js/main-freemium-bee.js" defer></script>
-
-  <style>
-    body {
-      font-family: "Poppins", sans-serif;
-      background: linear-gradient(135deg, #667eea, #764ba2);
-      color: #fff; margin:0; min-height:100vh;
-      display:flex; flex-direction:column; align-items:center; justify-content:center;
-    }
-    header {
-      position: absolute; top: 10px; left: 0; right: 0;
-      display: flex; justify-content: space-between; align-items:center;
-      padding: 10px 20px;
-    }
-    .btn {
-      background: rgba(255,255,255,0.15);
-      border: none; color:#fff;
-      padding:8px 14px; border-radius:6px; cursor:pointer;
-      transition:0.2s;
-    }
-    .btn:hover { background: rgba(255,255,255,0.3); }
-    main {
-      background: rgba(255,255,255,0.15);
-      border: 1px solid rgba(255,255,255,0.25);
-      backdrop-filter: blur(10px);
-      border-radius: 16px;
-      box-shadow: 0 8px 20px rgba(0,0,0,0.2);
-      padding: 24px;
-      width: min(90%, 480px);
-      text-align: center;
-    }
-    h1 { margin-top: 0; }
-    textarea {
-      width: 100%; min-height: 80px;
-      border-radius: 10px; border: none;
-      margin-top: 10px; padding: 10px;
-    }
-    .actions { margin-top: 16px; display:flex; flex-wrap:wrap; justify-content:center; gap:10px; }
-    [data-role="feedback"] { margin-top: 14px; min-height: 20px; }
-    .dark { background: linear-gradient(135deg,#121212,#3f3f3f); color:#eee; }
-  </style>
+<meta charset="utf-8"/>
+<title>Spelling Bee (Freemium)</title>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<link rel="stylesheet" href="/css/styles.css"/>
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-XXXXXXXXXXXX" crossorigin="anonymous"></script>
 </head>
-<body>
-  <header>
-    <a href="/index.html" class="btn"><i class="fa fa-home"></i> Home</a>
-    <button id="toggleDark" class="btn">🌙</button>
-  </header>
+<body data-mode="bee">
+<main class="container">
+<section class="glass" style="max-width:720px;margin:70px auto;padding:24px">
+<h1>Spelling Bee (Freemium)</h1>
+<p>Listen carefully and spell the word aloud.</p>
+<textarea id="customWords" rows="4" placeholder="Add custom words (optional)…"></textarea>
+<p><input id="uploadList" type="file" accept=".txt,.csv"/></p>
 
-  <main>
-    <h1>Spelling Bee (Freemium)</h1>
-    <p>Listen carefully and spell the word aloud!</p>
+<div id="progress">Word 0 of 0</div>
+<div id="feedback"></div>
 
-    <textarea id="customWords" placeholder="Add custom words here (optional)..."></textarea>
+<div style="display:flex;gap:.6rem;flex-wrap:wrap;margin-top:.5rem">
+<button class="btn" data-action="start">Start</button>
+<button class="btn" data-action="say">Say Again</button>
+<button class="btn btn-secondary" data-action="prev">Prev</button>
+<button class="btn btn-secondary" data-action="next">Next</button>
+<button class="btn" data-action="flag">Flag</button>
+<button class="btn danger" data-action="end">End Session</button>
+</div>
 
-    <div data-role="progress"></div>
-    <div class="actions">
-      <button data-action="start" class="btn">Start</button>
-      <button data-action="say" class="btn">Say Again</button>
-      <button data-action="prev" class="btn">Prev</button>
-      <button data-action="next" class="btn">Next</button>
-      <button data-action="flag" class="btn">Flag</button>
-      <button data-action="end" class="btn">End Session</button>
-    </div>
-    <div data-role="feedback"></div>
-  </main>
-
-  <!-- AdSense -->
-  <div style="margin-top:20px; text-align:center;">
-    <ins class="adsbygoogle"
-         style="display:block"
-         data-ad-client="ca-pub-4670761653568502"
-         data-ad-slot="3089395247"
-         data-ad-format="auto"
-         data-full-width-responsive="true"></ins>
-    <script>(adsbygoogle=window.adsbygoogle||[]).push({});</script>
-    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js"></script>
-  </div>
-
-  <script>
-    const toggle = document.getElementById('toggleDark');
-    function applyDarkMode(on){document.body.classList.toggle('dark',on);localStorage.setItem('srp_dark',on?'1':'0');}
-    applyDarkMode(localStorage.getItem('srp_dark')==='1');
-    toggle.addEventListener('click',()=>applyDarkMode(!document.body.classList.contains('dark')));
-  </script>
+<div id="summary" style="margin-top:1rem"></div>
+</section>
+</main>
+<script src="/js/audio-guards.js"></script>
+<script src="/js/main-freemium.js"></script>
 </body>
 </html>
