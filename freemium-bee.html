@@ -1,36 +1,100 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="utf-8"/>
-<title>Spelling Bee (Freemium)</title>
-<meta name="viewport" content="width=device-width,initial-scale=1"/>
-<link rel="stylesheet" href="/css/styles.css"/>
-<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-XXXXXXXXXXXX" crossorigin="anonymous"></script>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>SpellRightPro — Spelling Bee</title>
+  <link rel="stylesheet" href="/css/styles.css"/>
+  <link rel="stylesheet" href="/css/premium.css"/>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"/>
+  <!-- AdSense (Freemium) -->
+  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-1894570090762726" crossorigin="anonymous"></script>
 </head>
 <body data-mode="bee">
-<main class="container">
-<section class="glass" style="max-width:720px;margin:70px auto;padding:24px">
-<h1>Spelling Bee (Freemium)</h1>
-<p>Listen carefully and spell the word aloud.</p>
-<textarea id="customWords" rows="4" placeholder="Add custom words (optional)…"></textarea>
-<p><input id="uploadList" type="file" accept=".txt,.csv"/></p>
+  <header class="navbar">
+    <a href="/index.html" class="brand">
+      <img src="/assets/logo.png" alt="SpellRightPro Logo" class="logo"/>
+      <div><span>SpellRightPro</span><span class="subtitle">Bee</span></div>
+    </a>
+    <div class="nav-actions">
+      <button id="darkModeToggle" class="btn-icon" title="Toggle dark mode"><i class="fa fa-moon"></i></button>
+      <a href="/premium.html" class="btn-secondary"><i class="fa fa-crown"></i> Premium</a>
+    </div>
+  </header>
 
-<div id="progress">Word 0 of 0</div>
-<div id="feedback"></div>
+  <!-- Top Ad -->
+  <section class="ad-container">
+    <div class="ad-label">Advertisement</div>
+    <ins class="adsbygoogle" style="display:block"
+         data-ad-client="ca-pub-1894570090762726"
+         data-ad-slot="7259876123"
+         data-ad-format="auto"
+         data-full-width-responsive="true"></ins>
+    <script>(adsbygoogle=window.adsbygoogle||[]).push({});</script>
+  </section>
 
-<div style="display:flex;gap:.6rem;flex-wrap:wrap;margin-top:.5rem">
-<button class="btn" data-action="start">Start</button>
-<button class="btn" data-action="say">Say Again</button>
-<button class="btn btn-secondary" data-action="prev">Prev</button>
-<button class="btn btn-secondary" data-action="next">Next</button>
-<button class="btn" data-action="flag">Flag</button>
-<button class="btn danger" data-action="end">End Session</button>
-</div>
+  <main class="trainer-area">
+    <section class="intro-card">
+      <p>Spell aloud letter-by-letter (e.g., “c-h-e-r-r-y”). We’ll compare and auto-advance.</p>
+    </section>
 
-<div id="summary" style="margin-top:1rem"></div>
-</section>
-</main>
-<script src="/js/audio-guards.js"></script>
-<script src="/js/main-freemium.js"></script>
+    <section class="custom-section">
+      <h3>Custom Words (one list per day)</h3>
+      <textarea id="customWords" placeholder="Paste words separated by commas/newlines" style="min-height:140px"></textarea>
+      <div class="upload-row" style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
+        <input type="file" id="file-input" accept=".txt,.csv"/>
+        <button id="useCustomList" class="btn-secondary"><i class="fa fa-plus"></i> Use Custom List</button>
+      </div>
+    </section>
+
+    <section class="controls" style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
+      <button id="start" class="btn-primary"><i class="fa fa-microphone"></i> Start Voice Session</button>
+      <button id="say" class="btn-secondary"><i class="fa fa-volume-high"></i> Say Again</button>
+      <button id="flag" class="btn-icon" title="Flag word"><i class="fa fa-flag"></i></button>
+      <button id="end"  class="btn-secondary"><i class="fa fa-stop"></i> End Session</button>
+    </section>
+
+    <section class="feedback-section">
+      <div id="progress" class="word-progress"></div>
+      <div id="feedback" class="feedback"></div>
+    </section>
+
+    <!-- Mid Ad -->
+    <section class="ad-container">
+      <ins class="adsbygoogle" style="display:block; text-align:center;"
+           data-ad-client="ca-pub-1894570090762726"
+           data-ad-slot="4847632215"
+           data-ad-format="auto"
+           data-full-width-responsive="true"></ins>
+      <script>(adsbygoogle=window.adsbygoogle||[]).push({});</script>
+    </section>
+
+    <section class="summary-area hidden"></section>
+  </main>
+
+  <!-- Bottom Ad -->
+  <footer class="footer gradient-footer">
+    <p>Freemium: one custom list per day. <a href="premium.html">Upgrade for unlimited lists and detailed stats.</a></p>
+    <ins class="adsbygoogle" style="display:block"
+         data-ad-client="ca-pub-1894570090762726"
+         data-ad-slot="6427638123"
+         data-ad-format="auto"
+         data-full-width-responsive="true"></ins>
+    <script>(adsbygoogle=window.adsbygoogle||[]).push({});</script>
+  </footer>
+
+  <script src="/js/audio-guards.js"></script>
+  <script src="/js/main-freemium.js" defer></script>
+  <script>
+    // dark mode rememberer
+    (function(){
+      const t=document.getElementById('darkModeToggle');
+      function apply(){const on=localStorage.getItem('dark')==='true';
+        document.body.classList.toggle('dark-mode',on);
+        t?.querySelector('i').className=on?'fa fa-sun':'fa fa-moon';}
+      t?.addEventListener('click',()=>{const on=!(localStorage.getItem('dark')==='true');localStorage.setItem('dark',on);apply();});
+      apply();
+    })();
+  </script>
 </body>
 </html>
