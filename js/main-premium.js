@@ -1,149 +1,232 @@
-/*!
- * main-premium.js
- * Unified premium controller for Bee / School / OET tabs
- * Self-contained (includes internal TTS + SpeechRecognition)
- */
-
+/* ======================================================
+   Premium tabs (Bee / School / OET)
+   - Switch without page reload
+   - Remembers last tab (localStorage 'premiumTab')
+   - Bee voice recognition; School/OET typed input
+   - Clear input immediately after marking
+   - OET uses window.OET_WORDS; Exam = 24 random
+====================================================== */
 (function(){
-  document.addEventListener("DOMContentLoaded", init);
+  "use strict";
 
-  // ---------- utilities ----------
-  const $ = sel => document.querySelector(sel);
-  const sleep = ms => new Promise(r=>setTimeout(r,ms));
-  const clean = s => s.toLowerCase().replace(/[^\p{L}]/gu,"");
-
-  // ---------- Speech & TTS ----------
-  function speak(text){
-    return new Promise(res=>{
-      if(!("speechSynthesis" in window)) return res();
-      const u = new SpeechSynthesisUtterance(text);
-      u.rate = 0.9;
-      const v = speechSynthesis.getVoices().find(v=>/^en/i.test(v.lang)) || null;
-      if(v) u.voice=v;
-      u.onend=res;
-      speechSynthesis.cancel();
-      speechSynthesis.speak(u);
+  // ----- tabs -----
+  const tabs = [
+    {btn:'#tabBee',    sec:'#secBee',    key:'bee'},
+    {btn:'#tabSchool', sec:'#secSchool', key:'school'},
+    {btn:'#tabOet',    sec:'#secOet',    key:'oet'}
+  ];
+  function q(s){ return document.querySelector(s); }
+  function activate(key){
+    tabs.forEach(t=>{
+      q(t.btn).classList.toggle('active', t.key===key);
+      q(t.sec).classList.toggle('active', t.key===key);
     });
+    localStorage.setItem('premiumTab', key);
+  }
+  tabs.forEach(t=> q(t.btn).addEventListener('click', ()=>activate(t.key)));
+  activate(localStorage.getItem('premiumTab') || 'bee');
+
+  // ---- shared helpers ----
+  const sanitize = (w)=> (w||'').toString().trim().toLowerCase().replace(/[.,!?;:'"()]/g,'');
+  const speak = (t)=>{ try {
+    if (!("speechSynthesis" in window) || !t) return;
+    const u=new SpeechSynthesisUtterance(t); u.rate=0.96; u.pitch=1;
+    speechSynthesis.cancel(); speechSynthesis.speak(u);
+  } catch{} };
+
+  function summaryBox(container, correct, attempts, incorrect, flags){
+    container.innerHTML = `
+      <div class="summary-header">
+        <h2>Session complete</h2>
+        <div class="score-percent">${correct}/${attempts} correct</div>
+      </div>
+      <div class="results-grid">
+        <div class="results-card incorrect">
+          <h3><i class="fa fa-xmark"></i> Incorrect (${incorrect.length})</h3>
+          <div class="word-list">${incorrect.map(w=>`<div class="word-item">${w}</div>`).join('') || '<em>None</em>'}</div>
+        </div>
+        <div class="results-card">
+          <h3><i class="fa fa-flag"></i> Flagged (${flags.length})</h3>
+          <div class="word-list">${flags.map(w=>`<div class="word-item">${w}</div>`).join('') || '<em>None</em>'}</div>
+        </div>
+      </div>`;
   }
 
-  function listen(){
-    return new Promise(resolve=>{
-      const SR = window.SpeechRecognition||window.webkitSpeechRecognition;
-      if(!SR){ console.warn("SpeechRecognition unsupported"); return resolve("");}
-      const rec = new SR();
-      rec.lang="en-US"; rec.interimResults=false; rec.maxAlternatives=1;
-      let done=false;
-      rec.onresult=e=>{done=true; resolve(e.results[0][0].transcript);}
-      rec.onerror=e=>{console.warn("rec err",e.error); if(!done)resolve("");}
-      rec.onend=()=>{if(!done)resolve("");}
-      rec.start();
-    });
-  }
+  // ---- Bee (voice) ----
+  (function Bee(){
+    const els = {
+      start: q('#beeStart'), say:q('#beeSay'), flag:q('#beeFlag'), end:q('#beeEnd'),
+      feedback:q('#beeFeedback'), progress:q('#beeProgress'), summary:q('#beeSummary'),
+      custom:q('#beeCustom'), file:q('#beeFile'), load:q('#beeLoad')
+    };
+    let master=[], list=[], idx=0, correct=0, attempts=0, incorrect=[], flags=new Set();
+    const rec = window.AudioGuards?.getRecognition?.(); if (rec){ rec.interimResults=false; rec.maxAlternatives=1; rec.lang='en-US'; }
 
-  // ---------- mode states ----------
-  const modes = {
-    bee:{words:[],i:0,correct:[],wrong:[],flags:new Set(),active:false},
-    school:{words:[],i:0,correct:[],wrong:[],flags:new Set(),active:false},
-    oet:{words:[],i:0,correct:[],wrong:[],flags:new Set(),active:false}
-  };
-
-  // ---------- load words ----------
-  async function loadWords(area,upload,defaultList){
-    let words=[];
-    const txt = area.value.trim();
-    if(txt) words = txt.split(/[\n,]+/).map(w=>w.trim()).filter(Boolean);
-    if(!words.length && upload.files[0]){
-      const f = await upload.files[0].text();
-      words = f.split(/[\n,]+/).map(w=>w.trim()).filter(Boolean);
+    async function loadList(){
+      if (master.length) return;
+      try{
+        const res = await fetch('/data/word-lists/spelling-bee.json', {cache:'no-store'});
+        const data = await res.json();
+        master = (Array.isArray(data?.words)?data.words:Array.isArray(data)?data:[]).filter(Boolean);
+      }catch{ master = ['accommodate','rhythm','occurrence','necessary','embarrass']; }
     }
-    if(!words.length) words = defaultList;
-    return words;
-  }
+    function start(){
+      if (!master.length){ els.feedback.textContent='No words available.'; return; }
+      list = master.slice(); idx=0; correct=0; attempts=0; incorrect.length=0; flags.clear();
+      els.summary.innerHTML='';
+      speak(list[idx]); // do not show on screen
+      if (rec){ try{ rec.stop(); }catch{} setTimeout(()=>{ try{ rec.start(); }catch{} }, 250); }
+      showProgress();
+    }
+    function showProgress(){ els.progress.textContent = `Word ${Math.min(idx+1,list.length)} of ${list.length}`; }
+    function grade(heard){
+      const t = list[idx]; attempts++;
+      const ok = sanitize(heard) === sanitize(t);
+      if (ok){ correct++; els.feedback.textContent='✅ Correct'; }
+      else   { incorrect.push(t); els.feedback.textContent=`❌ Incorrect — ${t}`; }
+      setTimeout(next, 500);
+    }
+    function next(){
+      if (idx<list.length-1){ idx++; speak(list[idx]); if(rec){ try{rec.stop();}catch{} try{rec.start();}catch{} } showProgress(); }
+      else end();
+    }
+    function end(){
+      summaryBox(els.summary, correct, attempts, incorrect, [...flags]);
+    }
+    function useCustom(arr){ master = arr.slice(); els.feedback.textContent='Custom list loaded. Press Start.'; }
 
-  // ---------- summaries ----------
-  function showSummary(mode){
-    const s = modes[mode];
-    const flagged=[...s.flags];
-    const html = `
-      <h3>${mode.toUpperCase()} Summary</h3>
-      <p>✅ Correct: ${s.correct.length}</p>
-      <p>❌ Incorrect: ${s.wrong.join(", ")||"None"}</p>
-      <p>🚩 Flagged: ${flagged.join(", ")||"None"}</p>`;
-    $("#summary").innerHTML=html;
-  }
+    // events
+    els.start?.addEventListener('click', async ()=>{ await loadList(); start(); });
+    els.say?.addEventListener('click', ()=>{ speak(list[idx]); if(rec){ try{rec.stop();}catch{} try{rec.start();}catch{} }});
+    els.flag?.addEventListener('click', ()=>{ const w=list[idx]; if(!w)return; if(flags.has(w)){flags.delete(w); els.feedback.textContent=`🚩 Removed flag on “${w}”`;} else {flags.add(w); els.feedback.textContent=`🚩 Flagged “${w}”`; }});
+    els.end?.addEventListener('click', end);
+    els.load?.addEventListener('click', ()=>{
+      const txt=(els.custom?.value||'').trim(); if(!txt) return alert('Paste words first or upload a file.');
+      const arr = txt.split(/[\n,]+/).map(s=>s.trim()).filter(Boolean); if(!arr.length) return alert('No valid words found.');
+      useCustom(arr);
+    });
+    els.file?.addEventListener('change', async (e)=>{
+      const f=e.target.files&&e.target.files[0]; if(!f) return;
+      const text = await f.text(); const arr=text.split(/[\n,]+/).map(s=>s.trim()).filter(Boolean);
+      if(!arr.length) return alert('No valid words in file.'); useCustom(arr);
+    });
 
-  // ---------- Bee logic ----------
-  async function beeNext(auto){
-    const s=modes.bee; if(!s.active) return;
-    if(s.i>=s.words.length){ s.active=false; return showSummary("bee"); }
-    const w=s.words[s.i];
-    $("#beeFeedback").textContent=`🎧 Listen: ${w}`;
-    await speak(w);
-    const heard=clean(await listen());
-    const target=clean(w);
-    if(heard===target){$("#beeFeedback").textContent="✅ Correct";s.correct.push(w);}
-    else {$("#beeFeedback").textContent=`❌ Incorrect — ${w}`;s.wrong.push(w);}
-    s.i++;
-    await sleep(1000);
-    beeNext(true);
-  }
+    if (rec){
+      rec.onresult = (evt)=>{ const heard = evt.results[0][0].transcript||''; grade(heard); };
+      rec.onerror  = ()=>{ els.feedback.textContent='⚠️ Mic error. Tap “Say Again” to retry.'; };
+    }
+  })();
 
-  // ---------- School & OET logic ----------
-  async function startTypingMode(mode,inputEl,feedbackEl){
-    const s=modes[mode]; if(!s.active)return;
-    if(s.i>=s.words.length){ s.active=false; return showSummary(mode); }
-    const w=s.words[s.i];
-    feedbackEl.textContent=`🎧 Listen carefully…`;
-    await speak(w);
-    inputEl.value="";
-    inputEl.focus();
-    const check=()=>{ 
-      const ans=clean(inputEl.value);
-      const target=clean(w);
-      if(!ans)return;
-      if(ans===target){feedbackEl.textContent="✅ Correct";s.correct.push(w);}
-      else{feedbackEl.textContent=`❌ Incorrect — ${w}`;s.wrong.push(w);}
-      s.i++; 
-      setTimeout(()=>startTypingMode(mode,inputEl,feedbackEl),800);
+  // ---- School (typed) ----
+  (function School(){
+    const els = {
+      start:q('#schoolStart'), submit:q('#schoolSubmit'), flag:q('#schoolFlag'), end:q('#schoolEnd'),
+      input:q('#schoolAnswer'), feedback:q('#schoolFeedback'), progress:q('#schoolProgress'), summary:q('#schoolSummary'),
+      custom:q('#schoolCustom'), file:q('#schoolFile'), load:q('#schoolLoad')
     };
-    inputEl.onkeydown=e=>{if(e.key==="Enter"){e.preventDefault();check();}};
-  }
+    let master=[], list=[], idx=0, correct=0, attempts=0, incorrect=[], flags=new Set();
 
-  // ---------- init -------------
-  function init(){
-    console.log("Premium JS loaded");
+    async function loadList(){
+      if (master.length) return;
+      try{
+        const res = await fetch('/data/word-lists/school.json', {cache:'no-store'});
+        const data = await res.json();
+        master = (Array.isArray(data?.words)?data.words:Array.isArray(data)?data:[]).filter(Boolean);
+      }catch{ master = ['apple','banana','computer','library','mountain']; }
+    }
+    function start(){
+      if (!master.length){ els.feedback.textContent='No words available.'; return; }
+      list = master.slice(); idx=0; correct=0; attempts=0; incorrect.length=0; flags.clear();
+      els.summary.innerHTML=''; speak(list[idx]); show();
+    }
+    function show(){ els.progress.textContent=`Word ${idx+1} of ${list.length}`; els.input?.focus(); }
+    function grade(){
+      const t=list[idx]; const typed=(els.input?.value||'').trim();
+      const ok = sanitize(typed)===sanitize(t); attempts++;
+      if (ok){ correct++; els.feedback.textContent='✅ Correct'; }
+      else   { incorrect.push(t); els.feedback.textContent=`❌ Incorrect — ${t}`; }
+      if (els.input) els.input.value='';
+      setTimeout(next, 500);
+    }
+    function next(){
+      if (idx<list.length-1){ idx++; speak(list[idx]); show(); }
+      else end();
+    }
+    function end(){ summaryBox(els.summary, correct, attempts, incorrect, [...flags]); }
+    function useCustom(arr){ master=arr.slice(); els.feedback.textContent='Custom list loaded. Press Start.'; }
 
-    // Bee
-    $("#beeStart").onclick=async()=>{
-      const s=modes.bee;
-      s.words=await loadWords($("#beeCustom"),$("#beeUpload"),
-        ["accommodate","rhythm","necessary","separate","recommend"]);
-      s.i=0;s.correct=[];s.wrong=[];s.flags.clear();s.active=true;
-      $("#summary").innerHTML=""; beeNext();
+    els.start?.addEventListener('click', async ()=>{ await loadList(); start(); });
+    els.submit?.addEventListener('click', grade);
+    els.input?.addEventListener('keydown', (e)=>{ if(e.key==='Enter'){ e.preventDefault(); grade(); }});
+    els.flag?.addEventListener('click', ()=>{ const w=list[idx]; if(!w)return; if(flags.has(w)){flags.delete(w); els.feedback.textContent=`🚩 Removed flag on “${w}”`;} else {flags.add(w); els.feedback.textContent=`🚩 Flagged “${w}”`; }});
+    els.end?.addEventListener('click', end);
+    els.load?.addEventListener('click', ()=>{
+      const txt=(els.custom?.value||'').trim(); if(!txt) return alert('Paste words first or upload a file.');
+      const arr = txt.split(/[\n,]+/).map(s=>s.trim()).filter(Boolean); if(!arr.length) return alert('No valid words found.');
+      useCustom(arr);
+    });
+    els.file?.addEventListener('change', async (e)=>{
+      const f=e.target.files&&e.target.files[0]; if(!f) return;
+      const text = await f.text(); const arr=text.split(/[\n,]+/).map(s=>s.trim()).filter(Boolean);
+      if(!arr.length) return alert('No valid words in file.'); useCustom(arr);
+    });
+  })();
+
+  // ---- OET (typed, practice/exam) ----
+  (function OET(){
+    const els = {
+      practice:q('#oetPractice'), exam:q('#oetExam'),
+      start:q('#oetStart'), submit:q('#oetSubmit'), flag:q('#oetFlag'), end:q('#oetEnd'),
+      input:q('#oetAnswer'), feedback:q('#oetFeedback'), progress:q('#oetProgress'), summary:q('#oetSummary'),
+      custom:q('#oetCustom'), file:q('#oetFile'), load:q('#oetLoad')
     };
-    $("#beeSay").onclick=()=>speak(modes.bee.words[modes.bee.i]||"");
-    $("#beeEnd").onclick=()=>{modes.bee.active=false;showSummary("bee");};
+    let master=[], list=[], idx=0, correct=0, attempts=0, incorrect=[], flags=new Set();
+    let exam=false;
 
-    // School
-    $("#schoolStart").onclick=async()=>{
-      const s=modes.school;
-      s.words=await loadWords($("#schoolCustom"),$("#schoolUpload"),
-        ["biology","anatomy","physiology","neuron","surgery"]);
-      s.i=0;s.correct=[];s.wrong=[];s.flags.clear();s.active=true;
-      $("#summary").innerHTML=""; startTypingMode("school",$("#schoolInput"),$("#schoolFeedback"));
-    };
-    $("#schoolNext").onclick=()=>startTypingMode("school",$("#schoolInput"),$("#schoolFeedback"));
-    $("#schoolEnd").onclick=()=>{modes.school.active=false;showSummary("school");};
+    async function loadList(){
+      if (master.length) return;
+      if (Array.isArray(window.OET_WORDS) && window.OET_WORDS.length){ master = window.OET_WORDS.slice(); }
+      else { master = ['abdomen','anemia','antibiotic','artery','asthma','biopsy','catheter','diagnosis','embolism','fracture']; }
+    }
+    function start(){
+      if (!master.length){ els.feedback.textContent='No words available.'; return; }
+      const base = master.slice();
+      if (exam){ base.sort(()=>Math.random()-0.5); list = base.slice(0,24); }
+      else list = base;
+      idx=0; correct=0; attempts=0; incorrect.length=0; flags.clear();
+      els.summary.innerHTML=''; speak(list[idx]); show();
+    }
+    function show(){ els.progress.textContent=`Word ${idx+1} of ${list.length}`; els.input?.focus(); }
+    function grade(){
+      const t=list[idx]; const typed=(els.input?.value||'').trim();
+      const ok = sanitize(typed)===sanitize(t); attempts++;
+      if (ok){ correct++; els.feedback.textContent='✅ Correct'; }
+      else   { incorrect.push(t); els.feedback.textContent=`❌ Incorrect — ${t}`; }
+      if (els.input) els.input.value='';
+      setTimeout(next, 500);
+    }
+    function next(){ if(idx<list.length-1){ idx++; speak(list[idx]); show(); } else end(); }
+    function end(){ summaryBox(els.summary, correct, attempts, incorrect, [...flags]); }
+    function useCustom(arr){ master=arr.slice(); els.feedback.textContent='Custom list loaded. Press Start.'; }
 
-    // OET
-    $("#oetStart").onclick=async()=>{
-      const s=modes.oet;
-      s.words=await loadWords($("#oetCustom"),$("#oetUpload"),
-        ["diagnosis","prescription","stethoscope","patient","symptom"]);
-      s.i=0;s.correct=[];s.wrong=[];s.flags.clear();s.active=true;
-      $("#summary").innerHTML=""; startTypingMode("oet",$("#oetInput"),$("#oetFeedback"));
-    };
-    $("#oetNext").onclick=()=>startTypingMode("oet",$("#oetInput"),$("#oetFeedback"));
-    $("#oetEnd").onclick=()=>{modes.oet.active=false;showSummary("oet");};
-  }
+    els.practice?.addEventListener('click', ()=>{ exam=false; els.feedback.textContent='Practice mode selected.'; });
+    els.exam?.addEventListener('click', ()=>{ exam=true;  els.feedback.textContent='Exam mode (24) selected.'; });
+
+    els.start?.addEventListener('click', async ()=>{ await loadList(); start(); });
+    els.submit?.addEventListener('click', grade);
+    els.input?.addEventListener('keydown', (e)=>{ if(e.key==='Enter'){ e.preventDefault(); grade(); }});
+    els.flag?.addEventListener('click', ()=>{ const w=list[idx]; if(!w)return; if(flags.has(w)){flags.delete(w); els.feedback.textContent=`🚩 Removed flag on “${w}”`;} else {flags.add(w); els.feedback.textContent=`🚩 Flagged “${w}”`; }});
+    els.end?.addEventListener('click', end);
+    els.load?.addEventListener('click', ()=>{
+      const txt=(els.custom?.value||'').trim(); if(!txt) return alert('Paste words first or upload a file.');
+      const arr = txt.split(/[\n,]+/).map(s=>s.trim()).filter(Boolean); if(!arr.length) return alert('No valid words found.');
+      useCustom(arr);
+    });
+    els.file?.addEventListener('change', async (e)=>{
+      const f=e.target.files&&e.target.files[0]; if(!f) return;
+      const text = await f.text(); const arr=text.split(/[\n,]+/).map(s=>s.trim()).filter(Boolean);
+      if(!arr.length) return alert('No valid words in file.'); useCustom(arr);
+    });
+  })();
+
 })();
