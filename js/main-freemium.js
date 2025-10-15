@@ -1,447 +1,279 @@
 /* ==========================================================================
    SpellRightPro – Unified Freemium Modes (Bee / School / OET)
-   - Fixes: custom list loader button, voice-only Bee, auto-advance,
-            immediate clearing after mark, dark mode persistence,
-            OET JSON fallback, larger input for accessibility.
+   - Custom list loader button
+   - Auto-advance & Enter-to-submit
+   - Clear input immediately after marking
+   - Bee hides target word (voice only)
+   - OET Practice=full list, Exam=24 random (from /js/oet_word_list.js if present)
+   - Dark mode respected (from localStorage 'dark')
    ========================================================================== */
 (() => {
   "use strict";
 
-  // ---------- Mode detection ----------
-  const MODE =
-    (document.body && document.body.dataset.mode) ||
-    (location.pathname.includes("bee") ? "bee" :
-     location.pathname.includes("school") ? "school" :
-     location.pathname.includes("oet") ? "oet" : "school");
+  const MODE = (document.body && document.body.dataset.mode) ||
+               (location.pathname.includes("bee") ? "bee" :
+                location.pathname.includes("school") ? "school" :
+                location.pathname.includes("oet") ? "oet" : "school");
 
-  // ---------- Query helpers ----------
-  const $ = (sel) => document.querySelector(sel);
-  const on = (el, ev, fn) => el && el.addEventListener(ev, fn);
-
-  // ---------- Elements ----------
+  // picks
+  const $ = (s) => document.querySelector(s);
   const els = {
+    input:   $('#answer'),
     start:   $('#start'),
     submit:  $('#submit'),
-    next:    $('#next'),
-    prev:    $('#prev'),
     flag:    $('#flag'),
     end:     $('#end'),
-
-    progress: $('#progress'),
-    feedback: $('#feedback'),
-    summary:  document.querySelector('.summary-area'),
-
-    // Answer field (School/OET)
-    input:   $('#answer'),
-
-    // Custom list UI (all 3 modes)
-    customText: $('#customWords'),
-    fileInput:  $('#file-input'),
-    useCustom:  $('#useCustomList'),
-
-    // OET tabs (freemium still has practice/exam controls)
+    say:     $('#say'),
+    progress:$('#progress'),
+    feedback:$('#feedback'),
+    summary: $('.summary-area'),
+    // custom
+    customBox: $('#customWords'),
+    fileInput: $('#file-input'),
+    useCustom: $('#useCustomList'),
+    // OET tabs
     tabPractice: $('#tabPractice'),
     tabExam:     $('#tabExam'),
-
-    // Dark mode
-    darkToggle:  document.getElementById('darkModeToggle')
   };
 
-  // ---------- Dark mode (works if the toggle exists) ----------
-  try {
-    if (localStorage.getItem('dark') === 'true') {
-      document.body.classList.add('dark-mode');
-    }
-    on(els.darkToggle, 'click', () => {
-      document.body.classList.toggle('dark-mode');
-      localStorage.setItem('dark', document.body.classList.contains('dark-mode'));
-    });
-  } catch {}
-
-  // ---------- State ----------
-  let master = [];        // full list for the selected mode
-  let words = [];         // active session list
-  let i = 0;              // index
-  const incorrect = [];
+  // state
+  let masterList = [];      // underlying mode list
+  let sessionList = [];     // active run list
+  let idx = 0;
+  let correct = 0;
+  let attempts = 0;
+  const incorrectWords = [];
   const flagged = new Set();
-  let isExam = false;     // OET: practice vs exam
-  let rec = null;         // web speech (Bee)
-  let listening = false;
+  let isExam = false;
 
-  // ---------- Utilities ----------
-  const sanitize = (w) =>
-    (w || "").toString().trim().toLowerCase().replace(/[.,!?;:'"()]/g, "");
+  // ---- helpers
+  const sanitize = (w) => (w||'').toString().trim().toLowerCase().replace(/[.,!?;:'"()]/g,'');
+  const speak = (t) => { try {
+    if (!("speechSynthesis" in window) || !t) return;
+    const u = new SpeechSynthesisUtterance(t);
+    u.rate = 0.96; u.pitch = 1;
+    speechSynthesis.cancel(); speechSynthesis.speak(u);
+  } catch {} };
 
-  const updateProgress = () => {
+  function showProgress(){
     if (!els.progress) return;
-    els.progress.textContent = words.length
-      ? `Word ${Math.min(i + 1, words.length)} of ${words.length}`
-      : '';
-  };
-
-  const setFeedback = (msg) => { if (els.feedback) els.feedback.textContent = msg; };
-
-  // Larger, more readable input box on freemium pages
-  if (els.input) {
-    els.input.style.minHeight = '54px';
-    els.input.style.fontSize = '1.1rem';
+    const total = sessionList.length;
+    els.progress.textContent = total ? `Word ${Math.min(idx+1,total)} of ${total}` : '';
   }
 
-  // ---------- Word Sources ----------
-  async function loadDefaultBee() {
-    try {
-      const res = await fetch('/data/word-lists/spelling-bee.json', { cache: 'no-store' });
-      if (!res.ok) throw new Error(res.status);
-      const data = await res.json();
-      return Array.isArray(data?.words) ? data.words : (Array.isArray(data) ? data : []);
-    } catch {
-      return ['accommodate','rhythm','occurrence','necessary','embarrass','definitely','separate','recommend','privilege','challenge'];
-    }
+  function showFeedback(msg, ok=null){
+    if (!els.feedback) return;
+    els.feedback.textContent = msg || '';
+    els.feedback.classList.remove('correct','incorrect');
+    if (ok===true) els.feedback.classList.add('correct');
+    if (ok===false) els.feedback.classList.add('incorrect');
   }
 
-  async function loadDefaultSchool() {
-    try {
-      const res = await fetch('/data/word-lists/school.json', { cache: 'no-store' });
-      if (!res.ok) throw new Error(res.status);
-      const data = await res.json();
-      return Array.isArray(data?.words) ? data.words : (Array.isArray(data) ? data : []);
-    } catch {
-      return ['apple','banana','computer','dictionary','elephant','friendly','garden','hospital','important','jungle','kitchen','library','mountain','notebook','ocean','pencil','question','rabbit','school','teacher'];
-    }
+  function endSession(){
+    const inc = incorrectWords.slice();
+    const flg = [...flagged];
+    const html = `
+      <div class="summary-header">
+        <h2>Session complete</h2>
+        <div class="score-percent">${correct}/${attempts} correct</div>
+      </div>
+      <div class="results-grid">
+        <div class="results-card incorrect">
+          <h3><i class="fa fa-xmark"></i> Incorrect (${inc.length})</h3>
+          <div class="word-list">${inc.map(w=>`<div class="word-item">${w}</div>`).join('') || '<em>None</em>'}</div>
+        </div>
+        <div class="results-card">
+          <h3><i class="fa fa-flag"></i> Flagged (${flg.length})</h3>
+          <div class="word-list">${flg.map(w=>`<div class="word-item">${w}</div>`).join('') || '<em>None</em>'}</div>
+        </div>
+      </div>
+      <div class="summary-actions">
+        <a class="btn-secondary" href="/index.html"><i class="fa fa-home"></i> Home</a>
+      </div>
+    `;
+    els.summary && (els.summary.innerHTML = html, els.summary.classList.remove('hidden'));
   }
 
-  async function loadDefaultOET() {
-    // Freemium OET reads from JSON; if missing, fallback to a small set
-    try {
-      const res = await fetch('/data/word-lists/oet.json', { cache: 'no-store' });
-      if (!res.ok) throw new Error(res.status);
-      const data = await res.json();
-      return Array.isArray(data?.words) ? data.words : (Array.isArray(data) ? data : []);
-    } catch {
-      return ['anaphylaxis','auscultation','bronchiole','cyanosis','diaphoresis','edema','fascia','ganglion','hematoma','ischemia','jaundice','kyphosis','lesion','myalgia','necrosis','oedema','pericardium','quadriceps','respiratory','syncope','tendon','ulceration','vital','wrist'];
-    }
+  function gradeTyped(target, typed){
+    const ok = sanitize(typed) === sanitize(target);
+    attempts++;
+    if (ok) { correct++; showFeedback('✅ Correct', true); }
+    else    { showFeedback(`❌ Incorrect — ${target}`, false); incorrectWords.push(target); }
+    // clear input immediately after mark
+    if (els.input) { els.input.value = ''; }
+    return ok;
   }
 
-  function chooseExamSubset(list, count = 24) {
-    const arr = [...list];
-    for (let j = arr.length - 1; j > 0; j--) {
-      const k = Math.floor(Math.random() * (j + 1));
-      [arr[j], arr[k]] = [arr[k], arr[j]];
-    }
-    return arr.slice(0, Math.min(count, arr.length));
+  async function playWord(){
+    if (!sessionList.length) return;
+    const current = sessionList[idx];
+    showProgress();
+    // Bee: do NOT reveal the word on screen (voice only)
+    if (MODE === 'bee') { speak(current); }
+    else { speak(current); }
   }
 
-  // ---------- Custom list handling (textarea + file) ----------
-  async function parseUploadedFile(file) {
-    const text = await file.text();
-    return text.split(/[\n,]+/).map(s => s.trim()).filter(Boolean);
-  }
-
-  function parseCustomTextarea() {
-    const raw = (els.customText?.value || '').trim();
-    if (!raw) return [];
-    return raw.split(/[\n,]+/).map(s => s.trim()).filter(Boolean);
-  }
-
-  async function handleUseCustomList() {
-    let list = parseCustomTextarea();
-
-    // if no textarea, try file input
-    if ((!list || list.length === 0) && els.fileInput?.files?.[0]) {
-      list = await parseUploadedFile(els.fileInput.files[0]);
-    }
-
-    if (!list || list.length === 0) {
-      alert('Please paste words or upload a .txt/.csv file first.');
-      return;
-    }
-
-    master = list;
-    words  = [...master];
-    i = 0;
-    incorrect.length = 0;
-    flagged.clear();
-    setFeedback(`Loaded ${words.length} custom words.`);
-    updateProgress();
-  }
-
-  on(els.useCustom, 'click', handleUseCustomList);
-  on(els.fileInput, 'change', async () => {
-    if (!els.fileInput.files[0]) return;
-    setFeedback('Reading uploaded file…');
-    const list = await parseUploadedFile(els.fileInput.files[0]);
-    if (list.length) {
-      // keep words in textarea for user visibility, but we’ll still require pressing the button
-      setFeedback(`File ready (${list.length} words). Click “+ Use Custom List” to apply.`);
-    } else {
-      setFeedback('Could not read any words from the file.');
-    }
-  });
-
-  // ---------- Speech (Bee) ----------
-  function getRecognition() {
-    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (!SR) return null;
-    if (rec) return rec;
-    rec = new SR();
-    rec.lang = 'en-US';
-    rec.interimResults = false;
-    rec.maxAlternatives = 1;
-    return rec;
-  }
-
-  function normalizeSpelled(s) {
-    if (!s) return '';
-    return s.toLowerCase().replace(/[^\p{L}]+/gu, '').replace(/\.$/, '');
-  }
-
-  function speak(text) {
-    try {
-      if (!("speechSynthesis" in window)) return;
-      const u = new SpeechSynthesisUtterance(text);
-      u.rate = 0.95;
-      window.speechSynthesis.cancel();
-      window.speechSynthesis.speak(u);
-    } catch {}
-  }
-
-  function stopRecSafe() {
-    try { rec && rec.stop(); } catch {}
-    listening = false;
-  }
-
-  // ---------- Core flow ----------
-  async function ensureMasterLoaded() {
-    if (master.length) return;
-
-    if (MODE === 'bee') master = await loadDefaultBee();
-    else if (MODE === 'school') master = await loadDefaultSchool();
-    else master = await loadDefaultOET(); // freemium OET JSON
-
-    words = [...master];
-    i = 0;
-    updateProgress();
-  }
-
-  async function startSession() {
-    await ensureMasterLoaded();
-    incorrect.length = 0;
-    flagged.clear();
-    i = 0;
-    setFeedback(MODE === 'bee' ? '🎧 Listen carefully…' : '✍️ Type what you hear…');
-    updateProgress();
-
-    if (MODE === 'bee') {
-      // voice-only: do not show the word anywhere
-      doBeeTurn();
-    } else {
-      doTypeTurn(); // School / OET
-    }
-  }
-
-  // Bee: speak, then listen, grade, auto-advance
-  function doBeeTurn() {
-    if (!words[i]) return endSession();
-    const w = words[i];
-
-    // Speak
-    speak(w);
-    // Start recognition after small delay to avoid picking up the TTS
-    setTimeout(() => {
-      const R = getRecognition();
-      if (!R) {
-        setFeedback('⚠️ Speech recognition not supported in this browser.');
-        return;
-      }
-      if (listening) return;
-      listening = true;
-
-      R.onresult = (evt) => {
-        const said = evt.results[0][0].transcript || '';
-        const heard = normalizeSpelled(said);
-        const target = normalizeSpelled(w);
-        const ok = (heard === target);
-
-        listening = false;
-        stopRecSafe();
-
-        if (ok) {
-          setFeedback('✅ Correct');
-        } else {
-          setFeedback('❌ Incorrect');
-          incorrect.push(w);
-        }
-
-        // auto-advance shortly after grading
-        setTimeout(() => {
-          i++;
-          if (i >= words.length) endSession();
-          else doBeeTurn();
-          updateProgress();
-        }, 600);
-      };
-
-      R.onerror = () => {
-        listening = false;
-        stopRecSafe();
-        setFeedback('⚠️ Mic error. Tap Start again.');
-      };
-
-      R.onend = () => { listening = false; };
-
-      try { R.start(); } catch {}
-    }, 350);
-  }
-
-  // School/OET typing flow
-  function doTypeTurn() {
-    if (!words[i]) return endSession();
-    const w = words[i];
-    speak(w); // speak once
-
-    // focus input
-    if (els.input) {
-      els.input.removeAttribute('disabled');
-      els.input.value = '';
-      els.input.focus();
-    }
-  }
-
-  function gradeTyped() {
-    if (!words[i]) return;
-
-    const w = words[i];
-    const a = sanitize(els.input?.value);
-
-    if (!a) {
-      setFeedback('✍️ Please type your spelling, then press Enter or Submit.');
-      if (els.input) els.input.focus();
-      return;
-    }
-
-    const ok = (a === sanitize(w));
-    setFeedback(ok ? '✅ Correct' : '❌ Incorrect');
-    if (!ok) incorrect.push(w);
-
-    // immediately clear the input after mark (requested)
-    if (els.input) {
-      els.input.value = '';
-      els.input.blur();
-    }
-
-    // short pause then move on
-    setTimeout(() => {
-      i++;
-      if (i >= words.length) endSession();
-      else doTypeTurn();
-      updateProgress();
-    }, 500);
-  }
-
-  function prev() {
-    if (i > 0) {
-      i--;
-      setFeedback('');
-      (MODE === 'bee') ? doBeeTurn() : doTypeTurn();
-      updateProgress();
-    }
-  }
-
-  function next() {
-    if (i < words.length - 1) {
-      i++;
-      setFeedback('');
-      (MODE === 'bee') ? doBeeTurn() : doTypeTurn();
-      updateProgress();
+  function nextWord(auto=false){
+    if (!sessionList.length) return;
+    if (idx < sessionList.length-1){
+      idx++;
+      playWord();
     } else {
       endSession();
     }
   }
 
-  function toggleFlag() {
-    const w = words[i];
+  function flagWord(){
+    const w = sessionList[idx];
     if (!w) return;
-    if (flagged.has(w)) {
-      flagged.delete(w);
-      setFeedback('🚩 Flag removed');
+    if (flagged.has(w)) { flagged.delete(w); showFeedback(`🚩 Removed flag on “${w}”`); }
+    else { flagged.add(w); showFeedback(`🚩 Flagged “${w}”`); }
+  }
+
+  // ---- Custom list loader
+  function applyCustomList(list){
+    masterList = list.slice();
+    sessionList = masterList.slice();
+    idx = 0; correct = 0; attempts = 0; incorrectWords.length=0; flagged.clear();
+    els.summary?.classList.add('hidden');
+    showFeedback('Custom list loaded. Press Start.');
+    showProgress();
+  }
+
+  function parseTextarea(txt){
+    return txt.split(/[\n,]+/).map(s=>s.trim()).filter(Boolean);
+  }
+
+  function attachCustomHandlers(){
+    els.useCustom?.addEventListener('click', ()=>{
+      const txt = (els.customBox?.value||'').trim();
+      if (!txt) { alert('Paste words first or upload a file.'); return; }
+      const list = parseTextarea(txt);
+      if (list.length===0) { alert('No valid words found.'); return; }
+      applyCustomList(list);
+    });
+
+    els.fileInput?.addEventListener('change', async (e)=>{
+      const f = e.target.files && e.target.files[0];
+      if (!f) return;
+      const text = await f.text();
+      const list = parseTextarea(text);
+      if (list.length===0) { alert('No valid words in file.'); return; }
+      applyCustomList(list);
+    });
+  }
+
+  // ---- OET list
+  async function loadModeList(){
+    if (masterList.length) return;
+    if (MODE === 'bee'){
+      // Spelling Bee built-in JSON
+      try{
+        const res = await fetch('/data/word-lists/spelling-bee.json', {cache:'no-store'});
+        const data = await res.json();
+        const arr = Array.isArray(data?.words) ? data.words : (Array.isArray(data)?data:[]);
+        masterList = arr.filter(Boolean);
+      }catch(e){
+        masterList = ['accommodate','rhythm','occurrence','necessary','embarrass','challenge','definitely','separate','recommend','privilege'];
+      }
+    } else if (MODE === 'oet'){
+      // from /js/oet_word_list.js -> window.OET_WORDS
+      if (Array.isArray(window.OET_WORDS) && window.OET_WORDS.length){
+        masterList = window.OET_WORDS.slice();
+      } else {
+        // fallback
+        masterList = ['abdomen','anemia','antibiotic','artery','asthma','biopsy','catheter','diagnosis','embolism','fracture'];
+      }
     } else {
-      flagged.add(w);
-      setFeedback('🚩 Flagged');
+      // school sample list
+      try{
+        const res = await fetch('/data/word-lists/school.json', {cache:'no-store'});
+        const data = await res.json();
+        const arr = Array.isArray(data?.words) ? data.words : (Array.isArray(data)?data:[]);
+        masterList = arr.filter(Boolean);
+      }catch(e){
+        masterList = ['apple','banana','computer','dictionary','elephant','garden','hospital','important','library','mountain'];
+      }
     }
   }
 
-  function endSession() {
-    stopRecSafe();
-    const wrong = incorrect.slice();
-    const flags = [...flagged];
-
-    if (els.summary) {
-      els.summary.classList.remove('hidden');
-      els.summary.innerHTML = `
-        <div class="summary-header">
-          <h3>Session Summary</h3>
-        </div>
-        <div class="results-grid">
-          <div class="results-card incorrect">
-            <h3><i class="fa fa-xmark"></i> Incorrect (${wrong.length})</h3>
-            <div class="word-list">${
-              wrong.length ? wrong.map(w => `<div class="word-item">${w}</div>`).join('') : '<em>None</em>'
-            }</div>
-          </div>
-          <div class="results-card">
-            <h3><i class="fa fa-flag"></i> Flagged (${flags.length})</h3>
-            <div class="word-list">${
-              flags.length ? flags.map(w => `<div class="word-item">${w}</div>`).join('') : '<em>None</em>'
-            }</div>
-          </div>
-        </div>
-      `;
-      try { window.insertSummaryAd && window.insertSummaryAd(); } catch {}
+  // Session preparation
+  function startSession(){
+    if (!masterList.length){ showFeedback('No words available.'); return; }
+    if (MODE==='oet' && isExam){
+      // 24 random
+      const shuffled = masterList.slice().sort(()=>Math.random()-0.5);
+      sessionList = shuffled.slice(0,24);
+    } else {
+      sessionList = masterList.slice();
     }
-    setFeedback('✅ Session complete');
+    idx = 0; correct = 0; attempts = 0; incorrectWords.length=0; flagged.clear();
+    els.summary?.classList.add('hidden');
+    showFeedback('🎧 Listen carefully…');
+    playWord();
   }
 
-  // ---------- OET tabs (freemium) ----------
-  on(els.tabPractice, 'click', () => {
-    isExam = false;
-    words = [...master];
-    i = 0;
-    setFeedback('Practice mode: full list.');
-    updateProgress();
-  });
-  on(els.tabExam, 'click', () => {
-    isExam = true;
-    words = chooseExamSubset(master, 24);
-    i = 0;
-    setFeedback(`Exam mode: 24 random words (loaded ${words.length}).`);
-    updateProgress();
+  // events
+  els.start?.addEventListener('click', async ()=>{
+    await loadModeList();
+    startSession();
   });
 
-  // ---------- Keyboard shortcuts ----------
-  on(document, 'keydown', (e) => {
-    if (e.key === 'Enter' && els.input && document.activeElement === els.input) {
-      e.preventDefault();
-      gradeTyped();
+  // Bee speech recognition
+  function attachBeeRecognition(){
+    if (MODE!=='bee') return;
+    const rec = window.AudioGuards?.getRecognition?.();
+    if (!rec) return;
+    rec.interimResults = false; rec.maxAlternatives = 1; rec.lang = 'en-US';
+
+    function doListen(){
+      try { rec.stop(); } catch {}
+      try { rec.start(); } catch {}
     }
+
+    // we listen automatically after speaking; also on say-again
+    els.say?.addEventListener('click', ()=>{ playWord(); setTimeout(doListen, 250); });
+
+    // Start will speak + then listen
+    els.start?.addEventListener('click', ()=> setTimeout(doListen, 350));
+
+    rec.onresult = (evt)=>{
+      const heard = (evt.results[0] && evt.results[0][0] && evt.results[0][0].transcript) || '';
+      const target = sessionList[idx];
+      gradeTyped(target, heard);
+      // Auto-advance after a short pause
+      setTimeout(nextWord, 600);
+    };
+    rec.onerror = ()=>{ showFeedback('⚠️ Mic error. Tap “Say Again” to retry.'); };
+  }
+
+  // typing submit (School & OET; also works if Bee uses typing fallback)
+  els.submit?.addEventListener('click', ()=>{
+    const target = sessionList[idx];
+    if (!target) return;
+    const typed = (els.input?.value||'').trim();
+    gradeTyped(target, typed);
+    setTimeout(nextWord, 500);
+    els.input?.focus();
+  });
+  els.input?.addEventListener('keydown', (e)=>{
+    if (e.key==='Enter'){ e.preventDefault(); els.submit?.click(); }
   });
 
-  // ---------- Button wiring ----------
-  on(els.start,  'click', startSession);
-  on(els.submit, 'click', gradeTyped);
-  on(els.next,   'click', next);
-  on(els.prev,   'click', prev);
-  on(els.flag,   'click', toggleFlag);
-  on(els.end,    'click', endSession);
+  els.flag?.addEventListener('click', flagWord);
+  els.end?.addEventListener('click', endSession);
 
-  // ---------- Boot ----------
-  (async () => {
-    // preload master
-    await ensureMasterLoaded();
-    // default OET tab is Practice
-    if (MODE === 'oet') {
-      isExam = false;
-      words = [...master];
-    }
-    updateProgress();
-  })();
+  // OET tabs
+  els.tabPractice?.addEventListener('click', ()=>{ isExam=false; els.tabPractice.classList.add('active'); els.tabExam?.classList.remove('active'); showFeedback('Practice mode selected.'); });
+  els.tabExam?.addEventListener('click', ()=>{ isExam=true; els.tabExam.classList.add('active'); els.tabPractice?.classList.remove('active'); showFeedback('Exam mode (24) selected.'); });
+
+  // custom handlers
+  attachCustomHandlers();
+
+  // Bee recognition setup
+  attachBeeRecognition();
+
+  // make input comfortably large on mobile
+  if (els.input) { els.input.style.minHeight = '56px'; els.input.style.fontSize='18px'; }
+
 })();
