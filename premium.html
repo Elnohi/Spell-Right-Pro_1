@@ -1,187 +1,114 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
-<title>SpellRightPro Premium</title>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>SpellRightPro — Premium</title>
 
-<link rel="stylesheet" href="/css/premium.css"/>
-<link rel="icon" href="/assets/logo.png"/>
+  <link rel="stylesheet" href="/css/premium.css"/>
+  <link rel="stylesheet" href="/css/styles.css"/>
+  <link rel="preload" href="/assets/logo.png" as="image"/>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"/>
 
-<!-- Firebase -->
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
-<script src="/js/config.js"></script>
-
-<!-- Audio / Main Logic -->
-<script src="/js/audio-guards.js" defer></script>
-<script src="/js/main-premium.js" defer></script>
-
-<style>
-body {
-  margin:0; font-family:"Inter",sans-serif;
-  background:linear-gradient(135deg,#7b2ff7,#f107a3);
-  min-height:100vh; display:flex; flex-direction:column; align-items:center;
-  color:#fff;
-}
-header{
-  display:flex; justify-content:space-between; align-items:center;
-  width:100%; max-width:900px; padding:15px 25px;
-}
-.nav-btn{background:rgba(255,255,255,0.2);color:#fff;border:none;
-  border-radius:12px;padding:8px 18px;font-weight:600;cursor:pointer}
-main{
-  background:rgba(255,255,255,0.12);backdrop-filter:blur(10px);
-  border-radius:18px;box-shadow:0 8px 20px rgba(0,0,0,0.2);
-  width:100%;max-width:900px;margin:20px;padding:25px;text-align:center;
-}
-.tabs{display:flex;justify-content:center;gap:15px;margin-bottom:20px}
-.tab{
-  background:rgba(255,255,255,0.15);border:none;border-radius:10px;
-  padding:10px 20px;color:#fff;font-weight:600;cursor:pointer;
-  transition:0.2s ease;
-}
-.tab.active{background:#fff;color:#7b2ff7}
-.section{display:none}
-.section.active{display:block;animation:fade 0.3s}
-@keyframes fade{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:none}}
-input,textarea{width:100%;max-width:500px;border:none;border-radius:10px;
-  padding:10px;margin:10px 0;font-size:1rem}
-button.action{
-  background:#4895ef;color:#fff;border:none;border-radius:10px;
-  padding:10px 20px;margin:5px;cursor:pointer;font-weight:600;
-}
-#feedback{min-height:30px;margin:10px;font-weight:500}
-.glass-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.6);
-  backdrop-filter:blur(8px);display:none;justify-content:center;align-items:center;z-index:999}
-.glass-card{background:rgba(255,255,255,0.1);padding:2rem;border-radius:16px;width:320px;text-align:center}
-.dark-mode{background:#121212;color:#eee}
-@media(max-width:700px){.tab{padding:8px 10px}}
-</style>
+  <!-- Firebase (real config stays in js/config.js) -->
+  <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore-compat.js"></script>
+  <script src="/js/config.js"></script>
 </head>
-<body>
+<body data-premium="1">
+  <header>
+    <button class="nav-btn" onclick="location.href='/index.html'"><i class="fa fa-house"></i> Home</button>
+    <button id="darkModeToggle" class="nav-btn"><i class="fa fa-moon"></i></button>
+  </header>
 
-<header>
-  <button onclick="location.href='index.html'" class="nav-btn">🏠 Home</button>
-  <div>
-    <button id="toggleDark" class="nav-btn">🌙</button>
-    <button id="logoutBtn" class="nav-btn">Logout</button>
-  </div>
-</header>
+  <main>
+    <h2>Premium Dashboard</h2>
+    <p class="subtitle">Unlimited custom lists, voice & writing evaluation, and detailed summaries.</p>
 
-<main>
-  <h2>Premium Spelling Practice</h2>
-  <div class="tabs">
-    <button class="tab" data-tab="bee">🐝 Bee</button>
-    <button class="tab" data-tab="school">🏫 School</button>
-    <button class="tab" data-tab="oet">💊 OET</button>
-  </div>
-
-  <!-- Bee Section -->
-  <section id="bee" class="section">
-    <p>Speak the spelling of each word.</p>
-    <textarea id="beeCustom" placeholder="Enter custom words (comma or newline separated)"></textarea>
-    <input type="file" id="beeUpload" accept=".txt,.json"/>
-    <div>
-      <button id="beeStart" class="action">Start</button>
-      <button id="beeSay" class="action">Say Again</button>
-      <button id="beeEnd" class="action">End Session</button>
+    <!-- Tabs -->
+    <div class="tabs" role="tablist" aria-label="Premium modes">
+      <button class="tab active" id="tabBee"   role="tab" aria-selected="true">Bee</button>
+      <button class="tab"         id="tabSchool" role="tab" aria-selected="false">School</button>
+      <button class="tab"         id="tabOet"    role="tab" aria-selected="false">OET</button>
     </div>
-    <div id="beeFeedback"></div>
-  </section>
 
-  <!-- School Section -->
-  <section id="school" class="section">
-    <p>Write the spelling as you hear it.</p>
-    <textarea id="schoolCustom" placeholder="Enter custom words"></textarea>
-    <input type="file" id="schoolUpload" accept=".txt,.json"/>
-    <input type="text" id="schoolInput" placeholder="Type spelling here…"/>
-    <div>
-      <button id="schoolStart" class="action">Start</button>
-      <button id="schoolNext" class="action">Next</button>
-      <button id="schoolEnd" class="action">End Session</button>
-    </div>
-    <div id="schoolFeedback"></div>
-  </section>
+    <!-- Sections -->
+    <section id="secBee" class="section active" role="tabpanel" aria-labelledby="tabBee">
+      <p class="subtitle">Hands-free spelling with voice recognition. The word will not be shown on screen.</p>
+      <div style="margin:10px 0;">
+        <textarea id="beeCustom" placeholder="Custom words (comma / new line separated)" style="min-height:140px"></textarea><br/>
+        <input type="file" id="beeFile" accept=".txt,.csv"/>
+        <button id="beeLoad" class="action"><i class="fa fa-plus"></i> Use Custom List</button>
+      </div>
+      <div>
+        <button id="beeStart" class="action"><i class="fa fa-microphone"></i> Start</button>
+        <button id="beeSay"   class="action"><i class="fa fa-volume-high"></i> Say Again</button>
+        <button id="beeFlag"  class="action"><i class="fa fa-flag"></i> Flag</button>
+        <button id="beeEnd"   class="action"><i class="fa fa-stop"></i> End</button>
+      </div>
+      <div id="beeProgress"></div>
+      <div id="beeFeedback"></div>
+      <div id="beeSummary" class="summary"></div>
+    </section>
 
-  <!-- OET Section -->
-  <section id="oet" class="section">
-    <p>Medical spelling mode.</p>
-    <textarea id="oetCustom" placeholder="Add or upload OET terms"></textarea>
-    <input type="file" id="oetUpload" accept=".txt,.json"/>
-    <input type="text" id="oetInput" placeholder="Type spelling here…"/>
-    <div>
-      <button id="oetStart" class="action">Start</button>
-      <button id="oetNext" class="action">Next</button>
-      <button id="oetEnd" class="action">End Session</button>
-    </div>
-    <div id="oetFeedback"></div>
-  </section>
+    <section id="secSchool" class="section" role="tabpanel" aria-labelledby="tabSchool">
+      <p class="subtitle">Type what you hear. Input clears as soon as you’re marked.</p>
+      <div style="margin:10px 0;">
+        <textarea id="schoolCustom" placeholder="Custom words" style="min-height:140px"></textarea><br/>
+        <input type="file" id="schoolFile" accept=".txt,.csv"/>
+        <button id="schoolLoad" class="action"><i class="fa fa-plus"></i> Use Custom List</button>
+      </div>
+      <div>
+        <button id="schoolStart" class="action"><i class="fa fa-play"></i> Start</button>
+        <input id="schoolAnswer" type="text" class="form-control" placeholder="Type spelling…"/>
+        <button id="schoolSubmit" class="action"><i class="fa fa-check"></i> Submit</button>
+        <button id="schoolFlag" class="action"><i class="fa fa-flag"></i> Flag</button>
+        <button id="schoolEnd"  class="action"><i class="fa fa-stop"></i> End</button>
+      </div>
+      <div id="schoolProgress"></div>
+      <div id="schoolFeedback"></div>
+      <div id="schoolSummary" class="summary"></div>
+    </section>
 
-  <div id="summary"></div>
-</main>
+    <section id="secOet" class="section" role="tabpanel" aria-labelledby="tabOet">
+      <p class="subtitle">OET healthcare words. Practice = full list; Exam = 24 random.</p>
+      <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin:10px 0;">
+        <button id="oetPractice" class="action">Practice</button>
+        <button id="oetExam" class="action">Exam (24)</button>
+      </div>
+      <div style="margin:10px 0;">
+        <textarea id="oetCustom" placeholder="Custom medical words" style="min-height:140px"></textarea><br/>
+        <input type="file" id="oetFile" accept=".txt,.csv"/>
+        <button id="oetLoad" class="action"><i class="fa fa-plus"></i> Use Custom List</button>
+      </div>
+      <div>
+        <button id="oetStart" class="action"><i class="fa fa-play"></i> Start</button>
+        <input id="oetAnswer" type="text" class="form-control" placeholder="Type spelling…"/>
+        <button id="oetSubmit" class="action"><i class="fa fa-check"></i> Submit</button>
+        <button id="oetFlag" class="action"><i class="fa fa-flag"></i> Flag</button>
+        <button id="oetEnd"  class="action"><i class="fa fa-stop"></i> End</button>
+      </div>
+      <div id="oetProgress"></div>
+      <div id="oetFeedback"></div>
+      <div id="oetSummary" class="summary"></div>
+    </section>
+  </main>
 
-<!-- Auth Overlay -->
-<div id="authOverlay" class="glass-overlay">
-  <div class="glass-card">
-    <h3>Sign in to Premium</h3>
-    <button id="googleBtn" class="nav-btn" style="background:#fff;color:#333">Continue with Google</button>
-    <input id="email" type="email" placeholder="Email"/>
-    <input id="password" type="password" placeholder="Password"/>
-    <div>
-      <button id="loginBtn" class="action">Login</button>
-      <button id="registerBtn" class="action">Register</button>
-    </div>
-    <p id="authStatus"></p>
-  </div>
-</div>
-
-<script>
-// -------- Tab handling -------------
-const tabs=document.querySelectorAll('.tab'),sections=document.querySelectorAll('.section');
-function showTab(id){
-  tabs.forEach(t=>t.classList.toggle('active',t.dataset.tab===id));
-  sections.forEach(s=>s.classList.toggle('active',s.id===id));
-  localStorage.setItem('srp_lastTab',id);
-}
-const saved=localStorage.getItem('srp_lastTab')||'bee';
-showTab(saved);
-tabs.forEach(t=>t.addEventListener('click',()=>showTab(t.dataset.tab)));
-
-// -------- Dark mode -------------
-const darkKey='srp_dark';
-function applyDark(on){document.body.classList.toggle('dark-mode',on);localStorage.setItem(darkKey,on?'1':'0');}
-applyDark(localStorage.getItem(darkKey)==='1');
-document.getElementById('toggleDark').onclick=()=>applyDark(!document.body.classList.contains('dark-mode'));
-
-// -------- Auth -------------
-firebase.initializeApp(firebaseConfig);
-const auth=firebase.auth();
-const overlay=document.getElementById('authOverlay');
-function showAuth(){overlay.style.display='flex'}
-function hideAuth(){overlay.style.display='none'}
-
-auth.onAuthStateChanged(u=>{if(u){hideAuth();}else{showAuth();}});
-document.getElementById('googleBtn').onclick=()=>auth.signInWithPopup(new firebase.auth.GoogleAuthProvider());
-document.getElementById('loginBtn').onclick=()=>{
-  auth.signInWithEmailAndPassword(email.value,password.value).catch(e=>authStatus.textContent=e.message);
-};
-document.getElementById('registerBtn').onclick=()=>{
-  auth.createUserWithEmailAndPassword(email.value,password.value).catch(e=>authStatus.textContent=e.message);
-};
-document.getElementById('logoutBtn').onclick=()=>auth.signOut();
-
-// -------- Summary placeholder ----
-function showSummary(mode,correct,incorrect,flagged){
-  const out=[
-    `<h3>${mode} Summary</h3>`,
-    `<p>Correct: ${correct.length}</p>`,
-    `<p>Incorrect: ${incorrect.join(', ')||'None'}</p>`,
-    `<p>Flagged: ${flagged.join(', ')||'None'}</p>`
-  ].join('');
-  document.getElementById('summary').innerHTML=out;
-}
-</script>
+  <!-- Auth overlay is handled by main-premium.js (Google + email/password) -->
+  <script src="/js/audio-guards.js"></script>
+  <script src="/js/oet_word_list.js" defer></script>
+  <script src="/js/main-premium.js"></script>
+  <script>
+    // Dark mode (remembered)
+    (function(){
+      const t=document.getElementById('darkModeToggle');
+      function apply(){const on=localStorage.getItem('dark')==='true';
+        document.body.classList.toggle('dark-mode',on);
+        t?.querySelector('i').className=on?'fa fa-sun':'fa fa-moon';}
+      t?.addEventListener('click',()=>{const on=!(localStorage.getItem('dark')==='true');localStorage.setItem('dark',on);apply();});
+      apply();
+    })();
+  </script>
 </body>
 </html>
