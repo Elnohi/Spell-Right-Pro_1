@@ -171,3 +171,14 @@ input[type="text"], input[type="email"], input[type="password"] {
   main { padding: 25px; }
   button { width: 90%; }
 }
+
+.trainer-area {
+  display: none;
+  transition: opacity 0.3s ease;
+  opacity: 0;
+}
+.trainer-area.active {
+  display: block;
+  opacity: 1;
+}
+
