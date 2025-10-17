@@ -9,13 +9,13 @@
 (function(){
   "use strict";
 
-  // ----- tabs -----
+  // ----- Tabs -----
   const tabs = [
     {btn:'#tabBee',    sec:'#secBee',    key:'bee'},
     {btn:'#tabSchool', sec:'#secSchool', key:'school'},
     {btn:'#tabOet',    sec:'#secOet',    key:'oet'}
   ];
-  function q(s){ return document.querySelector(s); }
+  const q = s => document.querySelector(s);
   function activate(key){
     tabs.forEach(t=>{
       q(t.btn).classList.toggle('active', t.key===key);
@@ -23,14 +23,15 @@
     });
     localStorage.setItem('premiumTab', key);
   }
-  tabs.forEach(t=> q(t.btn).addEventListener('click', ()=>activate(t.key)));
+  tabs.forEach(t=> q(t.btn)?.addEventListener('click', ()=>activate(t.key)));
   activate(localStorage.getItem('premiumTab') || 'bee');
 
-  // ---- shared helpers ----
-  const sanitize = (w)=> (w||'').toString().trim().toLowerCase().replace(/[.,!?;:'"()]/g,'');
-  const speak = (t)=>{ try {
+  // ----- Helpers -----
+  const sanitize = w => (w||'').toString().trim().toLowerCase().replace(/[.,!?;:'"()]/g,'');
+  const speak = t => { try {
     if (!("speechSynthesis" in window) || !t) return;
-    const u=new SpeechSynthesisUtterance(t); u.rate=0.96; u.pitch=1;
+    const u = new SpeechSynthesisUtterance(t);
+    u.rate = 0.96; u.pitch = 1;
     speechSynthesis.cancel(); speechSynthesis.speak(u);
   } catch{} };
 
@@ -52,15 +53,16 @@
       </div>`;
   }
 
-  // ---- Bee (voice) ----
+  // ----- Bee (voice) -----
   (function Bee(){
     const els = {
-      start: q('#beeStart'), say:q('#beeSay'), flag:q('#beeFlag'), end:q('#beeEnd'),
+      start:q('#beeStart'), say:q('#beeSay'), flag:q('#beeFlag'), end:q('#beeEnd'),
       feedback:q('#beeFeedback'), progress:q('#beeProgress'), summary:q('#beeSummary'),
       custom:q('#beeCustom'), file:q('#beeFile'), load:q('#beeLoad')
     };
     let master=[], list=[], idx=0, correct=0, attempts=0, incorrect=[], flags=new Set();
-    const rec = window.AudioGuards?.getRecognition?.(); if (rec){ rec.interimResults=false; rec.maxAlternatives=1; rec.lang='en-US'; }
+    let rec = window.AudioGuards?.getRecognition?.();
+    if (rec){ rec.interimResults=false; rec.maxAlternatives=1; rec.lang='en-US'; }
 
     async function loadList(){
       if (master.length) return;
@@ -68,56 +70,46 @@
         const res = await fetch('/data/word-lists/spelling-bee.json', {cache:'no-store'});
         const data = await res.json();
         master = (Array.isArray(data?.words)?data.words:Array.isArray(data)?data:[]).filter(Boolean);
-      }catch{ master = ['accommodate','rhythm','occurrence','necessary','embarrass']; }
+      }catch{ master=['accommodate','rhythm','occurrence','necessary','embarrass']; }
     }
     function start(){
       if (!master.length){ els.feedback.textContent='No words available.'; return; }
       list = master.slice(); idx=0; correct=0; attempts=0; incorrect.length=0; flags.clear();
       els.summary.innerHTML='';
-      speak(list[idx]); // do not show on screen
-      if (rec){ try{ rec.stop(); }catch{} setTimeout(()=>{ try{ rec.start(); }catch{} }, 250); }
-      showProgress();
-    }
-    function showProgress(){ els.progress.textContent = `Word ${Math.min(idx+1,list.length)} of ${list.length}`; }
-    function grade(heard){
-      const t = list[idx]; attempts++;
-      const ok = sanitize(heard) === sanitize(t);
-      if (ok){ correct++; els.feedback.textContent='✅ Correct'; }
-      else   { incorrect.push(t); els.feedback.textContent=`❌ Incorrect — ${t}`; }
-      setTimeout(next, 500);
+      next();
     }
     function next(){
-      if (idx<list.length-1){ idx++; speak(list[idx]); if(rec){ try{rec.stop();}catch{} try{rec.start();}catch{} } showProgress(); }
+      if (idx<list.length){ speak(list[idx]); showProgress(); listen(); }
       else end();
     }
-    function end(){
-      summaryBox(els.summary, correct, attempts, incorrect, [...flags]);
+    function showProgress(){ els.progress.textContent=`Word ${Math.min(idx+1,list.length)} of ${list.length}`; }
+    function grade(heard){
+      const t=list[idx]; attempts++;
+      const ok = sanitize(heard)===sanitize(t);
+      if (ok){ correct++; els.feedback.textContent='✅ Correct'; }
+      else   { incorrect.push(t); els.feedback.textContent=`❌ Incorrect — ${t}`; }
+      idx++; setTimeout(next, 600);
     }
-    function useCustom(arr){ master = arr.slice(); els.feedback.textContent='Custom list loaded. Press Start.'; }
+    function end(){ summaryBox(els.summary, correct, attempts, incorrect, [...flags]); }
+    function useCustom(arr){ master=arr.slice(); els.feedback.textContent='Custom list loaded. Press Start.'; }
 
-    // events
-    els.start?.addEventListener('click', async ()=>{ await loadList(); start(); });
-    els.say?.addEventListener('click', ()=>{ speak(list[idx]); if(rec){ try{rec.stop();}catch{} try{rec.start();}catch{} }});
+    function listen(){
+      if (!rec) return;
+      rec.onresult=null; rec.onerror=null;
+      rec.onresult=(evt)=>{ const heard=evt.results[0][0].transcript||''; grade(heard); };
+      rec.onerror=()=>{ els.feedback.textContent='⚠️ Mic error. Tap “Say Again”.'; };
+      try{ rec.stop(); rec.start(); }catch{}
+    }
+
+    els.start?.addEventListener('click', async()=>{ await loadList(); start(); });
+    els.say?.addEventListener('click', ()=>{ speak(list[idx]); listen(); });
     els.flag?.addEventListener('click', ()=>{ const w=list[idx]; if(!w)return; if(flags.has(w)){flags.delete(w); els.feedback.textContent=`🚩 Removed flag on “${w}”`;} else {flags.add(w); els.feedback.textContent=`🚩 Flagged “${w}”`; }});
     els.end?.addEventListener('click', end);
-    els.load?.addEventListener('click', ()=>{
-      const txt=(els.custom?.value||'').trim(); if(!txt) return alert('Paste words first or upload a file.');
-      const arr = txt.split(/[\n,]+/).map(s=>s.trim()).filter(Boolean); if(!arr.length) return alert('No valid words found.');
-      useCustom(arr);
-    });
-    els.file?.addEventListener('change', async (e)=>{
-      const f=e.target.files&&e.target.files[0]; if(!f) return;
-      const text = await f.text(); const arr=text.split(/[\n,]+/).map(s=>s.trim()).filter(Boolean);
-      if(!arr.length) return alert('No valid words in file.'); useCustom(arr);
-    });
-
-    if (rec){
-      rec.onresult = (evt)=>{ const heard = evt.results[0][0].transcript||''; grade(heard); };
-      rec.onerror  = ()=>{ els.feedback.textContent='⚠️ Mic error. Tap “Say Again” to retry.'; };
-    }
+    els.load?.addEventListener('click', ()=>{ const txt=(els.custom?.value||'').trim(); if(!txt)return alert('Paste words first or upload a file.'); const arr=txt.split(/[\n,]+/).map(s=>s.trim()).filter(Boolean); if(!arr.length)return alert('No valid words found.'); useCustom(arr); });
+    els.file?.addEventListener('change', async(e)=>{ const f=e.target.files?.[0]; if(!f)return; const text=await f.text(); const arr=text.split(/[\n,]+/).map(s=>s.trim()).filter(Boolean); if(!arr.length)return alert('No valid words in file.'); useCustom(arr); });
   })();
 
-  // ---- School (typed) ----
+  // ----- School (typed) -----
   (function School(){
     const els = {
       start:q('#schoolStart'), submit:q('#schoolSubmit'), flag:q('#schoolFlag'), end:q('#schoolEnd'),
@@ -129,50 +121,28 @@
     async function loadList(){
       if (master.length) return;
       try{
-        const res = await fetch('/data/word-lists/school.json', {cache:'no-store'});
+        const res = await fetch('/data/word-lists/school.json',{cache:'no-store'});
         const data = await res.json();
         master = (Array.isArray(data?.words)?data.words:Array.isArray(data)?data:[]).filter(Boolean);
-      }catch{ master = ['apple','banana','computer','library','mountain']; }
+      }catch{ master=['apple','banana','computer','library','mountain']; }
     }
-    function start(){
-      if (!master.length){ els.feedback.textContent='No words available.'; return; }
-      list = master.slice(); idx=0; correct=0; attempts=0; incorrect.length=0; flags.clear();
-      els.summary.innerHTML=''; speak(list[idx]); show();
-    }
+    function start(){ list=master.slice(); idx=0; correct=0; attempts=0; incorrect.length=0; flags.clear(); els.summary.innerHTML=''; speak(list[idx]); show(); }
     function show(){ els.progress.textContent=`Word ${idx+1} of ${list.length}`; els.input?.focus(); }
-    function grade(){
-      const t=list[idx]; const typed=(els.input?.value||'').trim();
-      const ok = sanitize(typed)===sanitize(t); attempts++;
-      if (ok){ correct++; els.feedback.textContent='✅ Correct'; }
-      else   { incorrect.push(t); els.feedback.textContent=`❌ Incorrect — ${t}`; }
-      if (els.input) els.input.value='';
-      setTimeout(next, 500);
-    }
-    function next(){
-      if (idx<list.length-1){ idx++; speak(list[idx]); show(); }
-      else end();
-    }
+    function grade(){ const t=list[idx]; const typed=(els.input?.value||'').trim(); const ok=sanitize(typed)===sanitize(t); attempts++; if(ok){correct++;els.feedback.textContent='✅ Correct';} else{incorrect.push(t);els.feedback.textContent=`❌ Incorrect — ${t}`;} if(els.input)els.input.value=''; idx++; setTimeout(next,400); }
+    function next(){ if(idx<list.length){ speak(list[idx]); show(); } else end(); }
     function end(){ summaryBox(els.summary, correct, attempts, incorrect, [...flags]); }
     function useCustom(arr){ master=arr.slice(); els.feedback.textContent='Custom list loaded. Press Start.'; }
 
-    els.start?.addEventListener('click', async ()=>{ await loadList(); start(); });
+    els.start?.addEventListener('click', async()=>{ await loadList(); start(); });
     els.submit?.addEventListener('click', grade);
-    els.input?.addEventListener('keydown', (e)=>{ if(e.key==='Enter'){ e.preventDefault(); grade(); }});
-    els.flag?.addEventListener('click', ()=>{ const w=list[idx]; if(!w)return; if(flags.has(w)){flags.delete(w); els.feedback.textContent=`🚩 Removed flag on “${w}”`;} else {flags.add(w); els.feedback.textContent=`🚩 Flagged “${w}”`; }});
+    els.input?.addEventListener('keydown',(e)=>{ if(e.key==='Enter'){ e.preventDefault(); grade(); }});
+    els.flag?.addEventListener('click',()=>{ const w=list[idx]; if(!w)return; if(flags.has(w)){flags.delete(w); els.feedback.textContent=`🚩 Removed flag on “${w}”`;} else {flags.add(w); els.feedback.textContent=`🚩 Flagged “${w}”`; }});
     els.end?.addEventListener('click', end);
-    els.load?.addEventListener('click', ()=>{
-      const txt=(els.custom?.value||'').trim(); if(!txt) return alert('Paste words first or upload a file.');
-      const arr = txt.split(/[\n,]+/).map(s=>s.trim()).filter(Boolean); if(!arr.length) return alert('No valid words found.');
-      useCustom(arr);
-    });
-    els.file?.addEventListener('change', async (e)=>{
-      const f=e.target.files&&e.target.files[0]; if(!f) return;
-      const text = await f.text(); const arr=text.split(/[\n,]+/).map(s=>s.trim()).filter(Boolean);
-      if(!arr.length) return alert('No valid words in file.'); useCustom(arr);
-    });
+    els.load?.addEventListener('click', ()=>{ const txt=(els.custom?.value||'').trim(); if(!txt)return alert('Paste words first or upload a file.'); const arr=txt.split(/[\n,]+/).map(s=>s.trim()).filter(Boolean); if(!arr.length)return alert('No valid words found.'); useCustom(arr); });
+    els.file?.addEventListener('change', async(e)=>{ const f=e.target.files?.[0]; if(!f)return; const text=await f.text(); const arr=text.split(/[\n,]+/).map(s=>s.trim()).filter(Boolean); if(!arr.length)return alert('No valid words in file.'); useCustom(arr); });
   })();
 
-  // ---- OET (typed, practice/exam) ----
+  // ----- OET (typed) -----
   (function OET(){
     const els = {
       practice:q('#oetPractice'), exam:q('#oetExam'),
@@ -180,53 +150,34 @@
       input:q('#oetAnswer'), feedback:q('#oetFeedback'), progress:q('#oetProgress'), summary:q('#oetSummary'),
       custom:q('#oetCustom'), file:q('#oetFile'), load:q('#oetLoad')
     };
-    let master=[], list=[], idx=0, correct=0, attempts=0, incorrect=[], flags=new Set();
-    let exam=false;
+    let master=[], list=[], idx=0, correct=0, attempts=0, incorrect=[], flags=new Set(), exam=false;
 
     async function loadList(){
       if (master.length) return;
-      if (Array.isArray(window.OET_WORDS) && window.OET_WORDS.length){ master = window.OET_WORDS.slice(); }
-      else { master = ['abdomen','anemia','antibiotic','artery','asthma','biopsy','catheter','diagnosis','embolism','fracture']; }
+      if (Array.isArray(window.OET_WORDS) && window.OET_WORDS.length) master = window.OET_WORDS.slice();
+      else master = ['abdomen','anemia','antibiotic','artery','asthma','biopsy','catheter','diagnosis','embolism','fracture'];
     }
     function start(){
       if (!master.length){ els.feedback.textContent='No words available.'; return; }
-      const base = master.slice();
-      if (exam){ base.sort(()=>Math.random()-0.5); list = base.slice(0,24); }
-      else list = base;
-      idx=0; correct=0; attempts=0; incorrect.length=0; flags.clear();
-      els.summary.innerHTML=''; speak(list[idx]); show();
+      let base = master.slice();
+      if (exam){ base.sort(()=>Math.random()-0.5); list=base.slice(0,24); } else list=base;
+      idx=0; correct=0; attempts=0; incorrect.length=0; flags.clear(); els.summary.innerHTML=''; speak(list[idx]); show();
     }
     function show(){ els.progress.textContent=`Word ${idx+1} of ${list.length}`; els.input?.focus(); }
-    function grade(){
-      const t=list[idx]; const typed=(els.input?.value||'').trim();
-      const ok = sanitize(typed)===sanitize(t); attempts++;
-      if (ok){ correct++; els.feedback.textContent='✅ Correct'; }
-      else   { incorrect.push(t); els.feedback.textContent=`❌ Incorrect — ${t}`; }
-      if (els.input) els.input.value='';
-      setTimeout(next, 500);
-    }
-    function next(){ if(idx<list.length-1){ idx++; speak(list[idx]); show(); } else end(); }
+    function grade(){ const t=list[idx]; const typed=(els.input?.value||'').trim(); const ok=sanitize(typed)===sanitize(t); attempts++; if(ok){correct++;els.feedback.textContent='✅ Correct';} else{incorrect.push(t);els.feedback.textContent=`❌ Incorrect — ${t}`;} if(els.input)els.input.value=''; idx++; setTimeout(next,400); }
+    function next(){ if(idx<list.length){ speak(list[idx]); show(); } else end(); }
     function end(){ summaryBox(els.summary, correct, attempts, incorrect, [...flags]); }
     function useCustom(arr){ master=arr.slice(); els.feedback.textContent='Custom list loaded. Press Start.'; }
 
     els.practice?.addEventListener('click', ()=>{ exam=false; els.feedback.textContent='Practice mode selected.'; });
-    els.exam?.addEventListener('click', ()=>{ exam=true;  els.feedback.textContent='Exam mode (24) selected.'; });
-
-    els.start?.addEventListener('click', async ()=>{ await loadList(); start(); });
+    els.exam?.addEventListener('click', ()=>{ exam=true; els.feedback.textContent='Exam mode (24) selected.'; });
+    els.start?.addEventListener('click', async()=>{ await loadList(); start(); });
     els.submit?.addEventListener('click', grade);
-    els.input?.addEventListener('keydown', (e)=>{ if(e.key==='Enter'){ e.preventDefault(); grade(); }});
-    els.flag?.addEventListener('click', ()=>{ const w=list[idx]; if(!w)return; if(flags.has(w)){flags.delete(w); els.feedback.textContent=`🚩 Removed flag on “${w}”`;} else {flags.add(w); els.feedback.textContent=`🚩 Flagged “${w}”`; }});
+    els.input?.addEventListener('keydown',(e)=>{ if(e.key==='Enter'){ e.preventDefault(); grade(); }});
+    els.flag?.addEventListener('click',()=>{ const w=list[idx]; if(!w)return; if(flags.has(w)){flags.delete(w); els.feedback.textContent=`🚩 Removed flag on “${w}”`;} else {flags.add(w); els.feedback.textContent=`🚩 Flagged “${w}”`; }});
     els.end?.addEventListener('click', end);
-    els.load?.addEventListener('click', ()=>{
-      const txt=(els.custom?.value||'').trim(); if(!txt) return alert('Paste words first or upload a file.');
-      const arr = txt.split(/[\n,]+/).map(s=>s.trim()).filter(Boolean); if(!arr.length) return alert('No valid words found.');
-      useCustom(arr);
-    });
-    els.file?.addEventListener('change', async (e)=>{
-      const f=e.target.files&&e.target.files[0]; if(!f) return;
-      const text = await f.text(); const arr=text.split(/[\n,]+/).map(s=>s.trim()).filter(Boolean);
-      if(!arr.length) return alert('No valid words in file.'); useCustom(arr);
-    });
+    els.load?.addEventListener('click', ()=>{ const txt=(els.custom?.value||'').trim(); if(!txt)return alert('Paste words first or upload a file.'); const arr=txt.split(/[\n,]+/).map(s=>s.trim()).filter(Boolean); if(!arr.length)return alert('No valid words found.'); useCustom(arr); });
+    els.file?.addEventListener('change', async(e)=>{ const f=e.target.files?.[0]; if(!f)return; const text=await f.text(); const arr=text.split(/[\n,]+/).map(s=>s.trim()).filter(Boolean); if(!arr.length)return alert('No valid words in file.'); useCustom(arr); });
   })();
 
 })();
