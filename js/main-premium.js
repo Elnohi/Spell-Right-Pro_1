@@ -135,12 +135,18 @@
     {btn:'#tabOet',    sec:'#secOet',    key:'oet'}
   ];
   function activate(key){
-    tabs.forEach(t=>{
-      $(t.btn).classList.toggle('active', t.key===key);
-      $(t.sec).classList.toggle('active', t.key===key);
-    });
-    localStorage.setItem('premiumTab', key);
-  }
+  tabs.forEach(t=>{
+    const btn = $(t.btn);
+    const sec = $(t.sec);
+    const isActive = (t.key === key);
+    if (btn) btn.classList.toggle('active', isActive);
+    if (sec) {
+      sec.classList.toggle('active', isActive);
+      sec.style.display = isActive ? 'block' : 'none';
+    }
+  });
+  localStorage.setItem('premiumTab', key);
+}
   tabs.forEach(t=> $(t.btn)?.addEventListener('click', ()=>activate(t.key)));
   activate(localStorage.getItem('premiumTab') || 'bee');
 
@@ -353,3 +359,4 @@
   })();
 
 })();
+
