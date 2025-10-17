@@ -22,6 +22,7 @@ body {
   align-items: center;
 }
 
+/* --- Header / Navbar --- */
 header {
   display: flex;
   justify-content: space-between;
@@ -29,11 +30,34 @@ header {
   width: 100%;
   max-width: 800px;
   margin-bottom: 25px;
+  background: rgba(80, 30, 150, 0.2);
+  backdrop-filter: blur(14px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.25);
+  color: #2b1b57;
+  border-radius: var(--radius);
+  padding: 10px 20px;
+  box-shadow: var(--shadow);
 }
 
+/* Brand area */
+header .brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+header .brand span {
+  color: #1a0033;
+  font-weight: 700;
+  font-size: 1.1rem;
+}
+header .brand small {
+  color: #4a0099;
+}
+
+/* Buttons inside header */
 .nav-btn {
-  background: rgba(255,255,255,0.2);
-  color: #fff;
+  background: rgba(255, 255, 255, 0.2);
+  color: #2b1b57;
   border: none;
   border-radius: var(--radius);
   padding: 8px 18px;
@@ -41,9 +65,24 @@ header {
   font-weight: 600;
   transition: 0.2s ease;
 }
-
 .nav-btn:hover {
-  background: rgba(255,255,255,0.35);
+  background: rgba(255, 255, 255, 0.35);
+}
+body.dark-mode .nav-btn {
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.15);
+}
+
+/* Dark mode header adjustments */
+body.dark-mode header {
+  background: rgba(30, 10, 50, 0.8);
+  color: #ffffff;
+}
+body.dark-mode header .brand span {
+  color: #ffffff;
+}
+body.dark-mode header .brand small {
+  color: #c6a8ff;
 }
 
 /* --- Main Card --- */
@@ -70,11 +109,11 @@ h2 {
   margin-bottom: 25px;
 }
 
+/* --- Progress / Feedback --- */
 #wordProgress {
   font-weight: 600;
   color: #fff;
 }
-
 #feedback {
   margin: 14px 0;
   font-weight: 500;
@@ -99,8 +138,11 @@ button {
 #btnNext, #btnPrev { background: #eee; color: #000; }
 #btnSayAgain { background: #4cc9f0; color: #fff; }
 
-/* --- Input --- */
-input[type="text"], input[type="email"], input[type="password"] {
+/* --- Input fields --- */
+input[type="text"],
+input[type="email"],
+input[type="password"],
+textarea {
   width: 100%;
   max-width: 500px;
   padding: 10px;
@@ -108,9 +150,10 @@ input[type="text"], input[type="email"], input[type="password"] {
   border: none;
   margin: 10px 0;
   font-size: 1rem;
+  outline: none;
 }
 
-/* --- Overlay --- */
+/* --- Overlay (Login Glass Card) --- */
 .glass-overlay {
   position: fixed;
   inset: 0;
@@ -132,6 +175,7 @@ input[type="text"], input[type="email"], input[type="password"] {
   color: #fff;
 }
 
+/* Google Button */
 .btn-google {
   display: inline-flex;
   align-items: center;
@@ -147,6 +191,7 @@ input[type="text"], input[type="email"], input[type="password"] {
   font-weight: 600;
 }
 
+/* Auth buttons */
 .btn-main, .btn-sub, .btn-verify {
   display: inline-block;
   margin: 6px 5px;
@@ -155,7 +200,6 @@ input[type="text"], input[type="email"], input[type="password"] {
   padding: 10px 20px;
   border-radius: var(--radius);
 }
-
 .btn-sub {
   background: rgba(255,255,255,0.2);
 }
@@ -172,6 +216,7 @@ input[type="text"], input[type="email"], input[type="password"] {
   button { width: 90%; }
 }
 
+/* --- Trainer Areas (Tabs visibility) --- */
 .trainer-area {
   display: none;
   transition: opacity 0.3s ease;
@@ -181,4 +226,3 @@ input[type="text"], input[type="email"], input[type="password"] {
   display: block;
   opacity: 1;
 }
-
