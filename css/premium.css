@@ -9,7 +9,9 @@
   --font-main: 'Inter', 'Segoe UI', sans-serif;
 }
 
-/* --- Global --- */
+/* =======================================================
+   GLOBAL
+======================================================= */
 body {
   font-family: var(--font-main);
   background: var(--gradient);
@@ -20,9 +22,24 @@ body {
   display: flex;
   flex-direction: column;
   align-items: center;
+  transition: background 0.3s ease, color 0.3s ease;
 }
 
-/* --- Header / Navbar --- */
+/* Dark mode */
+body.dark-mode {
+  background: #1c1c1c;
+  color: #e9e9e9;
+}
+body.dark-mode main,
+body.dark-mode .trainer-area,
+body.dark-mode .mode-section {
+  background: rgba(255, 255, 255, 0.08);
+  color: #f1f1f1;
+}
+
+/* =======================================================
+   HEADER / NAVBAR
+======================================================= */
 header {
   display: flex;
   justify-content: space-between;
@@ -39,7 +56,6 @@ header {
   box-shadow: var(--shadow);
 }
 
-/* Brand area */
 header .brand {
   display: flex;
   align-items: center;
@@ -85,7 +101,9 @@ body.dark-mode header .brand small {
   color: #c6a8ff;
 }
 
-/* --- Main Card --- */
+/* =======================================================
+   MAIN CARD
+======================================================= */
 main {
   background: rgba(255, 255, 255, 0.1);
   border-radius: var(--radius);
@@ -109,19 +127,22 @@ h2 {
   margin-bottom: 25px;
 }
 
-/* --- Progress / Feedback --- */
-#wordProgress {
+/* =======================================================
+   PROGRESS / FEEDBACK
+======================================================= */
+#wordProgress,
+#feedback {
   font-weight: 600;
   color: #fff;
 }
 #feedback {
   margin: 14px 0;
-  font-weight: 500;
-  color: #fff;
   min-height: 30px;
 }
 
-/* --- Buttons --- */
+/* =======================================================
+   BUTTONS
+======================================================= */
 button {
   border: none;
   border-radius: var(--radius);
@@ -131,14 +152,15 @@ button {
   box-shadow: var(--shadow);
   font-weight: 600;
 }
-
 #btnStart { background: #4895ef; color: #fff; }
 #btnEnd { background: #f72585; color: #fff; }
 #btnFlag { background: #ffd166; color: #000; }
 #btnNext, #btnPrev { background: #eee; color: #000; }
 #btnSayAgain { background: #4cc9f0; color: #fff; }
 
-/* --- Input fields --- */
+/* =======================================================
+   INPUT FIELDS
+======================================================= */
 input[type="text"],
 input[type="email"],
 input[type="password"],
@@ -153,7 +175,9 @@ textarea {
   outline: none;
 }
 
-/* --- Overlay (Login Glass Card) --- */
+/* =======================================================
+   AUTH OVERLAY (LOGIN CARD)
+======================================================= */
 .glass-overlay {
   position: fixed;
   inset: 0;
@@ -175,7 +199,6 @@ textarea {
   color: #fff;
 }
 
-/* Google Button */
 .btn-google {
   display: inline-flex;
   align-items: center;
@@ -183,7 +206,6 @@ textarea {
   gap: 10px;
   background: #fff;
   color: #333;
-  border: none;
   border-radius: var(--radius);
   padding: 10px 14px;
   margin-bottom: 10px;
@@ -209,26 +231,26 @@ textarea {
   font-size: 0.9rem;
 }
 
-/* --- Responsive --- */
+/* =======================================================
+   TABS / TRAINER AREAS
+======================================================= */
+.trainer-area,
+.mode-section {
+  display: none;
+  transition: opacity 0.3s ease;
+  opacity: 0;
+}
+.trainer-area.active,
+.mode-section.active {
+  display: block !important;
+  opacity: 1;
+}
+
+/* =======================================================
+   RESPONSIVE
+======================================================= */
 @media (max-width: 700px) {
   header { flex-direction: column; gap: 10px; }
   main { padding: 25px; }
   button { width: 90%; }
 }
-
-/* --- Trainer Areas (Tabs visibility) --- */
-.trainer-area {
-  display: none;
-  transition: opacity 0.3s ease;
-  opacity: 0;
-}
-.trainer-area.active {
-  display: block;
-  opacity: 1;
-}
-.mode-section.active {
-  display: block !important;
-}
-.mode-section { display:none; }
-.mode-section.active { display:block !important; }
-
