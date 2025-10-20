@@ -1,6 +1,6 @@
 /* --------------------------------------------------
    SPELLRIGHTPRO FREEMIUM POLISHED LAYOUT
-   -------------------------------------------------- */
+-------------------------------------------------- */
 
 :root {
   --primary: #7b2ff7;
@@ -9,8 +9,12 @@
   --shadow: 0 8px 16px rgba(0, 0, 0, 0.15);
   --radius: 14px;
   --font-main: 'Inter', 'Segoe UI', sans-serif;
+  color-scheme: light dark;
 }
 
+/* ======================================================
+   GLOBAL
+====================================================== */
 body {
   font-family: var(--font-main);
   background: var(--gradient);
@@ -24,7 +28,9 @@ body {
   padding: 20px;
 }
 
-/* --- Header --- */
+/* ======================================================
+   HEADER
+====================================================== */
 header {
   display: flex;
   align-items: center;
@@ -67,7 +73,9 @@ header .btn-premium:hover {
   background: #631fc6;
 }
 
-/* --- Main Card --- */
+/* ======================================================
+   MAIN CARD
+====================================================== */
 .main-card {
   background: #fff;
   border-radius: var(--radius);
@@ -94,7 +102,9 @@ header .btn-premium:hover {
   margin-bottom: 15px;
 }
 
-/* --- Progress / Feedback --- */
+/* ======================================================
+   PROGRESS / FEEDBACK
+====================================================== */
 #wordProgress {
   margin-top: 10px;
   font-weight: 600;
@@ -108,7 +118,9 @@ header .btn-premium:hover {
   min-height: 28px;
 }
 
-/* --- Buttons --- */
+/* ======================================================
+   BUTTONS
+====================================================== */
 button {
   font-size: 1rem;
   border: none;
@@ -130,7 +142,6 @@ button.start {
   color: #fff;
   font-weight: 600;
 }
-
 button#btnStart:hover {
   background: #377fd6;
 }
@@ -155,7 +166,19 @@ button#btnSayAgain {
   color: #fff;
 }
 
-/* --- Input / Typing area --- */
+/* Secondary button (for accessibility and consistency) */
+.btn-secondary {
+  background: #eceffd;
+  color: #222;
+  border: 1px solid #cfd7ff;
+}
+.btn-secondary:hover {
+  filter: brightness(0.98);
+}
+
+/* ======================================================
+   INPUT / TYPING AREAS
+====================================================== */
 #userInput,
 #customWords,
 textarea {
@@ -177,7 +200,20 @@ textarea:focus {
   outline: none;
 }
 
-/* --- Footer --- */
+/* ======================================================
+   SUMMARY LIST
+====================================================== */
+.summary-list {
+  margin: 0.5rem 0 0;
+  padding-left: 1.2rem;
+}
+.summary-list li {
+  margin: 0.15rem 0;
+}
+
+/* ======================================================
+   FOOTER
+====================================================== */
 footer {
   text-align: center;
   color: #eee;
@@ -185,6 +221,26 @@ footer {
   font-size: 0.9rem;
 }
 
+/* ======================================================
+   DARK MODE
+====================================================== */
+html.dark body {
+  background: #0e0b1a;
+  color: #f4f2ff;
+}
+html.dark .main-card {
+  background: rgba(255, 255, 255, 0.06);
+  color: #f4f2ff;
+}
+html.dark .btn-secondary {
+  background: #2a2740;
+  color: #f4f2ff;
+  border-color: #3b3661;
+}
+
+/* ======================================================
+   RESPONSIVE
+====================================================== */
 @media (max-width: 600px) {
   header {
     flex-direction: column;
@@ -199,26 +255,4 @@ footer {
   .main-card {
     padding: 20px;
   }
-
-   /* --- Accessibility: stronger contrast for secondary buttons --- */
-.btn-secondary {
-  background: #eceffd;
-  color: #222;
-  border: 1px solid #cfd7ff;
-}
-.btn-secondary:hover { filter: brightness(0.98); }
-
-/* Summary list */
-.summary-list {
-  margin: .5rem 0 0;
-  padding-left: 1.2rem;
-}
-.summary-list li { margin: .15rem 0; }
-
-/* Dark mode (kept consistent) */
-:root { color-scheme: light dark; }
-html.dark body { background: #0e0b1a; color: #f4f2ff; }
-html.dark .glass { background: rgba(255,255,255,.06); border-color: rgba(255,255,255,.12); }
-html.dark .btn-secondary { background: #2a2740; color: #f4f2ff; border-color: #3b3661; }
-
 }
