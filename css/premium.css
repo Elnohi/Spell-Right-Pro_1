@@ -1,5 +1,5 @@
 /* =======================================================
-   PREMIUM THEME - CORRECTED VERSION
+   SPELLRIGHTPRO PREMIUM THEME - FINAL VERSION
 ======================================================= */
 :root {
   --primary: #7b2ff7;
@@ -12,7 +12,9 @@
   --font-main: 'Inter', 'Segoe UI', sans-serif;
 }
 
-/* GLOBAL */
+/* =======================================================
+   GLOBAL
+======================================================= */
 body {
   font-family: var(--font-main);
   background: var(--gradient);
@@ -26,13 +28,15 @@ body {
   transition: background 0.3s ease, color 0.3s ease;
 }
 
-/* Dark Mode (global) */
+/* DARK MODE */
 body.dark-mode {
   background: #0d0b1a;
   color: #f1f1f1;
 }
 
-/* HEADER */
+/* =======================================================
+   HEADER
+======================================================= */
 header {
   display: flex;
   justify-content: space-between;
@@ -62,7 +66,8 @@ header .brand small {
 }
 
 /* Header Buttons */
-.nav-btn, .btn-premium {
+.nav-btn,
+.btn-premium {
   background: var(--primary);
   color: #fff;
   border: none;
@@ -72,30 +77,37 @@ header .brand small {
   font-weight: 600;
   transition: background 0.3s ease, transform 0.2s ease;
 }
-.nav-btn:hover, .btn-premium:hover {
+.nav-btn:hover,
+.btn-premium:hover {
   background: var(--primary-dark);
   transform: translateY(-2px);
 }
 
-/* Dark Mode Header */
+/* Dark Header */
 body.dark-mode header {
   background: rgba(40, 15, 70, 0.9);
   color: #ffffff;
-  border-bottom: 1px solid rgba(255,255,255,0.2);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
 }
-body.dark-mode .nav-btn, body.dark-mode .btn-premium {
-  background: rgba(255,255,255,0.15);
+body.dark-mode .nav-btn,
+body.dark-mode .btn-premium {
+  background: rgba(255, 255, 255, 0.15);
   color: #fff;
-  border: 1px solid rgba(255,255,255,0.25);
+  border: 1px solid rgba(255, 255, 255, 0.25);
 }
-body.dark-mode .nav-btn:hover, body.dark-mode .btn-premium:hover {
-  background: rgba(255,255,255,0.25);
+body.dark-mode .nav-btn:hover,
+body.dark-mode .btn-premium:hover {
+  background: rgba(255, 255, 255, 0.25);
 }
 
 /* Ensure icons visible */
-header i { margin-right: 6px; }
+header i {
+  margin-right: 6px;
+}
 
-/* MAIN CARD */
+/* =======================================================
+   MAIN CARD
+======================================================= */
 main {
   background: rgba(255, 255, 255, 0.1);
   border-radius: var(--radius);
@@ -108,17 +120,22 @@ main {
   color: #fff;
 }
 body.dark-mode main {
-  background: rgba(255,255,255,0.08);
+  background: rgba(255, 255, 255, 0.08);
   color: #fff;
 }
 
-/* FEEDBACK / PROGRESS */
-#feedback, #wordProgress {
+/* =======================================================
+   FEEDBACK / PROGRESS
+======================================================= */
+#feedback,
+#wordProgress {
   font-weight: 600;
   color: #fff;
 }
 
-/* BUTTONS */
+/* =======================================================
+   BUTTONS
+======================================================= */
 button {
   border: none;
   border-radius: var(--radius);
@@ -129,25 +146,43 @@ button {
   font-weight: 600;
   transition: transform 0.2s ease, background 0.3s ease;
 }
-button:hover { transform: translateY(-2px); }
-#btnStart { background: #4895ef; color: #fff; }
-#btnEnd { background: #f72585; color: #fff; }
-#btnFlag { background: #ffd166; color: #000; }
-#btnSayAgain { background: #4cc9f0; color: #fff; }
-
-/* DARK MODE BUTTON ADJUST */
-body.dark-mode button {
-  box-shadow: none;
-  background: rgba(255,255,255,0.15);
+button:hover {
+  transform: translateY(-2px);
+}
+#btnStart {
+  background: #4895ef;
   color: #fff;
 }
-body.dark-mode button:hover { background: rgba(255,255,255,0.25); }
+#btnEnd {
+  background: #f72585;
+  color: #fff;
+}
+#btnFlag {
+  background: #ffd166;
+  color: #000;
+}
+#btnSayAgain {
+  background: #4cc9f0;
+  color: #fff;
+}
 
-/* AUTH OVERLAY */
+/* Dark Mode Buttons */
+body.dark-mode button {
+  box-shadow: none;
+  background: rgba(255, 255, 255, 0.15);
+  color: #fff;
+}
+body.dark-mode button:hover {
+  background: rgba(255, 255, 255, 0.25);
+}
+
+/* =======================================================
+   AUTH OVERLAY
+======================================================= */
 .glass-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(30,10,60,0.6);
+  background: rgba(30, 10, 60, 0.6);
   backdrop-filter: blur(8px);
   display: none;
   justify-content: center;
@@ -155,9 +190,18 @@ body.dark-mode button:hover { background: rgba(255,255,255,0.25); }
   z-index: 9999;
 }
 
-/* RESPONSIVE */
-@media (max-width:700px){
-  header { flex-direction:column; gap:10px; }
-  main { padding:25px; }
-  button { width:90%; }
+/* =======================================================
+   RESPONSIVE
+======================================================= */
+@media (max-width: 700px) {
+  header {
+    flex-direction: column;
+    gap: 10px;
+  }
+  main {
+    padding: 25px;
+  }
+  button {
+    width: 90%;
+  }
 }
