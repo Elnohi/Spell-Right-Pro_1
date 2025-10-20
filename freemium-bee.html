@@ -7,43 +7,6 @@
 
   <link rel="preload" href="/assets/logo.png" as="image"/>
   <link rel="stylesheet" href="/css/styles.css"/>
-  <style>
-    :root{
-      --radius:14px; --shadow:0 8px 16px rgba(0,0,0,.15);
-      --grad:linear-gradient(135deg,#7b2ff7 0%,#f107a3 100%);
-    }
-    body{margin:0;font-family:Inter,Segoe UI,system-ui,-apple-system,sans-serif;background:var(--grad);min-height:100vh;color:#222;display:flex;flex-direction:column;align-items:center}
-    header{width:100%;max-width:980px;display:flex;gap:10px;justify-content:space-between;align-items:center;padding:16px}
-    .brand{display:flex;gap:12px;align-items:center;background:rgba(255,255,255,.18);backdrop-filter:blur(8px);padding:10px 16px;border-radius:999px;color:#fff;box-shadow:var(--shadow)}
-    .brand img{width:38px;height:38px;border-radius:9px}
-    .nav{display:flex;gap:10px}
-    .btn{border:0;border-radius:999px;padding:10px 16px;font-weight:700;cursor:pointer;box-shadow:var(--shadow)}
-    .btn-home{background:#ffffff33;color:#fff}
-    .btn-home:hover{background:#ffffff55}
-    .btn-dark{background:#ffffff22;color:#fff;width:48px;display:grid;place-items:center}
-    main{width:100%;max-width:720px;background:rgba(255,255,255,.10);backdrop-filter:blur(10px);border-radius:16px;padding:26px;box-shadow:var(--shadow);color:#fff;margin:8px}
-    h1{margin:0 0 6px}
-    .subtitle{opacity:.9;margin:0 0 18px}
-    .card{background:rgba(255,255,255,.12);border-radius:16px;padding:16px;box-shadow:var(--shadow)}
-    textarea,input[type="text"]{width:100%;border:0;border-radius:12px;padding:12px;font-size:16px}
-    textarea{min-height:130px}
-    .row{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin:14px 0}
-    .chip{border:0;border-radius:12px;padding:10px 16px;font-weight:700;cursor:pointer;box-shadow:var(--shadow)}
-    .primary{background:#4895ef;color:#fff}
-    .accent{background:#4cc9f0;color:#fff}
-    .danger{background:#f72585;color:#fff}
-    .flag{background:#ffd166;color:#222}
-    .pale{background:#eee;color:#222}
-    .progress,.feedback{margin:10px 0;font-weight:700}
-    .summary{margin-top:12px;background:#fff;border-radius:12px;color:#2a2a2a;padding:12px}
-    .ads{display:flex;justify-content:center;margin-top:16px}
-    /* dark */
-    .dark body{}
-    .dark main,.dark .brand{color:#fff}
-    .dark .summary{background:#1f1f28;color:#e9e9f1}
-  </style>
-
-  <!-- Config (AdSense client etc) -->
   <script src="/js/config.js"></script>
 </head>
 <body>
@@ -53,181 +16,81 @@
       <strong>SpellRightPro <span style="opacity:.8">Bee</span></strong>
     </div>
     <div class="nav">
-      <button class="btn btn-home" onclick="location.href='/index.html'">Home</button>
-      <button id="darkToggle" class="btn btn-dark" aria-label="Toggle dark mode">🌙</button>
+      <button class="btn-premium" onclick="location.href='/index.html'"><i class="fa fa-home"></i>Home</button>
+      <button id="darkToggle" class="btn-premium"><i class="fa fa-moon"></i></button>
     </div>
   </header>
 
-  <main>
-    <h1>Spelling Bee (Freemium)</h1>
-    <p class="subtitle">Listen carefully and spell the word <em>aloud</em>. We’ll grade it and auto-advance.</p>
+  <main class="main-card">
+    <h2>Spelling Bee (Freemium)</h2>
+    <p class="subtitle">Listen carefully and spell aloud. Your pronunciation will be checked automatically.</p>
 
-    <section class="card">
-      <h3 style="margin-top:0">Custom words (one list per day)</h3>
-      <textarea id="customWords" placeholder="Paste words separated by new lines or commas (optional)…"></textarea>
-      <div class="row">
-        <input id="fileInput" type="file" accept=".txt,.csv"/>
-        <button id="useCustom" class="chip">+ Use Custom List</button>
-      </div>
-    </section>
-
+    <textarea id="customWords" placeholder="Paste custom list (optional)…"></textarea>
     <div class="row">
-      <button id="btnStart" class="chip primary">Start</button>
-      <button id="btnSay" class="chip accent">Say Again</button>
-      <button id="btnFlag" class="chip flag">Flag</button>
-      <button id="btnEnd" class="chip danger">End</button>
+      <input id="fileInput" type="file" accept=".txt,.csv"/>
+      <button id="useCustom" class="btn-secondary">Use Custom</button>
     </div>
 
-    <div id="progress" class="progress"></div>
-    <div id="feedback" class="feedback"></div>
-    <div id="summary" class="summary" hidden></div>
+    <div class="row">
+      <button id="btnStart" class="start">Start</button>
+      <button id="btnSayAgain">Say Again</button>
+      <button id="btnFlag">Flag</button>
+      <button id="btnEnd">End</button>
+    </div>
+
+    <div id="wordProgress"></div>
+    <div id="feedback"></div>
+    <div id="summary" hidden></div>
 
     <div id="ads" class="ads"></div>
   </main>
 
   <script>
-  // ---------- Dark mode ----------
+  // Dark mode unified
   (function(){
-    const key='dark'; const t=document.getElementById('darkToggle');
-    const apply=()=>document.documentElement.classList.toggle('dark',localStorage.getItem(key)==='1');
-    t.addEventListener('click',()=>{localStorage.setItem(key,localStorage.getItem(key)==='1'?'0':'1');apply();});
+    const key='dark',toggle=document.getElementById('darkToggle');
+    const apply=()=>{
+      const enabled=localStorage.getItem(key)==='1';
+      document.body.classList.toggle('dark-mode',enabled);
+      toggle.innerHTML=enabled?'<i class="fa fa-sun"></i>':'<i class="fa fa-moon"></i>';
+    };
+    toggle.addEventListener('click',()=>{localStorage.setItem(key,localStorage.getItem(key)==='1'?'0':'1');apply();});
     apply();
   })();
 
-  // ---------- AdSense (pull client from config.js) ----------
+  // Ads
   (function(){
-    if(!window.AD_CLIENT) return; // safe no-op if not set / blocked
+    if(!window.AD_CLIENT)return;
     const s=document.createElement('script');
     s.async=true;
     s.src=`https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${window.AD_CLIENT}`;
-    s.crossOrigin="anonymous";
-    document.head.appendChild(s);
-
+    s.crossOrigin="anonymous";document.head.appendChild(s);
     const ins=document.createElement('ins');
-    ins.className='adsbygoogle';
-    ins.style.cssText='display:block;min-height:90px';
+    ins.className='adsbygoogle';ins.style.cssText='display:block;min-height:90px';
     ins.setAttribute('data-ad-format','auto');
     ins.setAttribute('data-full-width-responsive','true');
     document.getElementById('ads').appendChild(ins);
     (window.adsbygoogle=window.adsbygoogle||[]).push({});
   })();
 
-  // ---------- Bee trainer ----------
+  // Bee Trainer
   (function(){
-    const els={
-      txt: document.getElementById('customWords'),
-      file: document.getElementById('fileInput'),
-      use: document.getElementById('useCustom'),
-      start: document.getElementById('btnStart'),
-      say: document.getElementById('btnSay'),
-      flag: document.getElementById('btnFlag'),
-      end: document.getElementById('btnEnd'),
-      progress: document.getElementById('progress'),
-      feedback: document.getElementById('feedback'),
-      summary: document.getElementById('summary'),
-    };
-
-    const state={words:[],i:0,flags:new Set(),correct:[],incorrect:[],rec:null,timeout:null,active:false};
-
-    function normalize(s){ return (s||'').toLowerCase().replace(/[^\p{L}]+/gu,''); }
-
-    function speak(word){
-      return new Promise(res=>{
-        if(!('speechSynthesis'in window)) return res();
-        const u=new SpeechSynthesisUtterance(word); u.rate=.95;
-        const v=speechSynthesis.getVoices().find(v=>/^en[-_]/i.test(v.lang))||null;
-        if(v) u.voice=v; u.onend=res; speechSynthesis.cancel(); speechSynthesis.speak(u);
-      });
-    }
-
-    function getRecognition(){
-      const C=window.SpeechRecognition||window.webkitSpeechRecognition;
-      if(!C) return null;
-      const r=new C(); r.lang='en-US'; r.interimResults=false; r.maxAlternatives=1; return r;
-    }
-
-    function showProgress(){ els.progress.textContent=`Word ${Math.min(state.i+1,state.words.length)} of ${state.words.length}`; }
-
-    async function loadDefault(){
-      try{
-        const r=await fetch('/data/word-lists/spelling-bee.json',{cache:'no-store'});
-        const j=await r.json(); const arr=Array.isArray(j?.words)?j.words:(Array.isArray(j)?j:[]);
-        if(arr.length) return arr;
-      }catch(e){}
-      return ['accommodate','rhythm','occurrence','necessary','embarrass','recommend','privilege','separate','definitely','challenge'];
-    }
-
-    async function buildList(){
-      // textarea first
-      const t=(els.txt.value||'').split(/[\n,]+/).map(s=>s.trim()).filter(Boolean);
-      if(t.length) return t;
-      // otherwise default json
-      return await loadDefault();
-    }
-
-    function clearTimer(){ if(state.timeout){clearTimeout(state.timeout); state.timeout=null;} }
-
-    async function playCurrent(){
-      const w=state.words[state.i]; if(!w) return;
-      showProgress(); els.feedback.textContent='🎧 Listen carefully…'; els.summary.hidden=true;
-      await speak(w);
-      await hearAndMark(w);
-    }
-
-    function endSession(){
-      state.active=false; clearTimer();
-      const flagged=[...state.flags];
-      els.summary.innerHTML=
-        `<strong>Session complete</strong><br>
-         Correct: ${state.correct.length} • Incorrect: ${state.incorrect.length}<br>
-         ${flagged.length?('Flagged: '+flagged.join(', ')):'No flagged words'}`;
-      els.summary.hidden=false;
-    }
-
-    function next(){ if(!state.active) return; if(state.i<state.words.length-1){state.i++; playCurrent();} else endSession(); }
-
-    async function hearAndMark(targetWord){
-      const rec=getRecognition(); if(!rec){els.feedback.textContent='⚠️ Speech recognition not supported.'; return;}
-      clearTimer();
-      return new Promise(resolve=>{
-        state.timeout=setTimeout(()=>{ try{rec.stop();}catch{} els.feedback.textContent='⚠️ No speech detected. Tap “Say Again”.'; resolve(); },8000);
-        rec.onresult=(e)=>{
-          clearTimer();
-          const said=e.results[0][0].transcript||'';
-          const ok= normalize(said)===normalize(targetWord);
-          if(ok){ els.feedback.textContent='✅ Correct'; state.correct.push(targetWord); }
-          else { els.feedback.textContent=`❌ Incorrect — ${targetWord}`; state.incorrect.push(targetWord); }
-          // auto-advance after a short beat
-          setTimeout(next, 800);
-          resolve();
-        };
-        rec.onerror=()=>{ clearTimer(); els.feedback.textContent='⚠️ Mic error. Try again.'; resolve(); };
-        rec.onend=()=>{};
-        try{ rec.start(); }catch{ resolve(); }
-      });
-    }
-
-    // events
-    els.use.addEventListener('click',async ()=>{
-      const chosen=(els.txt.value||'').trim();
-      if(!chosen && els.file.files[0]){
-        const text=await els.file.files[0].text();
-        els.txt.value=text;
-      }
-      alert('Custom list loaded for this session.');
-    });
-
-    els.start.addEventListener('click',async ()=>{
-      if(state.active) return;
-      state.words = await buildList();
-      state.i=0; state.flags.clear(); state.correct=[]; state.incorrect=[]; state.active=true;
-      if(!state.words.length){ els.feedback.textContent='No words available.'; state.active=false; return; }
-      playCurrent();
-    });
-
-    document.getElementById('btnSay').addEventListener('click',()=>{ if(!state.active) return; speak(state.words[state.i]); });
-    els.flag.addEventListener('click',()=>{ if(!state.active) return; const w=state.words[state.i]; state.flags.has(w)?state.flags.delete(w):state.flags.add(w); els.feedback.textContent=`🚩 Flagged “${w}”`; });
-    els.end.addEventListener('click', endSession);
+    const E=id=>document.getElementById(id);
+    const els={txt:E('customWords'),file:E('fileInput'),use:E('useCustom'),start:E('btnStart'),say:E('btnSayAgain'),flag:E('btnFlag'),end:E('btnEnd'),progress:E('wordProgress'),feedback:E('feedback'),summary:E('summary')};
+    const st={words:[],i:0,flags:new Set(),correct:[],incorrect:[],active:false};
+    function normalize(s){return(s||'').toLowerCase().replace(/[^\p{L}]+/gu,'');}
+    function speak(w){return new Promise(res=>{if(!('speechSynthesis'in window))return res();const u=new SpeechSynthesisUtterance(w);u.rate=.95;const v=speechSynthesis.getVoices().find(v=>/^en[-_]/i.test(v.lang));if(v)u.voice=v;u.onend=res;speechSynthesis.cancel();speechSynthesis.speak(u);});}
+    async function loadDefault(){try{const r=await fetch('/data/word-lists/spelling-bee.json',{cache:'no-store'});const j=await r.json();return Array.isArray(j?.words)?j.words:j;}catch(e){}return ['accommodate','rhythm','necessary','recommend','privilege'];}
+    async function buildList(){const t=(els.txt.value||'').split(/[\n,]+/).map(s=>s.trim()).filter(Boolean);if(t.length)return t;if(els.file.files[0]){const text=await els.file.files[0].text();return text.split(/[\n,]+/).map(s=>s.trim()).filter(Boolean);}return await loadDefault();}
+    async function play(){const w=st.words[st.i];if(!w)return;els.feedback.textContent='🎧 Listen carefully…';await speak(w);await mark(w);}
+    function next(){if(st.i<st.words.length-1){st.i++;play();}else end();}
+    function end(){st.active=false;const f=[...st.flags];els.summary.innerHTML=`<strong>Session complete</strong><br>Correct: ${st.correct.length} • Incorrect: ${st.incorrect.length}<br>${f.length?('Flagged: '+f.join(', ')):'No flagged words'}`;els.summary.hidden=false;}
+    function mark(target){const rec=new(window.SpeechRecognition||window.webkitSpeechRecognition)();if(!rec){els.feedback.textContent='⚠️ No speech recognition support.';return;}rec.lang='en-US';rec.onresult=e=>{const said=e.results[0][0].transcript;const ok=normalize(said)===normalize(target);if(ok){st.correct.push(target);els.feedback.textContent='✅ Correct';}else{st.incorrect.push(target);els.feedback.textContent=`❌ Incorrect — ${target}`;}setTimeout(next,800);};rec.start();}
+    els.start.addEventListener('click',async()=>{if(st.active)return;st.words=await buildList();if(!st.words.length){els.feedback.textContent='No words available.';return;}st.i=0;st.flags.clear();st.correct=[];st.incorrect=[];st.active=true;els.summary.hidden=true;play();});
+    els.say.addEventListener('click',()=>{if(!st.active)return;speak(st.words[st.i]);});
+    els.flag.addEventListener('click',()=>{if(!st.active)return;const w=st.words[st.i];st.flags.has(w)?st.flags.delete(w):st.flags.add(w);els.feedback.textContent=`🚩 Flagged “${w}”`;});
+    els.end.addEventListener('click',end);
+    els.use.addEventListener('click',()=>alert('Custom list ready.'));
   })();
   </script>
 </body>
