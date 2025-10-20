@@ -1,5 +1,4 @@
 window.OET_WORDS = [
-  // --- New top additions ---
   "Right shoulder",
   "Left knee",
   "Hockey",
