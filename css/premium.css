@@ -226,3 +226,9 @@ textarea {
   display: block;
   opacity: 1;
 }
+.mode-section.active {
+  display: block !important;
+}
+.mode-section { display:none; }
+.mode-section.active { display:block !important; }
+
