@@ -2,134 +2,124 @@
 <html lang="en">
 <head>
   <meta charset="utf-8"/>
-  <meta name="viewport" content="width=device-width,initial-scale=1"/>
-  <meta name="theme-color" content="#7b2ff7"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <title>SpellRightPro — Premium</title>
 
   <!-- Styles -->
   <link rel="stylesheet" href="/css/premium.css"/>
-  <link rel="stylesheet" href="/css/styles.css"/>
-  <link rel="preload" href="/assets/logo.png" as="image" fetchpriority="high"/>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"/>
 
-<!-- Firebase core -->
-<script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-auth-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore-compat.js"></script>
-
-<!-- Firebase config (must call firebase.initializeApp) -->
-<script src="/js/config.js"></script>
-
-<!-- Word list -->
-<script src="/js/oet_word_list.js"></script>
-
-<!-- Main app logic -->
-<script src="/js/main-premium.js"></script>
-
-  <style>
-    /* Auth overlay only */
-    .auth-backdrop {
-      position: fixed; inset: 0;
-      background: rgba(0,0,0,.55); backdrop-filter: blur(8px);
-      display: none; align-items: center; justify-content: center; z-index: 10000;
-    }
-    .auth-card {
-      width: 100%; max-width: 420px;
-      background: linear-gradient(135deg, rgba(255,255,255,.92), rgba(248,250,252,.92));
-      border-radius: 20px; box-shadow: var(--shadow-xl); padding: 24px;
-    }
-    .auth-tab.active { background: linear-gradient(135deg,var(--primary),var(--secondary)); color: #fff; }
-    .hidden { display: none !important; }
-    .nav-btn.logout { margin-left: 8px; }
-    @media (max-width: 480px){ .auth-card{margin:0 12px;} }
-  </style>
+  <!-- Firebase & JS -->
+  <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore-compat.js"></script>
+  <script src="/js/config.js"></script>
+  <script src="/js/common.js" defer></script>
+  <script src="/js/main-premium.js" defer></script>
 </head>
-
-<body data-premium="1">
-  <header class="navbar">
+<body>
+  <header>
     <div class="brand">
-      <img src="/assets/logo.png" alt="SpellRightPro" class="logo" height="40"/>
-      <span>SpellRightPro</span>
-      <small class="subtitle">Premium</small>
+      <img src="/assets/logo.png" alt="SpellRightPro logo"/>
+      <strong>SpellRightPro <span style="opacity:0.8;">Premium</span></strong>
     </div>
-    <div class="nav-actions">
-      <button class="nav-btn" onclick="location.href='/index.html'"><i class="fa fa-house"></i> Home</button>
-      <button id="darkModeToggle" class="nav-btn" aria-label="Toggle dark mode"><i class="fa fa-moon"></i></button>
-      <button id="btnLogout" class="nav-btn logout hidden"><i class="fa fa-right-from-bracket"></i> Logout</button>
+    <div class="nav">
+      <button id="tabBee" class="nav-btn active">Bee</button>
+      <button id="tabSchool" class="nav-btn">School</button>
+      <button id="tabOet" class="nav-btn">OET</button>
+      <button id="dark-mode-toggle" class="btn-premium" aria-label="Toggle Dark Mode">
+        <i class="fas fa-moon"></i>
+      </button>
+      <button id="btnLogout" class="btn-premium hidden">Logout</button>
     </div>
   </header>
 
-  <main class="container">
-    <div class="training-card">
-      <h2 class="card-title">Premium Dashboard</h2>
-      <p class="subtitle text-center">Unlimited custom lists, voice & writing evaluation, and detailed summaries.</p>
-
-      <!-- Tabs -->
-      <div class="mode-selector" role="tablist">
-        <button class="btn-mode active" id="tabBee"><i class="fa fa-microphone"></i> Bee</button>
-        <button class="btn-mode" id="tabSchool"><i class="fa fa-pen-to-square"></i> School</button>
-        <button class="btn-mode" id="tabOet"><i class="fa fa-stethoscope"></i> OET</button>
+  <main>
+    <!-- Bee Section -->
+    <section id="secBee" class="trainer-area active">
+      <h2>Spelling Bee</h2>
+      <p class="subtitle">Hands-free spelling practice with speech recognition.</p>
+      <textarea id="beeCustom" placeholder="Custom words (optional)…"></textarea>
+      <input type="file" id="beeFile" accept=".txt,.csv"/>
+      <button id="beeLoad" class="btn-secondary">Use Custom List</button>
+      <div class="controls">
+        <button id="beeStart" class="start">Start</button>
+        <button id="beeSay">Say Again</button>
+        <button id="beeFlag">Flag</button>
+        <button id="beeEnd">End</button>
       </div>
+      <div id="beeProgress"></div>
+      <div id="beeFeedback"></div>
+      <div id="beeSummary"></div>
+    </section>
 
-      <!-- Bee -->
-      <section id="secBee" class="trainer-area active">
-        <!-- unchanged -->
-      </section>
+    <!-- School Section -->
+    <section id="secSchool" class="trainer-area">
+      <h2>School Practice</h2>
+      <p class="subtitle">Type what you hear. Input clears after marking.</p>
+      <textarea id="schoolCustom" placeholder="Custom words (optional)…"></textarea>
+      <input type="file" id="schoolFile" accept=".txt,.csv"/>
+      <button id="schoolLoad" class="btn-secondary">Use Custom List</button>
+      <div class="controls">
+        <button id="schoolStart" class="start">Start</button>
+        <input id="schoolAnswer" type="text" placeholder="Type here…" autocomplete="off"/>
+        <button id="schoolSubmit">Submit</button>
+        <button id="schoolFlag">Flag</button>
+        <button id="schoolEnd">End</button>
+      </div>
+      <div id="schoolProgress"></div>
+      <div id="schoolFeedback"></div>
+      <div id="schoolSummary"></div>
+    </section>
 
-      <!-- School -->
-      <section id="secSchool" class="trainer-area">
-        <!-- unchanged -->
-      </section>
-
-      <!-- OET -->
-      <section id="secOet" class="trainer-area">
-        <!-- unchanged -->
-      </section>
-    </div>
+    <!-- OET Section -->
+    <section id="secOet" class="trainer-area">
+      <h2>OET Practice</h2>
+      <p class="subtitle">Choose Practice (full list) or Exam (24 random words).</p>
+      <div class="mode-select">
+        <button id="oetPractice" class="btn-secondary">Practice</button>
+        <button id="oetExam" class="btn-secondary">Exam (24)</button>
+      </div>
+      <textarea id="oetCustom" placeholder="Custom medical words (optional)…"></textarea>
+      <input type="file" id="oetFile" accept=".txt,.csv"/>
+      <button id="oetLoad" class="btn-secondary">Use Custom List</button>
+      <div class="controls">
+        <button id="oetStart" class="start">Start</button>
+        <input id="oetAnswer" type="text" placeholder="Type spelling here…" autocomplete="off"/>
+        <button id="oetSubmit">Submit</button>
+        <button id="oetFlag">Flag</button>
+        <button id="oetEnd">End</button>
+      </div>
+      <div id="oetProgress"></div>
+      <div id="oetFeedback"></div>
+      <div id="oetSummary"></div>
+    </section>
   </main>
 
-  <!-- AdSense block -->
-  <div id="ads" class="ads-container"></div>
-  <script>
-    if (window.AD_CLIENT) {
-      const s=document.createElement('script');
-      s.async=true;
-      s.src=`https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${window.AD_CLIENT}`;
-      s.crossOrigin="anonymous";
-      document.head.appendChild(s);
-      const ins=document.createElement('ins');
-      ins.className='adsbygoogle';
-      ins.style.cssText='display:block;min-height:90px';
-      ins.setAttribute('data-ad-format','auto');
-      ins.setAttribute('data-full-width-responsive','true');
-      document.getElementById('ads').appendChild(ins);
-      (window.adsbygoogle=window.adsbygoogle||[]).push({});
-    }
-  </script>
-
   <!-- Auth Overlay -->
-  <div id="authOverlay" class="auth-backdrop" role="dialog">
-    <!-- unchanged content -->
+  <div id="authOverlay" class="glass-overlay">
+    <div class="glass-card">
+      <h3>Sign In to Premium</h3>
+      <button id="btnGoogle" class="btn-google">
+        <i class="fab fa-google"></i> Continue with Google
+      </button>
+      <input id="authEmail" type="email" placeholder="Email"/>
+      <input id="authPass" type="password" placeholder="Password"/>
+      <div>
+        <button id="btnEmailLogin" class="btn-main">Login</button>
+        <button id="btnEmailSignup" class="btn-sub">Register</button>
+      </div>
+      <a href="#" id="linkForgot">Forgot Password?</a>
+      <div id="authMsg"></div>
+    </div>
   </div>
 
-  <!-- Dark Mode -->
+  <footer><small>&copy; 2025 SpellRightPro Premium</small></footer>
+
   <script>
-    (function(){
-      const toggle=document.getElementById('darkModeToggle');
-      function apply(){
-        const on=localStorage.getItem('dark')==='true';
-        document.body.classList.toggle('dark-mode',on);
-        if(toggle) toggle.querySelector('i').className=on?'fa fa-sun':'fa fa-moon';
-      }
-      if(toggle){
-        toggle.addEventListener('click',()=>{
-          const on=localStorage.getItem('dark')!=='true';
-          localStorage.setItem('dark',on?'true':'false');
-          apply();
-        });
-      }
-      apply();
-    })();
+    document.addEventListener('DOMContentLoaded', () => {
+      if (window.initThemeToggle) window.initThemeToggle();
+    });
   </script>
 </body>
 </html>
