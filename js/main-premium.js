@@ -79,10 +79,18 @@
   btnLogout?.addEventListener('click',async()=>{ try{ await auth.signOut(); }catch{} });
 
   auth.onAuthStateChanged((u)=>{
-    const logged=!!u;
-    btnLogout?.classList.toggle('hidden',!logged);
-    if(logged) hideOverlay(); else showOverlay();
-  });
+    auth.onAuthStateChanged((user) => {
+  const logged = !!user;
+  btnLogout?.classList.toggle('hidden', !logged);
+  if (logged) hideOverlay();
+  else {
+    setTimeout(() => {
+      overlay.style.display = 'flex';
+      msg('');
+    }, 200);
+  }
+});
+
   function requireAuth(){ if(!auth.currentUser){ showOverlay(); return false; } return true; }
 
   // --- Tab Control ---
@@ -327,3 +335,4 @@
   })();
 
 })();
+
