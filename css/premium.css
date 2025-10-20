@@ -1,6 +1,8 @@
 /* =======================================================
-   SPELLRIGHTPRO PREMIUM THEME - FINAL VERSION
+   SPELLRIGHTPRO PREMIUM THEME - FIXED & FINALIZED
+   Includes: logo scaling, layout centering, dark mode contrast
 ======================================================= */
+
 :root {
   --primary: #7b2ff7;
   --primary-dark: #5b1ec4;
@@ -25,6 +27,7 @@ body {
   display: flex;
   flex-direction: column;
   align-items: center;
+  justify-content: flex-start;
   transition: background 0.3s ease, color 0.3s ease;
 }
 
@@ -44,17 +47,25 @@ header {
   width: 100%;
   max-width: 800px;
   margin-bottom: 25px;
-  background: rgba(255, 255, 255, 0.9);
+  background: rgba(255, 255, 255, 0.95);
   color: #2b1b57;
   border-radius: var(--radius);
   padding: 10px 20px;
   box-shadow: var(--shadow);
 }
 
+/* Brand section */
 header .brand {
   display: flex;
   align-items: center;
   gap: 10px;
+}
+header img {
+  height: 60px;
+  width: auto;
+  max-width: 100%;
+  border-radius: 12px;
+  object-fit: contain;
 }
 header .brand span {
   color: #3a007d;
@@ -85,7 +96,7 @@ header .brand small {
 
 /* Dark Header */
 body.dark-mode header {
-  background: rgba(40, 15, 70, 0.9);
+  background: rgba(40, 15, 70, 0.95);
   color: #ffffff;
   border-bottom: 1px solid rgba(255, 255, 255, 0.2);
 }
@@ -103,12 +114,18 @@ body.dark-mode .btn-premium:hover {
 /* Ensure icons visible */
 header i {
   margin-right: 6px;
+  color: inherit;
 }
 
 /* =======================================================
-   MAIN CARD
+   MAIN CONTENT AREA
 ======================================================= */
 main {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  margin-top: 30px;
   background: rgba(255, 255, 255, 0.1);
   border-radius: var(--radius);
   backdrop-filter: blur(10px);
@@ -131,6 +148,7 @@ body.dark-mode main {
 #wordProgress {
   font-weight: 600;
   color: #fff;
+  margin: 10px 0;
 }
 
 /* =======================================================
@@ -189,6 +207,15 @@ body.dark-mode button:hover {
   align-items: center;
   z-index: 9999;
 }
+.glass-card {
+  background: rgba(255, 255, 255, 0.12);
+  border-radius: 16px;
+  padding: 2rem;
+  width: 320px;
+  box-shadow: var(--shadow);
+  text-align: center;
+  color: #fff;
+}
 
 /* =======================================================
    RESPONSIVE
@@ -197,9 +224,14 @@ body.dark-mode button:hover {
   header {
     flex-direction: column;
     gap: 10px;
+    text-align: center;
+  }
+  header img {
+    height: 50px;
   }
   main {
     padding: 25px;
+    margin-top: 20px;
   }
   button {
     width: 90%;
