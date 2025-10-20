@@ -1,4 +1,4 @@
-export const oetWords = [
+window.OET_WORDS = [
   "waking",
   "engineering",
   "ethanol",
