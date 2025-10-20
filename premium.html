@@ -12,18 +12,19 @@
   <link rel="preload" href="/assets/logo.png" as="image" fetchpriority="high"/>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"/>
 
-  <!-- Firebase -->
-  <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore-compat.js"></script>
-  <script src="/js/config.js"></script>
+<!-- Firebase core -->
+<script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore-compat.js"></script>
 
-  <!-- Word Lists MUST LOAD FIRST -->
-  <script src="/js/oet_word_list.js"></script>
+<!-- Firebase config (must call firebase.initializeApp) -->
+<script src="/js/config.js"></script>
 
-  <!-- Main Logic -->
-  <script src="/js/audio-guards.js" defer></script>
-  <script src="/js/main-premium.js" defer></script>
+<!-- Word list -->
+<script src="/js/oet_word_list.js"></script>
+
+<!-- Main app logic -->
+<script src="/js/main-premium.js"></script>
 
   <style>
     /* Auth overlay only */
