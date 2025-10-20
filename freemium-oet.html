@@ -2,104 +2,68 @@
 <html lang="en">
 <head>
   <meta charset="utf-8"/>
-  <meta name="viewport" content="width=device-width,initial-scale=1"/>
-  <title>SpellRightPro — OET Mode (Freemium)</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>SpellRightPro — OET (Freemium)</title>
 
-  <link rel="preload" href="/assets/logo.png" as="image"/>
+  <!-- Styles -->
   <link rel="stylesheet" href="/css/styles.css"/>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"/>
+
+  <!-- Firebase / JS -->
   <script src="/js/config.js"></script>
+  <script src="/js/common.js" defer></script>
+  <script src="/js/main-freemium-oet.js" defer></script>
 </head>
 <body>
   <header>
     <div class="brand">
-      <img src="/assets/logo.png" alt="SpellRightPro"/>
-      <strong>SpellRightPro <span style="opacity:.8">OET</span></strong>
+      <img src="/assets/logo.png" alt="SpellRightPro logo"/>
+      <strong>SpellRightPro <span style="opacity:0.8;">OET</span></strong>
     </div>
     <div class="nav">
-      <button class="btn-premium" onclick="location.href='/index.html'"><i class="fa fa-home"></i>Home</button>
-      <button id="darkToggle" class="btn-premium" aria-label="Toggle dark mode"><i class="fa fa-moon"></i></button>
+      <button class="btn-premium" onclick="location.href='/index.html'">
+        <i class="fa fa-home"></i> Home
+      </button>
+      <button id="dark-mode-toggle" class="btn-premium" aria-label="Toggle Dark Mode">
+        <i class="fas fa-moon"></i>
+      </button>
     </div>
   </header>
 
   <main class="main-card">
-    <h2>OET Practice (Freemium)</h2>
-    <p class="subtitle">Listen carefully and type the spelling. Auto-advance is on; answers are checked instantly.</p>
+    <h2>OET Spelling Practice</h2>
+    <p class="subtitle">Select a mode and type what you hear.</p>
 
-    <div class="row">
+    <!-- Mode Buttons -->
+    <div class="mode-select">
+      <button id="oetPractice" class="btn-secondary">Practice</button>
+      <button id="oetTest" class="btn-secondary">Test (24)</button>
+    </div>
+
+    <!-- Controls -->
+    <div class="controls">
       <button id="btnStart" class="start">Start</button>
-      <input id="userInput" type="text" placeholder="Type the word here…"/>
+      <input id="userInput" type="text" placeholder="Type your spelling here…" autocomplete="off"/>
       <button id="btnSubmit">Submit</button>
       <button id="btnFlag">Flag</button>
       <button id="btnEnd">End</button>
     </div>
 
+    <!-- Feedback -->
     <div id="wordProgress"></div>
     <div id="feedback"></div>
-    <div id="summary" hidden></div>
+    <div id="summary" class="summary-list" hidden></div>
 
+    <!-- Ads placeholder -->
     <div id="ads" class="ads"></div>
   </main>
 
   <footer><small>&copy; 2025 SpellRightPro</small></footer>
 
   <script>
-  // Dark mode unified
-  (function(){
-    const key='dark', toggle=document.getElementById('darkToggle');
-    const apply=()=>{
-      const enabled=localStorage.getItem(key)==='1';
-      document.body.classList.toggle('dark-mode',enabled);
-      toggle.innerHTML=enabled?'<i class="fa fa-sun"></i>':'<i class="fa fa-moon"></i>';
-    };
-    if(toggle) toggle.addEventListener('click',()=>{localStorage.setItem(key,localStorage.getItem(key)==='1'?'0':'1');apply();});
-    apply();
-  })();
-
-  // AdSense
-  (function(){
-    if(!window.AD_CLIENT)return;
-    const s=document.createElement('script');
-    s.async=true;
-    s.src=`https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${window.AD_CLIENT}`;
-    s.crossOrigin="anonymous";
-    document.head.appendChild(s);
-    const ins=document.createElement('ins');
-    ins.className='adsbygoogle';
-    ins.style.cssText='display:block;min-height:90px';
-    ins.setAttribute('data-ad-format','auto');
-    ins.setAttribute('data-full-width-responsive','true');
-    document.getElementById('ads').appendChild(ins);
-    (window.adsbygoogle=window.adsbygoogle||[]).push({});
-  })();
-
-  // Trainer logic
-  (function(){
-    const els={
-      start:document.getElementById('btnStart'),
-      input:document.getElementById('userInput'),
-      submit:document.getElementById('btnSubmit'),
-      flag:document.getElementById('btnFlag'),
-      end:document.getElementById('btnEnd'),
-      progress:document.getElementById('wordProgress'),
-      feedback:document.getElementById('feedback'),
-      summary:document.getElementById('summary')
-    };
-    const st={words:[],i:0,flags:new Set(),correct:[],incorrect:[],active:false};
-    function normalize(s){return (s||'').trim().toLowerCase();}
-    function speak(w){if(!('speechSynthesis'in window))return;const u=new SpeechSynthesisUtterance(w);u.rate=.95;const v=speechSynthesis.getVoices().find(v=>/^en[-_]/i.test(v.lang));if(v)u.voice=v;speechSynthesis.cancel();speechSynthesis.speak(u);}
-    async function loadDefault(){try{const r=await fetch('/data/word-lists/oet.json',{cache:'no-store'});const j=await r.json();return Array.isArray(j?.words)?j.words:j;}catch(e){}return ['diagnosis','patient','prescription','surgery','examination'];}
-    async function start(){if(st.active)return;st.words=await loadDefault();if(!st.words.length){els.feedback.textContent='No words available.';return;}st.i=0;st.flags.clear();st.correct=[];st.incorrect=[];st.active=true;els.summary.hidden=true;run();}
-    function run(){if(!st.active)return;const w=st.words[st.i];els.feedback.textContent='🎧 Listen carefully…';speak(w);els.input.value='';els.input.focus();showProgress();}
-    function showProgress(){els.progress.textContent=`Word ${st.i+1} of ${st.words.length}`;}
-    function mark(){if(!st.active)return;const w=st.words[st.i];const t=normalize(els.input.value);if(!t)return;if(t===normalize(w)){st.correct.push(w);els.feedback.textContent='✅ Correct';}else{st.incorrect.push(w);els.feedback.textContent=`❌ Incorrect — ${w}`;}setTimeout(next,800);}
-    function next(){if(st.i<st.words.length-1){st.i++;run();}else end();}
-    function end(){st.active=false;const f=[...st.flags];els.summary.innerHTML=`<strong>Session complete</strong><br>Correct: ${st.correct.length} • Incorrect: ${st.incorrect.length}<br>${f.length?('Flagged: '+f.join(', ')):'No flagged words'}`;els.summary.hidden=false;}
-    els.start.addEventListener('click',start);
-    els.submit.addEventListener('click',mark);
-    els.input.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();mark();}});
-    els.flag.addEventListener('click',()=>{if(!st.active)return;const w=st.words[st.i];st.flags.has(w)?st.flags.delete(w):st.flags.add(w);els.feedback.textContent=`🚩 Flagged “${w}”`;});
-    els.end.addEventListener('click',end);
-  })();
+    document.addEventListener('DOMContentLoaded', () => {
+      if (window.initThemeToggle) window.initThemeToggle();
+    });
   </script>
 </body>
 </html>
