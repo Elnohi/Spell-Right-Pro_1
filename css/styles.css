@@ -1,6 +1,6 @@
-/* ======================================================
-   FREEMIUM THEME - CORRECTED VERSION
-====================================================== */
+/* =======================================================
+   SPELLRIGHTPRO FREEMIUM THEME - FINAL VERSION
+======================================================= */
 :root {
   --primary: #7b2ff7;
   --primary-dark: #5b1ec4;
@@ -11,7 +11,9 @@
   color-scheme: light dark;
 }
 
-/* GLOBAL */
+/* =======================================================
+   GLOBAL
+======================================================= */
 body {
   font-family: var(--font-main);
   background: var(--gradient);
@@ -26,7 +28,9 @@ body {
   transition: background 0.3s ease, color 0.3s ease;
 }
 
-/* HEADER */
+/* =======================================================
+   HEADER
+======================================================= */
 header {
   display: flex;
   justify-content: space-between;
@@ -40,8 +44,15 @@ header {
   margin-bottom: 20px;
   color: #2a2a2a;
 }
-header img { height: 70px; border-radius: 12px; }
-header h1 { font-size: 1.4rem; font-weight: 700; color: #3a007d; }
+header img {
+  height: 70px;
+  border-radius: 12px;
+}
+header h1 {
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: #3a007d;
+}
 header .btn-premium {
   background: var(--primary);
   color: #fff;
@@ -58,21 +69,23 @@ header .btn-premium:hover {
   transform: translateY(-2px);
 }
 
-/* DARK HEADER MODE */
+/* Dark Header */
 body.dark-mode header {
-  background: rgba(40,15,70,0.9);
+  background: rgba(40, 15, 70, 0.9);
   color: #fff;
-  border-bottom: 1px solid rgba(255,255,255,0.2);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
 }
 body.dark-mode .btn-premium {
-  background: rgba(255,255,255,0.15);
-  border: 1px solid rgba(255,255,255,0.2);
+  background: rgba(255, 255, 255, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.2);
 }
 body.dark-mode .btn-premium:hover {
-  background: rgba(255,255,255,0.25);
+  background: rgba(255, 255, 255, 0.25);
 }
 
-/* MAIN CARD */
+/* =======================================================
+   MAIN CARD
+======================================================= */
 .main-card {
   background: #fff;
   border-radius: var(--radius);
@@ -83,14 +96,21 @@ body.dark-mode .btn-premium:hover {
   color: #222;
 }
 body.dark-mode .main-card {
-  background: rgba(255,255,255,0.08);
+  background: rgba(255, 255, 255, 0.08);
   color: #fff;
 }
 
-/* FEEDBACK / PROGRESS */
-#feedback, #wordProgress { font-weight: 600; }
+/* =======================================================
+   FEEDBACK / PROGRESS
+======================================================= */
+#feedback,
+#wordProgress {
+  font-weight: 600;
+}
 
-/* BUTTONS */
+/* =======================================================
+   BUTTONS
+======================================================= */
 button {
   font-size: 1rem;
   border: none;
@@ -101,19 +121,33 @@ button {
   box-shadow: var(--shadow);
   transition: transform 0.2s ease, background 0.3s ease;
 }
-button:hover { transform: translateY(-2px); }
+button:hover {
+  transform: translateY(-2px);
+}
 
-/* Dark-mode buttons */
+/* Dark Mode Buttons */
 body.dark-mode button {
   box-shadow: none;
-  background: rgba(255,255,255,0.15);
+  background: rgba(255, 255, 255, 0.15);
   color: #fff;
 }
-body.dark-mode button:hover { background: rgba(255,255,255,0.25); }
+body.dark-mode button:hover {
+  background: rgba(255, 255, 255, 0.25);
+}
 
-/* RESPONSIVE */
-@media (max-width:600px){
-  header { flex-direction:column; gap:10px; text-align:center; }
-  header img { height:55px; }
-  .main-card { padding:20px; }
+/* =======================================================
+   RESPONSIVE
+======================================================= */
+@media (max-width: 600px) {
+  header {
+    flex-direction: column;
+    gap: 10px;
+    text-align: center;
+  }
+  header img {
+    height: 55px;
+  }
+  .main-card {
+    padding: 20px;
+  }
 }
