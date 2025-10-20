@@ -1,10 +1,9 @@
-/* --------------------------------------------------
-   SPELLRIGHTPRO FREEMIUM POLISHED LAYOUT
--------------------------------------------------- */
-
+/* ======================================================
+   FREEMIUM THEME - CORRECTED VERSION
+====================================================== */
 :root {
   --primary: #7b2ff7;
-  --secondary: #f8f9fa;
+  --primary-dark: #5b1ec4;
   --gradient: linear-gradient(135deg, #7b2ff7 0%, #f107a3 100%);
   --shadow: 0 8px 16px rgba(0, 0, 0, 0.15);
   --radius: 14px;
@@ -12,29 +11,26 @@
   color-scheme: light dark;
 }
 
-/* ======================================================
-   GLOBAL
-====================================================== */
+/* GLOBAL */
 body {
   font-family: var(--font-main);
   background: var(--gradient);
   color: #222;
-  min-height: 100vh;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
+  min-height: 100vh;
   margin: 0;
   padding: 20px;
+  transition: background 0.3s ease, color 0.3s ease;
 }
 
-/* ======================================================
-   HEADER
-====================================================== */
+/* HEADER */
 header {
   display: flex;
-  align-items: center;
   justify-content: space-between;
+  align-items: center;
   background: #fff;
   border-radius: var(--radius);
   box-shadow: var(--shadow);
@@ -42,20 +38,10 @@ header {
   width: 100%;
   max-width: 720px;
   margin-bottom: 20px;
+  color: #2a2a2a;
 }
-
-header img {
-  height: 70px;
-  width: auto;
-  border-radius: 12px;
-}
-
-header h1 {
-  font-size: 1.4rem;
-  font-weight: 700;
-  color: #333;
-}
-
+header img { height: 70px; border-radius: 12px; }
+header h1 { font-size: 1.4rem; font-weight: 700; color: #3a007d; }
 header .btn-premium {
   background: var(--primary);
   color: #fff;
@@ -63,64 +49,48 @@ header .btn-premium {
   border-radius: var(--radius);
   padding: 8px 16px;
   font-weight: 600;
-  box-shadow: var(--shadow);
   cursor: pointer;
-  transition: 0.2s ease;
+  box-shadow: var(--shadow);
+  transition: background 0.3s ease, transform 0.2s ease;
 }
-
 header .btn-premium:hover {
+  background: var(--primary-dark);
   transform: translateY(-2px);
-  background: #631fc6;
 }
 
-/* ======================================================
-   MAIN CARD
-====================================================== */
+/* DARK HEADER MODE */
+body.dark-mode header {
+  background: rgba(40,15,70,0.9);
+  color: #fff;
+  border-bottom: 1px solid rgba(255,255,255,0.2);
+}
+body.dark-mode .btn-premium {
+  background: rgba(255,255,255,0.15);
+  border: 1px solid rgba(255,255,255,0.2);
+}
+body.dark-mode .btn-premium:hover {
+  background: rgba(255,255,255,0.25);
+}
+
+/* MAIN CARD */
 .main-card {
   background: #fff;
   border-radius: var(--radius);
   box-shadow: var(--shadow);
-  max-width: 680px;
-  width: 100%;
   padding: 30px 25px;
+  max-width: 680px;
   text-align: center;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
+  color: #222;
+}
+body.dark-mode .main-card {
+  background: rgba(255,255,255,0.08);
+  color: #fff;
 }
 
-.main-card h2 {
-  font-size: 1.6rem;
-  font-weight: 700;
-  margin-bottom: 10px;
-  color: #2a2a2a;
-}
+/* FEEDBACK / PROGRESS */
+#feedback, #wordProgress { font-weight: 600; }
 
-.main-card p {
-  font-size: 1rem;
-  color: #555;
-  margin-bottom: 15px;
-}
-
-/* ======================================================
-   PROGRESS / FEEDBACK
-====================================================== */
-#wordProgress {
-  margin-top: 10px;
-  font-weight: 600;
-  color: #6b21a8;
-}
-
-#feedback {
-  margin: 14px 0;
-  font-weight: 500;
-  color: #333;
-  min-height: 28px;
-}
-
-/* ======================================================
-   BUTTONS
-====================================================== */
+/* BUTTONS */
 button {
   font-size: 1rem;
   border: none;
@@ -131,128 +101,19 @@ button {
   box-shadow: var(--shadow);
   transition: transform 0.2s ease, background 0.3s ease;
 }
+button:hover { transform: translateY(-2px); }
 
-button:hover {
-  transform: translateY(-2px);
-}
-
-button#btnStart,
-button.start {
-  background: #4895ef;
-  color: #fff;
-  font-weight: 600;
-}
-button#btnStart:hover {
-  background: #377fd6;
-}
-
-button#btnEnd {
-  background: #f72585;
+/* Dark-mode buttons */
+body.dark-mode button {
+  box-shadow: none;
+  background: rgba(255,255,255,0.15);
   color: #fff;
 }
+body.dark-mode button:hover { background: rgba(255,255,255,0.25); }
 
-button#btnFlag {
-  background: #ffd166;
-  color: #000;
-}
-
-button#btnNext,
-button#btnPrev {
-  background: #eee;
-}
-
-button#btnSayAgain {
-  background: #4cc9f0;
-  color: #fff;
-}
-
-/* Secondary button (for accessibility and consistency) */
-.btn-secondary {
-  background: #eceffd;
-  color: #222;
-  border: 1px solid #cfd7ff;
-}
-.btn-secondary:hover {
-  filter: brightness(0.98);
-}
-
-/* ======================================================
-   INPUT / TYPING AREAS
-====================================================== */
-#userInput,
-#customWords,
-textarea {
-  width: 100%;
-  max-width: 480px;
-  font-size: 1rem;
-  padding: 10px 12px;
-  border-radius: var(--radius);
-  border: 1px solid #ddd;
-  margin-top: 10px;
-  margin-bottom: 15px;
-  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.05);
-}
-
-#userInput:focus,
-#customWords:focus,
-textarea:focus {
-  border-color: #7b2ff7;
-  outline: none;
-}
-
-/* ======================================================
-   SUMMARY LIST
-====================================================== */
-.summary-list {
-  margin: 0.5rem 0 0;
-  padding-left: 1.2rem;
-}
-.summary-list li {
-  margin: 0.15rem 0;
-}
-
-/* ======================================================
-   FOOTER
-====================================================== */
-footer {
-  text-align: center;
-  color: #eee;
-  margin-top: 30px;
-  font-size: 0.9rem;
-}
-
-/* ======================================================
-   DARK MODE
-====================================================== */
-html.dark body {
-  background: #0e0b1a;
-  color: #f4f2ff;
-}
-html.dark .main-card {
-  background: rgba(255, 255, 255, 0.06);
-  color: #f4f2ff;
-}
-html.dark .btn-secondary {
-  background: #2a2740;
-  color: #f4f2ff;
-  border-color: #3b3661;
-}
-
-/* ======================================================
-   RESPONSIVE
-====================================================== */
-@media (max-width: 600px) {
-  header {
-    flex-direction: column;
-    gap: 10px;
-    text-align: center;
-  }
-
-  header img {
-    height: 55px;
-  }
-
-  .main-card {
-    padding: 20px;
-  }
+/* RESPONSIVE */
+@media (max-width:600px){
+  header { flex-direction:column; gap:10px; text-align:center; }
+  header img { height:55px; }
+  .main-card { padding:20px; }
 }
