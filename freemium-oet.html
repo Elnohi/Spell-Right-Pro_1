@@ -3,36 +3,11 @@
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width,initial-scale=1"/>
-  <title>SpellRightPro — OET Practice (Freemium)</title>
+  <title>SpellRightPro — OET Mode (Freemium)</title>
 
   <link rel="preload" href="/assets/logo.png" as="image"/>
   <link rel="stylesheet" href="/css/styles.css"/>
-  <style>
-    :root{--radius:14px;--shadow:0 8px 16px rgba(0,0,0,.15);--grad:linear-gradient(135deg,#7b2ff7 0%,#f107a3 100%)}
-    body{margin:0;font-family:Inter,Segoe UI,system-ui,-apple-system,sans-serif;background:var(--grad);min-height:100vh;color:#222;display:flex;flex-direction:column;align-items:center}
-    header{width:100%;max-width:980px;display:flex;gap:10px;justify-content:space-between;align-items:center;padding:16px}
-    .brand{display:flex;gap:12px;align-items:center;background:rgba(255,255,255,.18);backdrop-filter:blur(8px);padding:10px 16px;border-radius:999px;color:#fff;box-shadow:var(--shadow)}
-    .brand img{width:38px;height:38px;border-radius:9px}
-    .nav{display:flex;gap:10px}
-    .btn{border:0;border-radius:999px;padding:10px 16px;font-weight:700;cursor:pointer;box-shadow:var(--shadow)}
-    .btn-home{background:#ffffff33;color:#fff}.btn-home:hover{background:#ffffff55}
-    .btn-dark{background:#ffffff22;color:#fff;width:48px;display:grid;place-items:center}
-    main{width:100%;max-width:760px;background:rgba(255,255,255,.10);backdrop-filter:blur(10px);border-radius:16px;padding:26px;box-shadow:var(--shadow);color:#fff;margin:8px}
-    h1{margin:0 0 6px}.subtitle{opacity:.9;margin:0 0 18px}
-    .card{background:rgba(255,255,255,.12);border-radius:16px;padding:16px;box-shadow:var(--shadow)}
-    textarea,input[type="text"]{width:100%;border:0;border-radius:12px;padding:12px;font-size:16px}
-    textarea{min-height:120px}
-    .row{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin:14px 0}
-    .chip{border:0;border-radius:12px;padding:10px 16px;font-weight:700;cursor:pointer;box-shadow:var(--shadow)}
-    .primary{background:#4895ef;color:#fff}.accent{background:#4cc9f0;color:#fff}.danger{background:#f72585;color:#fff}.flag{background:#ffd166;color:#222}.pale{background:#eee;color:#222}
-    .progress,.feedback{margin:10px 0;font-weight:700}
-    .summary{margin-top:12px;background:#fff;border-radius:12px;color:#2a2a2a;padding:12px}
-    .ads{display:flex;justify-content:center;margin-top:16px}
-    .dark .summary{background:#1f1f28;color:#e9e9f1}
-  </style>
-
   <script src="/js/config.js"></script>
-  <script src="/js/oet_word_list.js"></script>
 </head>
 <body>
   <header>
@@ -41,113 +16,88 @@
       <strong>SpellRightPro <span style="opacity:.8">OET</span></strong>
     </div>
     <div class="nav">
-      <button class="btn btn-home" onclick="location.href='/index.html'">Home</button>
-      <button id="darkToggle" class="btn btn-dark" aria-label="Toggle dark mode">🌙</button>
+      <button class="btn-premium" onclick="location.href='/index.html'"><i class="fa fa-home"></i>Home</button>
+      <button id="darkToggle" class="btn-premium" aria-label="Toggle dark mode"><i class="fa fa-moon"></i></button>
     </div>
   </header>
 
-  <main>
-    <h1>OET Spelling (Freemium)</h1>
-    <p class="subtitle">Healthcare words aligned to OET. <strong>Practice</strong> uses the full list; <strong>Exam</strong> picks 24 random.</p>
+  <main class="main-card">
+    <h2>OET Practice (Freemium)</h2>
+    <p class="subtitle">Listen carefully and type the spelling. Auto-advance is on; answers are checked instantly.</p>
 
     <div class="row">
-      <button id="btnPractice" class="chip pale">Practice</button>
-      <button id="btnExam" class="chip pale">Exam (24)</button>
+      <button id="btnStart" class="start">Start</button>
+      <input id="userInput" type="text" placeholder="Type the word here…"/>
+      <button id="btnSubmit">Submit</button>
+      <button id="btnFlag">Flag</button>
+      <button id="btnEnd">End</button>
     </div>
 
-    <section class="card">
-      <h3 style="margin-top:0">Custom medical words (one list per day)</h3>
-      <textarea id="customWords" placeholder="Paste words separated by new lines or commas (optional)…"></textarea>
-      <div class="row">
-        <input id="fileInput" type="file" accept=".txt,.csv"/>
-        <button id="useCustom" class="chip">+ Use Custom List</button>
-      </div>
-    </section>
-
-    <div class="row">
-      <button id="btnStart" class="chip primary">Start</button>
-      <input id="answer" type="text" placeholder="Type the spelling here…" style="max-width:420px;background:#fff"/>
-      <button id="btnSubmit" class="chip accent">Submit</button>
-      <button id="btnFlag" class="chip flag">Flag</button>
-      <button id="btnEnd" class="chip danger">End</button>
-    </div>
-
-    <div id="progress" class="progress"></div>
-    <div id="feedback" class="feedback"></div>
-    <div id="summary" class="summary" hidden></div>
+    <div id="wordProgress"></div>
+    <div id="feedback"></div>
+    <div id="summary" hidden></div>
 
     <div id="ads" class="ads"></div>
   </main>
 
+  <footer><small>&copy; 2025 SpellRightPro</small></footer>
+
   <script>
-  // dark mode
-  (function(){const k='dark';const t=document.getElementById('darkToggle');const apply=()=>document.documentElement.classList.toggle('dark',localStorage.getItem(k)==='1');t.addEventListener('click',()=>{localStorage.setItem(k,localStorage.getItem(k)==='1'?'0':'1');apply()});apply();})();
-  // ads
-  (function(){if(!window.AD_CLIENT)return;const s=document.createElement('script');s.async=true;s.src=`https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${window.AD_CLIENT}`;s.crossOrigin="anonymous";document.head.appendChild(s);const ins=document.createElement('ins');ins.className='adsbygoogle';ins.style.cssText='display:block;min-height:90px';ins.setAttribute('data-ad-format','auto');ins.setAttribute('data-full-width-responsive','true');document.getElementById('ads').appendChild(ins);(window.adsbygoogle=window.adsbygoogle||[]).push({});})();
-
-  // trainer
+  // Dark mode unified
   (function(){
-    const E=id=>document.getElementById(id);
-    const els={txt:E('customWords'),file:E('fileInput'),use:E('useCustom'),practice:E('btnPractice'),exam:E('btnExam'),start:E('btnStart'),ans:E('answer'),submit:E('btnSubmit'),flag:E('btnFlag'),end:E('btnEnd'),progress:E('progress'),feedback:E('feedback'),summary:E('summary')};
-    const st={full:[],words:[],i:0,flags:new Set(),correct:[],incorrect:[],active:false,mode:'practice'};
+    const key='dark', toggle=document.getElementById('darkToggle');
+    const apply=()=>{
+      const enabled=localStorage.getItem(key)==='1';
+      document.body.classList.toggle('dark-mode',enabled);
+      toggle.innerHTML=enabled?'<i class="fa fa-sun"></i>':'<i class="fa fa-moon"></i>';
+    };
+    if(toggle) toggle.addEventListener('click',()=>{localStorage.setItem(key,localStorage.getItem(key)==='1'?'0':'1');apply();});
+    apply();
+  })();
 
+  // AdSense
+  (function(){
+    if(!window.AD_CLIENT)return;
+    const s=document.createElement('script');
+    s.async=true;
+    s.src=`https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${window.AD_CLIENT}`;
+    s.crossOrigin="anonymous";
+    document.head.appendChild(s);
+    const ins=document.createElement('ins');
+    ins.className='adsbygoogle';
+    ins.style.cssText='display:block;min-height:90px';
+    ins.setAttribute('data-ad-format','auto');
+    ins.setAttribute('data-full-width-responsive','true');
+    document.getElementById('ads').appendChild(ins);
+    (window.adsbygoogle=window.adsbygoogle||[]).push({});
+  })();
+
+  // Trainer logic
+  (function(){
+    const els={
+      start:document.getElementById('btnStart'),
+      input:document.getElementById('userInput'),
+      submit:document.getElementById('btnSubmit'),
+      flag:document.getElementById('btnFlag'),
+      end:document.getElementById('btnEnd'),
+      progress:document.getElementById('wordProgress'),
+      feedback:document.getElementById('feedback'),
+      summary:document.getElementById('summary')
+    };
+    const st={words:[],i:0,flags:new Set(),correct:[],incorrect:[],active:false};
     function normalize(s){return (s||'').trim().toLowerCase();}
-    function speak(w){if(!('speechSynthesis'in window))return; const u=new SpeechSynthesisUtterance(w);u.rate=.95;const v=speechSynthesis.getVoices().find(v=>/^en[-_]/i.test(v.lang));if(v)u.voice=v;speechSynthesis.cancel();speechSynthesis.speak(u);}
-
-    function loadOetBase(){
-      // from /js/oet_word_list.js -> window.OET_WORDS
-      if(Array.isArray(window.OET_WORDS) && window.OET_WORDS.length) return window.OET_WORDS.slice();
-      // fallback tiny core
-      return ['abdomen','antibiotic','artery','asthma','biopsy','diagnosis','fracture','hypertension','intravenous','neonatal','pediatric','respiratory','suture','tumour','vaccine'];
-    }
-
-    function buildFromTextarea(){
-      const t=(els.txt.value||'').split(/[\n,]+/).map(s=>s.trim()).filter(Boolean);
-      return t.length?t:null;
-    }
-
-    function makeExamSet(list){
-      const pool=list.slice(); const out=[];
-      while(out.length<24 && pool.length){ const i=Math.floor(Math.random()*pool.length); out.push(pool.splice(i,1)[0]); }
-      return out;
-    }
-
-    function showProgress(){els.progress.textContent=`Word ${Math.min(st.i+1,st.words.length)} of ${st.words.length}`;}
-    function end(){st.active=false; const flagged=[...st.flags]; els.summary.innerHTML=`<strong>Session complete</strong><br>Correct: ${st.correct.length} • Incorrect: ${st.incorrect.length}<br>${flagged.length?('Flagged: '+flagged.join(', ')):'No flagged words'}`; els.summary.hidden=false;}
-    function next(){ if(!st.active) return; if(st.i<st.words.length-1){st.i++; run();} else end(); }
-
-    function run(){
-      const w=st.words[st.i]; if(!w) return; els.summary.hidden=true; showProgress(); els.feedback.textContent='🎧 Listen carefully…'; speak(w); els.ans.value=''; els.ans.focus();
-    }
-
-    function mark(){
-      const w=st.words[st.i], typed=normalize(els.ans.value); els.ans.value='';
-      if(!typed) return;
-      if(typed===normalize(w)){ els.feedback.textContent='✅ Correct'; st.correct.push(w); }
-      else { els.feedback.textContent=`❌ Incorrect — ${w}`; st.incorrect.push(w); }
-      setTimeout(next,800);
-    }
-
-    // mode
-    st.full = loadOetBase();
-    els.practice.addEventListener('click',()=>{ st.mode='practice'; els.practice.classList.add('pale'); els.exam.classList.remove('pale'); });
-    els.exam.addEventListener('click',()=>{ st.mode='exam'; els.exam.classList.add('pale'); els.practice.classList.remove('pale'); });
-
-    // custom words
-    els.use.addEventListener('click',async ()=>{ if(!els.txt.value && els.file.files[0]){ const text=await els.file.files[0].text(); els.txt.value=text; } alert('Custom list loaded.'); });
-
-    // start
-    els.start.addEventListener('click',()=>{
-      const custom = buildFromTextarea();
-      const base = custom || st.full;
-      st.words = (st.mode==='exam') ? makeExamSet(base) : base.slice();
-      if(!st.words.length){ els.feedback.textContent='No words available.'; return; }
-      st.i=0; st.flags.clear(); st.correct=[]; st.incorrect=[]; st.active=true; run();
-    });
-
+    function speak(w){if(!('speechSynthesis'in window))return;const u=new SpeechSynthesisUtterance(w);u.rate=.95;const v=speechSynthesis.getVoices().find(v=>/^en[-_]/i.test(v.lang));if(v)u.voice=v;speechSynthesis.cancel();speechSynthesis.speak(u);}
+    async function loadDefault(){try{const r=await fetch('/data/word-lists/oet.json',{cache:'no-store'});const j=await r.json();return Array.isArray(j?.words)?j.words:j;}catch(e){}return ['diagnosis','patient','prescription','surgery','examination'];}
+    async function start(){if(st.active)return;st.words=await loadDefault();if(!st.words.length){els.feedback.textContent='No words available.';return;}st.i=0;st.flags.clear();st.correct=[];st.incorrect=[];st.active=true;els.summary.hidden=true;run();}
+    function run(){if(!st.active)return;const w=st.words[st.i];els.feedback.textContent='🎧 Listen carefully…';speak(w);els.input.value='';els.input.focus();showProgress();}
+    function showProgress(){els.progress.textContent=`Word ${st.i+1} of ${st.words.length}`;}
+    function mark(){if(!st.active)return;const w=st.words[st.i];const t=normalize(els.input.value);if(!t)return;if(t===normalize(w)){st.correct.push(w);els.feedback.textContent='✅ Correct';}else{st.incorrect.push(w);els.feedback.textContent=`❌ Incorrect — ${w}`;}setTimeout(next,800);}
+    function next(){if(st.i<st.words.length-1){st.i++;run();}else end();}
+    function end(){st.active=false;const f=[...st.flags];els.summary.innerHTML=`<strong>Session complete</strong><br>Correct: ${st.correct.length} • Incorrect: ${st.incorrect.length}<br>${f.length?('Flagged: '+f.join(', ')):'No flagged words'}`;els.summary.hidden=false;}
+    els.start.addEventListener('click',start);
     els.submit.addEventListener('click',mark);
-    els.ans.addEventListener('keydown',e=>{ if(e.key==='Enter'){ e.preventDefault(); mark(); }});
-    els.flag.addEventListener('click',()=>{ if(!st.active) return; const w=st.words[st.i]; st.flags.has(w)?st.flags.delete(w):st.flags.add(w); els.feedback.textContent=`🚩 Flagged “${w}”`; });
+    els.input.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();mark();}});
+    els.flag.addEventListener('click',()=>{if(!st.active)return;const w=st.words[st.i];st.flags.has(w)?st.flags.delete(w):st.flags.add(w);els.feedback.textContent=`🚩 Flagged “${w}”`;});
     els.end.addEventListener('click',end);
   })();
   </script>
