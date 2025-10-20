@@ -1,125 +1,138 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>SpellRightPro — Premium</title>
 
   <!-- Styles -->
-  <link rel="stylesheet" href="/css/premium.css"/>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"/>
+  <link rel="stylesheet" href="/css/premium.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" />
 
-  <!-- Firebase & JS -->
+  <!-- Firebase -->
   <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore-compat.js"></script>
-  <script src="/js/config.js"></script>
-  <script src="/js/common.js" defer></script>
-  <script src="/js/main-premium.js" defer></script>
 </head>
+
 <body>
+  <!-- Header -->
   <header>
     <div class="brand">
-      <img src="/assets/logo.png" alt="SpellRightPro logo"/>
-      <strong>SpellRightPro <span style="opacity:0.8;">Premium</span></strong>
+      <img src="/assets/logo.png" alt="SpellRightPro Logo" />
+      <div>
+        <span>SpellRightPro</span><br />
+        <small>Premium</small>
+      </div>
     </div>
-    <div class="nav">
-      <button id="tabBee" class="nav-btn active">Bee</button>
-      <button id="tabSchool" class="nav-btn">School</button>
-      <button id="tabOet" class="nav-btn">OET</button>
-      <button id="dark-mode-toggle" class="btn-premium" aria-label="Toggle Dark Mode">
-        <i class="fas fa-moon"></i>
-      </button>
-      <button id="btnLogout" class="btn-premium hidden">Logout</button>
+
+    <div class="nav-right">
+      <button class="nav-btn" id="btnHome" onclick="window.location.href='/'"><i class="fa fa-home"></i> Home</button>
+      <button class="nav-btn" id="toggleDark"><i class="fa fa-moon"></i></button>
+      <button class="nav-btn" id="btnLogout"><i class="fa fa-sign-out-alt"></i> Logout</button>
     </div>
   </header>
 
-  <main>
-    <!-- Bee Section -->
-    <section id="secBee" class="trainer-area active">
-      <h2>Spelling Bee</h2>
-      <p class="subtitle">Hands-free spelling practice with speech recognition.</p>
-      <textarea id="beeCustom" placeholder="Custom words (optional)…"></textarea>
-      <input type="file" id="beeFile" accept=".txt,.csv"/>
-      <button id="beeLoad" class="btn-secondary">Use Custom List</button>
-      <div class="controls">
-        <button id="beeStart" class="start">Start</button>
-        <button id="beeSay">Say Again</button>
-        <button id="beeFlag">Flag</button>
-        <button id="beeEnd">End</button>
+  <!-- Main Dashboard -->
+  <main style="display:none;">
+    <h2>Premium Dashboard</h2>
+    <p>Unlimited custom lists, voice & writing evaluation, and detailed summaries.</p>
+
+    <!-- Mode Buttons -->
+    <div class="mode-select">
+      <button class="mode-btn" data-mode="bee"><i class="fa fa-microphone"></i> Bee</button>
+      <button class="mode-btn" data-mode="school"><i class="fa fa-pen"></i> School</button>
+      <button class="mode-btn" data-mode="oet"><i class="fa fa-stethoscope"></i> OET</button>
+    </div>
+
+    <!-- ========== Bee Section ========== -->
+    <section id="bee-area" class="trainer-area">
+      <h3>Spelling Bee Trainer</h3>
+      <div class="accent-select">
+        <label for="accent">Accent:</label>
+        <select id="accent">
+          <option value="en-US">American</option>
+          <option value="en-GB">British</option>
+          <option value="en-AU">Australian</option>
+          <option value="en-CA">Canadian</option>
+        </select>
       </div>
-      <div id="beeProgress"></div>
+
       <div id="beeFeedback"></div>
-      <div id="beeSummary"></div>
+      <div id="beeProgress"></div>
+      <button class="start-btn" data-mode="bee" id="beeStart"><i class="fa fa-play"></i> Start</button>
+      <button id="btnSayAgain"><i class="fa fa-volume-up"></i> Say Again</button>
+      <button id="btnFlag"><i class="fa fa-flag"></i> Flag</button>
+      <button id="btnEnd"><i class="fa fa-stop"></i> End</button>
+      <div id="summary" class="summary"></div>
     </section>
 
-    <!-- School Section -->
-    <section id="secSchool" class="trainer-area">
-      <h2>School Practice</h2>
-      <p class="subtitle">Type what you hear. Input clears after marking.</p>
-      <textarea id="schoolCustom" placeholder="Custom words (optional)…"></textarea>
-      <input type="file" id="schoolFile" accept=".txt,.csv"/>
-      <button id="schoolLoad" class="btn-secondary">Use Custom List</button>
-      <div class="controls">
-        <button id="schoolStart" class="start">Start</button>
-        <input id="schoolAnswer" type="text" placeholder="Type here…" autocomplete="off"/>
-        <button id="schoolSubmit">Submit</button>
-        <button id="schoolFlag">Flag</button>
-        <button id="schoolEnd">End</button>
+    <!-- ========== School Section ========== -->
+    <section id="school-area" class="trainer-area">
+      <h3>School Practice</h3>
+      <div class="accent-select">
+        <label for="accent">Accent:</label>
+        <select id="accent">
+          <option value="en-US">American</option>
+          <option value="en-GB">British</option>
+          <option value="en-AU">Australian</option>
+          <option value="en-CA">Canadian</option>
+        </select>
       </div>
-      <div id="schoolProgress"></div>
+
       <div id="schoolFeedback"></div>
-      <div id="schoolSummary"></div>
+      <div id="schoolProgress"></div>
+      <input type="text" id="schoolInput" placeholder="Type the word..." />
+      <button class="start-btn" data-mode="school" id="schoolStart"><i class="fa fa-play"></i> Start</button>
+      <button id="btnSayAgain"><i class="fa fa-volume-up"></i> Say Again</button>
+      <button id="btnFlag"><i class="fa fa-flag"></i> Flag</button>
+      <button id="btnEnd"><i class="fa fa-stop"></i> End</button>
+      <div id="summary" class="summary"></div>
     </section>
 
-    <!-- OET Section -->
-    <section id="secOet" class="trainer-area">
-      <h2>OET Practice</h2>
-      <p class="subtitle">Choose Practice (full list) or Exam (24 random words).</p>
-      <div class="mode-select">
-        <button id="oetPractice" class="btn-secondary">Practice</button>
-        <button id="oetExam" class="btn-secondary">Exam (24)</button>
+    <!-- ========== OET Section ========== -->
+    <section id="oet-area" class="trainer-area">
+      <h3>OET Medical English</h3>
+
+      <!-- Practice vs Test Mode -->
+      <div class="exam-type">
+        <label><input type="radio" name="examType" value="practice" checked /> Practice (Full)</label>
+        <label><input type="radio" name="examType" value="test" /> Test (Random 24)</label>
       </div>
-      <textarea id="oetCustom" placeholder="Custom medical words (optional)…"></textarea>
-      <input type="file" id="oetFile" accept=".txt,.csv"/>
-      <button id="oetLoad" class="btn-secondary">Use Custom List</button>
-      <div class="controls">
-        <button id="oetStart" class="start">Start</button>
-        <input id="oetAnswer" type="text" placeholder="Type spelling here…" autocomplete="off"/>
-        <button id="oetSubmit">Submit</button>
-        <button id="oetFlag">Flag</button>
-        <button id="oetEnd">End</button>
+
+      <div class="accent-select">
+        <label for="accent">Accent:</label>
+        <select id="accent">
+          <option value="en-US">American</option>
+          <option value="en-GB">British</option>
+          <option value="en-AU">Australian</option>
+          <option value="en-CA">Canadian</option>
+        </select>
       </div>
-      <div id="oetProgress"></div>
+
       <div id="oetFeedback"></div>
-      <div id="oetSummary"></div>
+      <div id="oetProgress"></div>
+      <input type="text" id="oetInput" placeholder="Type your answer..." />
+      <button class="start-btn" data-mode="oet" id="oetStart"><i class="fa fa-play"></i> Start</button>
+      <button id="btnSayAgain"><i class="fa fa-volume-up"></i> Say Again</button>
+      <button id="btnFlag"><i class="fa fa-flag"></i> Flag</button>
+      <button id="btnEnd"><i class="fa fa-stop"></i> End</button>
+      <div id="summary" class="summary"></div>
     </section>
   </main>
 
-  <!-- Auth Overlay -->
-  <div id="authOverlay" class="glass-overlay">
+  <!-- Login Overlay -->
+  <div class="glass-overlay" id="loginOverlay">
     <div class="glass-card">
-      <h3>Sign In to Premium</h3>
-      <button id="btnGoogle" class="btn-google">
-        <i class="fab fa-google"></i> Continue with Google
+      <h3>Login to SpellRightPro</h3>
+      <button class="btn-google" onclick="signInWithGoogle()">
+        <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" width="20" alt="" /> Sign in with Google
       </button>
-      <input id="authEmail" type="email" placeholder="Email"/>
-      <input id="authPass" type="password" placeholder="Password"/>
-      <div>
-        <button id="btnEmailLogin" class="btn-main">Login</button>
-        <button id="btnEmailSignup" class="btn-sub">Register</button>
-      </div>
-      <a href="#" id="linkForgot">Forgot Password?</a>
-      <div id="authMsg"></div>
+      <p style="margin-top:10px;font-size:0.9rem;">Premium access required to continue.</p>
     </div>
   </div>
 
-  <footer><small>&copy; 2025 SpellRightPro Premium</small></footer>
-
-  <script>
-    document.addEventListener('DOMContentLoaded', () => {
-      if (window.initThemeToggle) window.initThemeToggle();
-    });
-  </script>
+  <!-- JS -->
+  <script src="/js/main-premium.js" defer></script>
 </body>
 </html>
