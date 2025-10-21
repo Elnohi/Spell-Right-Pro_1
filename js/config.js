@@ -3,8 +3,8 @@
 // Frontend runtime configuration
 // ------------------------------
 
-// ===== 1) Firebase (REQUIRED) =====
-window.firebaseConfig = {
+// For Firebase JS SDK v7.20.0 and later, measurementId is optional
+const firebaseConfig = {
   apiKey: "AIzaSyCZ-rAPnRgVjSRFOFvbiQlowE6A3RVvwWo",
   authDomain: "spellrightpro-firebase.firebaseapp.com",
   projectId: "spellrightpro-firebase",
