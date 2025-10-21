@@ -2,8 +2,8 @@
    SpellRightPro Premium Logic - Fixed Google Login + Auth
    ======================================================= */
 
-// --- Import Firebase Config ---
-import { firebaseConfig } from "./config.js"; // ✅ Use your existing config file
+const firebaseConfig = window.firebaseConfig;
+ // ✅ Use your existing config file
 
 // --- Firebase Setup ---
 if (!firebase.apps.length) {
@@ -223,4 +223,5 @@ window.addEventListener("beforeunload", () => speechSynthesis.cancel());
 window.addEventListener("error", e => {
   console.error("Global JS error:", e.message);
 });
+
 
