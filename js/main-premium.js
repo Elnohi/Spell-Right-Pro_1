@@ -2,19 +2,14 @@
    SpellRightPro Premium Logic - Fixed Google Login + Auth
    ======================================================= */
 
-// --- Firebase Setup ---
-const firebaseConfig = {
-  apiKey: "YOUR_API_KEY",
-  authDomain: "spellrightpro-firebase.firebaseapp.com",
-  projectId: "spellrightpro-firebase",
-  storageBucket: "spellrightpro-firebase.appspot.com",
-  messagingSenderId: "798456641137",
-  appId: "YOUR_APP_ID"
-};
+// --- Import Firebase Config ---
+import { firebaseConfig } from "./config.js"; // ✅ Use your existing config file
 
+// --- Firebase Setup ---
 if (!firebase.apps.length) {
   firebase.initializeApp(firebaseConfig);
 }
+
 const auth = firebase.auth();
 const db = firebase.firestore();
 
@@ -228,3 +223,4 @@ window.addEventListener("beforeunload", () => speechSynthesis.cancel());
 window.addEventListener("error", e => {
   console.error("Global JS error:", e.message);
 });
+
