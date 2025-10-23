@@ -125,10 +125,41 @@
   <div class="glass-overlay" id="loginOverlay">
     <div class="glass-card">
       <h3>Login to SpellRightPro</h3>
-      <button class="btn-google" onclick="signInWithGoogle()">
-        <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" width="20" alt="" /> Sign in with Google
-      </button>
-      <p style="margin-top:10px;font-size:0.9rem;">Premium access required to continue.</p>
+      
+      <!-- Login Form -->
+      <form id="loginForm">
+        <input type="email" id="loginEmail" placeholder="Email" required 
+               style="width: 100%; padding: 10px; margin: 8px 0; border-radius: 8px; border: 1px solid #ccc;">
+        <input type="password" id="loginPassword" placeholder="Password" required 
+               style="width: 100%; padding: 10px; margin: 8px 0; border-radius: 8px; border: 1px solid #ccc;">
+        <button type="submit" style="width: 100%; padding: 12px; margin: 10px 0; border-radius: 8px; background: var(--primary); color: white; border: none; cursor: pointer;">
+          Login
+        </button>
+      </form>
+
+      <!-- Register Form -->
+      <form id="registerForm" style="display: none;">
+        <input type="email" id="regEmail" placeholder="Email" required 
+               style="width: 100%; padding: 10px; margin: 8px 0; border-radius: 8px; border: 1px solid #ccc;">
+        <input type="password" id="regPassword" placeholder="Password" required 
+               style="width: 100%; padding: 10px; margin: 8px 0; border-radius: 8px; border: 1px solid #ccc;">
+        <input type="password" id="regConfirmPassword" placeholder="Confirm Password" required 
+               style="width: 100%; padding: 10px; margin: 8px 0; border-radius: 8px; border: 1px solid #ccc;">
+        <button type="submit" style="width: 100%; padding: 12px; margin: 10px 0; border-radius: 8px; background: var(--primary); color: white; border: none; cursor: pointer;">
+          Register
+        </button>
+      </form>
+
+      <div style="margin-top: 15px; text-align: center;">
+        <button id="showRegister" style="background: none; border: none; color: #7b2ff7; cursor: pointer; text-decoration: underline;">
+          Create new account
+        </button>
+        <button id="showLogin" style="display: none; background: none; border: none; color: #7b2ff7; cursor: pointer; text-decoration: underline;">
+          Back to login
+        </button>
+      </div>
+
+      <p style="margin-top:15px;font-size:0.9rem;">Premium access required to continue.</p>
     </div>
   </div>
 
