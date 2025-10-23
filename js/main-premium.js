@@ -1,9 +1,8 @@
 /* =======================================================
-   SpellRightPro Premium Logic - Fixed Google Login + Auth
+   SpellRightPro Premium Logic - Email/Password Auth
    ======================================================= */
 
 const firebaseConfig = window.firebaseConfig;
- // ✅ Use your existing config file
 
 // --- Firebase Setup ---
 if (!firebase.apps.length) {
@@ -17,6 +16,10 @@ const db = firebase.firestore();
 const overlay = document.getElementById("loginOverlay");
 const logoutBtn = document.getElementById("btnLogout");
 const mainContent = document.querySelector("main");
+const loginForm = document.getElementById("loginForm");
+const registerForm = document.getElementById("registerForm");
+const showRegisterBtn = document.getElementById("showRegister");
+const showLoginBtn = document.getElementById("showLogin");
 
 // --- Overlay Control ---
 function showOverlay() {
@@ -28,31 +31,92 @@ function hideOverlay() {
   if (mainContent) mainContent.style.display = "block";
 }
 
-// --- GLOBAL Google Sign-In (Fixes onclick issue) ---
-window.signInWithGoogle = async function () {
-  try {
-    const provider = new firebase.auth.GoogleAuthProvider();
-    provider.setCustomParameters({ prompt: "select_account" });
-    const result = await auth.signInWithPopup(provider);
-    const user = result.user;
-    if (user) await verifyPremiumAccess(user);
-  } catch (err) {
-    console.error("Google login error:", err);
-    alert("Login failed, please try again.");
-  }
-};
+// --- Email/Password Registration ---
+if (registerForm) {
+  registerForm.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const email = document.getElementById("regEmail").value;
+    const password = document.getElementById("regPassword").value;
+    const confirmPassword = document.getElementById("regConfirmPassword").value;
 
-// --- Logout ---
-if (logoutBtn) {
-  logoutBtn.addEventListener("click", async () => {
+    if (password !== confirmPassword) {
+      alert("Passwords don't match");
+      return;
+    }
+
     try {
-      await auth.signOut();
-      showOverlay();
-      alert("Logged out successfully.");
-    } catch (e) {
-      console.error("Logout failed:", e);
+      const userCredential = await auth.createUserWithEmailAndPassword(email, password);
+      const user = userCredential.user;
+      showFeedback("Registration successful! Please login.", "success");
+      showLoginForm();
+    } catch (err) {
+      console.error("Registration error:", err);
+      showFeedback(`Registration failed: ${err.message}`, "error");
     }
   });
+}
+
+// --- Email/Password Login ---
+if (loginForm) {
+  loginForm.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const email = document.getElementById("loginEmail").value;
+    const password = document.getElementById("loginPassword").value;
+
+    try {
+      const userCredential = await auth.signInWithEmailAndPassword(email, password);
+      const user = userCredential.user;
+      await verifyPremiumAccess(user);
+    } catch (err) {
+      console.error("Login error:", err);
+      showFeedback(`Login failed: ${err.message}`, "error");
+    }
+  });
+}
+
+// --- Form Toggle ---
+if (showRegisterBtn) {
+  showRegisterBtn.addEventListener("click", showRegisterForm);
+}
+if (showLoginBtn) {
+  showLoginBtn.addEventListener("click", showLoginForm);
+}
+
+function showRegisterForm() {
+  if (loginForm) loginForm.style.display = "none";
+  if (registerForm) registerForm.style.display = "block";
+  if (showRegisterBtn) showRegisterBtn.style.display = "none";
+  if (showLoginBtn) showLoginBtn.style.display = "inline";
+}
+
+function showLoginForm() {
+  if (registerForm) registerForm.style.display = "none";
+  if (loginForm) loginForm.style.display = "block";
+  if (showLoginBtn) showLoginBtn.style.display = "none";
+  if (showRegisterBtn) showRegisterBtn.style.display = "inline";
+}
+
+function showFeedback(message, type) {
+  // Remove existing feedback
+  const existingFeedback = document.querySelector(".feedback-message");
+  if (existingFeedback) existingFeedback.remove();
+
+  const feedback = document.createElement("div");
+  feedback.className = `feedback-message ${type}`;
+  feedback.textContent = message;
+  feedback.style.marginTop = "10px";
+  feedback.style.padding = "8px";
+  feedback.style.borderRadius = "4px";
+  feedback.style.background = type === "success" ? "#d4edda" : "#f8d7da";
+  feedback.style.color = type === "success" ? "#155724" : "#721c24";
+  feedback.style.border = type === "success" ? "1px solid #c3e6cb" : "1px solid #f5c6cb";
+
+  const card = document.querySelector(".glass-card");
+  if (card) card.appendChild(feedback);
+
+  setTimeout(() => {
+    if (feedback.parentNode) feedback.remove();
+  }, 5000);
 }
 
 // --- Premium Access Verification ---
@@ -92,6 +156,19 @@ async function verifyPremiumAccess(user) {
     alert("Could not verify your Premium access. Please try again.");
     showOverlay();
   }
+}
+
+// --- Logout ---
+if (logoutBtn) {
+  logoutBtn.addEventListener("click", async () => {
+    try {
+      await auth.signOut();
+      showOverlay();
+      alert("Logged out successfully.");
+    } catch (e) {
+      console.error("Logout failed:", e);
+    }
+  });
 }
 
 // --- Auth State Watcher ---
@@ -223,5 +300,3 @@ window.addEventListener("beforeunload", () => speechSynthesis.cancel());
 window.addEventListener("error", e => {
   console.error("Global JS error:", e.message);
 });
-
-
