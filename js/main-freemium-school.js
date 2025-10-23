@@ -63,5 +63,37 @@
     t(ui.feedback, `Loaded ${state.words.length} words. Press Start.`);
   });
 
+  // Consistent Dark Mode Toggle
+  function initializeDarkModeToggle() {
+    const darkModeToggle = document.getElementById('toggleDark');
+    if (!darkModeToggle) return;
+
+    // Initialize icon based on current mode
+    const icon = darkModeToggle.querySelector('i');
+    const isDark = document.body.classList.contains('dark-mode');
+    if (icon) {
+      icon.className = isDark ? 'fa fa-sun' : 'fa fa-moon';
+    }
+
+    darkModeToggle.addEventListener('click', () => {
+      document.body.classList.toggle('dark-mode');
+      const icon = darkModeToggle.querySelector('i');
+      if (icon) {
+        icon.classList.toggle('fa-moon');
+        icon.classList.toggle('fa-sun');
+      }
+      
+      // Save preference
+      localStorage.setItem('dark', document.body.classList.contains('dark-mode'));
+    });
+  }
+
+  // Initialize when DOM is ready
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initializeDarkModeToggle);
+  } else {
+    initializeDarkModeToggle();
+  }
+
   console.log('School ready');
 })();
