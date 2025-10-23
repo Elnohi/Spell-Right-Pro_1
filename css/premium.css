@@ -218,6 +218,123 @@ body.dark-mode button:hover {
 }
 
 /* =======================================================
+   TRAINER AREA VISIBILITY - FIXED
+======================================================= */
+.trainer-area {
+  display: none;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: var(--radius);
+  padding: 25px;
+  margin-top: 20px;
+  text-align: center;
+}
+
+.trainer-area.active {
+  display: block;
+  animation: fadeIn 0.3s ease-in;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Mode selection buttons */
+.mode-select {
+  display: flex;
+  gap: 15px;
+  justify-content: center;
+  margin: 25px 0;
+  flex-wrap: wrap;
+}
+
+.mode-btn {
+  background: rgba(255, 255, 255, 0.1);
+  border: 2px solid transparent;
+  border-radius: var(--radius);
+  padding: 15px 25px;
+  color: white;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  min-width: 120px;
+}
+
+.mode-btn:hover {
+  background: rgba(255, 255, 255, 0.2);
+  transform: translateY(-2px);
+}
+
+.mode-btn.active {
+  background: var(--primary);
+  border-color: rgba(255, 255, 255, 0.3);
+}
+
+/* Summary styles for premium */
+.summary {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: var(--radius);
+  padding: 20px;
+  margin-top: 20px;
+  text-align: left;
+  display: none;
+}
+
+.summary-header {
+  text-align: center;
+  margin-bottom: 20px;
+  border-bottom: 2px solid rgba(255, 255, 255, 0.2);
+  padding-bottom: 15px;
+}
+
+.incorrect-words,
+.flagged-words,
+.correct-words {
+  margin-bottom: 20px;
+}
+
+.incorrect-words h4 {
+  color: #f72585;
+  margin-bottom: 10px;
+}
+
+.flagged-words h4 {
+  color: #ffd166;
+  margin-bottom: 10px;
+}
+
+.correct-words h4 {
+  color: #4cc9f0;
+  margin-bottom: 10px;
+}
+
+.word-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 8px;
+}
+
+.word-item {
+  background: rgba(255, 255, 255, 0.1);
+  padding: 8px 12px;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  border-left: 4px solid var(--primary);
+}
+
+.incorrect-words .word-item {
+  border-left-color: #f72585;
+}
+
+.flagged-words .word-item {
+  border-left-color: #ffd166;
+}
+
+.correct-words .word-item {
+  border-left-color: #4cc9f0;
+}
+
+/* =======================================================
    RESPONSIVE
 ======================================================= */
 @media (max-width: 700px) {
