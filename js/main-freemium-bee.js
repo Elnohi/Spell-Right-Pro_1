@@ -44,7 +44,7 @@
     state.recognizing=true;
 
     let ok=false, got=false;
-    const timer=setTimeout(()=>{ if(!got){ t(els.feedback,'⏱️ No speech heard. Tap “Say Again” or Next.'); state.recognizing=false; }}, 7000);
+    const timer=setTimeout(()=>{ if(!got){ t(els.feedback,'⏱️ No speech heard. Tap "Say Again" or Next.'); state.recognizing=false; }}, 7000);
 
     rec.onresult=(e)=>{ got=true;
       const said = e.results[0][0].transcript||'';
@@ -87,9 +87,41 @@
     if(state.i<state.words.length-1){ state.i++; play(); } else { endSession(); }});
   els.prev && els.prev.addEventListener('click', ()=>{ if(!state.active) return; if(state.i>0){ state.i--; play(); }});
   els.flag && els.flag.addEventListener('click', ()=>{ if(!state.active) return; const w=state.words[state.i]; if(!w) return;
-    if(state.flags.has(w)){ state.flags.delete(w); t(els.feedback,`🚩 Removed flag on “${w}”`); } else { state.flags.add(w); t(els.feedback,`🚩 Flagged “${w}”`); }});
+    if(state.flags.has(w)){ state.flags.delete(w); t(els.feedback,`🚩 Removed flag on "${w}"`); } else { state.flags.add(w); t(els.feedback,`🚩 Flagged "${w}"`); }});
   els.say  && els.say .addEventListener('click', ()=>{ if(!state.active) return; play(); });
   els.end  && els.end .addEventListener('click', endSession);
+
+  // Consistent Dark Mode Toggle
+  function initializeDarkModeToggle() {
+    const darkModeToggle = document.getElementById('toggleDark');
+    if (!darkModeToggle) return;
+
+    // Initialize icon based on current mode
+    const icon = darkModeToggle.querySelector('i');
+    const isDark = document.body.classList.contains('dark-mode');
+    if (icon) {
+      icon.className = isDark ? 'fa fa-sun' : 'fa fa-moon';
+    }
+
+    darkModeToggle.addEventListener('click', () => {
+      document.body.classList.toggle('dark-mode');
+      const icon = darkModeToggle.querySelector('i');
+      if (icon) {
+        icon.classList.toggle('fa-moon');
+        icon.classList.toggle('fa-sun');
+      }
+      
+      // Save preference
+      localStorage.setItem('dark', document.body.classList.contains('dark-mode'));
+    });
+  }
+
+  // Initialize when DOM is ready
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initializeDarkModeToggle);
+  } else {
+    initializeDarkModeToggle();
+  }
 
   console.log('Bee ready');
 })();
