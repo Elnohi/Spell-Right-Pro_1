@@ -46,31 +46,49 @@
     </div>
 
     <!-- ========== Bee Section ========== -->
-    <section id="bee-area" class="trainer-area">
-      <h3>Spelling Bee Trainer</h3>
-      
-      <div class="accent-select">
-        <label for="beeAccent">Accent:</label>
-        <select id="beeAccent">
-          <option value="en-US">American</option>
-          <option value="en-GB">British</option>
-          <option value="en-AU">Australian</option>
-          <option value="en-CA">Canadian</option>
-        </select>
-      </div>
+<section id="bee-area" class="trainer-area">
+  <h3>Spelling Bee Trainer</h3>
+  
+  <div class="accent-select">
+    <label for="beeAccent">Accent:</label>
+    <select id="beeAccent">
+      <option value="en-US">American</option>
+      <option value="en-GB">British</option>
+      <option value="en-AU">Australian</option>
+      <option value="en-CA">Canadian</option>
+    </select>
+  </div>
 
-      <div id="beeProgress" class="progress-display"></div>
-      <div id="beeFeedback" class="feedback-display"></div>
-      
-      <div class="button-group">
-        <button class="start-btn" data-mode="bee" id="beeStart"><i class="fa fa-play"></i> Start</button>
-        <button id="beeSayAgain"><i class="fa fa-volume-up"></i> Say Again</button>
-        <button id="beeFlag"><i class="fa fa-flag"></i> Flag</button>
-        <button id="beeEnd"><i class="fa fa-stop"></i> End</button>
-      </div>
-      <div id="beeSummary" class="summary"></div>
-    </section>
+  <div id="beeProgress" class="progress-display"></div>
+  <div id="beeFeedback" class="feedback-display"></div>
+  
+  <!-- Voice Recognition Status -->
+  <div id="beeVoiceStatus" class="voice-status" style="display: none;">
+    <i class="fa fa-microphone"></i> <span id="beeVoiceText">Listening...</span>
+    <div class="voice-visualizer">
+      <div class="voice-bar"></div>
+      <div class="voice-bar"></div>
+      <div class="voice-bar"></div>
+      <div class="voice-bar"></div>
+      <div class="voice-bar"></div>
+    </div>
+  </div>
 
+  <!-- Recognized Text Display -->
+  <div id="beeRecognizedText" class="recognized-text" style="display: none;">
+    <strong>You said:</strong> <span id="beeSpokenText"></span>
+  </div>
+  
+  <div class="button-group">
+    <button class="start-btn" data-mode="bee" id="beeStart"><i class="fa fa-play"></i> Start</button>
+    <button id="beeSayAgain"><i class="fa fa-volume-up"></i> Say Again</button>
+    <button id="beeListen"><i class="fa fa-microphone"></i> Listen & Spell</button>
+    <button id="beeFlag"><i class="fa fa-flag"></i> Flag</button>
+    <button id="beeEnd"><i class="fa fa-stop"></i> End</button>
+  </div>
+  <div id="beeSummary" class="summary"></div>
+</section>
+    
     <!-- ========== School Section ========== -->
     <section id="school-area" class="trainer-area">
       <h3>School Practice</h3>
