@@ -164,22 +164,17 @@ if (toggleDark) {
 }
 
 // =======================================================
-// CUSTOM WORDS FEATURE - NEW IMPLEMENTATION
+// CUSTOM WORDS FEATURE - UPDATED IMPLEMENTATION
 // =======================================================
-
-function initializeCustomWords() {
-  loadCustomLists();
-  updateCustomListsDisplay();
-}
 
 function createCustomWordsUI() {
   const customHTML = `
-    <div id="customWordsSection" class="trainer-area" style="margin-top: 20px;">
-      <h3><i class="fa fa-file-upload"></i> Custom Words</h3>
+    <div class="custom-words-area" style="margin-top: 20px; display: none;">
+      <h4><i class="fa fa-file-upload"></i> Custom Words</h4>
       
       <!-- Upload New List -->
       <div class="upload-section" style="background: rgba(255,255,255,0.1); padding: 20px; border-radius: var(--radius); margin-bottom: 20px;">
-        <h4>Upload New Word List</h4>
+        <h5>Upload New Word List</h5>
         <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
           <input type="text" id="newListName" placeholder="List Name" 
                  style="padding: 10px; border-radius: 8px; border: 1px solid #ccc; flex: 1; min-width: 150px;">
@@ -196,27 +191,38 @@ function createCustomWordsUI() {
 
       <!-- Manage Existing Lists -->
       <div class="lists-section">
-        <h4>Your Word Lists</h4>
+        <h5>Your Word Lists</h5>
         <div id="customListsContainer" class="lists-container"></div>
       </div>
 
       <!-- Quick Create -->
       <div class="quick-create" style="margin-top: 20px; padding: 15px; background: rgba(255,255,255,0.05); border-radius: var(--radius);">
-        <h4>Quick Create</h4>
+        <h5>Quick Create</h5>
         <textarea id="quickWordsInput" placeholder="Enter words separated by commas or new lines" 
                   style="width: 100%; height: 80px; padding: 10px; border-radius: 8px; border: 1px solid #ccc; margin-bottom: 10px;"></textarea>
         <button onclick="createQuickList()" class="nav-btn">
-          <i class="fa fa-plus"></i> Create List
+            <i class="fa fa-plus"></i> Create List
         </button>
       </div>
     </div>
   `;
 
-  // Insert after mode buttons
-  const modeSelect = document.querySelector('.mode-select');
-  if (modeSelect) {
-    modeSelect.insertAdjacentHTML('afterend', customHTML);
-  }
+  // Insert custom words into EACH trainer area
+  document.querySelectorAll('.trainer-area').forEach(area => {
+    const existingCustom = area.querySelector('.custom-words-area');
+    if (!existingCustom) {
+      // Insert after the h3 title but before other content
+      const title = area.querySelector('h3');
+      if (title) {
+        title.insertAdjacentHTML('afterend', customHTML);
+      }
+    }
+  });
+}
+
+function initializeCustomWords() {
+  loadCustomLists();
+  updateCustomListsDisplay();
 }
 
 function uploadWordList() {
@@ -429,7 +435,7 @@ let correctWords = [];
 let incorrectWords = [];
 let flaggedWords = new Set();
 
-// Mode selection - FIXED: Hide all areas initially, show only selected
+// Enhanced Mode selection - Show custom words when mode is selected
 document.querySelectorAll(".mode-btn").forEach(btn => {
   btn.addEventListener("click", () => {
     currentMode = btn.dataset.mode;
@@ -445,6 +451,12 @@ document.querySelectorAll(".mode-btn").forEach(btn => {
     if (selectedArea) {
       selectedArea.style.display = "block";
       selectedArea.classList.add("active");
+      
+      // Show custom words section for the selected mode
+      const customWordsSection = selectedArea.querySelector('.custom-words-area');
+      if (customWordsSection) {
+        customWordsSection.style.display = "block";
+      }
     }
     
     // Reset any ongoing session
@@ -774,6 +786,7 @@ function initializeSpeechSynthesis() {
 // Initialize the app
 document.addEventListener('DOMContentLoaded', function() {
   initializeSpeechSynthesis();
-  initializeCustomWords(); // NEW: Initialize custom words feature
+  createCustomWordsUI(); // Create the custom words UI in each mode
+  initializeCustomWords(); // Initialize custom words functionality
   console.log("SpellRightPro Premium with Custom Words initialized");
 });
