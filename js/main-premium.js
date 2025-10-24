@@ -164,59 +164,12 @@ if (toggleDark) {
 }
 
 // =======================================================
-// CUSTOM WORDS FEATURE - NEW IMPLEMENTATION
+// CUSTOM WORDS FEATURE - FIXED IMPLEMENTATION
 // =======================================================
 
 function initializeCustomWords() {
   loadCustomLists();
   updateCustomListsDisplay();
-}
-
-function createCustomWordsUI() {
-  const customHTML = `
-    <div id="customWordsSection" class="trainer-area" style="margin-top: 20px;">
-      <h3><i class="fa fa-file-upload"></i> Custom Words</h3>
-      
-      <!-- Upload New List -->
-      <div class="upload-section" style="background: rgba(255,255,255,0.1); padding: 20px; border-radius: var(--radius); margin-bottom: 20px;">
-        <h4>Upload New Word List</h4>
-        <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
-          <input type="text" id="newListName" placeholder="List Name" 
-                 style="padding: 10px; border-radius: 8px; border: 1px solid #ccc; flex: 1; min-width: 150px;">
-          <input type="file" id="wordListFile" accept=".txt,.csv" 
-                 style="flex: 2; min-width: 200px;">
-          <button onclick="uploadWordList()" class="nav-btn">
-            <i class="fa fa-upload"></i> Upload
-          </button>
-        </div>
-        <p style="font-size: 0.8rem; margin-top: 10px; opacity: 0.8;">
-          Supported formats: .txt (one word per line) or .csv
-        </p>
-      </div>
-
-      <!-- Manage Existing Lists -->
-      <div class="lists-section">
-        <h4>Your Word Lists</h4>
-        <div id="customListsContainer" class="lists-container"></div>
-      </div>
-
-      <!-- Quick Create -->
-      <div class="quick-create" style="margin-top: 20px; padding: 15px; background: rgba(255,255,255,0.05); border-radius: var(--radius);">
-        <h4>Quick Create</h4>
-        <textarea id="quickWordsInput" placeholder="Enter words separated by commas or new lines" 
-                  style="width: 100%; height: 80px; padding: 10px; border-radius: 8px; border: 1px solid #ccc; margin-bottom: 10px;"></textarea>
-        <button onclick="createQuickList()" class="nav-btn">
-          <i class="fa fa-plus"></i> Create List
-        </button>
-      </div>
-    </div>
-  `;
-
-  // Insert after mode buttons
-  const modeSelect = document.querySelector('.mode-select');
-  if (modeSelect) {
-    modeSelect.insertAdjacentHTML('afterend', customHTML);
-  }
 }
 
 function uploadWordList() {
@@ -419,7 +372,7 @@ function loadCustomLists() {
 }
 
 // =======================================================
-// TRAINING LOGIC (Bee / School / OET)
+// TRAINING LOGIC (Bee / School / OET) - FIXED
 // =======================================================
 let currentMode = null;
 let currentIndex = 0;
@@ -429,12 +382,14 @@ let correctWords = [];
 let incorrectWords = [];
 let flaggedWords = new Set();
 
-// Mode selection - FIXED: Hide all areas initially, show only selected
+// Mode selection - FIXED: Only hide trainer areas, not custom words
 document.querySelectorAll(".mode-btn").forEach(btn => {
   btn.addEventListener("click", () => {
     currentMode = btn.dataset.mode;
     
-    // Hide all trainer areas
+    console.log('Mode selected:', currentMode);
+    
+    // Hide all trainer areas (only Bee, School, OET sections)
     document.querySelectorAll(".trainer-area").forEach(a => {
       a.style.display = "none";
       a.classList.remove("active");
@@ -445,6 +400,7 @@ document.querySelectorAll(".mode-btn").forEach(btn => {
     if (selectedArea) {
       selectedArea.style.display = "block";
       selectedArea.classList.add("active");
+      console.log('Showing area:', selectedArea.id);
     }
     
     // Reset any ongoing session
@@ -452,11 +408,17 @@ document.querySelectorAll(".mode-btn").forEach(btn => {
   });
 });
 
-// Initialize - hide all trainer areas on load
+// Initialize - hide all trainer areas on load (but NOT custom words)
 document.addEventListener('DOMContentLoaded', function() {
   document.querySelectorAll(".trainer-area").forEach(a => {
     a.style.display = "none";
   });
+  
+  // Ensure custom words section is visible
+  const customWordsSection = document.getElementById('customWordsSection');
+  if (customWordsSection) {
+    customWordsSection.style.display = 'block';
+  }
 });
 
 function resetTraining() {
@@ -774,7 +736,6 @@ function initializeSpeechSynthesis() {
 // Initialize the app
 document.addEventListener('DOMContentLoaded', function() {
   initializeSpeechSynthesis();
-  initializeCustomWords(); // NEW: Initialize custom words feature
+  initializeCustomWords(); // Initialize custom words feature
   console.log("SpellRightPro Premium with Custom Words initialized");
 });
-
