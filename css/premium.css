@@ -270,7 +270,122 @@ body.dark-mode button:hover {
   border-color: rgba(255, 255, 255, 0.3);
 }
 
-/* Summary styles for premium */
+/* =======================================================
+   VOICE RECOGNITION STYLES - ADDED
+======================================================= */
+
+.voice-status {
+  background: rgba(76, 175, 80, 0.15);
+  border: 2px solid rgba(76, 175, 80, 0.5);
+  border-radius: var(--radius);
+  padding: 20px;
+  margin: 20px 0;
+  text-align: center;
+  animation: pulseBorder 2s infinite;
+}
+
+@keyframes pulseBorder {
+  0% { border-color: rgba(76, 175, 80, 0.5); }
+  50% { border-color: rgba(76, 175, 80, 0.8); }
+  100% { border-color: rgba(76, 175, 80, 0.5); }
+}
+
+.voice-status i {
+  color: #4CAF50;
+  margin-right: 10px;
+  font-size: 1.2rem;
+}
+
+.voice-visualizer {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 4px;
+  margin-top: 15px;
+  height: 25px;
+}
+
+.voice-bar {
+  width: 5px;
+  height: 8px;
+  background: linear-gradient(to top, #4CAF50, #8BC34A);
+  border-radius: 3px;
+  transition: height 0.3s ease;
+}
+
+@keyframes voicePulse {
+  0% { height: 8px; }
+  50% { height: 20px; }
+  100% { height: 8px; }
+}
+
+.voice-status.listening .voice-bar:nth-child(1) { animation: voicePulse 0.8s infinite 0.1s; }
+.voice-status.listening .voice-bar:nth-child(2) { animation: voicePulse 0.8s infinite 0.2s; }
+.voice-status.listening .voice-bar:nth-child(3) { animation: voicePulse 0.8s infinite 0.3s; }
+.voice-status.listening .voice-bar:nth-child(4) { animation: voicePulse 0.8s infinite 0.4s; }
+.voice-status.listening .voice-bar:nth-child(5) { animation: voicePulse 0.8s infinite 0.5s; }
+
+.recognized-text {
+  background: rgba(33, 150, 243, 0.15);
+  border: 2px solid rgba(33, 150, 243, 0.5);
+  border-radius: var(--radius);
+  padding: 15px;
+  margin: 15px 0;
+  text-align: center;
+  animation: slideInUp 0.3s ease-out;
+}
+
+@keyframes slideInUp {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.recognized-text strong {
+  color: #2196F3;
+  font-weight: 600;
+}
+
+#beeSpokenText {
+  font-weight: 600;
+  color: #fff;
+  background: rgba(255, 255, 255, 0.1);
+  padding: 4px 8px;
+  border-radius: 4px;
+  margin-left: 5px;
+}
+
+/* Bee mode specific button */
+#beeListen {
+  background: #4CAF50 !important;
+  color: white !important;
+  border: none !important;
+}
+
+#beeListen:hover {
+  background: #45a049 !important;
+  transform: translateY(-2px);
+}
+
+#beeListen.listening {
+  background: #f44336 !important;
+  animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+  0% { box-shadow: 0 0 0 0 rgba(244, 67, 54, 0.7); }
+  70% { box-shadow: 0 0 0 10px rgba(244, 67, 54, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(244, 67, 54, 0); }
+}
+
+/* =======================================================
+   SUMMARY STYLES - ENHANCED
+======================================================= */
 .summary {
   background: rgba(255, 255, 255, 0.1);
   border-radius: var(--radius);
@@ -287,39 +402,79 @@ body.dark-mode button:hover {
   padding-bottom: 15px;
 }
 
+.score {
+  font-size: 1.5em;
+  font-weight: bold;
+  color: var(--primary);
+  margin-top: 10px;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
 .incorrect-words,
 .flagged-words,
 .correct-words {
-  margin-bottom: 20px;
+  margin-bottom: 25px;
+  padding: 15px;
+  border-radius: var(--radius);
+}
+
+.incorrect-words {
+  background: rgba(244, 67, 54, 0.1);
+  border: 1px solid rgba(244, 67, 54, 0.3);
+}
+
+.flagged-words {
+  background: rgba(255, 193, 7, 0.1);
+  border: 1px solid rgba(255, 193, 7, 0.3);
+}
+
+.correct-words {
+  background: rgba(76, 175, 80, 0.1);
+  border: 1px solid rgba(76, 175, 80, 0.3);
 }
 
 .incorrect-words h4 {
   color: #f72585;
   margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .flagged-words h4 {
   color: #ffd166;
   margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .correct-words h4 {
   color: #4cc9f0;
   margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .word-list {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-  gap: 8px;
+  gap: 10px;
 }
 
 .word-item {
   background: rgba(255, 255, 255, 0.1);
-  padding: 8px 12px;
-  border-radius: 6px;
+  padding: 10px 15px;
+  border-radius: 8px;
   font-size: 0.9rem;
   border-left: 4px solid var(--primary);
+  transition: transform 0.2s ease;
+}
+
+.word-item:hover {
+  transform: translateX(5px);
+  background: rgba(255, 255, 255, 0.15);
 }
 
 .incorrect-words .word-item {
@@ -468,24 +623,111 @@ body.dark-mode .upload-section input[type="file"]::file-selector-button {
   cursor: pointer;
 }
 
-/* Responsive custom words */
-@media (max-width: 600px) {
-  .lists-grid {
-    grid-template-columns: 1fr;
-  }
-  
-  .list-actions {
-    justify-content: center;
-  }
-  
-  .upload-section > div {
-    flex-direction: column;
-  }
-  
-  .upload-section input {
-    width: 100%;
-    margin-bottom: 10px;
-  }
+/* =======================================================
+   PROGRESS AND FEEDBACK DISPLAYS
+======================================================= */
+.progress-display {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--primary);
+  margin: 15px 0;
+  padding: 10px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: var(--radius);
+}
+
+.feedback-display {
+  font-size: 1rem;
+  margin: 15px 0;
+  padding: 12px;
+  border-radius: var(--radius);
+  background: rgba(255, 255, 255, 0.05);
+  min-height: 20px;
+  transition: all 0.3s ease;
+}
+
+/* Button group styling */
+.button-group {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin: 20px 0;
+}
+
+/* Input field styling */
+.answer-input {
+  width: 100%;
+  max-width: 400px;
+  padding: 12px 15px;
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  border-radius: var(--radius);
+  background: rgba(255, 255, 255, 0.1);
+  color: white;
+  font-size: 1rem;
+  margin: 15px 0;
+  transition: border-color 0.3s ease;
+}
+
+.answer-input:focus {
+  outline: none;
+  border-color: var(--primary);
+  background: rgba(255, 255, 255, 0.15);
+}
+
+body.dark-mode .answer-input {
+  background: rgba(255, 255, 255, 0.05);
+  color: white;
+}
+
+/* Accent select styling */
+.accent-select {
+  margin: 15px 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+
+.accent-select label {
+  font-weight: 600;
+}
+
+.accent-select select {
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 6px;
+  padding: 8px 12px;
+  color: white;
+  font-size: 0.9rem;
+}
+
+/* Exam type radio buttons */
+.exam-type {
+  display: flex;
+  gap: 20px;
+  justify-content: center;
+  margin: 15px 0;
+  flex-wrap: wrap;
+}
+
+.exam-type label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  padding: 8px 15px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: var(--radius);
+  transition: background 0.3s ease;
+}
+
+.exam-type label:hover {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+.exam-type input[type="radio"] {
+  accent-color: var(--primary);
 }
 
 /* =======================================================
@@ -506,5 +748,65 @@ body.dark-mode .upload-section input[type="file"]::file-selector-button {
   }
   button {
     width: 90%;
+  }
+  
+  /* Responsive voice recognition */
+  .voice-visualizer {
+    gap: 3px;
+  }
+  
+  .voice-bar {
+    width: 4px;
+  }
+  
+  .word-list {
+    grid-template-columns: 1fr;
+  }
+  
+  .button-group {
+    flex-direction: column;
+    align-items: center;
+  }
+  
+  .button-group button {
+    width: 200px;
+  }
+  
+  .exam-type {
+    flex-direction: column;
+    align-items: center;
+  }
+  
+  .accent-select {
+    flex-direction: column;
+    gap: 5px;
+  }
+}
+
+@media (max-width: 600px) {
+  .lists-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .list-actions {
+    justify-content: center;
+  }
+  
+  .upload-section > div {
+    flex-direction: column;
+  }
+  
+  .upload-section input {
+    width: 100%;
+    margin-bottom: 10px;
+  }
+  
+  .mode-select {
+    flex-direction: column;
+    align-items: center;
+  }
+  
+  .mode-btn {
+    width: 200px;
   }
 }
