@@ -45,46 +45,10 @@
       <button class="mode-btn" data-mode="oet"><i class="fa fa-stethoscope"></i> OET</button>
     </div>
 
-    <!-- ========== CUSTOM WORDS SECTION ========== -->
-    <div id="customWordsSection" class="custom-words-area">
-      <h3><i class="fa fa-file-upload"></i> Custom Words</h3>
-      
-      <!-- Upload New List -->
-      <div class="upload-section">
-        <h4>Upload New Word List</h4>
-        <div class="upload-controls">
-          <input type="text" id="newListName" placeholder="List Name" class="form-input">
-          <input type="file" id="wordListFile" accept=".txt,.csv" class="form-input">
-          <button onclick="uploadWordList()" class="nav-btn">
-            <i class="fa fa-upload"></i> Upload
-          </button>
-        </div>
-        <p class="upload-help">
-          Supported formats: .txt (one word per line) or .csv
-        </p>
-      </div>
-
-      <!-- Manage Existing Lists -->
-      <div class="lists-section">
-        <h4>Your Word Lists</h4>
-        <div id="customListsContainer" class="lists-container">
-          <!-- Lists will be dynamically inserted here -->
-        </div>
-      </div>
-
-      <!-- Quick Create -->
-      <div class="quick-create">
-        <h4>Quick Create</h4>
-        <textarea id="quickWordsInput" placeholder="Enter words separated by commas or new lines" class="form-textarea"></textarea>
-        <button onclick="createQuickList()" class="nav-btn">
-          <i class="fa fa-plus"></i> Create List
-        </button>
-      </div>
-    </div>
-
     <!-- ========== Bee Section ========== -->
     <section id="bee-area" class="trainer-area">
       <h3>Spelling Bee Trainer</h3>
+      
       <div class="accent-select">
         <label for="beeAccent">Accent:</label>
         <select id="beeAccent">
@@ -110,6 +74,7 @@
     <!-- ========== School Section ========== -->
     <section id="school-area" class="trainer-area">
       <h3>School Practice</h3>
+      
       <div class="accent-select">
         <label for="schoolAccent">Accent:</label>
         <select id="schoolAccent">
