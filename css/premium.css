@@ -129,6 +129,139 @@ body.dark-mode .upload-section input[type="file"]::file-selector-button {
   .custom-words-area {
     padding: 15px;
   }
+
+   /* =======================================================
+   CUSTOM WORDS AREA STYLES
+======================================================= */
+.custom-words-area {
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: var(--radius);
+  padding: 25px;
+  margin-top: 20px;
+  text-align: left;
+  width: 100%;
+  display: block !important; /* Force display */
+}
+
+.custom-words-area h3 {
+  text-align: center;
+  margin-bottom: 20px;
+  color: white;
+}
+
+.upload-section {
+  background: rgba(255, 255, 255, 0.1);
+  padding: 20px;
+  border-radius: var(--radius);
+  margin-bottom: 20px;
+}
+
+.upload-section h4 {
+  color: white;
+  margin-bottom: 15px;
+  text-align: center;
+}
+
+.upload-controls {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.form-input {
+  padding: 10px;
+  border-radius: 8px;
+  border: 1px solid #ddd;
+  background: rgba(255, 255, 255, 0.9);
+  font-size: 0.9rem;
+  flex: 1;
+  min-width: 150px;
+}
+
+.form-textarea {
+  width: 100%;
+  height: 80px;
+  padding: 10px;
+  border-radius: 8px;
+  border: 1px solid #ddd;
+  background: rgba(255, 255, 255, 0.9);
+  font-family: inherit;
+  font-size: 0.9rem;
+  resize: vertical;
+  margin-bottom: 10px;
+  box-sizing: border-box;
+}
+
+.upload-help {
+  font-size: 0.8rem;
+  margin-top: 10px;
+  opacity: 0.8;
+  text-align: center;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.lists-section {
+  margin-bottom: 20px;
+}
+
+.lists-section h4 {
+  color: white;
+  margin-bottom: 15px;
+  text-align: center;
+}
+
+.quick-create {
+  margin-top: 20px;
+  padding: 15px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: var(--radius);
+}
+
+.quick-create h4 {
+  color: white;
+  margin-bottom: 15px;
+  text-align: center;
+}
+
+/* Dark mode adjustments */
+body.dark-mode .form-input,
+body.dark-mode .form-textarea {
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  color: white;
+}
+
+body.dark-mode .form-input::placeholder,
+body.dark-mode .form-textarea::placeholder {
+  color: rgba(255, 255, 255, 0.6);
+}
+
+body.dark-mode .upload-section input[type="file"]::file-selector-button {
+  background: var(--primary);
+  color: white;
+  border: none;
+  padding: 8px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+/* Responsive custom words */
+@media (max-width: 600px) {
+  .upload-controls {
+    flex-direction: column;
+  }
+  
+  .form-input {
+    width: 100%;
+    margin-bottom: 10px;
+  }
+  
+  .custom-words-area {
+    padding: 15px;
+  }
+}
 }/* =======================================================
    CUSTOM WORDS AREA STYLES
 ======================================================= */
