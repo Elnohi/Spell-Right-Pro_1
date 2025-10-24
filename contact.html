@@ -1,39 +1,86 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <title>Contact Support – SpellRightPro</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <link rel="icon" href="/assets/logo.png">
-  <link rel="stylesheet" href="/css/styles.css">
-  <link rel="stylesheet" href="/css/premium.css">
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Contact Support - SpellRightPro</title>
+
+  <link rel="stylesheet" href="/css/styles.css"/>
+  <link rel="stylesheet" href="/css/premium.css"/>
+  <link rel="preload" href="/assets/logo.png" as="image"/>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"/>
 </head>
-<body class="container" style="max-width: 800px;">
-  <h1>Contact Support</h1>
-  <p>We usually reply within 1–2 business days.</p>
+<body data-page="contact">
+  <header class="navbar">
+    <a href="/index.html" class="brand">
+      <img src="/assets/logo.png" alt="SpellRightPro Logo" class="logo"/>
+      <div>
+        <span>SpellRightPro</span>
+        <span class="subtitle">Spelling Trainer</span>
+      </div>
+    </a>
+    <div class="nav-actions">
+      <button id="darkModeToggle" class="btn-icon" title="Toggle dark mode"><i class="fa fa-moon"></i></button>
+      <a class="btn-primary" href="/premium.html"><i class="fa fa-crown"></i> Premium</a>
+    </div>
+  </header>
 
-  <form name="support" method="POST" data-netlify="true" action="contact-success.html">
-    <input type="hidden" name="form-name" value="support">
-    <!-- simple bot trap -->
-    <p style="display:none">
-      <label>Don’t fill this out: <input name="bot-field"></label>
-    </p>
+  <div class="support-container">
+    <div class="support-header">
+      <h1>Contact Support</h1>
+      <p>We usually reply within 1–2 business days.</p>
+    </div>
 
-    <label>Email<br>
-      <input type="email" name="email" required class="form-control">
-    </label>
+    <form class="support-form" netlify>
+      <div class="form-group">
+        <label for="email">Email Address</label>
+        <input type="email" id="email" name="email" required placeholder="your.email@example.com">
+      </div>
 
-    <label>Subject<br>
-      <input type="text" name="subject" required class="form-control">
-    </label>
+      <div class="form-group">
+        <label for="subject">Subject</label>
+        <input type="text" id="subject" name="subject" required placeholder="Briefly describe your issue">
+      </div>
 
-    <label>Message<br>
-      <textarea name="message" rows="6" required class="form-control"></textarea>
-    </label>
+      <div class="form-group">
+        <label for="message">Message</label>
+        <textarea id="message" name="message" rows="6" required placeholder="Please provide a detailed description of your question or problem..."></textarea>
+      </div>
 
-    <button class="btn btn-primary" type="submit">Send</button>
-  </form>
+      <button type="submit" class="send-button">
+        Send Message
+      </button>
+    </form>
 
-  <p style="margin-top:2rem"><a href="/">← Back to Home</a></p>
+    <a href="/index.html" class="back-home-link">← Back to Home</a>
+  </div>
+
+  <footer style="margin:24px 0; text-align:center; font-size:.95rem;">
+    <a href="/terms.html">Terms</a> •
+    <a href="/privacy.html">Privacy</a> •
+    <a href="/refund-policy.html">Refund Policy</a> •
+    <a href="/contact.html">Contact</a>
+  </footer>
+
+  <!-- Dark mode remembering -->
+  <script>
+    (function(){
+      const toggle = document.getElementById('darkModeToggle');
+      function apply() {
+        const on = localStorage.getItem('dark') === 'true';
+        document.body.classList.toggle('dark-mode', on);
+        if (toggle) toggle.querySelector('i').className = on ? 'fa fa-sun' : 'fa fa-moon';
+      }
+      toggle?.addEventListener('click', ()=>{
+        const on = !(localStorage.getItem('dark') === 'true');
+        localStorage.setItem('dark', on);
+        apply();
+      });
+      apply();
+    })();
+  </script>
+
+  <!-- SW -->
+  <script>if('serviceWorker' in navigator){navigator.serviceWorker.register('/sw.js').catch(()=>{});}</script>
 </body>
 </html>
