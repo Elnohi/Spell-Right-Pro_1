@@ -46,22 +46,20 @@
     </div>
 
     <!-- ========== CUSTOM WORDS SECTION ========== -->
-    <div id="customWordsSection" style="margin-top: 20px;">
+    <div id="customWordsSection" class="custom-words-area">
       <h3><i class="fa fa-file-upload"></i> Custom Words</h3>
       
       <!-- Upload New List -->
-      <div class="upload-section" style="background: rgba(255,255,255,0.1); padding: 20px; border-radius: var(--radius); margin-bottom: 20px;">
+      <div class="upload-section">
         <h4>Upload New Word List</h4>
-        <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
-          <input type="text" id="newListName" placeholder="List Name" 
-                 style="padding: 10px; border-radius: 8px; border: 1px solid #ccc; flex: 1; min-width: 150px;">
-          <input type="file" id="wordListFile" accept=".txt,.csv" 
-                 style="flex: 2; min-width: 200px;">
+        <div class="upload-controls">
+          <input type="text" id="newListName" placeholder="List Name" class="form-input">
+          <input type="file" id="wordListFile" accept=".txt,.csv" class="form-input">
           <button onclick="uploadWordList()" class="nav-btn">
             <i class="fa fa-upload"></i> Upload
           </button>
         </div>
-        <p style="font-size: 0.8rem; margin-top: 10px; opacity: 0.8;">
+        <p class="upload-help">
           Supported formats: .txt (one word per line) or .csv
         </p>
       </div>
@@ -75,10 +73,9 @@
       </div>
 
       <!-- Quick Create -->
-      <div class="quick-create" style="margin-top: 20px; padding: 15px; background: rgba(255,255,255,0.05); border-radius: var(--radius);">
+      <div class="quick-create">
         <h4>Quick Create</h4>
-        <textarea id="quickWordsInput" placeholder="Enter words separated by commas or new lines" 
-                  style="width: 100%; height: 80px; padding: 10px; border-radius: 8px; border: 1px solid #ccc; margin-bottom: 10px;"></textarea>
+        <textarea id="quickWordsInput" placeholder="Enter words separated by commas or new lines" class="form-textarea"></textarea>
         <button onclick="createQuickList()" class="nav-btn">
           <i class="fa fa-plus"></i> Create List
         </button>
