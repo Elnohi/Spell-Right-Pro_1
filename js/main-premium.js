@@ -17,6 +17,10 @@ const overlay = document.getElementById("loginOverlay");
 const logoutBtn = document.getElementById("btnLogout");
 const mainContent = document.querySelector("main");
 
+// --- Custom Words Management ---
+let customLists = JSON.parse(localStorage.getItem('premiumCustomLists') || '{}');
+let currentCustomList = null;
+
 // --- SIMPLIFIED AUTH: Bypass premium checks for now ---
 function showOverlay() {
   if (overlay) overlay.style.display = "flex";
@@ -160,6 +164,266 @@ if (toggleDark) {
 }
 
 // =======================================================
+// CUSTOM WORDS FEATURE - NEW IMPLEMENTATION
+// =======================================================
+
+function initializeCustomWords() {
+  // Create custom words UI if it doesn't exist
+  if (!document.getElementById('customWordsSection')) {
+    createCustomWordsUI();
+  }
+  
+  loadCustomLists();
+  updateCustomListsDisplay();
+}
+
+function createCustomWordsUI() {
+  const customHTML = `
+    <div id="customWordsSection" class="trainer-area" style="margin-top: 20px;">
+      <h3><i class="fa fa-file-upload"></i> Custom Words</h3>
+      
+      <!-- Upload New List -->
+      <div class="upload-section" style="background: rgba(255,255,255,0.1); padding: 20px; border-radius: var(--radius); margin-bottom: 20px;">
+        <h4>Upload New Word List</h4>
+        <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+          <input type="text" id="newListName" placeholder="List Name" 
+                 style="padding: 10px; border-radius: 8px; border: 1px solid #ccc; flex: 1; min-width: 150px;">
+          <input type="file" id="wordListFile" accept=".txt,.csv" 
+                 style="flex: 2; min-width: 200px;">
+          <button onclick="uploadWordList()" class="nav-btn">
+            <i class="fa fa-upload"></i> Upload
+          </button>
+        </div>
+        <p style="font-size: 0.8rem; margin-top: 10px; opacity: 0.8;">
+          Supported formats: .txt (one word per line) or .csv
+        </p>
+      </div>
+
+      <!-- Manage Existing Lists -->
+      <div class="lists-section">
+        <h4>Your Word Lists</h4>
+        <div id="customListsContainer" class="lists-container"></div>
+      </div>
+
+      <!-- Quick Create -->
+      <div class="quick-create" style="margin-top: 20px; padding: 15px; background: rgba(255,255,255,0.05); border-radius: var(--radius);">
+        <h4>Quick Create</h4>
+        <textarea id="quickWordsInput" placeholder="Enter words separated by commas or new lines" 
+                  style="width: 100%; height: 80px; padding: 10px; border-radius: 8px; border: 1px solid #ccc; margin-bottom: 10px;"></textarea>
+        <button onclick="createQuickList()" class="nav-btn">
+          <i class="fa fa-plus"></i> Create List
+        </button>
+      </div>
+    </div>
+  `;
+
+  // Insert after mode buttons
+  const modeSelect = document.querySelector('.mode-select');
+  if (modeSelect) {
+    modeSelect.insertAdjacentHTML('afterend', customHTML);
+  }
+}
+
+function uploadWordList() {
+  const listName = document.getElementById('newListName').value.trim();
+  const fileInput = document.getElementById('wordListFile');
+  
+  if (!listName) {
+    showFeedback('Please enter a list name', 'error');
+    return;
+  }
+  
+  if (!fileInput.files.length) {
+    showFeedback('Please select a file', 'error');
+    return;
+  }
+
+  const file = fileInput.files[0];
+  const reader = new FileReader();
+  
+  reader.onload = function(e) {
+    try {
+      const content = e.target.result;
+      const words = parseWordList(content, file.name);
+      
+      if (words.length === 0) {
+        showFeedback('No valid words found in file', 'error');
+        return;
+      }
+      
+      // Save the list
+      customLists[listName] = {
+        words: words,
+        createdAt: new Date().toISOString(),
+        wordCount: words.length
+      };
+      
+      saveCustomLists();
+      updateCustomListsDisplay();
+      
+      // Clear inputs
+      document.getElementById('newListName').value = '';
+      fileInput.value = '';
+      
+      showFeedback(`List "${listName}" created with ${words.length} words`, 'success');
+    } catch (error) {
+      showFeedback('Error reading file: ' + error.message, 'error');
+    }
+  };
+  
+  reader.readAsText(file);
+}
+
+function parseWordList(content, filename) {
+  let words = [];
+  
+  if (filename.toLowerCase().endsWith('.csv')) {
+    // Parse CSV - simple comma separation
+    words = content.split(',')
+      .map(word => word.trim())
+      .filter(word => word.length > 0);
+  } else {
+    // Parse TXT - line by line
+    words = content.split('\n')
+      .map(word => word.trim())
+      .filter(word => word.length > 0);
+  }
+  
+  // Remove duplicates and empty strings
+  words = [...new Set(words)].filter(word => word.length > 0);
+  
+  return words;
+}
+
+function createQuickList() {
+  const input = document.getElementById('quickWordsInput').value.trim();
+  const listName = `Quick List ${new Date().toLocaleDateString()}`;
+  
+  if (!input) {
+    showFeedback('Please enter some words', 'error');
+    return;
+  }
+  
+  // Parse words (both comma and newline separated)
+  const words = input.split(/[\n,]/)
+    .map(word => word.trim())
+    .filter(word => word.length > 0);
+  
+  if (words.length === 0) {
+    showFeedback('No valid words found', 'error');
+    return;
+  }
+  
+  // Save the list
+  customLists[listName] = {
+    words: words,
+    createdAt: new Date().toISOString(),
+    wordCount: words.length
+  };
+  
+  saveCustomLists();
+  updateCustomListsDisplay();
+  document.getElementById('quickWordsInput').value = '';
+  
+  showFeedback(`Quick list created with ${words.length} words`, 'success');
+}
+
+function updateCustomListsDisplay() {
+  const container = document.getElementById('customListsContainer');
+  if (!container) return;
+  
+  if (Object.keys(customLists).length === 0) {
+    container.innerHTML = '<p style="opacity: 0.7; text-align: center;">No custom lists yet. Upload your first list!</p>';
+    return;
+  }
+  
+  let html = '<div class="lists-grid">';
+  
+  Object.entries(customLists).forEach(([listName, listData]) => {
+    html += `
+      <div class="list-card">
+        <div class="list-header">
+          <strong>${listName}</strong>
+          <span class="word-count">${listData.wordCount} words</span>
+        </div>
+        <div class="list-words-preview">
+          ${listData.words.slice(0, 3).join(', ')}${listData.words.length > 3 ? '...' : ''}
+        </div>
+        <div class="list-actions">
+          <button onclick="loadCustomList('${listName}')" class="btn-small">
+            <i class="fa fa-play"></i> Use
+          </button>
+          <button onclick="renameCustomList('${listName}')" class="btn-small">
+            <i class="fa fa-edit"></i> Rename
+          </button>
+          <button onclick="deleteCustomList('${listName}')" class="btn-small btn-danger">
+            <i class="fa fa-trash"></i> Delete
+          </button>
+        </div>
+      </div>
+    `;
+  });
+  
+  html += '</div>';
+  container.innerHTML = html;
+}
+
+function loadCustomList(listName) {
+  if (!customLists[listName]) {
+    showFeedback('List not found', 'error');
+    return;
+  }
+  
+  currentCustomList = listName;
+  currentList = customLists[listName].words;
+  
+  showFeedback(`Loaded "${listName}" with ${currentList.length} words`, 'success');
+  
+  // Auto-start training if a mode is selected
+  if (currentMode) {
+    setTimeout(() => {
+      startTraining(currentMode);
+    }, 1000);
+  }
+}
+
+function renameCustomList(oldName) {
+  const newName = prompt('Enter new name for the list:', oldName);
+  if (newName && newName.trim() && newName !== oldName) {
+    if (customLists[newName]) {
+      showFeedback('A list with this name already exists', 'error');
+      return;
+    }
+    
+    customLists[newName] = customLists[oldName];
+    delete customLists[oldName];
+    saveCustomLists();
+    updateCustomListsDisplay();
+    showFeedback(`List renamed to "${newName}"`, 'success');
+  }
+}
+
+function deleteCustomList(listName) {
+  if (confirm(`Are you sure you want to delete "${listName}"?`)) {
+    delete customLists[listName];
+    saveCustomLists();
+    updateCustomListsDisplay();
+    showFeedback(`List "${listName}" deleted`, 'success');
+  }
+}
+
+function saveCustomLists() {
+  localStorage.setItem('premiumCustomLists', JSON.stringify(customLists));
+}
+
+function loadCustomLists() {
+  const saved = localStorage.getItem('premiumCustomLists');
+  if (saved) {
+    customLists = JSON.parse(saved);
+  }
+}
+
+// =======================================================
 // TRAINING LOGIC (Bee / School / OET)
 // =======================================================
 let currentMode = null;
@@ -217,20 +481,26 @@ document.querySelectorAll(".start-btn").forEach(btn => {
   });
 });
 
+// ENHANCED START TRAINING FUNCTION
 function startTraining(mode) {
   resetTraining();
   
-  if (mode === "oet") {
+  // Use custom list if loaded, otherwise use default
+  if (currentCustomList && customLists[currentCustomList]) {
+    currentList = customLists[currentCustomList].words;
+    showFeedback(`Using "${currentCustomList}" - ${currentList.length} words`, 'info');
+  } else if (mode === "oet") {
     loadOETWords();
+    return;
   } else if (mode === "bee") {
     currentList = ["accommodate", "rhythm", "occurrence", "necessary", "embarrass", "challenge", "definitely", "separate", "recommend", "privilege"];
-    showFeedback("Bee mode started! Listen carefully...", "info");
-    nextWord();
+    showFeedback("Bee mode started with default words", "info");
   } else if (mode === "school") {
     currentList = ["example", "language", "grammar", "knowledge", "science", "mathematics", "history", "geography", "literature", "chemistry"];
-    showFeedback("School mode started! Type what you hear...", "info");
-    nextWord();
+    showFeedback("School mode started with default words", "info");
   }
+  
+  nextWord();
 }
 
 // FIXED: OET words loading from external file
@@ -509,5 +779,6 @@ function initializeSpeechSynthesis() {
 // Initialize the app
 document.addEventListener('DOMContentLoaded', function() {
   initializeSpeechSynthesis();
-  console.log("SpellRightPro Premium initialized");
+  initializeCustomWords(); // NEW: Initialize custom words feature
+  console.log("SpellRightPro Premium with Custom Words initialized");
 });
