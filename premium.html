@@ -49,8 +49,8 @@
     <section id="bee-area" class="trainer-area">
       <h3>Spelling Bee Trainer</h3>
       <div class="accent-select">
-        <label for="accent">Accent:</label>
-        <select id="accent">
+        <label for="beeAccent">Accent:</label>
+        <select id="beeAccent">
           <option value="en-US">American</option>
           <option value="en-GB">British</option>
           <option value="en-AU">Australian</option>
@@ -58,21 +58,24 @@
         </select>
       </div>
 
-      <div id="beeFeedback"></div>
-      <div id="beeProgress"></div>
-      <button class="start-btn" data-mode="bee" id="beeStart"><i class="fa fa-play"></i> Start</button>
-      <button id="btnSayAgain"><i class="fa fa-volume-up"></i> Say Again</button>
-      <button id="btnFlag"><i class="fa fa-flag"></i> Flag</button>
-      <button id="btnEnd"><i class="fa fa-stop"></i> End</button>
-      <div id="summary" class="summary"></div>
+      <div id="beeProgress" class="progress-display"></div>
+      <div id="beeFeedback" class="feedback-display"></div>
+      
+      <div class="button-group">
+        <button class="start-btn" data-mode="bee" id="beeStart"><i class="fa fa-play"></i> Start</button>
+        <button id="beeSayAgain"><i class="fa fa-volume-up"></i> Say Again</button>
+        <button id="beeFlag"><i class="fa fa-flag"></i> Flag</button>
+        <button id="beeEnd"><i class="fa fa-stop"></i> End</button>
+      </div>
+      <div id="beeSummary" class="summary"></div>
     </section>
 
     <!-- ========== School Section ========== -->
     <section id="school-area" class="trainer-area">
       <h3>School Practice</h3>
       <div class="accent-select">
-        <label for="accent">Accent:</label>
-        <select id="accent">
+        <label for="schoolAccent">Accent:</label>
+        <select id="schoolAccent">
           <option value="en-US">American</option>
           <option value="en-GB">British</option>
           <option value="en-AU">Australian</option>
@@ -80,14 +83,19 @@
         </select>
       </div>
 
-      <div id="schoolFeedback"></div>
-      <div id="schoolProgress"></div>
-      <input type="text" id="schoolInput" placeholder="Type the word..." />
-      <button class="start-btn" data-mode="school" id="schoolStart"><i class="fa fa-play"></i> Start</button>
-      <button id="btnSayAgain"><i class="fa fa-volume-up"></i> Say Again</button>
-      <button id="btnFlag"><i class="fa fa-flag"></i> Flag</button>
-      <button id="btnEnd"><i class="fa fa-stop"></i> End</button>
-      <div id="summary" class="summary"></div>
+      <div id="schoolProgress" class="progress-display"></div>
+      <div id="schoolFeedback" class="feedback-display"></div>
+      
+      <input type="text" id="schoolInput" placeholder="Type the word..." class="answer-input" />
+      
+      <div class="button-group">
+        <button class="start-btn" data-mode="school" id="schoolStart"><i class="fa fa-play"></i> Start</button>
+        <button id="schoolSubmit"><i class="fa fa-check"></i> Submit</button>
+        <button id="schoolSayAgain"><i class="fa fa-volume-up"></i> Say Again</button>
+        <button id="schoolFlag"><i class="fa fa-flag"></i> Flag</button>
+        <button id="schoolEnd"><i class="fa fa-stop"></i> End</button>
+      </div>
+      <div id="schoolSummary" class="summary"></div>
     </section>
 
     <!-- ========== OET Section ========== -->
@@ -96,13 +104,13 @@
 
       <!-- Practice vs Test Mode -->
       <div class="exam-type">
-        <label><input type="radio" name="examType" value="practice" checked /> Practice (Full)</label>
+        <label><input type="radio" name="examType" value="practice" checked /> Practice (Full List)</label>
         <label><input type="radio" name="examType" value="test" /> Test (Random 24)</label>
       </div>
 
       <div class="accent-select">
-        <label for="accent">Accent:</label>
-        <select id="accent">
+        <label for="oetAccent">Accent:</label>
+        <select id="oetAccent">
           <option value="en-US">American</option>
           <option value="en-GB">British</option>
           <option value="en-AU">Australian</option>
@@ -110,14 +118,19 @@
         </select>
       </div>
 
-      <div id="oetFeedback"></div>
-      <div id="oetProgress"></div>
-      <input type="text" id="oetInput" placeholder="Type your answer..." />
-      <button class="start-btn" data-mode="oet" id="oetStart"><i class="fa fa-play"></i> Start</button>
-      <button id="btnSayAgain"><i class="fa fa-volume-up"></i> Say Again</button>
-      <button id="btnFlag"><i class="fa fa-flag"></i> Flag</button>
-      <button id="btnEnd"><i class="fa fa-stop"></i> End</button>
-      <div id="summary" class="summary"></div>
+      <div id="oetProgress" class="progress-display"></div>
+      <div id="oetFeedback" class="feedback-display"></div>
+      
+      <input type="text" id="oetInput" placeholder="Type your answer..." class="answer-input" />
+      
+      <div class="button-group">
+        <button class="start-btn" data-mode="oet" id="oetStart"><i class="fa fa-play"></i> Start</button>
+        <button id="oetSubmit"><i class="fa fa-check"></i> Submit</button>
+        <button id="oetSayAgain"><i class="fa fa-volume-up"></i> Say Again</button>
+        <button id="oetFlag"><i class="fa fa-flag"></i> Flag</button>
+        <button id="oetEnd"><i class="fa fa-stop"></i> End</button>
+      </div>
+      <div id="oetSummary" class="summary"></div>
     </section>
   </main>
 
@@ -126,46 +139,65 @@
     <div class="glass-card">
       <h3>Login to SpellRightPro</h3>
       
+      <!-- Quick Test Button -->
+      <button onclick="quickTest()" style="width: 100%; padding: 12px; margin: 10px 0; background: #6c757d; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 600;">
+        <i class="fa fa-bolt"></i> Quick Test (Skip Login)
+      </button>
+      
+      <div style="text-align: center; margin: 15px 0; color: rgba(255,255,255,0.7);">or</div>
+      
       <!-- Login Form -->
       <form id="loginForm">
         <input type="email" id="loginEmail" placeholder="Email" required 
-               style="width: 100%; padding: 10px; margin: 8px 0; border-radius: 8px; border: 1px solid #ccc;">
+               style="width: 100%; padding: 12px; margin: 8px 0; border-radius: 8px; border: 1px solid #ccc; font-size: 16px;">
         <input type="password" id="loginPassword" placeholder="Password" required 
-               style="width: 100%; padding: 10px; margin: 8px 0; border-radius: 8px; border: 1px solid #ccc;">
-        <button type="submit" style="width: 100%; padding: 12px; margin: 10px 0; border-radius: 8px; background: var(--primary); color: white; border: none; cursor: pointer;">
-          Login
+               style="width: 100%; padding: 12px; margin: 8px 0; border-radius: 8px; border: 1px solid #ccc; font-size: 16px;">
+        <button type="submit" style="width: 100%; padding: 12px; margin: 10px 0; border-radius: 8px; background: var(--primary); color: white; border: none; cursor: pointer; font-weight: 600;">
+          <i class="fa fa-sign-in-alt"></i> Login
         </button>
       </form>
 
       <!-- Register Form -->
       <form id="registerForm" style="display: none;">
         <input type="email" id="regEmail" placeholder="Email" required 
-               style="width: 100%; padding: 10px; margin: 8px 0; border-radius: 8px; border: 1px solid #ccc;">
+               style="width: 100%; padding: 12px; margin: 8px 0; border-radius: 8px; border: 1px solid #ccc; font-size: 16px;">
         <input type="password" id="regPassword" placeholder="Password" required 
-               style="width: 100%; padding: 10px; margin: 8px 0; border-radius: 8px; border: 1px solid #ccc;">
+               style="width: 100%; padding: 12px; margin: 8px 0; border-radius: 8px; border: 1px solid #ccc; font-size: 16px;">
         <input type="password" id="regConfirmPassword" placeholder="Confirm Password" required 
-               style="width: 100%; padding: 10px; margin: 8px 0; border-radius: 8px; border: 1px solid #ccc;">
-        <button type="submit" style="width: 100%; padding: 12px; margin: 10px 0; border-radius: 8px; background: var(--primary); color: white; border: none; cursor: pointer;">
-          Register
+               style="width: 100%; padding: 12px; margin: 8px 0; border-radius: 8px; border: 1px solid #ccc; font-size: 16px;">
+        <button type="submit" style="width: 100%; padding: 12px; margin: 10px 0; border-radius: 8px; background: var(--primary); color: white; border: none; cursor: pointer; font-weight: 600;">
+          <i class="fa fa-user-plus"></i> Register
         </button>
       </form>
 
       <div style="margin-top: 15px; text-align: center;">
-        <button id="showRegister" style="background: none; border: none; color: #7b2ff7; cursor: pointer; text-decoration: underline;">
+        <button id="showRegister" style="background: none; border: none; color: #7b2ff7; cursor: pointer; text-decoration: underline; font-size: 14px;">
           Create new account
         </button>
-        <button id="showLogin" style="display: none; background: none; border: none; color: #7b2ff7; cursor: pointer; text-decoration: underline;">
+        <button id="showLogin" style="display: none; background: none; border: none; color: #7b2ff7; cursor: pointer; text-decoration: underline; font-size: 14px;">
           Back to login
         </button>
       </div>
 
-      <p style="margin-top:15px;font-size:0.9rem;">Premium access required to continue.</p>
+      <p style="margin-top:15px;font-size:0.9rem; text-align: center; color: rgba(255,255,255,0.8);">Premium access required to continue.</p>
     </div>
   </div>
 
   <!-- JS -->
   <script src="/js/config.js"></script>
-  <script src="/js/main-premium.js" defer></script>
+  <script src="/js/main-premium.js"></script>
   
+  <script>
+    function quickTest() {
+      document.getElementById('loginOverlay').style.display = 'none';
+      document.querySelector('main').style.display = 'block';
+      // Create a temporary feedback message
+      const feedback = document.createElement('div');
+      feedback.style.cssText = 'position: fixed; top: 20px; right: 20px; background: #4CAF50; color: white; padding: 15px; border-radius: 5px; z-index: 10000;';
+      feedback.innerHTML = '<i class="fa fa-bolt"></i> Quick test mode activated!';
+      document.body.appendChild(feedback);
+      setTimeout(() => feedback.remove(), 3000);
+    }
+  </script>
 </body>
 </html>
