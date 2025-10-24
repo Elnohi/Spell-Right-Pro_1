@@ -335,8 +335,19 @@ body.dark-mode button:hover {
 }
 
 /* =======================================================
-   CUSTOM WORDS STYLES
+   CUSTOM WORDS STYLES - UPDATED
 ======================================================= */
+
+/* Ensure custom words sections are hidden initially */
+.custom-words-area {
+  display: none;
+}
+
+/* Show custom words only when parent trainer area is active */
+.trainer-area.active .custom-words-area {
+  display: block;
+  animation: fadeIn 0.5s ease-in;
+}
 
 .lists-grid {
   display: grid;
