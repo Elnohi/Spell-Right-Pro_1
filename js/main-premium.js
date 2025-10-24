@@ -1,3 +1,164 @@
+/* =======================================================
+   SpellRightPro Premium Logic - SIMPLIFIED & RELIABLE
+   ======================================================= */
+
+const firebaseConfig = window.firebaseConfig;
+
+// --- Firebase Setup ---
+if (!firebase.apps.length) {
+  firebase.initializeApp(firebaseConfig);
+}
+
+const auth = firebase.auth();
+const db = firebase.firestore();
+
+// --- Elements ---
+const overlay = document.getElementById("loginOverlay");
+const logoutBtn = document.getElementById("btnLogout");
+const mainContent = document.querySelector("main");
+
+// --- SIMPLIFIED AUTH: Bypass premium checks for now ---
+function showOverlay() {
+  if (overlay) overlay.style.display = "flex";
+  if (mainContent) mainContent.style.display = "none";
+}
+
+function hideOverlay() {
+  if (overlay) overlay.style.display = "none";
+  if (mainContent) mainContent.style.display = "block";
+}
+
+// --- Ultra-simple email/password auth ---
+document.getElementById('loginForm')?.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const email = document.getElementById('loginEmail').value;
+  const password = document.getElementById('loginPassword').value;
+
+  try {
+    showFeedback('Logging in...', 'info');
+    await auth.signInWithEmailAndPassword(email, password);
+    // SUCCESS: Immediately grant access
+    hideOverlay();
+    showFeedback('Welcome to SpellRightPro Premium!', 'success');
+  } catch (error) {
+    console.log('Login failed, trying registration...');
+    // Try to create account
+    try {
+      await auth.createUserWithEmailAndPassword(email, password);
+      hideOverlay();
+      showFeedback('Account created! Welcome to Premium!', 'success');
+    } catch (registerError) {
+      showFeedback('Authentication failed. Please try again.', 'error');
+    }
+  }
+});
+
+// Register form
+document.getElementById('registerForm')?.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const email = document.getElementById('regEmail').value;
+  const password = document.getElementById('regPassword').value;
+  const confirmPassword = document.getElementById('regConfirmPassword').value;
+
+  if (password !== confirmPassword) {
+    showFeedback('Passwords do not match', 'error');
+    return;
+  }
+
+  try {
+    showFeedback('Creating account...', 'info');
+    await auth.createUserWithEmailAndPassword(email, password);
+    hideOverlay();
+    showFeedback('Account created! Welcome to Premium!', 'success');
+  } catch (error) {
+    showFeedback('Registration failed: ' + error.message, 'error');
+  }
+});
+
+// --- Form toggle ---
+document.getElementById('showRegister')?.addEventListener('click', () => {
+  document.getElementById('loginForm').style.display = 'none';
+  document.getElementById('registerForm').style.display = 'block';
+  document.getElementById('showRegister').style.display = 'none';
+  document.getElementById('showLogin').style.display = 'inline';
+});
+
+document.getElementById('showLogin')?.addEventListener('click', () => {
+  document.getElementById('registerForm').style.display = 'none';
+  document.getElementById('loginForm').style.display = 'block';
+  document.getElementById('showLogin').style.display = 'none';
+  document.getElementById('showRegister').style.display = 'inline';
+});
+
+// --- SIMPLIFIED: Auto-login for testing ---
+function quickAuth() {
+  const testEmail = 'test@spellrightpro.com';
+  const testPassword = 'test123456';
+  
+  auth.signInWithEmailAndPassword(testEmail, testPassword)
+    .then(() => {
+      hideOverlay();
+      showFeedback('Auto-login successful!', 'success');
+    })
+    .catch(() => {
+      // If auto-login fails, just show the login form
+      showOverlay();
+    });
+}
+
+// --- Auth state: SIMPLIFIED - any logged in user gets premium ---
+auth.onAuthStateChanged((user) => {
+  if (user) {
+    console.log('✅ User authenticated:', user.email);
+    hideOverlay();
+  } else {
+    console.log('❌ No user, showing login');
+    showOverlay();
+    // Try quick auth after a delay
+    setTimeout(quickAuth, 1000);
+  }
+});
+
+// --- Logout ---
+logoutBtn?.addEventListener('click', () => {
+  auth.signOut();
+  showOverlay();
+  showFeedback('Logged out successfully', 'info');
+});
+
+function showFeedback(message, type = "info") {
+  const existing = document.querySelector(".feedback-message");
+  if (existing) existing.remove();
+
+  const feedback = document.createElement("div");
+  feedback.className = `feedback-message ${type}`;
+  feedback.textContent = message;
+  feedback.style.cssText = `
+    margin-top: 10px; padding: 8px 12px; border-radius: 6px; font-size: 0.9rem;
+    background: ${type === 'success' ? '#d4edda' : type === 'error' ? '#f8d7da' : '#d1ecf1'};
+    color: ${type === 'success' ? '#155724' : type === 'error' ? '#721c24' : '#0c5460'};
+    border: 1px solid ${type === 'success' ? '#c3e6cb' : type === 'error' ? '#f5c6cb' : '#bee5eb'};
+  `;
+
+  document.querySelector('.glass-card')?.appendChild(feedback);
+  setTimeout(() => feedback.remove(), 4000);
+}
+
+// =======================================================
+// DARK MODE TOGGLE
+// =======================================================
+const toggleDark = document.getElementById("toggleDark");
+if (toggleDark) {
+  toggleDark.addEventListener("click", () => {
+    document.body.classList.toggle("dark-mode");
+    const icon = toggleDark.querySelector("i");
+    if (icon) {
+      icon.classList.toggle("fa-moon");
+      icon.classList.toggle("fa-sun");
+    }
+  });
+}
+
 // =======================================================
 // TRAINING LOGIC (Bee / School / OET)
 // =======================================================
@@ -63,9 +224,11 @@ function startTraining(mode) {
     loadOETWords();
   } else if (mode === "bee") {
     currentList = ["accommodate", "rhythm", "occurrence", "necessary", "embarrass", "challenge", "definitely", "separate", "recommend", "privilege"];
+    showFeedback("Bee mode started! Listen carefully...", "info");
     nextWord();
   } else if (mode === "school") {
     currentList = ["example", "language", "grammar", "knowledge", "science", "mathematics", "history", "geography", "literature", "chemistry"];
+    showFeedback("School mode started! Type what you hear...", "info");
     nextWord();
   }
 }
@@ -77,6 +240,7 @@ async function loadOETWords() {
     if (typeof window.OET_WORDS !== 'undefined') {
       const isTest = document.querySelector('input[name="examType"]:checked')?.value === "test";
       currentList = isTest ? shuffle(window.OET_WORDS).slice(0, 24) : window.OET_WORDS;
+      showFeedback(`OET ${isTest ? 'Test' : 'Practice'} mode: ${currentList.length} words loaded`, "success");
       nextWord();
       return;
     }
@@ -92,6 +256,7 @@ async function loadOETWords() {
       if (typeof OET_WORDS !== 'undefined') {
         const isTest = document.querySelector('input[name="examType"]:checked')?.value === "test";
         currentList = isTest ? shuffle(OET_WORDS).slice(0, 24) : OET_WORDS;
+        showFeedback(`OET ${isTest ? 'Test' : 'Practice'} mode: ${currentList.length} words loaded`, "success");
         nextWord();
       } else {
         throw new Error('OET_WORDS not found in loaded file');
@@ -117,7 +282,8 @@ function speakWord(word) {
   
   try {
     const utter = new SpeechSynthesisUtterance(word);
-    const accent = document.getElementById("accent")?.value || "en-US";
+    const accentSelect = document.getElementById(`${currentMode}Accent`);
+    const accent = accentSelect?.value || "en-US";
     utter.lang = accent;
     utter.rate = 0.9;
     utter.pitch = 1;
@@ -156,6 +322,10 @@ function nextWord() {
     feedbackElement.textContent = "Listen carefully...";
   }
   
+  // Clear input field
+  const inputElement = document.getElementById(`${currentMode}Input`);
+  if (inputElement) inputElement.value = "";
+  
   // Speak the word with a slight delay
   setTimeout(() => {
     speakWord(word);
@@ -170,7 +340,7 @@ function checkAnswer() {
   
   // Get answer based on mode
   if (currentMode === "bee") {
-    // For bee mode, we'd use speech recognition - for now, mock it
+    // For bee mode, use speech recognition mock
     userAnswer = prompt(`Spell the word you heard:`) || "";
   } else {
     const inputElement = document.getElementById(`${currentMode}Input`);
@@ -209,7 +379,7 @@ function checkAnswer() {
 
 // FIXED: Enhanced summary showing actual words
 function showSummary() {
-  const summaryElement = document.getElementById("summary");
+  const summaryElement = document.getElementById(`${currentMode}Summary`);
   if (!summaryElement) return;
   
   let summaryHTML = `
@@ -254,7 +424,7 @@ function showSummary() {
   }
   
   // Show correct words if needed
-  if (correctWords.length > 0) {
+  if (correctWords.length > 0 && incorrectWords.length === 0) {
     summaryHTML += `
       <div class="correct-words">
         <h4>✅ Correct Words (${correctWords.length})</h4>
@@ -292,7 +462,7 @@ function shuffle(arr) {
 // Attach event listeners for mode-specific buttons
 document.addEventListener('DOMContentLoaded', function() {
   // Say Again buttons
-  document.querySelectorAll('#btnSayAgain').forEach(btn => {
+  document.querySelectorAll('[id$="SayAgain"]').forEach(btn => {
     btn.addEventListener('click', () => {
       if (currentIndex < currentList.length) {
         const word = currentList[currentIndex];
@@ -302,68 +472,42 @@ document.addEventListener('DOMContentLoaded', function() {
   });
   
   // Flag buttons
-  document.querySelectorAll('#btnFlag').forEach(btn => {
+  document.querySelectorAll('[id$="Flag"]').forEach(btn => {
     btn.addEventListener('click', flagCurrentWord);
   });
   
-  // Submit/Check Answer functionality
-  document.querySelectorAll('.start-btn').forEach(btn => {
-    const mode = btn.dataset.mode;
-    if (mode !== 'bee') {
-      const inputElement = document.getElementById(`${mode}Input`);
-      if (inputElement) {
-        inputElement.addEventListener('keypress', (e) => {
-          if (e.key === 'Enter') {
-            checkAnswer();
-          }
-        });
-      }
-    }
+  // Submit buttons
+  document.querySelectorAll('[id$="Submit"]').forEach(btn => {
+    btn.addEventListener('click', checkAnswer);
   });
   
   // End buttons
-  document.querySelectorAll('#btnEnd').forEach(btn => {
+  document.querySelectorAll('[id$="End"]').forEach(btn => {
     btn.addEventListener('click', showSummary);
+  });
+  
+  // Input field enter key support
+  document.querySelectorAll('.answer-input').forEach(input => {
+    input.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') {
+        checkAnswer();
+      }
+    });
   });
 });
 
-// Enhanced showFeedback function for premium
-function showFeedback(message, type = "info") {
-  // Remove existing feedback
-  const existingFeedback = document.querySelector(".feedback-message");
-  if (existingFeedback) existingFeedback.remove();
-
-  const feedback = document.createElement("div");
-  feedback.className = `feedback-message ${type}`;
-  feedback.textContent = message;
-  feedback.style.marginTop = "10px";
-  feedback.style.padding = "8px 12px";
-  feedback.style.borderRadius = "6px";
-  feedback.style.fontSize = "0.9rem";
-  
-  if (type === "success") {
-    feedback.style.background = "#d4edda";
-    feedback.style.color = "#155724";
-    feedback.style.border = "1px solid #c3e6cb";
-  } else if (type === "error") {
-    feedback.style.background = "#f8d7da";
-    feedback.style.color = "#721c24";
-    feedback.style.border = "1px solid #f5c6cb";
-  } else {
-    feedback.style.background = "#d1ecf1";
-    feedback.style.color = "#0c5460";
-    feedback.style.border = "1px solid #bee5eb";
+// Initialize speech synthesis
+function initializeSpeechSynthesis() {
+  if ('speechSynthesis' in window) {
+    speechSynthesis.getVoices();
+    window.speechSynthesis.onvoiceschanged = function() {
+      console.log("Voices loaded:", speechSynthesis.getVoices().length);
+    };
   }
-
-  // Add to current active trainer area or main
-  const activeArea = document.querySelector('.trainer-area.active');
-  if (activeArea) {
-    activeArea.appendChild(feedback);
-  } else {
-    document.querySelector('main').appendChild(feedback);
-  }
-
-  setTimeout(() => {
-    if (feedback.parentNode) feedback.remove();
-  }, 4000);
 }
+
+// Initialize the app
+document.addEventListener('DOMContentLoaded', function() {
+  initializeSpeechSynthesis();
+  console.log("SpellRightPro Premium initialized");
+});
