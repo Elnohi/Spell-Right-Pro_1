@@ -136,6 +136,158 @@ body.dark-mode button:hover {
 }
 
 /* =======================================================
+   CONTACT SUPPORT PAGE STYLES
+======================================================= */
+.support-container {
+  max-width: 600px;
+  margin: 40px auto;
+  padding: 0 20px;
+  font-family: var(--font-main);
+  color: #333;
+}
+
+/* Header Section */
+.support-header {
+  text-align: center;
+  margin-bottom: 40px;
+}
+
+.support-header h1 {
+  font-size: 2.5rem;
+  margin-bottom: 10px;
+  color: #2c3e50;
+  font-weight: 600;
+}
+
+.support-header p {
+  font-size: 1.1rem;
+  color: #7f8c8d;
+  line-height: 1.5;
+}
+
+/* Form Styling */
+.support-form {
+  background: #fff;
+  padding: 30px;
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  border: 1px solid #e1e8ed;
+}
+
+.form-group {
+  margin-bottom: 25px;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: 600;
+  color: #2c3e50;
+  font-size: 0.95rem;
+}
+
+.form-group input[type="email"],
+.form-group input[type="text"],
+.form-group textarea {
+  width: 100%;
+  padding: 12px 16px;
+  border: 1px solid #dcdfe3;
+  border-radius: 8px;
+  font-size: 1rem;
+  box-sizing: border-box;
+  transition: all 0.2s ease-in-out;
+  font-family: inherit;
+}
+
+.form-group input[type="email"]:focus,
+.form-group input[type="text"]:focus,
+.form-group textarea:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(123, 47, 247, 0.2);
+}
+
+.form-group textarea {
+  resize: vertical;
+}
+
+/* Send Button */
+.send-button {
+  width: 100%;
+  background: var(--primary);
+  color: white;
+  border: none;
+  padding: 14px 20px;
+  font-size: 1.1rem;
+  font-weight: 600;
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+  box-shadow: var(--shadow);
+}
+
+.send-button:hover {
+  background: var(--primary-dark);
+  transform: translateY(-2px);
+}
+
+/* Back to Home Link */
+.back-home-link {
+  display: block;
+  text-align: center;
+  margin-top: 30px;
+  color: #7f8c8d;
+  text-decoration: none;
+  font-size: 1rem;
+  transition: color 0.2s ease;
+}
+
+.back-home-link:hover {
+  color: var(--primary);
+}
+
+/* Dark Mode Support Styles */
+body.dark-mode .support-header h1 {
+  color: #fff;
+}
+
+body.dark-mode .support-header p {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+body.dark-mode .support-form {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+body.dark-mode .form-group label {
+  color: #fff;
+}
+
+body.dark-mode .form-group input[type="email"],
+body.dark-mode .form-group input[type="text"],
+body.dark-mode .form-group textarea {
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #fff;
+}
+
+body.dark-mode .form-group input[type="email"]:focus,
+body.dark-mode .form-group input[type="text"]:focus,
+body.dark-mode .form-group textarea:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(123, 47, 247, 0.3);
+}
+
+body.dark-mode .back-home-link {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+body.dark-mode .back-home-link:hover {
+  color: var(--primary);
+}
+
+/* =======================================================
    RESPONSIVE
 ======================================================= */
 @media (max-width: 600px) {
@@ -148,6 +300,16 @@ body.dark-mode button:hover {
     height: 55px;
   }
   .main-card {
+    padding: 20px;
+  }
+  .support-container {
+    margin: 20px auto;
+    padding: 0 15px;
+  }
+  .support-header h1 {
+    font-size: 2rem;
+  }
+  .support-form {
     padding: 20px;
   }
 }
