@@ -335,6 +335,149 @@ body.dark-mode button:hover {
 }
 
 /* =======================================================
+   CUSTOM WORDS STYLES
+======================================================= */
+
+.lists-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 15px;
+  margin-top: 15px;
+}
+
+.list-card {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: var(--radius);
+  padding: 15px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  transition: transform 0.2s ease;
+}
+
+.list-card:hover {
+  transform: translateY(-2px);
+  background: rgba(255, 255, 255, 0.15);
+}
+
+.list-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.list-header strong {
+  color: white;
+  font-size: 1rem;
+}
+
+.word-count {
+  background: var(--primary);
+  color: white;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.list-words-preview {
+  font-size: 0.9rem;
+  opacity: 0.8;
+  margin-bottom: 15px;
+  line-height: 1.4;
+}
+
+.list-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.btn-small {
+  padding: 6px 12px !important;
+  font-size: 0.8rem !important;
+  background: rgba(255, 255, 255, 0.15) !important;
+  border: none !important;
+  border-radius: 6px !important;
+  color: white !important;
+  cursor: pointer !important;
+  transition: background 0.2s ease !important;
+}
+
+.btn-small:hover {
+  background: rgba(255, 255, 255, 0.25) !important;
+  transform: none !important;
+}
+
+.btn-danger {
+  background: rgba(244, 67, 54, 0.3) !important;
+}
+
+.btn-danger:hover {
+  background: rgba(244, 67, 54, 0.5) !important;
+}
+
+/* Upload section improvements */
+.upload-section input[type="text"],
+.upload-section input[type="file"] {
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid #ddd;
+  padding: 10px;
+  border-radius: 8px;
+  font-size: 0.9rem;
+}
+
+.upload-section input[type="file"] {
+  background: rgba(255, 255, 255, 0.95);
+}
+
+/* Quick create textarea */
+.quick-create textarea {
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid #ddd;
+  font-family: inherit;
+  font-size: 0.9rem;
+  resize: vertical;
+}
+
+/* Dark mode adjustments for custom words */
+body.dark-mode .upload-section input[type="text"],
+body.dark-mode .upload-section input[type="file"],
+body.dark-mode .quick-create textarea {
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  color: white;
+}
+
+body.dark-mode .upload-section input[type="file"]::file-selector-button {
+  background: var(--primary);
+  color: white;
+  border: none;
+  padding: 8px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+/* Responsive custom words */
+@media (max-width: 600px) {
+  .lists-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .list-actions {
+    justify-content: center;
+  }
+  
+  .upload-section > div {
+    flex-direction: column;
+  }
+  
+  .upload-section input {
+    width: 100%;
+    margin-bottom: 10px;
+  }
+}
+
+/* =======================================================
    RESPONSIVE
 ======================================================= */
 @media (max-width: 700px) {
