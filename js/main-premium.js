@@ -168,11 +168,6 @@ if (toggleDark) {
 // =======================================================
 
 function initializeCustomWords() {
-  // Create custom words UI if it doesn't exist
-  if (!document.getElementById('customWordsSection')) {
-    createCustomWordsUI();
-  }
-  
   loadCustomLists();
   updateCustomListsDisplay();
 }
@@ -782,3 +777,4 @@ document.addEventListener('DOMContentLoaded', function() {
   initializeCustomWords(); // NEW: Initialize custom words feature
   console.log("SpellRightPro Premium with Custom Words initialized");
 });
+
