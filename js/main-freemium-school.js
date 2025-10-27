@@ -1,4 +1,4 @@
-/* /js/main-freemium-school.js - FIXED VERSION */
+/* /js/main-freemium-school.js - COMPLETE FIXED VERSION */
 (() => {
   const $ = s => document.querySelector(s);
   const ui = {
@@ -44,14 +44,13 @@
     }
     
     try {
-      speechSynthesis.cancel(); // Stop any ongoing speech
+      speechSynthesis.cancel();
       
       const utterance = new SpeechSynthesisUtterance(word);
       utterance.rate = 0.9;
       utterance.pitch = 1;
       utterance.volume = 1;
       
-      // Get available voices
       const voices = speechSynthesis.getVoices();
       if (voices.length > 0) {
         const englishVoice = voices.find(v => v.lang.includes('en-US')) || voices[0];
@@ -120,12 +119,10 @@
     state.flags.clear();
     state.active = true;
     
-    // Hide summary
     if (ui.summary) ui.summary.style.display = 'none';
     
     showProgress();
     
-    // Wait a moment then speak the first word
     setTimeout(() => {
       speakCurrentWord();
     }, 1000);
@@ -160,10 +157,8 @@
       t(ui.feedback, `❌ Incorrect. The correct spelling is: ${target}`);
     }
 
-    // Clear input for next word
     if (ui.area) ui.area.value = '';
 
-    // Move to next word or end session
     state.i++;
     if (state.i < state.words.length) {
       showProgress();
@@ -201,7 +196,6 @@
         <p style="font-size: 1.2em; font-weight: bold; color: #7b2ff7;">Score: ${correctCount}/${total} correct</p>
     `;
 
-    // Show incorrect words with user's answers
     if (state.incorrect.length > 0) {
       summaryHTML += `
         <div style="margin: 20px 0;">
@@ -221,7 +215,6 @@
       summaryHTML += `</div></div>`;
     }
 
-    // Show flagged words
     if (flaggedWords.length > 0) {
       summaryHTML += `
         <div style="margin: 20px 0;">
@@ -240,7 +233,6 @@
       summaryHTML += `</div></div>`;
     }
 
-    // Show perfect score message
     if (state.incorrect.length === 0 && correctCount > 0) {
       summaryHTML += `
         <div style="margin: 20px 0; padding: 15px; background: rgba(76, 175, 80, 0.1); border-radius: 8px;">
@@ -249,7 +241,6 @@
       `;
     }
 
-    // Restart button
     summaryHTML += `
       <div style="text-align: center; margin-top: 25px;">
         <button onclick="restartTraining()" style="background: #7b2ff7; color: white; border: none; padding: 12px 24px; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 1rem;">
@@ -260,7 +251,6 @@
 
     summaryHTML += `</div>`;
     
-    // Update summary element
     if (ui.summary) {
       ui.summary.innerHTML = summaryHTML;
       ui.summary.style.display = 'block';
@@ -281,17 +271,12 @@
   }
 
   function setupEventListeners() {
-    // Start session
-    if (ui.start) {
-      ui.start.addEventListener('click', start);
-    }
+    if (ui.start) ui.start.addEventListener('click', start);
+    if (ui.submit) ui.submit.addEventListener('click', checkAnswer);
+    if (ui.say) ui.say.addEventListener('click', speakCurrentWord);
+    if (ui.flag) ui.flag.addEventListener('click', toggleFlag);
+    if (ui.end) ui.end.addEventListener('click', endSession);
 
-    // Submit answer
-    if (ui.submit) {
-      ui.submit.addEventListener('click', checkAnswer);
-    }
-
-    // Enter key to submit
     if (ui.area) {
       ui.area.addEventListener('keydown', (e) => {
         if (e.key === 'Enter') {
@@ -301,30 +286,12 @@
       });
     }
 
-    // Say again
-    if (ui.say) {
-      ui.say.addEventListener('click', speakCurrentWord);
-    }
-
-    // Flag word
-    if (ui.flag) {
-      ui.flag.addEventListener('click', toggleFlag);
-    }
-
-    // End session
-    if (ui.end) {
-      ui.end.addEventListener('click', endSession);
-    }
-
-    // File upload
     if (ui.upload) {
       ui.upload.addEventListener('change', async (e) => {
         const file = e.target.files?.[0];
         if (!file) return;
 
-        if (ui.fileName) {
-          ui.fileName.textContent = file.name;
-        }
+        if (ui.fileName) ui.fileName.textContent = file.name;
 
         try {
           const text = await file.text();
@@ -337,7 +304,6 @@
       });
     }
 
-    // Custom list handler
     if (ui.useCustom) {
       ui.useCustom.addEventListener('click', () => {
         const customText = (ui.customBox?.value || '').trim();
@@ -352,7 +318,6 @@
     }
   }
 
-  // Initialize speech synthesis voices
   function initializeSpeechSynthesis() {
     if ('speechSynthesis' in window) {
       speechSynthesis.getVoices();
@@ -362,16 +327,13 @@
     }
   }
 
-  // Consistent Dark Mode Toggle
   function initializeDarkModeToggle() {
     const darkModeToggle = document.getElementById('toggleDark');
     if (!darkModeToggle) return;
 
     const icon = darkModeToggle.querySelector('i');
     const isDark = document.body.classList.contains('dark-mode');
-    if (icon) {
-      icon.className = isDark ? 'fa fa-sun' : 'fa fa-moon';
-    }
+    if (icon) icon.className = isDark ? 'fa fa-sun' : 'fa fa-moon';
 
     darkModeToggle.addEventListener('click', () => {
       document.body.classList.toggle('dark-mode');
@@ -387,13 +349,10 @@
     if (savedDarkMode && !document.body.classList.contains('dark-mode')) {
       document.body.classList.add('dark-mode');
       const icon = darkModeToggle.querySelector('i');
-      if (icon) {
-        icon.className = 'fa fa-sun';
-      }
+      if (icon) icon.className = 'fa fa-sun';
     }
   }
 
-  // Initialize the application
   function initialize() {
     setupEventListeners();
     initializeSpeechSynthesis();
@@ -407,10 +366,6 @@
     console.log('School Spelling Trainer ready - Fixed version');
   }
 
-  // Make restartTraining globally available
   window.restartTraining = restartTraining;
-
-  // Start the application
   initialize();
-
 })();
