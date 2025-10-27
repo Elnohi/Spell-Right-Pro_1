@@ -1,30 +1,35 @@
-/* /js/main-freemium-bee.js */
+/* /js/main-freemium-bee.js - FIXED VERSION */
 (() => {
   const $ = s => document.querySelector(s);
   const els = {
-    start:  $('[data-action="start"], #btnStart, .btn-start') || [...document.querySelectorAll('button')].find(b=>/^\s*start\s*$/i.test(b.textContent)),
-    next:   $('[data-action="next"],  #btnNext'),
-    prev:   $('[data-action="prev"],  #btnPrev'),
-    flag:   $('[data-action="flag"],  #btnFlag'),
-    end:    $('[data-action="end"],   #btnEnd'),
-    say:    $('[data-action="say"],   #btnSayAgain, .btn-say'),
-    progress: $('[data-role="progress"], .word-progress') || (()=>{
-      const d=document.createElement('div'); d.setAttribute('data-role','progress'); d.style.fontWeight='700'; d.style.margin='8px 0 4px';
-      (document.querySelector('.training-card')||document.body).prepend(d); return d;
-    })(),
-    feedback: $('[data-role="feedback"], .feedback') || (()=>{
-      const d=document.createElement('div'); d.setAttribute('data-role','feedback'); d.style.minHeight='22px'; d.style.marginTop='10px';
-      (document.querySelector('.training-card')||document.body).appendChild(d); return d;
-    })()
+    start:  $('#btnStart'),
+    flag:   $('#btnFlag'),
+    end:    $('#btnEnd'),
+    say:    $('#btnSayAgain'),
+    progress: $('#progress'),
+    feedback: $('#feedback'),
+    customBox: $('#customWords'),
+    fileInput: $('#fileInput'),
+    useCustom: $('#useCustomList'),
+    fileName: $('#fileName'),
+    summary: $('.summary-area')
   };
 
   const LIST = '/data/word-lists/spelling-bee.json';
   const FALLBACK = ['accommodate','rhythm','occurrence','necessary','embarrass','challenge','definitely','separate','recommend','privilege'];
 
-  const state = { words:[], i:0, flags:new Set(), correct:[], incorrect:[], active:false, recognizing:false };
+  const state = { 
+    words: [], 
+    i: 0, 
+    flags: new Set(), 
+    correct: [], 
+    incorrect: [], 
+    active: false, 
+    recognizing: false 
+  };
 
-  function t(el,s){ if(el) el.textContent=s; }
-  const norm = s => (s||'').toLowerCase().replace(/[^\p{L}]+/gu,'');
+  function t(el, s) { if (el) el.textContent = s; }
+  const norm = s => (s || '').toLowerCase().replace(/[^\p{L}]+/gu, '');
 
   // FIXED: Enhanced speech synthesis
   function speakWord(word) {
@@ -36,17 +41,15 @@
       }
 
       try {
-        speechSynthesis.cancel(); // Cancel any ongoing speech
+        speechSynthesis.cancel();
         
         const utterance = new SpeechSynthesisUtterance(word);
         utterance.rate = 0.9;
         utterance.pitch = 1;
         utterance.volume = 1;
         
-        // Get available voices
         const voices = speechSynthesis.getVoices();
         if (voices.length > 0) {
-          // Prefer UK English voice, fallback to any English voice
           const ukVoice = voices.find(v => v.lang.includes('en-GB')) || 
                          voices.find(v => v.lang.includes('en-US')) || 
                          voices[0];
@@ -75,13 +78,12 @@
     });
   }
 
-  // FIXED: Enhanced speech recognition
+  // FIXED: Enhanced speech recognition with AUTO-ADVANCE
   function listenForWord(w) {
     return new Promise((resolve) => {
-      // Check for speech recognition support
       const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
       if (!SpeechRecognition) {
-        t(els.feedback, '🎤 Speech recognition not supported. Use typing instead.');
+        t(els.feedback, '🎤 Speech recognition not supported.');
         resolve(false);
         return;
       }
@@ -121,10 +123,21 @@
           state.correct.push(w);
         } else {
           t(els.feedback, `❌ Incorrect - Said: "${said}", Correct: "${w}"`);
-          state.incorrect.push(w);
+          state.incorrect.push({ word: w, answer: said });
         }
         
         state.recognizing = false;
+        
+        // FIXED: AUTO-ADVANCE after result
+        setTimeout(() => {
+          if (state.i < state.words.length - 1) {
+            state.i++;
+            play();
+          } else {
+            endSession();
+          }
+        }, 1500);
+        
         resolve(isCorrect);
       };
 
@@ -161,64 +174,143 @@
     });
   }
 
-  async function loadWords(){
-    try{
-      const r = await fetch(`${LIST}?v=${Date.now()}`, {cache:'no-store'});
-      if(!r.ok) throw 0; const j = await r.json();
-      const arr = Array.isArray(j?.words)? j.words : Array.isArray(j) ? j : [];
-      return arr.length?arr:FALLBACK;
-    }catch(_){ return FALLBACK; }
-  }
-  
-  function show(){ 
-    const n=state.words.length; 
-    t(els.progress, `Word ${Math.min(state.i+1,n)} of ${n}`); 
-  }
-  
-  async function play(){
-    if(!state.active) return;
-    
-    const w=state.words[state.i]; 
-    if(!w) return;
-    
-    show(); 
-    t(els.feedback,'🎧 Speaking...');
-    
-    await speakWord(w);
-    const isCorrect = await listenForWord(w);
-    
-    // Auto-advance after short delay
-    if(isCorrect) {
-      setTimeout(() => {
-        if(state.i < state.words.length - 1) {
-          state.i++;
-          play();
-        } else {
-          endSession();
-        }
-      }, 1500);
+  async function loadWords() {
+    try {
+      const r = await fetch(`${LIST}?v=${Date.now()}`, { cache: 'no-store' });
+      if (!r.ok) throw new Error('Failed to fetch');
+      const j = await r.json();
+      const arr = Array.isArray(j?.words) ? j.words : (Array.isArray(j) ? j : []);
+      return arr.length ? arr : FALLBACK;
+    } catch (_) { 
+      return FALLBACK; 
     }
   }
 
-  function endSession(){
-    state.active=false; 
+  function loadCustomWords(text) {
+    try {
+      const j = JSON.parse(text);
+      return Array.isArray(j?.words) ? j.words : (Array.isArray(j) ? j : []);
+    } catch (_) {
+      return text.split(/[\n,]+/).map(s => s.trim()).filter(Boolean);
+    }
+  }
+  
+  function showProgress() { 
+    const n = state.words.length; 
+    t(els.progress, `Word ${Math.min(state.i + 1, n)} of ${n}`); 
+  }
+  
+  async function play() {
+    if (!state.active) return;
+    
+    const w = state.words[state.i]; 
+    if (!w) return;
+    
+    showProgress(); 
+    t(els.feedback, '🎧 Speaking...');
+    
+    await speakWord(w);
+    await listenForWord(w);
+  }
+
+  function endSession() {
+    state.active = false; 
     speechSynthesis.cancel();
     
-    const flagged=[...state.flags];
-    const lines=[
-      `Session Complete`,
-      `✅ ${state.correct.length} correct`,
-      `❌ ${state.incorrect.length} incorrect`,
-      flagged.length ? `🚩 ${flagged.join(', ')}` : 'No words flagged'
-    ];
+    const flagged = [...state.flags];
+    const total = state.words.length;
+    const correctCount = state.correct.length;
+    const incorrectCount = state.incorrect.length;
+
+    let summaryHTML = `
+      <div style="background: rgba(0,0,0,0.05); padding: 20px; border-radius: 10px;">
+        <h3 style="margin-top: 0; color: #7b2ff7;">Bee Session Complete! 🎉</h3>
+        <p style="font-size: 1.2em; font-weight: bold; color: #7b2ff7;">Score: ${correctCount}/${total} correct</p>
+    `;
+
+    // Show incorrect words
+    if (state.incorrect.length > 0) {
+      summaryHTML += `
+        <div style="margin: 20px 0;">
+          <h4 style="color: #f72585; margin-bottom: 10px;">❌ Incorrect Words (${state.incorrect.length})</h4>
+          <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 10px;">
+      `;
+      
+      state.incorrect.forEach(item => {
+        summaryHTML += `
+          <div style="background: rgba(247, 37, 133, 0.1); padding: 10px 15px; border-radius: 8px; border-left: 4px solid #f72585;">
+            <strong style="color: #f72585;">${item.word}</strong><br>
+            <small style="color: #666;">You said: "${item.answer}"</small>
+          </div>
+        `;
+      });
+      
+      summaryHTML += `</div></div>`;
+    }
+
+    // Show flagged words
+    if (flagged.length > 0) {
+      summaryHTML += `
+        <div style="margin: 20px 0;">
+          <h4 style="color: #ffd166; margin-bottom: 10px;">🚩 Flagged Words (${flagged.length})</h4>
+          <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px;">
+      `;
+      
+      flagged.forEach(word => {
+        summaryHTML += `
+          <div style="background: rgba(255, 209, 102, 0.1); padding: 10px 15px; border-radius: 8px; border-left: 4px solid #ffd166;">
+            ${word}
+          </div>
+        `;
+      });
+      
+      summaryHTML += `</div></div>`;
+    }
+
+    // Restart button
+    summaryHTML += `
+      <div style="text-align: center; margin-top: 25px;">
+        <button onclick="restartBeeTraining()" style="background: #7b2ff7; color: white; border: none; padding: 12px 24px; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 1rem;">
+          🔄 Start New Session
+        </button>
+      </div>
+    `;
+
+    summaryHTML += `</div>`;
     
-    t(els.feedback, lines.join(' • '));
+    if (els.summary) {
+      els.summary.innerHTML = summaryHTML;
+      els.summary.style.display = 'block';
+    }
+  }
+
+  function toggleFlag() {
+    if (!state.active) return; 
+    const w = state.words[state.i]; 
+    if (!w) return;
+    
+    if (state.flags.has(w)) { 
+      state.flags.delete(w); 
+      t(els.feedback, `🚩 Removed flag on "${w}"`); 
+    } else { 
+      state.flags.add(w); 
+      t(els.feedback, `🚩 Flagged "${w}"`); 
+    }
+  }
+
+  function restartBeeTraining() {
+    state.i = 0;
+    state.correct = [];
+    state.incorrect = [];
+    state.flags.clear();
+    if (els.summary) els.summary.style.display = 'none';
+    t(els.feedback, 'Ready to start new session');
+    showProgress();
   }
 
   // Initialize speech synthesis
   function initializeSpeech() {
     if ('speechSynthesis' in window) {
-      // Preload voices
       speechSynthesis.getVoices();
       window.speechSynthesis.onvoiceschanged = () => {
         console.log('Voices loaded:', speechSynthesis.getVoices().length);
@@ -226,49 +318,75 @@
     }
   }
 
-  els.start?.addEventListener('click', async ()=>{
-    // Initialize speech
+  // Event listeners
+  els.start?.addEventListener('click', async () => {
     initializeSpeech();
     
-    state.words = await loadWords();
-    if(!state.words.length){ t(els.feedback,'No words loaded.'); return; }
+    const customText = (els.customBox?.value || '').trim();
+    if (customText) {
+      state.words = loadCustomWords(customText);
+      t(els.feedback, `Custom list loaded: ${state.words.length} words`);
+    } else {
+      state.words = await loadWords();
+      t(els.feedback, `Bee words loaded: ${state.words.length} words`);
+    }
     
-    state.i=0; state.flags.clear(); state.correct=[]; state.incorrect=[]; state.active=true;
+    if (!state.words.length) { 
+      t(els.feedback, 'No words loaded.'); 
+      return; 
+    }
+    
+    state.i = 0; 
+    state.flags.clear(); 
+    state.correct = []; 
+    state.incorrect = []; 
+    state.active = true;
+    
+    if (els.summary) els.summary.style.display = 'none';
+    
     play();
   });
   
-  els.next && els.next.addEventListener('click', ()=>{ 
-    if(!state.active) return;
-    if(state.i<state.words.length-1){ state.i++; play(); } 
-    else { endSession(); }
+  els.flag?.addEventListener('click', toggleFlag);
+  
+  els.say?.addEventListener('click', () => { 
+    if (!state.active) return; 
+    const w = state.words[state.i];
+    if (w) speakWord(w);
   });
   
-  els.prev && els.prev.addEventListener('click', ()=>{ 
-    if(!state.active) return; 
-    if(state.i>0){ state.i--; play(); } 
-  });
-  
-  els.flag && els.flag.addEventListener('click', ()=>{ 
-    if(!state.active) return; 
-    const w=state.words[state.i]; 
-    if(!w) return;
-    
-    if(state.flags.has(w)){ 
-      state.flags.delete(w); 
-      t(els.feedback,`🚩 Removed flag on "${w}"`); 
-    } else { 
-      state.flags.add(w); 
-      t(els.feedback,`🚩 Flagged "${w}"`); 
+  els.end?.addEventListener('click', endSession);
+
+  // File upload handler
+  els.fileInput?.addEventListener('change', async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (els.fileName) {
+      els.fileName.textContent = file.name;
+    }
+
+    try {
+      const text = await file.text();
+      const words = loadCustomWords(text);
+      state.words = words;
+      t(els.feedback, `Loaded ${words.length} words from file. Ready to start!`);
+    } catch (error) {
+      t(els.feedback, 'Error reading file. Please try again.');
     }
   });
-  
-  els.say && els.say.addEventListener('click', ()=>{ 
-    if(!state.active) return; 
-    const w = state.words[state.i];
-    if(w) speakWord(w);
+
+  // Custom list handler
+  els.useCustom?.addEventListener('click', () => {
+    const customText = (els.customBox?.value || '').trim();
+    if (!customText) {
+      t(els.feedback, 'Please enter words in the custom words box first.');
+      return;
+    }
+    const words = loadCustomWords(customText);
+    state.words = words;
+    t(els.feedback, `Custom list loaded: ${words.length} words. Ready to start!`);
   });
-  
-  els.end && els.end.addEventListener('click', endSession);
 
   // Consistent Dark Mode Toggle
   function initializeDarkModeToggle() {
@@ -301,6 +419,9 @@
     }
   }
 
+  // Make restart function globally available
+  window.restartBeeTraining = restartBeeTraining;
+
   // Initialize when DOM is ready
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', initializeDarkModeToggle);
@@ -308,5 +429,5 @@
     initializeDarkModeToggle();
   }
 
-  console.log('Bee ready - Speech enhanced');
+  console.log('Bee ready - Fixed with auto-advance');
 })();
