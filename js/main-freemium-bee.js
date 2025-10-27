@@ -1,4 +1,4 @@
-/* /js/main-freemium-bee.js - FIXED VERSION */
+/* /js/main-freemium-bee.js - COMPLETE FIXED VERSION */
 (() => {
   const $ = s => document.querySelector(s);
   const els = {
@@ -31,7 +31,6 @@
   function t(el, s) { if (el) el.textContent = s; }
   const norm = s => (s || '').toLowerCase().replace(/[^\p{L}]+/gu, '');
 
-  // FIXED: Enhanced speech synthesis
   function speakWord(word) {
     return new Promise((resolve) => {
       if (!('speechSynthesis' in window)) {
@@ -228,7 +227,6 @@
         <p style="font-size: 1.2em; font-weight: bold; color: #7b2ff7;">Score: ${correctCount}/${total} correct</p>
     `;
 
-    // Show incorrect words
     if (state.incorrect.length > 0) {
       summaryHTML += `
         <div style="margin: 20px 0;">
@@ -248,7 +246,6 @@
       summaryHTML += `</div></div>`;
     }
 
-    // Show flagged words
     if (flagged.length > 0) {
       summaryHTML += `
         <div style="margin: 20px 0;">
@@ -267,7 +264,6 @@
       summaryHTML += `</div></div>`;
     }
 
-    // Restart button
     summaryHTML += `
       <div style="text-align: center; margin-top: 25px;">
         <button onclick="restartBeeTraining()" style="background: #7b2ff7; color: white; border: none; padding: 12px 24px; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 1rem;">
@@ -308,7 +304,6 @@
     showProgress();
   }
 
-  // Initialize speech synthesis
   function initializeSpeech() {
     if ('speechSynthesis' in window) {
       speechSynthesis.getVoices();
@@ -318,7 +313,6 @@
     }
   }
 
-  // Event listeners
   els.start?.addEventListener('click', async () => {
     initializeSpeech();
     
@@ -357,14 +351,11 @@
   
   els.end?.addEventListener('click', endSession);
 
-  // File upload handler
   els.fileInput?.addEventListener('change', async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    if (els.fileName) {
-      els.fileName.textContent = file.name;
-    }
+    if (els.fileName) els.fileName.textContent = file.name;
 
     try {
       const text = await file.text();
@@ -376,7 +367,6 @@
     }
   });
 
-  // Custom list handler
   els.useCustom?.addEventListener('click', () => {
     const customText = (els.customBox?.value || '').trim();
     if (!customText) {
@@ -388,16 +378,13 @@
     t(els.feedback, `Custom list loaded: ${words.length} words. Ready to start!`);
   });
 
-  // Consistent Dark Mode Toggle
   function initializeDarkModeToggle() {
     const darkModeToggle = document.getElementById('toggleDark');
     if (!darkModeToggle) return;
 
     const icon = darkModeToggle.querySelector('i');
     const isDark = document.body.classList.contains('dark-mode');
-    if (icon) {
-      icon.className = isDark ? 'fa fa-sun' : 'fa fa-moon';
-    }
+    if (icon) icon.className = isDark ? 'fa fa-sun' : 'fa fa-moon';
 
     darkModeToggle.addEventListener('click', () => {
       document.body.classList.toggle('dark-mode');
@@ -413,16 +400,12 @@
     if (savedDarkMode && !document.body.classList.contains('dark-mode')) {
       document.body.classList.add('dark-mode');
       const icon = darkModeToggle.querySelector('i');
-      if (icon) {
-        icon.className = 'fa fa-sun';
-      }
+      if (icon) icon.className = 'fa fa-sun';
     }
   }
 
-  // Make restart function globally available
   window.restartBeeTraining = restartBeeTraining;
 
-  // Initialize when DOM is ready
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', initializeDarkModeToggle);
   } else {
