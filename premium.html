@@ -199,6 +199,15 @@
         </button>
       </div>
 
+      <!-- ADDED: Upgrade Section for Non-Premium Users -->
+      <div style="text-align: center; margin-top: 20px; padding: 15px; background: rgba(123, 47, 247, 0.1); border-radius: 8px;">
+        <p style="margin: 0 0 10px 0; font-size: 0.9rem;">Don't have premium access?</p>
+        <button onclick="window.location.href='/pricing.html'" 
+                style="background: #7b2ff7; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-weight: 600;">
+          <i class="fa fa-crown"></i> Upgrade to Premium
+        </button>
+      </div>
+
       <p style="margin-top:15px;font-size:0.9rem; text-align: center; color: rgba(255,255,255,0.8);">Premium access required to continue.</p>
     </div>
   </div>
@@ -218,6 +227,22 @@
       document.body.appendChild(feedback);
       setTimeout(() => feedback.remove(), 3000);
     }
+
+    // Enhanced function to handle premium access simulation for testing
+    function simulatePremiumAccess() {
+      // This function can be called from browser console for testing
+      if (typeof firebase !== 'undefined' && firebase.auth().currentUser) {
+        const userId = firebase.auth().currentUser.uid;
+        localStorage.setItem(`premium_${userId}`, 'true');
+        console.log('✅ Premium access simulated for user:', userId);
+        location.reload();
+      } else {
+        console.log('❌ No user logged in');
+      }
+    }
+
+    // Make simulatePremiumAccess available globally for testing
+    window.simulatePremiumAccess = simulatePremiumAccess;
   </script>
 
 <!-- Legal Footer -->
@@ -230,6 +255,8 @@
         <a href="/refund-policy.html" style="color: #fff; text-decoration: none;">Refund Policy</a>
         • 
         <a href="/contact.html" style="color: #fff; text-decoration: none;">Contact</a>
+        • 
+        <a href="/pricing.html" style="color: #fff; text-decoration: none;">Pricing</a>
     </p>
     <p style="margin-top: 10px; font-size: 0.9em;">&copy; 2025 SpellRightPro. All rights reserved.</p>
 </footer>
