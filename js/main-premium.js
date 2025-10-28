@@ -23,9 +23,165 @@ let isListening = false;
 
 // --- Real-time Marking Variables ---
 let realTimeMarkingEnabled = true;
-let currentWordElement = null;
 
-// Initialize speech recognition
+// --- Training Variables ---
+let currentMode = null;
+let currentIndex = 0;
+let currentList = [];
+let score = 0;
+let correctWords = [];
+let incorrectWords = [];
+let flaggedWords = new Set();
+
+// --- Custom Words Management ---
+let customLists = JSON.parse(localStorage.getItem('premiumCustomLists') || '{}');
+let currentCustomList = null;
+
+// =======================================================
+// AUTHENTICATION - ORIGINAL CODE
+// =======================================================
+
+function showOverlay() {
+  if (overlay) overlay.style.display = "flex";
+  if (mainContent) mainContent.style.display = "none";
+}
+
+function hideOverlay() {
+  if (overlay) overlay.style.display = "none";
+  if (mainContent) mainContent.style.display = "block";
+}
+
+// Ultra-simple email/password auth
+document.getElementById('loginForm')?.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const email = document.getElementById('loginEmail').value;
+  const password = document.getElementById('loginPassword').value;
+
+  try {
+    showFeedback('Logging in...', 'info');
+    await auth.signInWithEmailAndPassword(email, password);
+    hideOverlay();
+    showFeedback('Welcome to SpellRightPro Premium!', 'success');
+  } catch (error) {
+    console.log('Login failed, trying registration...');
+    try {
+      await auth.createUserWithEmailAndPassword(email, password);
+      hideOverlay();
+      showFeedback('Account created! Welcome to Premium!', 'success');
+    } catch (registerError) {
+      showFeedback('Authentication failed. Please try again.', 'error');
+    }
+  }
+});
+
+// Register form
+document.getElementById('registerForm')?.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const email = document.getElementById('regEmail').value;
+  const password = document.getElementById('regPassword').value;
+  const confirmPassword = document.getElementById('regConfirmPassword').value;
+
+  if (password !== confirmPassword) {
+    showFeedback('Passwords do not match', 'error');
+    return;
+  }
+
+  try {
+    showFeedback('Creating account...', 'info');
+    await auth.createUserWithEmailAndPassword(email, password);
+    hideOverlay();
+    showFeedback('Account created! Welcome to Premium!', 'success');
+  } catch (error) {
+    showFeedback('Registration failed: ' + error.message, 'error');
+  }
+});
+
+// Form toggle
+document.getElementById('showRegister')?.addEventListener('click', () => {
+  document.getElementById('loginForm').style.display = 'none';
+  document.getElementById('registerForm').style.display = 'block';
+  document.getElementById('showRegister').style.display = 'none';
+  document.getElementById('showLogin').style.display = 'inline';
+});
+
+document.getElementById('showLogin')?.addEventListener('click', () => {
+  document.getElementById('registerForm').style.display = 'none';
+  document.getElementById('loginForm').style.display = 'block';
+  document.getElementById('showLogin').style.display = 'none';
+  document.getElementById('showRegister').style.display = 'inline';
+});
+
+// Auto-login for testing
+function quickAuth() {
+  const testEmail = 'test@spellrightpro.com';
+  const testPassword = 'test123456';
+  
+  auth.signInWithEmailAndPassword(testEmail, testPassword)
+    .then(() => {
+      hideOverlay();
+      showFeedback('Auto-login successful!', 'success');
+    })
+    .catch(() => {
+      showOverlay();
+    });
+}
+
+// Auth state: any logged in user gets premium
+auth.onAuthStateChanged((user) => {
+  if (user) {
+    console.log('✅ User authenticated:', user.email);
+    hideOverlay();
+  } else {
+    console.log('❌ No user, showing login');
+    showOverlay();
+    setTimeout(quickAuth, 1000);
+  }
+});
+
+// Logout
+logoutBtn?.addEventListener('click', () => {
+  auth.signOut();
+  showOverlay();
+  showFeedback('Logged out successfully', 'info');
+});
+
+function showFeedback(message, type = "info") {
+  const existing = document.querySelector(".feedback-message");
+  if (existing) existing.remove();
+
+  const feedback = document.createElement("div");
+  feedback.className = `feedback-message ${type}`;
+  feedback.textContent = message;
+  feedback.style.cssText = `
+    margin-top: 10px; padding: 8px 12px; border-radius: 6px; font-size: 0.9rem;
+    background: ${type === 'success' ? '#d4edda' : type === 'error' ? '#f8d7da' : type === 'warning' ? '#fff3cd' : '#d1ecf1'};
+    color: ${type === 'success' ? '#155724' : type === 'error' ? '#721c24' : type === 'warning' ? '#856404' : '#0c5460'};
+    border: 1px solid ${type === 'success' ? '#c3e6cb' : type === 'error' ? '#f5c6cb' : type === 'warning' ? '#ffeaa7' : '#bee5eb'};
+  `;
+
+  document.querySelector('.glass-card')?.appendChild(feedback);
+  setTimeout(() => feedback.remove(), 4000);
+}
+
+// =======================================================
+// DARK MODE TOGGLE - ORIGINAL CODE
+// =======================================================
+const toggleDark = document.getElementById("toggleDark");
+if (toggleDark) {
+  toggleDark.addEventListener("click", () => {
+    document.body.classList.toggle("dark-mode");
+    const icon = toggleDark.querySelector("i");
+    if (icon) {
+      icon.classList.toggle("fa-moon");
+      icon.classList.toggle("fa-sun");
+    }
+  });
+}
+
+// =======================================================
+// VOICE RECOGNITION - ORIGINAL CODE
+// =======================================================
+
 function initializeSpeechRecognition() {
   if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -71,8 +227,6 @@ function updateBeeVoiceUI(listening) {
     voiceStatus.style.display = 'block';
     voiceText.textContent = 'Listening... Speak now!';
     recognizedText.style.display = 'none';
-    
-    // Animate voice visualizer
     animateVoiceVisualizer(true);
   } else {
     voiceStatus.style.display = 'none';
@@ -84,10 +238,10 @@ function animateVoiceVisualizer(active) {
   const bars = document.querySelectorAll('.voice-bar');
   bars.forEach(bar => {
     if (active) {
-      bar.style.animation = 'pulse 0.8s infinite alternate';
+      bar.style.animation = 'voicePulse 0.8s infinite alternate';
     } else {
       bar.style.animation = 'none';
-      bar.style.height = '5px';
+      bar.style.height = '8px';
     }
   });
 }
@@ -99,7 +253,6 @@ function processSpokenSpelling(spokenText) {
   spokenTextElement.textContent = spokenText;
   recognizedText.style.display = 'block';
   
-  // Auto-check the answer after a brief delay
   setTimeout(() => {
     checkBeeAnswer(spokenText);
   }, 1000);
@@ -132,23 +285,18 @@ function checkBeeAnswer(spokenText) {
   const normalizedSpoken = spokenText.toLowerCase().replace(/[^a-z]/g, '');
   const normalizedWord = word.toLowerCase().trim();
   
-  // Hide recognized text during processing
   document.getElementById('beeRecognizedText').style.display = 'none';
   
   if (normalizedSpoken === normalizedWord) {
     score++;
     correctWords.push(word);
     showFeedback("✅ Correct! Well done!", "success");
-    
-    // Visual confirmation
     const feedbackElement = document.getElementById('beeFeedback');
     feedbackElement.style.color = '#28a745';
     feedbackElement.style.fontWeight = 'bold';
   } else {
     incorrectWords.push({ word: word, answer: spokenText });
     showFeedback(`❌ Incorrect. The word was: ${word}`, "error");
-    
-    // Visual feedback
     const feedbackElement = document.getElementById('beeFeedback');
     feedbackElement.style.color = '#dc3545';
     feedbackElement.style.fontWeight = 'bold';
@@ -163,412 +311,102 @@ function checkBeeAnswer(spokenText) {
   }
 }
 
-// --- REAL-TIME MARKING FUNCTIONS ---
-function initializeRealTimeMarking() {
-  // Add real-time marking toggle
-  const realTimeToggleHTML = `
-    <div class="real-time-marking-toggle" style="margin: 15px 0; display: flex; align-items: center; justify-content: center; gap: 10px;">
-      <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
-        <input type="checkbox" id="realTimeMarkingToggle" checked>
-        <span>Real-time Spelling Check</span>
-      </label>
-    </div>
-  `;
-  
-  // Add to each trainer area except bee mode
-  document.querySelectorAll('.trainer-area').forEach(area => {
-    if (!area.id.includes('bee')) {
-      const inputGroup = area.querySelector('.input-group');
-      if (inputGroup) {
-        inputGroup.insertAdjacentHTML('beforebegin', realTimeToggleHTML);
-      }
-    }
-  });
-  
-  // Add event listener for toggle
-  document.addEventListener('change', function(e) {
-    if (e.target.id === 'realTimeMarkingToggle') {
-      realTimeMarkingEnabled = e.target.checked;
-      showFeedback(`Real-time marking ${realTimeMarkingEnabled ? 'enabled' : 'disabled'}`, 'info');
-      
-      // Clear any existing real-time feedback
-      clearRealTimeFeedback();
-    }
-  });
-  
-  // Add input event listeners for real-time checking
-  document.querySelectorAll('.answer-input').forEach(input => {
-    input.addEventListener('input', function() {
-      if (realTimeMarkingEnabled && currentIndex < currentList.length) {
-        checkRealTimeSpelling(this.value, currentList[currentIndex]);
-      } else {
-        clearRealTimeFeedback();
-      }
+// =======================================================
+// REAL-TIME MARKING - NEW INTEGRATION
+// =======================================================
+
+function initializeRealTimeValidation() {
+    // Add real-time marking toggle
+    const realTimeToggleHTML = `
+        <div class="real-time-marking-toggle" style="margin: 15px 0; display: flex; align-items: center; justify-content: center; gap: 10px;">
+            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                <input type="checkbox" id="realTimeMarkingToggle" checked>
+                <span>Real-time Spelling Check</span>
+            </label>
+        </div>
+    `;
+    
+    // Add to each trainer area except bee mode
+    document.querySelectorAll('.trainer-area').forEach(area => {
+        if (!area.id.includes('bee')) {
+            const inputGroup = area.querySelector('.input-group');
+            if (inputGroup) {
+                inputGroup.insertAdjacentHTML('beforebegin', realTimeToggleHTML);
+            }
+        }
     });
     
-    input.addEventListener('focus', function() {
-      if (realTimeMarkingEnabled && currentIndex < currentList.length) {
-        currentWordElement = this;
-      }
+    // Add event listener for toggle
+    document.addEventListener('change', function(e) {
+        if (e.target.id === 'realTimeMarkingToggle') {
+            realTimeMarkingEnabled = e.target.checked;
+            showFeedback(`Real-time marking ${realTimeMarkingEnabled ? 'enabled' : 'disabled'}`, 'info');
+            clearRealTimeFeedback();
+        }
     });
-  });
-}
-
-function checkRealTimeSpelling(userInput, correctWord) {
-  if (!userInput.trim()) {
-    clearRealTimeFeedback();
-    return;
-  }
-  
-  const feedbackElement = document.getElementById(`${currentMode}Feedback`);
-  const inputElement = document.getElementById(`${currentMode}Input`);
-  
-  if (!feedbackElement || !inputElement) return;
-  
-  const normalizedInput = userInput.toLowerCase().trim();
-  const normalizedCorrect = correctWord.toLowerCase().trim();
-  
-  // Clear previous styling
-  inputElement.style.borderColor = '';
-  inputElement.style.background = '';
-  
-  if (normalizedInput === normalizedCorrect) {
-    // Perfect match
-    inputElement.style.borderColor = '#28a745';
-    inputElement.style.background = 'rgba(40, 167, 69, 0.1)';
-    feedbackElement.innerHTML = '<span style="color: #28a745;">✅ Spelling is correct!</span>';
-  } else if (normalizedCorrect.startsWith(normalizedInput)) {
-    // Partial match - on the right track
-    inputElement.style.borderColor = '#ffc107';
-    inputElement.style.background = 'rgba(255, 193, 7, 0.1)';
     
-    const remaining = normalizedCorrect.slice(normalizedInput.length);
-    feedbackElement.innerHTML = `<span style="color: #ffc107;">↳ Continue with: <strong>${remaining}</strong></span>`;
-  } else {
-    // Incorrect spelling
-    inputElement.style.borderColor = '#dc3545';
-    inputElement.style.background = 'rgba(220, 53, 69, 0.1)';
-    
-    // Provide hints for common mistakes
-    const hint = generateSpellingHint(userInput, correctWord);
-    feedbackElement.innerHTML = `<span style="color: #dc3545;">❌ ${hint}</span>`;
-  }
-}
-
-function generateSpellingHint(wrongWord, correctWord) {
-  const wrong = wrongWord.toLowerCase();
-  const correct = correctWord.toLowerCase();
-  
-  // Common spelling mistake patterns
-  if (wrong.length === correct.length) {
-    // Check for single letter differences
-    let differences = [];
-    for (let i = 0; i < Math.min(wrong.length, correct.length); i++) {
-      if (wrong[i] !== correct[i]) {
-        differences.push(`Position ${i + 1}: "${wrong[i]}" should be "${correct[i]}"`);
-      }
-    }
-    
-    if (differences.length === 1) {
-      return `Check ${differences[0]}`;
-    } else if (differences.length > 0) {
-      return `Multiple spelling errors detected`;
-    }
-  }
-  
-  // Check for missing/extra letters
-  if (wrong.length < correct.length) {
-    return `Word seems too short. Check for missing letters.`;
-  } else if (wrong.length > correct.length) {
-    return `Word seems too long. Check for extra letters.`;
-  }
-  
-  // General hint
-  return `Incorrect spelling. Listen carefully to the word.`;
+    document.querySelectorAll('.answer-input').forEach(input => {
+        input.addEventListener('input', function() {
+            if (!realTimeMarkingEnabled || currentIndex >= currentList.length) return;
+            
+            const currentWord = currentList[currentIndex];
+            const userInput = this.value.trim().toLowerCase();
+            const correctWord = currentWord.toLowerCase();
+            
+            // Real-time visual feedback
+            if (userInput === correctWord) {
+                this.style.borderColor = '#4CAF50';
+                this.style.backgroundColor = 'rgba(76, 175, 80, 0.1)';
+                this.style.color = '#4CAF50';
+                this.style.fontWeight = 'bold';
+                this.style.textDecoration = 'none';
+            } else if (userInput && correctWord.startsWith(userInput)) {
+                this.style.borderColor = '#FFC107';
+                this.style.backgroundColor = 'rgba(255, 193, 7, 0.1)';
+                this.style.color = '#FFC107';
+                this.style.fontWeight = 'normal';
+                this.style.textDecoration = 'none';
+            } else if (userInput) {
+                this.style.borderColor = '#f44336';
+                this.style.backgroundColor = 'rgba(244, 67, 54, 0.1)';
+                this.style.color = '#f44336';
+                this.style.fontWeight = 'normal';
+                this.style.textDecoration = 'line-through';
+            } else {
+                this.style.borderColor = 'rgba(255, 255, 255, 0.2)';
+                this.style.backgroundColor = 'rgba(255, 255, 255, 0.1)';
+                this.style.color = 'white';
+                this.style.fontWeight = 'normal';
+                this.style.textDecoration = 'none';
+            }
+        });
+        
+        // Add focus styling
+        input.addEventListener('focus', function() {
+            this.style.borderColor = '#7b2ff7';
+            this.style.boxShadow = '0 0 0 2px rgba(123, 47, 247, 0.3)';
+        });
+        
+        input.addEventListener('blur', function() {
+            this.style.boxShadow = 'none';
+        });
+    });
 }
 
 function clearRealTimeFeedback() {
-  const feedbackElement = document.getElementById(`${currentMode}Feedback`);
-  const inputElement = document.getElementById(`${currentMode}Input`);
-  
-  if (feedbackElement) {
-    feedbackElement.innerHTML = 'Type your answer...';
-    feedbackElement.style.color = '';
-  }
-  
-  if (inputElement) {
-    inputElement.style.borderColor = '';
-    inputElement.style.background = '';
-  }
-}
-
-// --- Enhanced Answer Checking with Detailed Feedback ---
-function checkAnswer() {
-  if (currentIndex >= currentList.length) return;
-  
-  const word = currentList[currentIndex];
-  let userAnswer = "";
-  
-  // Get answer based on mode
-  if (currentMode === "bee") {
-    // For bee mode, start voice recognition instead of using prompt
-    startVoiceRecognition();
-    return;
-  } else {
     const inputElement = document.getElementById(`${currentMode}Input`);
-    userAnswer = inputElement ? inputElement.value.trim() : "";
-  }
-  
-  if (!userAnswer) {
-    showFeedback("Please provide an answer", "error");
-    return;
-  }
-  
-  const normalizedAnswer = userAnswer.toLowerCase().trim();
-  const normalizedWord = word.toLowerCase().trim();
-  
-  // Enhanced feedback system
-  if (normalizedAnswer === normalizedWord) {
-    score++;
-    correctWords.push(word);
-    showDetailedFeedback(true, word, userAnswer);
-  } else {
-    incorrectWords.push({ word: word, answer: userAnswer });
-    showDetailedFeedback(false, word, userAnswer);
-  }
-  
-  currentIndex++;
-  
-  // Clear input and real-time feedback for next word
-  const inputElement = document.getElementById(`${currentMode}Input`);
-  if (inputElement) {
-    inputElement.value = "";
-    clearRealTimeFeedback();
-  }
-  
-  if (currentIndex < currentList.length) {
-    setTimeout(nextWord, 2000);
-  } else {
-    setTimeout(showSummary, 1000);
-  }
-}
-
-function showDetailedFeedback(isCorrect, correctWord, userAnswer) {
-  const feedbackElement = document.getElementById(`${currentMode}Feedback`);
-  if (!feedbackElement) return;
-  
-  if (isCorrect) {
-    feedbackElement.innerHTML = `
-      <div style="color: #28a745; font-weight: bold;">
-        ✅ Correct! Excellent spelling!
-      </div>
-      <div style="font-size: 0.9em; opacity: 0.9; margin-top: 5px;">
-        You spelled "<strong>${correctWord}</strong>" perfectly.
-      </div>
-    `;
-  } else {
-    // Analyze the mistake
-    const analysis = analyzeSpellingMistake(userAnswer, correctWord);
-    
-    feedbackElement.innerHTML = `
-      <div style="color: #dc3545; font-weight: bold;">
-        ❌ Incorrect
-      </div>
-      <div style="font-size: 0.9em; margin-top: 5px;">
-        <div>Correct: <strong>${correctWord}</strong></div>
-        <div>Your answer: <strong>${userAnswer}</strong></div>
-        ${analysis ? `<div style="margin-top: 5px; color: #ffc107;">💡 ${analysis}</div>` : ''}
-      </div>
-    `;
-  }
-}
-
-function analyzeSpellingMistake(wrong, correct) {
-  const w = wrong.toLowerCase();
-  const c = correct.toLowerCase();
-  
-  // Common spelling patterns to check
-  if (w.replace(/[^a-z]/g, '') === c.replace(/[^a-z]/g, '')) {
-    return "Watch out for unnecessary spaces or punctuation";
-  }
-  
-  // Double letter mistakes
-  const doubleLetterMistakes = {
-    'acommodate': 'accommodate',
-    'comitee': 'committee',
-    'embarass': 'embarrass',
-    'ocured': 'occurred'
-  };
-  
-  if (doubleLetterMistakes[w]) {
-    return "This word has double letters. Remember: " + doubleLetterMistakes[w];
-  }
-  
-  // Silent letter mistakes
-  if (w === c.replace(/[bckg]/g, '')) {
-    return "This word has silent letters. Listen carefully to each syllable.";
-  }
-  
-  // Vowel mistakes
-  const vowelChanges = w.split('').filter((char, i) => 
-    'aeiou'.includes(char) && i < c.length && char !== c[i]
-  );
-  
-  if (vowelChanges.length > 0) {
-    return "Check the vowels in the word. English vowels can be tricky!";
-  }
-  
-  return "Practice this word's spelling pattern";
-}
-
-// --- Custom Words Management ---
-let customLists = JSON.parse(localStorage.getItem('premiumCustomLists') || '{}');
-let currentCustomList = null;
-
-// --- SIMPLIFIED AUTH: Bypass premium checks for now ---
-function showOverlay() {
-  if (overlay) overlay.style.display = "flex";
-  if (mainContent) mainContent.style.display = "none";
-}
-
-function hideOverlay() {
-  if (overlay) overlay.style.display = "none";
-  if (mainContent) mainContent.style.display = "block";
-}
-
-// --- Ultra-simple email/password auth ---
-document.getElementById('loginForm')?.addEventListener('submit', async (e) => {
-  e.preventDefault();
-  const email = document.getElementById('loginEmail').value;
-  const password = document.getElementById('loginPassword').value;
-
-  try {
-    showFeedback('Logging in...', 'info');
-    await auth.signInWithEmailAndPassword(email, password);
-    // SUCCESS: Immediately grant access
-    hideOverlay();
-    showFeedback('Welcome to SpellRightPro Premium!', 'success');
-  } catch (error) {
-    console.log('Login failed, trying registration...');
-    // Try to create account
-    try {
-      await auth.createUserWithEmailAndPassword(email, password);
-      hideOverlay();
-      showFeedback('Account created! Welcome to Premium!', 'success');
-    } catch (registerError) {
-      showFeedback('Authentication failed. Please try again.', 'error');
+    if (inputElement) {
+        inputElement.style.borderColor = 'rgba(255, 255, 255, 0.2)';
+        inputElement.style.backgroundColor = 'rgba(255, 255, 255, 0.1)';
+        inputElement.style.color = 'white';
+        inputElement.style.fontWeight = 'normal';
+        inputElement.style.textDecoration = 'none';
+        inputElement.style.boxShadow = 'none';
     }
-  }
-});
-
-// Register form
-document.getElementById('registerForm')?.addEventListener('submit', async (e) => {
-  e.preventDefault();
-  const email = document.getElementById('regEmail').value;
-  const password = document.getElementById('regPassword').value;
-  const confirmPassword = document.getElementById('regConfirmPassword').value;
-
-  if (password !== confirmPassword) {
-    showFeedback('Passwords do not match', 'error');
-    return;
-  }
-
-  try {
-    showFeedback('Creating account...', 'info');
-    await auth.createUserWithEmailAndPassword(email, password);
-    hideOverlay();
-    showFeedback('Account created! Welcome to Premium!', 'success');
-  } catch (error) {
-    showFeedback('Registration failed: ' + error.message, 'error');
-  }
-});
-
-// --- Form toggle ---
-document.getElementById('showRegister')?.addEventListener('click', () => {
-  document.getElementById('loginForm').style.display = 'none';
-  document.getElementById('registerForm').style.display = 'block';
-  document.getElementById('showRegister').style.display = 'none';
-  document.getElementById('showLogin').style.display = 'inline';
-});
-
-document.getElementById('showLogin')?.addEventListener('click', () => {
-  document.getElementById('registerForm').style.display = 'none';
-  document.getElementById('loginForm').style.display = 'block';
-  document.getElementById('showLogin').style.display = 'none';
-  document.getElementById('showRegister').style.display = 'inline';
-});
-
-// --- SIMPLIFIED: Auto-login for testing ---
-function quickAuth() {
-  const testEmail = 'test@spellrightpro.com';
-  const testPassword = 'test123456';
-  
-  auth.signInWithEmailAndPassword(testEmail, testPassword)
-    .then(() => {
-      hideOverlay();
-      showFeedback('Auto-login successful!', 'success');
-    })
-    .catch(() => {
-      // If auto-login fails, just show the login form
-      showOverlay();
-    });
-}
-
-// --- Auth state: SIMPLIFIED - any logged in user gets premium ---
-auth.onAuthStateChanged((user) => {
-  if (user) {
-    console.log('✅ User authenticated:', user.email);
-    hideOverlay();
-  } else {
-    console.log('❌ No user, showing login');
-    showOverlay();
-    // Try quick auth after a delay
-    setTimeout(quickAuth, 1000);
-  }
-});
-
-// --- Logout ---
-logoutBtn?.addEventListener('click', () => {
-  auth.signOut();
-  showOverlay();
-  showFeedback('Logged out successfully', 'info');
-});
-
-function showFeedback(message, type = "info") {
-  const existing = document.querySelector(".feedback-message");
-  if (existing) existing.remove();
-
-  const feedback = document.createElement("div");
-  feedback.className = `feedback-message ${type}`;
-  feedback.textContent = message;
-  feedback.style.cssText = `
-    margin-top: 10px; padding: 8px 12px; border-radius: 6px; font-size: 0.9rem;
-    background: ${type === 'success' ? '#d4edda' : type === 'error' ? '#f8d7da' : type === 'warning' ? '#fff3cd' : '#d1ecf1'};
-    color: ${type === 'success' ? '#155724' : type === 'error' ? '#721c24' : type === 'warning' ? '#856404' : '#0c5460'};
-    border: 1px solid ${type === 'success' ? '#c3e6cb' : type === 'error' ? '#f5c6cb' : type === 'warning' ? '#ffeaa7' : '#bee5eb'};
-  `;
-
-  document.querySelector('.glass-card')?.appendChild(feedback);
-  setTimeout(() => feedback.remove(), 4000);
 }
 
 // =======================================================
-// DARK MODE TOGGLE
-// =======================================================
-const toggleDark = document.getElementById("toggleDark");
-if (toggleDark) {
-  toggleDark.addEventListener("click", () => {
-    document.body.classList.toggle("dark-mode");
-    const icon = toggleDark.querySelector("i");
-    if (icon) {
-      icon.classList.toggle("fa-moon");
-      icon.classList.toggle("fa-sun");
-    }
-  });
-}
-
-// =======================================================
-// CUSTOM WORDS FEATURE - UPDATED IMPLEMENTATION
+// CUSTOM WORDS MANAGEMENT - ORIGINAL CODE
 // =======================================================
 
 function createCustomWordsUI() {
@@ -611,11 +449,9 @@ function createCustomWordsUI() {
     </div>
   `;
 
-  // Insert custom words into EACH trainer area
   document.querySelectorAll('.trainer-area').forEach(area => {
     const existingCustom = area.querySelector('.custom-words-area');
     if (!existingCustom) {
-      // Insert after the h3 title but before other content
       const title = area.querySelector('h3');
       if (title) {
         title.insertAdjacentHTML('afterend', customHTML);
@@ -656,7 +492,6 @@ function uploadWordList() {
         return;
       }
       
-      // Save the list
       customLists[listName] = {
         words: words,
         createdAt: new Date().toISOString(),
@@ -665,11 +500,8 @@ function uploadWordList() {
       
       saveCustomLists();
       updateCustomListsDisplay();
-      
-      // Clear inputs
       document.getElementById('newListName').value = '';
       fileInput.value = '';
-      
       showFeedback(`List "${listName}" created with ${words.length} words`, 'success');
     } catch (error) {
       showFeedback('Error reading file: ' + error.message, 'error');
@@ -683,21 +515,16 @@ function parseWordList(content, filename) {
   let words = [];
   
   if (filename.toLowerCase().endsWith('.csv')) {
-    // Parse CSV - simple comma separation
     words = content.split(',')
       .map(word => word.trim())
       .filter(word => word.length > 0);
   } else {
-    // Parse TXT - line by line
     words = content.split('\n')
       .map(word => word.trim())
       .filter(word => word.length > 0);
   }
   
-  // Remove duplicates and empty strings
-  words = [...new Set(words)].filter(word => word.length > 0);
-  
-  return words;
+  return [...new Set(words)].filter(word => word.length > 0);
 }
 
 function createQuickList() {
@@ -709,7 +536,6 @@ function createQuickList() {
     return;
   }
   
-  // Parse words (both comma and newline separated)
   const words = input.split(/[\n,]/)
     .map(word => word.trim())
     .filter(word => word.length > 0);
@@ -719,7 +545,6 @@ function createQuickList() {
     return;
   }
   
-  // Save the list
   customLists[listName] = {
     words: words,
     createdAt: new Date().toISOString(),
@@ -729,7 +554,6 @@ function createQuickList() {
   saveCustomLists();
   updateCustomListsDisplay();
   document.getElementById('quickWordsInput').value = '';
-  
   showFeedback(`Quick list created with ${words.length} words`, 'success');
 }
 
@@ -781,10 +605,8 @@ function loadCustomList(listName) {
   
   currentCustomList = listName;
   currentList = customLists[listName].words;
-  
   showFeedback(`Loaded "${listName}" with ${currentList.length} words`, 'success');
   
-  // Auto-start training if a mode is selected
   if (currentMode) {
     setTimeout(() => {
       startTraining(currentMode);
@@ -829,41 +651,30 @@ function loadCustomLists() {
 }
 
 // =======================================================
-// TRAINING LOGIC (Bee / School / OET)
+// TRAINING LOGIC - ORIGINAL CODE + REAL-TIME ENHANCEMENTS
 // =======================================================
-let currentMode = null;
-let currentIndex = 0;
-let currentList = [];
-let score = 0;
-let correctWords = [];
-let incorrectWords = [];
-let flaggedWords = new Set();
 
-// Enhanced Mode selection - Show custom words when mode is selected
+// Mode selection
 document.querySelectorAll(".mode-btn").forEach(btn => {
   btn.addEventListener("click", () => {
     currentMode = btn.dataset.mode;
     
-    // Hide all trainer areas
     document.querySelectorAll(".trainer-area").forEach(a => {
       a.style.display = "none";
       a.classList.remove("active");
     });
     
-    // Show only the selected mode
     const selectedArea = document.getElementById(`${currentMode}-area`);
     if (selectedArea) {
       selectedArea.style.display = "block";
       selectedArea.classList.add("active");
       
-      // Show custom words section for the selected mode
       const customWordsSection = selectedArea.querySelector('.custom-words-area');
       if (customWordsSection) {
         customWordsSection.style.display = "block";
       }
     }
     
-    // Reset any ongoing session
     resetTraining();
   });
 });
@@ -883,16 +694,14 @@ function resetTraining() {
   flaggedWords = new Set();
   speechSynthesis.cancel();
   
-  // Stop voice recognition if active
   if (recognition && isListening) {
     recognition.stop();
   }
   
-  // Clear real-time feedback
   clearRealTimeFeedback();
 }
 
-// Start button - FIXED: Proper mode handling
+// Start button handlers
 document.querySelectorAll(".start-btn").forEach(btn => {
   btn.addEventListener("click", () => {
     const mode = btn.dataset.mode;
@@ -900,11 +709,9 @@ document.querySelectorAll(".start-btn").forEach(btn => {
   });
 });
 
-// ENHANCED START TRAINING FUNCTION
 function startTraining(mode) {
   resetTraining();
   
-  // Use custom list if loaded, otherwise use default
   if (currentCustomList && customLists[currentCustomList]) {
     currentList = customLists[currentCustomList].words;
     showFeedback(`Using "${currentCustomList}" - ${currentList.length} words`, 'info');
@@ -922,10 +729,9 @@ function startTraining(mode) {
   nextWord();
 }
 
-// FIXED: OET words loading from external file
+// OET words loading
 async function loadOETWords() {
   try {
-    // Try to load from external JS file first
     if (typeof window.OET_WORDS !== 'undefined') {
       const isTest = document.querySelector('input[name="examType"]:checked')?.value === "test";
       currentList = isTest ? shuffle(window.OET_WORDS).slice(0, 24) : window.OET_WORDS;
@@ -934,12 +740,9 @@ async function loadOETWords() {
       return;
     }
     
-    // Fallback: fetch the JS file
     const response = await fetch('/js/oet_word_list.js');
     if (response.ok) {
       const jsContent = await response.text();
-      
-      // Execute the JS to get OET_WORDS
       eval(jsContent);
       
       if (typeof OET_WORDS !== 'undefined') {
@@ -955,14 +758,13 @@ async function loadOETWords() {
     }
   } catch (err) {
     console.error("OET list load error:", err);
-    // Fallback words
     currentList = ["abdomen", "anemia", "antibiotic", "artery", "asthma", "biopsy", "catheter", "diagnosis", "embolism", "fracture"];
     showFeedback("Using fallback OET words", "info");
     nextWord();
   }
 }
 
-// FIXED: Text-to-speech with proper error handling
+// Text-to-speech with proper error handling
 function speakWord(word) {
   if (!window.speechSynthesis) {
     showFeedback("Text-to-speech not supported in this browser", "error");
@@ -977,7 +779,6 @@ function speakWord(word) {
     utter.rate = 0.9;
     utter.pitch = 1;
     
-    // Cancel any ongoing speech
     speechSynthesis.cancel();
     
     utter.onerror = (event) => {
@@ -993,45 +794,141 @@ function speakWord(word) {
   }
 }
 
+// ENHANCED NEXTWORD FUNCTION WITH REAL-TIME MARKING
 function nextWord() {
-  if (currentIndex >= currentList.length) {
-    showSummary();
-    return;
-  }
-  
-  const word = currentList[currentIndex];
-  const progressElement = document.getElementById(`${currentMode}Progress`);
-  const feedbackElement = document.getElementById(`${currentMode}Feedback`);
-  
-  if (progressElement) {
-    progressElement.textContent = `Word ${currentIndex + 1} of ${currentList.length}`;
-  }
-  
-  if (feedbackElement) {
-    feedbackElement.innerHTML = "Listen carefully...";
-    feedbackElement.style.color = ''; // Reset color
-    feedbackElement.style.fontWeight = ''; // Reset font weight
-  }
-  
-  // Clear any previous voice recognition UI
-  updateBeeVoiceUI(false);
-  document.getElementById('beeRecognizedText').style.display = 'none';
-  
-  // Clear input field
-  const inputElement = document.getElementById(`${currentMode}Input`);
-  if (inputElement) {
-    inputElement.value = "";
-    inputElement.style.borderColor = '';
-    inputElement.style.background = '';
-  }
-  
-  // Speak the word with a slight delay
-  setTimeout(() => {
-    speakWord(word);
-  }, 500);
+    if (currentIndex >= currentList.length) {
+        showSummary();
+        return;
+    }
+    
+    const word = currentList[currentIndex];
+    const progressElement = document.getElementById(`${currentMode}Progress`);
+    const feedbackElement = document.getElementById(`${currentMode}Feedback`);
+    const inputElement = document.getElementById(`${currentMode}Input`);
+    
+    if (progressElement) {
+        progressElement.textContent = `Word ${currentIndex + 1} of ${currentList.length}`;
+    }
+    
+    if (feedbackElement) {
+        feedbackElement.textContent = "Listen carefully...";
+        feedbackElement.style.color = '';
+        feedbackElement.style.fontWeight = '';
+    }
+    
+    // Reset input styling
+    if (inputElement) {
+        inputElement.value = "";
+        inputElement.style.borderColor = 'rgba(255, 255, 255, 0.2)';
+        inputElement.style.backgroundColor = 'rgba(255, 255, 255, 0.1)';
+        inputElement.style.color = 'white';
+        inputElement.style.fontWeight = 'normal';
+        inputElement.style.textDecoration = 'none';
+        inputElement.style.boxShadow = 'none';
+    }
+    
+    // Clear any previous voice recognition UI
+    updateBeeVoiceUI(false);
+    document.getElementById('beeRecognizedText').style.display = 'none';
+    
+    // Speak the word with a slight delay
+    setTimeout(() => {
+        speakWord(word);
+    }, 500);
 }
 
-// FIXED: Enhanced summary showing actual words
+// ENHANCED CHECKANSWER FUNCTION WITH REAL-TIME MARKING
+function checkAnswer() {
+    if (currentIndex >= currentList.length) return;
+    
+    const word = currentList[currentIndex];
+    let userAnswer = "";
+    
+    if (currentMode === "bee") {
+        startVoiceRecognition();
+        return;
+    } else {
+        const inputElement = document.getElementById(`${currentMode}Input`);
+        userAnswer = inputElement ? inputElement.value.trim() : "";
+    }
+    
+    if (!userAnswer) {
+        showFeedback("Please provide an answer", "error");
+        return;
+    }
+    
+    const normalizedAnswer = userAnswer.toLowerCase().trim();
+    const normalizedWord = word.toLowerCase().trim();
+    
+    // Enhanced real-time visual feedback
+    const inputElement = document.getElementById(`${currentMode}Input`);
+    const feedbackElement = document.getElementById(`${currentMode}Feedback`);
+    
+    if (normalizedAnswer === normalizedWord) {
+        score++;
+        correctWords.push(word);
+        showFeedback("✅ Correct! Well done!", "success");
+        
+        // Visual confirmation
+        if (inputElement) {
+            inputElement.style.borderColor = '#4CAF50';
+            inputElement.style.backgroundColor = 'rgba(76, 175, 80, 0.2)';
+            inputElement.style.color = '#4CAF50';
+            inputElement.style.fontWeight = 'bold';
+            inputElement.style.textDecoration = 'none';
+        }
+        if (feedbackElement) {
+            feedbackElement.style.color = '#4CAF50';
+            feedbackElement.style.fontWeight = 'bold';
+            feedbackElement.textContent = "✅ Correct!";
+        }
+    } else {
+        incorrectWords.push({ word: word, answer: userAnswer });
+        showFeedback(`❌ Incorrect. The word was: ${word}`, "error");
+        
+        // Visual feedback for incorrect
+        if (inputElement) {
+            inputElement.style.borderColor = '#f44336';
+            inputElement.style.backgroundColor = 'rgba(244, 67, 54, 0.2)';
+            inputElement.style.color = '#f44336';
+            inputElement.style.fontWeight = 'bold';
+            inputElement.style.textDecoration = 'line-through';
+        }
+        if (feedbackElement) {
+            feedbackElement.style.color = '#f44336';
+            feedbackElement.style.fontWeight = 'bold';
+            feedbackElement.textContent = `❌ Incorrect. Correct: ${word}`;
+        }
+    }
+    
+    currentIndex++;
+    
+    // Auto-advance with delay
+    setTimeout(() => {
+        // Reset input styling for next word
+        if (inputElement) {
+            inputElement.style.borderColor = 'rgba(255, 255, 255, 0.2)';
+            inputElement.style.backgroundColor = 'rgba(255, 255, 255, 0.1)';
+            inputElement.style.color = 'white';
+            inputElement.style.fontWeight = 'normal';
+            inputElement.style.textDecoration = 'none';
+            inputElement.value = "";
+        }
+        
+        if (feedbackElement) {
+            feedbackElement.style.color = '';
+            feedbackElement.style.fontWeight = '';
+        }
+        
+        if (currentIndex < currentList.length) {
+            nextWord();
+        } else {
+            showSummary();
+        }
+    }, 2000);
+}
+
+// Summary function
 function showSummary() {
   const summaryElement = document.getElementById(`${currentMode}Summary`);
   if (!summaryElement) return;
@@ -1043,7 +940,6 @@ function showSummary() {
     </div>
   `;
   
-  // Show incorrect words with user's answers
   if (incorrectWords.length > 0) {
     summaryHTML += `
       <div class="incorrect-words">
@@ -1062,7 +958,6 @@ function showSummary() {
     summaryHTML += `</div></div>`;
   }
   
-  // Show flagged words
   if (flaggedWords.size > 0) {
     summaryHTML += `
       <div class="flagged-words">
@@ -1077,7 +972,6 @@ function showSummary() {
     summaryHTML += `</div></div>`;
   }
   
-  // Show correct words if needed
   if (correctWords.length > 0 && incorrectWords.length === 0) {
     summaryHTML += `
       <div class="correct-words">
@@ -1113,7 +1007,10 @@ function shuffle(arr) {
   return [...arr].sort(() => Math.random() - 0.5);
 }
 
-// Attach event listeners for mode-specific buttons
+// =======================================================
+// EVENT LISTENERS - ORIGINAL CODE
+// =======================================================
+
 document.addEventListener('DOMContentLoaded', function() {
   // Say Again buttons
   document.querySelectorAll('[id$="SayAgain"]').forEach(btn => {
@@ -1162,15 +1059,17 @@ function initializeSpeechSynthesis() {
     };
   }
   
-  // Initialize voice recognition
   initializeSpeechRecognition();
 }
 
-// Initialize the app
+// =======================================================
+// FINAL INITIALIZATION
+// =======================================================
+
 document.addEventListener('DOMContentLoaded', function() {
   initializeSpeechSynthesis();
-  createCustomWordsUI(); // Create the custom words UI in each mode
-  initializeCustomWords(); // Initialize custom words functionality
-  initializeRealTimeMarking(); // Initialize real-time marking
-  console.log("SpellRightPro Premium with Voice Recognition & Real-time Marking initialized");
+  createCustomWordsUI();
+  initializeCustomWords();
+  initializeRealTimeValidation(); // REAL-TIME MARKING INITIALIZATION
+  console.log("SpellRightPro Premium with Real-time Marking initialized");
 });
