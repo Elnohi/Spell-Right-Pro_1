@@ -55,6 +55,53 @@ function hideOverlay() {
   if (mainContent) mainContent.style.display = "block";
 }
 
+// Enhanced premium status check with better error handling
+async function checkPremiumStatus(user) {
+  try {
+    if (!user) {
+      userIsPremium = false;
+      return;
+    }
+    
+    const userDoc = await db.collection('premiumUsers').doc(user.uid).get();
+    
+    if (userDoc.exists) {
+      const userData = userDoc.data();
+      const now = new Date();
+      const expiryDate = userData.expiryDate?.toDate();
+      
+      // Check if subscription is still valid
+      if (expiryDate && expiryDate > now && userData.active !== false) {
+        userIsPremium = true;
+        console.log('✅ User has active premium subscription');
+      } else {
+        userIsPremium = false;
+        console.log('❌ Premium subscription expired or inactive');
+        
+        // Optional: Mark as inactive in database
+        if (userData.active !== false) {
+          await db.collection('premiumUsers').doc(user.uid).update({
+            active: false
+          });
+        }
+      }
+    } else {
+      userIsPremium = false;
+      console.log('❌ User not found in premium users');
+    }
+  } catch (error) {
+    console.error('Error checking premium status:', error);
+    userIsPremium = false;
+    
+    // Fallback: Check if we have premium status in localStorage (for demo purposes)
+    const localPremium = localStorage.getItem(`premium_${user.uid}`);
+    if (localPremium === 'true') {
+      userIsPremium = true;
+      console.log('✅ Using local premium status');
+    }
+  }
+}
+
 // Enhanced auth state handler
 auth.onAuthStateChanged(async (user) => {
   if (user) {
@@ -69,9 +116,31 @@ auth.onAuthStateChanged(async (user) => {
       showFeedback('Welcome back to Premium!', 'success');
       initializePremiumFeatures();
     } else {
-      // User is logged in but not premium - show upgrade message
+      // FIX: User is logged in but not premium - show upgrade message with redirect option
       showOverlay();
-      showFeedback('Please upgrade to premium to access all features', 'info');
+      const feedbackDiv = document.createElement('div');
+      feedbackDiv.innerHTML = `
+        <div style="text-align: center; margin: 15px 0;">
+          <p>Premium access required for full features.</p>
+          <button onclick="window.location.href='/pricing.html'" 
+                  style="background: #7b2ff7; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; margin: 10px 0;">
+            <i class="fa fa-crown"></i> Upgrade to Premium
+          </button>
+          <br>
+          <button onclick="quickTest()" 
+                  style="background: #6c757d; color: white; border: none; padding: 8px 15px; border-radius: 6px; cursor: pointer; margin: 5px 0;">
+            <i class="fa fa-bolt"></i> Quick Test Mode
+          </button>
+        </div>
+      `;
+      
+      // Add to the login overlay
+      const glassCard = document.querySelector('.glass-card');
+      const existingFeedback = glassCard.querySelector('.premium-redirect');
+      if (existingFeedback) existingFeedback.remove();
+      
+      feedbackDiv.className = 'premium-redirect';
+      glassCard.appendChild(feedbackDiv);
     }
   } else {
     console.log('❌ No user, showing login');
@@ -80,34 +149,6 @@ auth.onAuthStateChanged(async (user) => {
     showOverlay();
   }
 });
-
-// Check if user has active premium subscription
-async function checkPremiumStatus(user) {
-  try {
-    const userDoc = await db.collection('premiumUsers').doc(user.uid).get();
-    
-    if (userDoc.exists) {
-      const userData = userDoc.data();
-      const now = new Date();
-      const expiryDate = userData.expiryDate?.toDate();
-      
-      // Check if subscription is still valid
-      if (expiryDate && expiryDate > now) {
-        userIsPremium = true;
-        console.log('✅ User has active premium subscription');
-      } else {
-        userIsPremium = false;
-        console.log('❌ Premium subscription expired');
-      }
-    } else {
-      userIsPremium = false;
-      console.log('❌ User not found in premium users');
-    }
-  } catch (error) {
-    console.error('Error checking premium status:', error);
-    userIsPremium = false;
-  }
-}
 
 // Enhanced login form
 document.getElementById('loginForm')?.addEventListener('submit', async (e) => {
@@ -125,8 +166,13 @@ document.getElementById('loginForm')?.addEventListener('submit', async (e) => {
     if (userIsPremium) {
       hideOverlay();
       showFeedback('Welcome back to Premium!', 'success');
+      initializePremiumFeatures();
     } else {
-      showFeedback('Account found! Upgrade to premium for full access.', 'info');
+      // FIX: User is logged in but not premium - redirect to pricing
+      showFeedback('Premium access required. Redirecting to pricing...', 'info');
+      setTimeout(() => {
+        window.location.href = '/pricing.html';
+      }, 2000);
     }
   } catch (error) {
     showFeedback('Login failed. Please check your credentials.', 'error');
@@ -149,8 +195,13 @@ document.getElementById('registerForm')?.addEventListener('submit', async (e) =>
     showFeedback('Creating account...', 'info');
     const userCredential = await auth.createUserWithEmailAndPassword(email, password);
     
-    // NEW USERS MUST PAY - don't give free premium access
-    showFeedback('Account created! Please upgrade to premium.', 'info');
+    // NEW FIX: Redirect to pricing page after successful registration
+    showFeedback('Account created! Redirecting to pricing...', 'success');
+    
+    // Redirect to pricing page after a short delay
+    setTimeout(() => {
+      window.location.href = '/pricing.html';
+    }, 2000);
     
   } catch (error) {
     showFeedback('Registration failed: ' + error.message, 'error');
