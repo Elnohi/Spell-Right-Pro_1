@@ -1,4 +1,4 @@
-/* /js/main-freemium-oet.js - COMPLETE FIXED VERSION */
+/* /js/main-freemium-oet.js - COMPLETE FIXED WITH ACCENT SUPPORT */
 (() => {
   const $ = s => document.querySelector(s);
   const ui = {
@@ -95,7 +95,7 @@
     }
   }
 
-  // FIXED: Text-to-speech with accent support
+  // FIXED: Text-to-speech with PROPER accent support
   function speakWord(word) {
     if (!window.speechSynthesis) {
       t(ui.feedback, "Text-to-speech not supported in this browser");
@@ -110,19 +110,37 @@
       utterance.pitch = 1;
       utterance.volume = 1;
       
-      // FIXED: Use selected accent
+      // FIXED: Use selected accent from dropdown
       const selectedAccent = ui.accentSelect ? ui.accentSelect.value : 'en-US';
       utterance.lang = selectedAccent;
       
+      // Get available voices and filter for the selected accent
       const voices = speechSynthesis.getVoices();
-      const preferredVoice = voices.find(voice => voice.lang.includes(selectedAccent)) || 
-                           voices.find(voice => voice.lang.includes('en')) || 
-                           voices[0];
+      let preferredVoice = null;
       
-      if (preferredVoice) utterance.voice = preferredVoice;
+      if (voices.length > 0) {
+        // Try to find exact match for selected accent
+        preferredVoice = voices.find(voice => voice.lang === selectedAccent);
+        
+        // If not found, try to find similar accent
+        if (!preferredVoice) {
+          const baseLang = selectedAccent.split('-')[0];
+          preferredVoice = voices.find(voice => voice.lang.startsWith(baseLang));
+        }
+        
+        // If still not found, use first available English voice
+        if (!preferredVoice) {
+          preferredVoice = voices.find(voice => voice.lang.includes('en')) || voices[0];
+        }
+        
+        if (preferredVoice) {
+          utterance.voice = preferredVoice;
+          console.log("Using voice:", preferredVoice.name, "for accent:", selectedAccent);
+        }
+      }
       
       utterance.onend = function() {
-        console.log("Finished speaking:", word);
+        console.log("Finished speaking:", word, "with accent:", selectedAccent);
       };
       
       utterance.onerror = function(event) {
@@ -131,7 +149,7 @@
       };
       
       speechSynthesis.speak(utterance);
-      t(ui.feedback, "Speaking...");
+      t(ui.feedback, `Speaking with ${getAccentName(selectedAccent)} accent...`);
       
     } catch (error) {
       console.error("Speech error:", error);
@@ -139,6 +157,18 @@
     }
   }
 
+  // Helper function to get accent display name
+  function getAccentName(accentCode) {
+    const accentMap = {
+      'en-US': 'American',
+      'en-GB': 'British', 
+      'en-AU': 'Australian',
+      'en-CA': 'Canadian'
+    };
+    return accentMap[accentCode] || accentCode;
+  }
+
+  // FIXED: Proper exam/practice mode handling
   async function startSession() {
     const customText = (ui.customBox?.value || '').trim();
     let wordList = [];
@@ -383,6 +413,14 @@
         t(ui.feedback, `Custom list loaded: ${words.length} words. Ready to start!`);
       });
     }
+
+    // FIXED: Accent selection change handler
+    if (ui.accentSelect) {
+      ui.accentSelect.addEventListener('change', function() {
+        const accentName = getAccentName(this.value);
+        t(ui.feedback, `Accent changed to ${accentName}. Next word will use this accent.`);
+      });
+    }
   }
 
   function initializeSpeechSynthesis() {
@@ -390,6 +428,19 @@
       speechSynthesis.getVoices();
       window.speechSynthesis.onvoiceschanged = function() {
         console.log("Voices loaded:", speechSynthesis.getVoices().length);
+        // Update accent selection based on available voices
+        if (ui.accentSelect) {
+          const voices = speechSynthesis.getVoices();
+          const availableAccents = new Set();
+          
+          voices.forEach(voice => {
+            if (voice.lang.includes('en')) {
+              availableAccents.add(voice.lang);
+            }
+          });
+          
+          console.log("Available English accents:", Array.from(availableAccents));
+        }
       };
     }
   }
@@ -437,7 +488,7 @@
 
     window.restartOETTraining = restartOETTraining;
 
-    console.log('OET Spelling Trainer ready - Fixed with accent support');
+    console.log('OET Spelling Trainer ready - Fixed with proper accent support');
   }
 
   initialize();
