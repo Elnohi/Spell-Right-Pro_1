@@ -1,5 +1,5 @@
 /* =======================================================
-   SpellRightPro Premium Logic - WITH VOICE RECOGNITION
+   SpellRightPro Premium Logic - WITH VOICE RECOGNITION & REAL-TIME MARKING
    ======================================================= */
 
 const firebaseConfig = window.firebaseConfig;
@@ -20,6 +20,10 @@ const mainContent = document.querySelector("main");
 // --- Voice Recognition ---
 let recognition = null;
 let isListening = false;
+
+// --- Real-time Marking Variables ---
+let realTimeMarkingEnabled = true;
+let currentWordElement = null;
 
 // Initialize speech recognition
 function initializeSpeechRecognition() {
@@ -157,6 +161,264 @@ function checkBeeAnswer(spokenText) {
   } else {
     setTimeout(showSummary, 1500);
   }
+}
+
+// --- REAL-TIME MARKING FUNCTIONS ---
+function initializeRealTimeMarking() {
+  // Add real-time marking toggle
+  const realTimeToggleHTML = `
+    <div class="real-time-marking-toggle" style="margin: 15px 0; display: flex; align-items: center; justify-content: center; gap: 10px;">
+      <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+        <input type="checkbox" id="realTimeMarkingToggle" checked>
+        <span>Real-time Spelling Check</span>
+      </label>
+    </div>
+  `;
+  
+  // Add to each trainer area except bee mode
+  document.querySelectorAll('.trainer-area').forEach(area => {
+    if (!area.id.includes('bee')) {
+      const inputGroup = area.querySelector('.input-group');
+      if (inputGroup) {
+        inputGroup.insertAdjacentHTML('beforebegin', realTimeToggleHTML);
+      }
+    }
+  });
+  
+  // Add event listener for toggle
+  document.addEventListener('change', function(e) {
+    if (e.target.id === 'realTimeMarkingToggle') {
+      realTimeMarkingEnabled = e.target.checked;
+      showFeedback(`Real-time marking ${realTimeMarkingEnabled ? 'enabled' : 'disabled'}`, 'info');
+      
+      // Clear any existing real-time feedback
+      clearRealTimeFeedback();
+    }
+  });
+  
+  // Add input event listeners for real-time checking
+  document.querySelectorAll('.answer-input').forEach(input => {
+    input.addEventListener('input', function() {
+      if (realTimeMarkingEnabled && currentIndex < currentList.length) {
+        checkRealTimeSpelling(this.value, currentList[currentIndex]);
+      } else {
+        clearRealTimeFeedback();
+      }
+    });
+    
+    input.addEventListener('focus', function() {
+      if (realTimeMarkingEnabled && currentIndex < currentList.length) {
+        currentWordElement = this;
+      }
+    });
+  });
+}
+
+function checkRealTimeSpelling(userInput, correctWord) {
+  if (!userInput.trim()) {
+    clearRealTimeFeedback();
+    return;
+  }
+  
+  const feedbackElement = document.getElementById(`${currentMode}Feedback`);
+  const inputElement = document.getElementById(`${currentMode}Input`);
+  
+  if (!feedbackElement || !inputElement) return;
+  
+  const normalizedInput = userInput.toLowerCase().trim();
+  const normalizedCorrect = correctWord.toLowerCase().trim();
+  
+  // Clear previous styling
+  inputElement.style.borderColor = '';
+  inputElement.style.background = '';
+  
+  if (normalizedInput === normalizedCorrect) {
+    // Perfect match
+    inputElement.style.borderColor = '#28a745';
+    inputElement.style.background = 'rgba(40, 167, 69, 0.1)';
+    feedbackElement.innerHTML = '<span style="color: #28a745;">✅ Spelling is correct!</span>';
+  } else if (normalizedCorrect.startsWith(normalizedInput)) {
+    // Partial match - on the right track
+    inputElement.style.borderColor = '#ffc107';
+    inputElement.style.background = 'rgba(255, 193, 7, 0.1)';
+    
+    const remaining = normalizedCorrect.slice(normalizedInput.length);
+    feedbackElement.innerHTML = `<span style="color: #ffc107;">↳ Continue with: <strong>${remaining}</strong></span>`;
+  } else {
+    // Incorrect spelling
+    inputElement.style.borderColor = '#dc3545';
+    inputElement.style.background = 'rgba(220, 53, 69, 0.1)';
+    
+    // Provide hints for common mistakes
+    const hint = generateSpellingHint(userInput, correctWord);
+    feedbackElement.innerHTML = `<span style="color: #dc3545;">❌ ${hint}</span>`;
+  }
+}
+
+function generateSpellingHint(wrongWord, correctWord) {
+  const wrong = wrongWord.toLowerCase();
+  const correct = correctWord.toLowerCase();
+  
+  // Common spelling mistake patterns
+  if (wrong.length === correct.length) {
+    // Check for single letter differences
+    let differences = [];
+    for (let i = 0; i < Math.min(wrong.length, correct.length); i++) {
+      if (wrong[i] !== correct[i]) {
+        differences.push(`Position ${i + 1}: "${wrong[i]}" should be "${correct[i]}"`);
+      }
+    }
+    
+    if (differences.length === 1) {
+      return `Check ${differences[0]}`;
+    } else if (differences.length > 0) {
+      return `Multiple spelling errors detected`;
+    }
+  }
+  
+  // Check for missing/extra letters
+  if (wrong.length < correct.length) {
+    return `Word seems too short. Check for missing letters.`;
+  } else if (wrong.length > correct.length) {
+    return `Word seems too long. Check for extra letters.`;
+  }
+  
+  // General hint
+  return `Incorrect spelling. Listen carefully to the word.`;
+}
+
+function clearRealTimeFeedback() {
+  const feedbackElement = document.getElementById(`${currentMode}Feedback`);
+  const inputElement = document.getElementById(`${currentMode}Input`);
+  
+  if (feedbackElement) {
+    feedbackElement.innerHTML = 'Type your answer...';
+    feedbackElement.style.color = '';
+  }
+  
+  if (inputElement) {
+    inputElement.style.borderColor = '';
+    inputElement.style.background = '';
+  }
+}
+
+// --- Enhanced Answer Checking with Detailed Feedback ---
+function checkAnswer() {
+  if (currentIndex >= currentList.length) return;
+  
+  const word = currentList[currentIndex];
+  let userAnswer = "";
+  
+  // Get answer based on mode
+  if (currentMode === "bee") {
+    // For bee mode, start voice recognition instead of using prompt
+    startVoiceRecognition();
+    return;
+  } else {
+    const inputElement = document.getElementById(`${currentMode}Input`);
+    userAnswer = inputElement ? inputElement.value.trim() : "";
+  }
+  
+  if (!userAnswer) {
+    showFeedback("Please provide an answer", "error");
+    return;
+  }
+  
+  const normalizedAnswer = userAnswer.toLowerCase().trim();
+  const normalizedWord = word.toLowerCase().trim();
+  
+  // Enhanced feedback system
+  if (normalizedAnswer === normalizedWord) {
+    score++;
+    correctWords.push(word);
+    showDetailedFeedback(true, word, userAnswer);
+  } else {
+    incorrectWords.push({ word: word, answer: userAnswer });
+    showDetailedFeedback(false, word, userAnswer);
+  }
+  
+  currentIndex++;
+  
+  // Clear input and real-time feedback for next word
+  const inputElement = document.getElementById(`${currentMode}Input`);
+  if (inputElement) {
+    inputElement.value = "";
+    clearRealTimeFeedback();
+  }
+  
+  if (currentIndex < currentList.length) {
+    setTimeout(nextWord, 2000);
+  } else {
+    setTimeout(showSummary, 1000);
+  }
+}
+
+function showDetailedFeedback(isCorrect, correctWord, userAnswer) {
+  const feedbackElement = document.getElementById(`${currentMode}Feedback`);
+  if (!feedbackElement) return;
+  
+  if (isCorrect) {
+    feedbackElement.innerHTML = `
+      <div style="color: #28a745; font-weight: bold;">
+        ✅ Correct! Excellent spelling!
+      </div>
+      <div style="font-size: 0.9em; opacity: 0.9; margin-top: 5px;">
+        You spelled "<strong>${correctWord}</strong>" perfectly.
+      </div>
+    `;
+  } else {
+    // Analyze the mistake
+    const analysis = analyzeSpellingMistake(userAnswer, correctWord);
+    
+    feedbackElement.innerHTML = `
+      <div style="color: #dc3545; font-weight: bold;">
+        ❌ Incorrect
+      </div>
+      <div style="font-size: 0.9em; margin-top: 5px;">
+        <div>Correct: <strong>${correctWord}</strong></div>
+        <div>Your answer: <strong>${userAnswer}</strong></div>
+        ${analysis ? `<div style="margin-top: 5px; color: #ffc107;">💡 ${analysis}</div>` : ''}
+      </div>
+    `;
+  }
+}
+
+function analyzeSpellingMistake(wrong, correct) {
+  const w = wrong.toLowerCase();
+  const c = correct.toLowerCase();
+  
+  // Common spelling patterns to check
+  if (w.replace(/[^a-z]/g, '') === c.replace(/[^a-z]/g, '')) {
+    return "Watch out for unnecessary spaces or punctuation";
+  }
+  
+  // Double letter mistakes
+  const doubleLetterMistakes = {
+    'acommodate': 'accommodate',
+    'comitee': 'committee',
+    'embarass': 'embarrass',
+    'ocured': 'occurred'
+  };
+  
+  if (doubleLetterMistakes[w]) {
+    return "This word has double letters. Remember: " + doubleLetterMistakes[w];
+  }
+  
+  // Silent letter mistakes
+  if (w === c.replace(/[bckg]/g, '')) {
+    return "This word has silent letters. Listen carefully to each syllable.";
+  }
+  
+  // Vowel mistakes
+  const vowelChanges = w.split('').filter((char, i) => 
+    'aeiou'.includes(char) && i < c.length && char !== c[i]
+  );
+  
+  if (vowelChanges.length > 0) {
+    return "Check the vowels in the word. English vowels can be tricky!";
+  }
+  
+  return "Practice this word's spelling pattern";
 }
 
 // --- Custom Words Management ---
@@ -625,6 +887,9 @@ function resetTraining() {
   if (recognition && isListening) {
     recognition.stop();
   }
+  
+  // Clear real-time feedback
+  clearRealTimeFeedback();
 }
 
 // Start button - FIXED: Proper mode handling
@@ -743,7 +1008,7 @@ function nextWord() {
   }
   
   if (feedbackElement) {
-    feedbackElement.textContent = "Listen carefully...";
+    feedbackElement.innerHTML = "Listen carefully...";
     feedbackElement.style.color = ''; // Reset color
     feedbackElement.style.fontWeight = ''; // Reset font weight
   }
@@ -752,56 +1017,18 @@ function nextWord() {
   updateBeeVoiceUI(false);
   document.getElementById('beeRecognizedText').style.display = 'none';
   
+  // Clear input field
+  const inputElement = document.getElementById(`${currentMode}Input`);
+  if (inputElement) {
+    inputElement.value = "";
+    inputElement.style.borderColor = '';
+    inputElement.style.background = '';
+  }
+  
   // Speak the word with a slight delay
   setTimeout(() => {
     speakWord(word);
   }, 500);
-}
-
-function checkAnswer() {
-  if (currentIndex >= currentList.length) return;
-  
-  const word = currentList[currentIndex];
-  let userAnswer = "";
-  
-  // Get answer based on mode
-  if (currentMode === "bee") {
-    // For bee mode, start voice recognition instead of using prompt
-    startVoiceRecognition();
-    return;
-  } else {
-    const inputElement = document.getElementById(`${currentMode}Input`);
-    userAnswer = inputElement ? inputElement.value.trim() : "";
-  }
-  
-  if (!userAnswer) {
-    showFeedback("Please provide an answer", "error");
-    return;
-  }
-  
-  const normalizedAnswer = userAnswer.toLowerCase().trim();
-  const normalizedWord = word.toLowerCase().trim();
-  
-  if (normalizedAnswer === normalizedWord) {
-    score++;
-    correctWords.push(word);
-    showFeedback("✅ Correct!", "success");
-  } else {
-    incorrectWords.push({ word: word, answer: userAnswer });
-    showFeedback(`❌ Incorrect. The word was: ${word}`, "error");
-  }
-  
-  currentIndex++;
-  
-  // Clear input for next word
-  const inputElement = document.getElementById(`${currentMode}Input`);
-  if (inputElement) inputElement.value = "";
-  
-  if (currentIndex < currentList.length) {
-    setTimeout(nextWord, 1500);
-  } else {
-    setTimeout(showSummary, 1000);
-  }
 }
 
 // FIXED: Enhanced summary showing actual words
@@ -944,5 +1171,6 @@ document.addEventListener('DOMContentLoaded', function() {
   initializeSpeechSynthesis();
   createCustomWordsUI(); // Create the custom words UI in each mode
   initializeCustomWords(); // Initialize custom words functionality
-  console.log("SpellRightPro Premium with Voice Recognition initialized");
+  initializeRealTimeMarking(); // Initialize real-time marking
+  console.log("SpellRightPro Premium with Voice Recognition & Real-time Marking initialized");
 });
