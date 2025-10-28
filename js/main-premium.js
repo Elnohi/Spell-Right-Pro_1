@@ -24,6 +24,10 @@ let isListening = false;
 // --- Real-time Marking Variables ---
 let realTimeMarkingEnabled = true;
 
+// --- Premium Access Variables ---
+let currentUser = null;
+let userIsPremium = false;
+
 // --- Training Variables ---
 let currentMode = null;
 let currentIndex = 0;
@@ -37,11 +41,8 @@ let flaggedWords = new Set();
 let customLists = JSON.parse(localStorage.getItem('premiumCustomLists') || '{}');
 let currentCustomList = null;
 
-// --- Premium Status ---
-let isPremiumUser = false;
-
 // =======================================================
-// AUTHENTICATION - FIXED REGISTRATION FLOW
+// ENHANCED AUTHENTICATION WITH PREMIUM ACCESS CONTROL
 // =======================================================
 
 function showOverlay() {
@@ -54,62 +55,61 @@ function hideOverlay() {
   if (mainContent) mainContent.style.display = "block";
 }
 
-// Check premium status from Firestore
+// Enhanced auth state handler
+auth.onAuthStateChanged(async (user) => {
+  if (user) {
+    console.log('✅ User authenticated:', user.email);
+    currentUser = user;
+    
+    // Check if user has premium access
+    await checkPremiumStatus(user);
+    
+    if (userIsPremium) {
+      hideOverlay();
+      showFeedback('Welcome back to Premium!', 'success');
+      initializePremiumFeatures();
+    } else {
+      // User is logged in but not premium - show upgrade message
+      showOverlay();
+      showFeedback('Please upgrade to premium to access all features', 'info');
+    }
+  } else {
+    console.log('❌ No user, showing login');
+    currentUser = null;
+    userIsPremium = false;
+    showOverlay();
+  }
+});
+
+// Check if user has active premium subscription
 async function checkPremiumStatus(user) {
   try {
-    const userDoc = await db.collection('users').doc(user.uid).get();
+    const userDoc = await db.collection('premiumUsers').doc(user.uid).get();
+    
     if (userDoc.exists) {
       const userData = userDoc.data();
-      isPremiumUser = userData.premium === true;
-      console.log('Premium status:', isPremiumUser);
+      const now = new Date();
+      const expiryDate = userData.expiryDate?.toDate();
       
-      // Apply premium restrictions
-      applyPremiumRestrictions();
-      
-      return isPremiumUser;
+      // Check if subscription is still valid
+      if (expiryDate && expiryDate > now) {
+        userIsPremium = true;
+        console.log('✅ User has active premium subscription');
+      } else {
+        userIsPremium = false;
+        console.log('❌ Premium subscription expired');
+      }
     } else {
-      // New user - not premium
-      isPremiumUser = false;
-      applyPremiumRestrictions();
-      return false;
+      userIsPremium = false;
+      console.log('❌ User not found in premium users');
     }
   } catch (error) {
     console.error('Error checking premium status:', error);
-    isPremiumUser = false;
-    applyPremiumRestrictions();
-    return false;
+    userIsPremium = false;
   }
 }
 
-// Apply premium feature restrictions
-function applyPremiumRestrictions() {
-  const premiumFeatures = document.querySelectorAll('.premium-feature');
-  const upgradePrompts = document.querySelectorAll('.upgrade-prompt');
-  
-  if (isPremiumUser) {
-    // User is premium - enable all features
-    premiumFeatures.forEach(feature => {
-      feature.style.opacity = '1';
-      feature.style.pointerEvents = 'auto';
-    });
-    upgradePrompts.forEach(prompt => {
-      prompt.style.display = 'none';
-    });
-    console.log('Premium features enabled');
-  } else {
-    // User is not premium - restrict features
-    premiumFeatures.forEach(feature => {
-      feature.style.opacity = '0.6';
-      feature.style.pointerEvents = 'none';
-    });
-    upgradePrompts.forEach(prompt => {
-      prompt.style.display = 'block';
-    });
-    console.log('Premium features restricted');
-  }
-}
-
-// Simple login
+// Enhanced login form
 document.getElementById('loginForm')?.addEventListener('submit', async (e) => {
   e.preventDefault();
   const email = document.getElementById('loginEmail').value;
@@ -118,22 +118,22 @@ document.getElementById('loginForm')?.addEventListener('submit', async (e) => {
   try {
     showFeedback('Logging in...', 'info');
     const userCredential = await auth.signInWithEmailAndPassword(email, password);
-    const isPremium = await checkPremiumStatus(userCredential.user);
     
-    if (isPremium) {
+    // Check premium status after login
+    await checkPremiumStatus(userCredential.user);
+    
+    if (userIsPremium) {
       hideOverlay();
-      showFeedback('Welcome back to SpellRightPro Premium!', 'success');
+      showFeedback('Welcome back to Premium!', 'success');
     } else {
-      hideOverlay();
-      showFeedback('Welcome! Upgrade to Premium for full features.', 'info');
+      showFeedback('Account found! Upgrade to premium for full access.', 'info');
     }
   } catch (error) {
-    console.log('Login failed:', error);
     showFeedback('Login failed. Please check your credentials.', 'error');
   }
 });
 
-// REGISTRATION WITH PAYMENT REDIRECTION - FIXED
+// Enhanced register form - ALWAYS requires payment
 document.getElementById('registerForm')?.addEventListener('submit', async (e) => {
   e.preventDefault();
   const email = document.getElementById('regEmail').value;
@@ -149,19 +149,8 @@ document.getElementById('registerForm')?.addEventListener('submit', async (e) =>
     showFeedback('Creating account...', 'info');
     const userCredential = await auth.createUserWithEmailAndPassword(email, password);
     
-    // Create user document in Firestore
-    await db.collection('users').doc(userCredential.user.uid).set({
-      email: email,
-      createdAt: new Date().toISOString(),
-      premium: false // Default to non-premium
-    });
-    
-    showFeedback('Account created! Redirecting to payment...', 'success');
-    
-    // REDIRECT TO PAYMENT PAGE AFTER REGISTRATION
-    setTimeout(() => {
-      window.location.href = 'pricing.html';
-    }, 2000);
+    // NEW USERS MUST PAY - don't give free premium access
+    showFeedback('Account created! Please upgrade to premium.', 'info');
     
   } catch (error) {
     showFeedback('Registration failed: ' + error.message, 'error');
@@ -183,28 +172,46 @@ document.getElementById('showLogin')?.addEventListener('click', () => {
   document.getElementById('showRegister').style.display = 'inline';
 });
 
-// Auth state: check premium status on login
-auth.onAuthStateChanged(async (user) => {
-  if (user) {
-    console.log('✅ User authenticated:', user.email);
-    await checkPremiumStatus(user);
-    hideOverlay();
-  } else {
-    console.log('❌ No user, showing login');
-    isPremiumUser = false;
-    applyPremiumRestrictions();
-    showOverlay();
-  }
-});
-
 // Logout
 logoutBtn?.addEventListener('click', () => {
   auth.signOut();
-  isPremiumUser = false;
-  applyPremiumRestrictions();
   showOverlay();
   showFeedback('Logged out successfully', 'info');
 });
+
+// Function to activate premium access (call this after payment)
+async function activatePremiumAccess(userId, planType) {
+  try {
+    const now = new Date();
+    const expiryDate = new Date();
+    
+    // Set expiry date based on plan
+    if (planType === 'monthly') {
+      expiryDate.setMonth(now.getMonth() + 1);
+    } else if (planType === 'yearly') {
+      expiryDate.setFullYear(now.getFullYear() + 1);
+    }
+    
+    await db.collection('premiumUsers').doc(userId).set({
+      plan: planType,
+      activatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+      expiryDate: expiryDate,
+      active: true
+    });
+    
+    userIsPremium = true;
+    console.log('✅ Premium access activated for user:', userId);
+    
+  } catch (error) {
+    console.error('Error activating premium access:', error);
+  }
+}
+
+// Initialize premium features only for paid users
+function initializePremiumFeatures() {
+  console.log('Initializing premium features for:', currentUser.email);
+  // Premium features are automatically available when userIsPremium = true
+}
 
 function showFeedback(message, type = "info") {
   const existing = document.querySelector(".feedback-message");
@@ -240,15 +247,10 @@ if (toggleDark) {
 }
 
 // =======================================================
-// VOICE RECOGNITION - WITH PREMIUM RESTRICTIONS
+// VOICE RECOGNITION
 // =======================================================
 
 function initializeSpeechRecognition() {
-  if (!isPremiumUser) {
-    console.log('Voice recognition requires premium');
-    return;
-  }
-  
   if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     recognition = new SpeechRecognition();
@@ -325,11 +327,6 @@ function processSpokenSpelling(spokenText) {
 }
 
 function startVoiceRecognition() {
-  if (!isPremiumUser) {
-    showFeedback('Voice recognition is a Premium feature. Please upgrade.', 'warning');
-    return;
-  }
-  
   if (!recognition) {
     showFeedback('Voice recognition not available', 'error');
     return;
@@ -383,7 +380,7 @@ function checkBeeAnswer(spokenText) {
 }
 
 // =======================================================
-// REAL-TIME MARKING - WITH PREMIUM RESTRICTIONS
+// REAL-TIME MARKING
 // =======================================================
 
 function initializeRealTimeValidation() {
@@ -391,8 +388,8 @@ function initializeRealTimeValidation() {
     const realTimeToggleHTML = `
         <div class="real-time-marking-toggle" style="margin: 15px 0; display: flex; align-items: center; justify-content: center; gap: 10px;">
             <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
-                <input type="checkbox" id="realTimeMarkingToggle" ${isPremiumUser ? 'checked' : 'disabled'}>
-                <span>Real-time Spelling Check ${!isPremiumUser ? '(Premium)' : ''}</span>
+                <input type="checkbox" id="realTimeMarkingToggle" checked>
+                <span>Real-time Spelling Check</span>
             </label>
         </div>
     `;
@@ -410,11 +407,6 @@ function initializeRealTimeValidation() {
     // Add event listener for toggle
     document.addEventListener('change', function(e) {
         if (e.target.id === 'realTimeMarkingToggle') {
-            if (!isPremiumUser) {
-                showFeedback('Real-time marking is a Premium feature. Please upgrade.', 'warning');
-                e.target.checked = false;
-                return;
-            }
             realTimeMarkingEnabled = e.target.checked;
             showFeedback(`Real-time marking ${realTimeMarkingEnabled ? 'enabled' : 'disabled'}`, 'info');
             clearRealTimeFeedback();
@@ -423,7 +415,7 @@ function initializeRealTimeValidation() {
     
     document.querySelectorAll('.answer-input').forEach(input => {
         input.addEventListener('input', function() {
-            if (!realTimeMarkingEnabled || !isPremiumUser || currentIndex >= currentList.length) return;
+            if (!realTimeMarkingEnabled || currentIndex >= currentList.length) return;
             
             const currentWord = currentList[currentIndex];
             const userInput = this.value.trim().toLowerCase();
@@ -482,34 +474,23 @@ function clearRealTimeFeedback() {
 }
 
 // =======================================================
-// CUSTOM WORDS MANAGEMENT - WITH PREMIUM RESTRICTIONS
+// CUSTOM WORDS MANAGEMENT
 // =======================================================
 
 function createCustomWordsUI() {
   const customHTML = `
     <div class="custom-words-area" style="margin-top: 20px; display: none;">
-      <h4><i class="fa fa-file-upload"></i> Custom Words ${!isPremiumUser ? '<small style="color: #ffd700;">(Premium)</small>' : ''}</h4>
-      
-      ${!isPremiumUser ? `
-      <div class="upgrade-prompt" style="background: linear-gradient(135deg, #ffd700, #ff6b00); padding: 15px; border-radius: var(--radius); margin-bottom: 15px; text-align: center;">
-        <i class="fa fa-crown" style="color: #fff;"></i>
-        <strong style="color: #fff;">Upgrade to Premium for unlimited custom word lists!</strong>
-        <br>
-        <a href="pricing.html" class="btn-primary" style="margin-top: 10px; display: inline-block;">
-          <i class="fa fa-arrow-up"></i> Upgrade Now
-        </a>
-      </div>
-      ` : ''}
+      <h4><i class="fa fa-file-upload"></i> Custom Words</h4>
       
       <!-- Upload New List -->
-      <div class="upload-section premium-feature" style="background: rgba(255,255,255,0.1); padding: 20px; border-radius: var(--radius); margin-bottom: 20px;">
+      <div class="upload-section" style="background: rgba(255,255,255,0.1); padding: 20px; border-radius: var(--radius); margin-bottom: 20px;">
         <h5>Upload New Word List</h5>
         <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
           <input type="text" id="newListName" placeholder="List Name" 
-                 style="padding: 10px; border-radius: 8px; border: 1px solid #ccc; flex: 1; min-width: 150px;" ${!isPremiumUser ? 'disabled' : ''}>
+                 style="padding: 10px; border-radius: 8px; border: 1px solid #ccc; flex: 1; min-width: 150px;">
           <input type="file" id="wordListFile" accept=".txt,.csv" 
-                 style="flex: 2; min-width: 200px;" ${!isPremiumUser ? 'disabled' : ''}>
-          <button onclick="uploadWordList()" class="nav-btn" ${!isPremiumUser ? 'disabled' : ''}>
+                 style="flex: 2; min-width: 200px;">
+          <button onclick="uploadWordList()" class="nav-btn">
             <i class="fa fa-upload"></i> Upload
           </button>
         </div>
@@ -519,17 +500,17 @@ function createCustomWordsUI() {
       </div>
 
       <!-- Manage Existing Lists -->
-      <div class="lists-section premium-feature">
+      <div class="lists-section">
         <h5>Your Word Lists</h5>
         <div id="customListsContainer" class="lists-container"></div>
       </div>
 
       <!-- Quick Create -->
-      <div class="quick-create premium-feature" style="margin-top: 20px; padding: 15px; background: rgba(255,255,255,0.05); border-radius: var(--radius);">
+      <div class="quick-create" style="margin-top: 20px; padding: 15px; background: rgba(255,255,255,0.05); border-radius: var(--radius);">
         <h5>Quick Create</h5>
         <textarea id="quickWordsInput" placeholder="Enter words separated by commas or new lines" 
-                  style="width: 100%; height: 80px; padding: 10px; border-radius: 8px; border: 1px solid #ccc; margin-bottom: 10px;" ${!isPremiumUser ? 'disabled' : ''}></textarea>
-        <button onclick="createQuickList()" class="nav-btn" ${!isPremiumUser ? 'disabled' : ''}>
+                  style="width: 100%; height: 80px; padding: 10px; border-radius: 8px; border: 1px solid #ccc; margin-bottom: 10px;"></textarea>
+        <button onclick="createQuickList()" class="nav-btn">
             <i class="fa fa-plus"></i> Create List
         </button>
       </div>
@@ -547,12 +528,12 @@ function createCustomWordsUI() {
   });
 }
 
+function initializeCustomWords() {
+  loadCustomLists();
+  updateCustomListsDisplay();
+}
+
 function uploadWordList() {
-  if (!isPremiumUser) {
-    showFeedback('Custom word lists are a Premium feature. Please upgrade.', 'warning');
-    return;
-  }
-  
   const listName = document.getElementById('newListName').value.trim();
   const fileInput = document.getElementById('wordListFile');
   
@@ -615,11 +596,6 @@ function parseWordList(content, filename) {
 }
 
 function createQuickList() {
-  if (!isPremiumUser) {
-    showFeedback('Custom word lists are a Premium feature. Please upgrade.', 'warning');
-    return;
-  }
-  
   const input = document.getElementById('quickWordsInput').value.trim();
   const listName = `Quick List ${new Date().toLocaleDateString()}`;
   
@@ -652,11 +628,6 @@ function createQuickList() {
 function updateCustomListsDisplay() {
   const container = document.getElementById('customListsContainer');
   if (!container) return;
-  
-  if (!isPremiumUser) {
-    container.innerHTML = '<p style="opacity: 0.7; text-align: center;">Upgrade to Premium to create and manage custom word lists.</p>';
-    return;
-  }
   
   if (Object.keys(customLists).length === 0) {
     container.innerHTML = '<p style="opacity: 0.7; text-align: center;">No custom lists yet. Upload your first list!</p>';
@@ -695,11 +666,6 @@ function updateCustomListsDisplay() {
 }
 
 function loadCustomList(listName) {
-  if (!isPremiumUser) {
-    showFeedback('Custom word lists are a Premium feature. Please upgrade.', 'warning');
-    return;
-  }
-  
   if (!customLists[listName]) {
     showFeedback('List not found', 'error');
     return;
@@ -717,11 +683,6 @@ function loadCustomList(listName) {
 }
 
 function renameCustomList(oldName) {
-  if (!isPremiumUser) {
-    showFeedback('Custom word lists are a Premium feature. Please upgrade.', 'warning');
-    return;
-  }
-  
   const newName = prompt('Enter new name for the list:', oldName);
   if (newName && newName.trim() && newName !== oldName) {
     if (customLists[newName]) {
@@ -738,11 +699,6 @@ function renameCustomList(oldName) {
 }
 
 function deleteCustomList(listName) {
-  if (!isPremiumUser) {
-    showFeedback('Custom word lists are a Premium feature. Please upgrade.', 'warning');
-    return;
-  }
-  
   if (confirm(`Are you sure you want to delete "${listName}"?`)) {
     delete customLists[listName];
     saveCustomLists();
@@ -763,21 +719,13 @@ function loadCustomLists() {
 }
 
 // =======================================================
-// TRAINING LOGIC - WITH PREMIUM RESTRICTIONS
+// TRAINING LOGIC
 // =======================================================
 
 // Mode selection
 document.querySelectorAll(".mode-btn").forEach(btn => {
   btn.addEventListener("click", () => {
-    const mode = btn.dataset.mode;
-    
-    // Check premium restrictions for certain modes
-    if ((mode === "bee" || mode === "school") && !isPremiumUser) {
-      showFeedback('This training mode requires Premium. Please upgrade.', 'warning');
-      return;
-    }
-    
-    currentMode = mode;
+    currentMode = btn.dataset.mode;
     
     document.querySelectorAll(".trainer-area").forEach(a => {
       a.style.display = "none";
@@ -825,13 +773,6 @@ function resetTraining() {
 document.querySelectorAll(".start-btn").forEach(btn => {
   btn.addEventListener("click", () => {
     const mode = btn.dataset.mode;
-    
-    // Check premium restrictions
-    if ((mode === "bee" || mode === "school") && !isPremiumUser) {
-      showFeedback('This training mode requires Premium. Please upgrade.', 'warning');
-      return;
-    }
-    
     startTraining(mode);
   });
 });
@@ -846,17 +787,9 @@ function startTraining(mode) {
     loadOETWords();
     return;
   } else if (mode === "bee") {
-    if (!isPremiumUser) {
-      showFeedback('Bee mode requires Premium. Please upgrade.', 'warning');
-      return;
-    }
     currentList = ["accommodate", "rhythm", "occurrence", "necessary", "embarrass", "challenge", "definitely", "separate", "recommend", "privilege"];
     showFeedback("Bee mode started with default words", "info");
   } else if (mode === "school") {
-    if (!isPremiumUser) {
-      showFeedback('School mode requires Premium. Please upgrade.', 'warning');
-      return;
-    }
     currentList = ["example", "language", "grammar", "knowledge", "science", "mathematics", "history", "geography", "literature", "chemistry"];
     showFeedback("School mode started with default words", "info");
   }
@@ -980,10 +913,6 @@ function checkAnswer() {
     let userAnswer = "";
     
     if (currentMode === "bee") {
-        if (!isPremiumUser) {
-            showFeedback('Voice recognition requires Premium. Please upgrade.', 'warning');
-            return;
-        }
         startVoiceRecognition();
         return;
     } else {
@@ -1019,148 +948,196 @@ function checkAnswer() {
         if (feedbackElement) {
             feedbackElement.style.color = '#4CAF50';
             feedbackElement.style.fontWeight = 'bold';
+            feedbackElement.textContent = "✅ Correct!";
         }
     } else {
         incorrectWords.push({ word: word, answer: userAnswer });
         showFeedback(`❌ Incorrect. The word was: ${word}`, "error");
         
-        // Visual correction
+        // Visual feedback for incorrect
         if (inputElement) {
             inputElement.style.borderColor = '#f44336';
             inputElement.style.backgroundColor = 'rgba(244, 67, 54, 0.2)';
             inputElement.style.color = '#f44336';
-            inputElement.style.fontWeight = 'normal';
+            inputElement.style.fontWeight = 'bold';
             inputElement.style.textDecoration = 'line-through';
         }
         if (feedbackElement) {
             feedbackElement.style.color = '#f44336';
             feedbackElement.style.fontWeight = 'bold';
+            feedbackElement.textContent = `❌ Incorrect. Correct: ${word}`;
         }
     }
     
     currentIndex++;
     
-    if (currentIndex < currentList.length) {
-        setTimeout(nextWord, 2000);
-    } else {
-        setTimeout(showSummary, 1500);
-    }
+    // Auto-advance with delay
+    setTimeout(() => {
+        // Reset input styling for next word
+        if (inputElement) {
+            inputElement.style.borderColor = 'rgba(255, 255, 255, 0.2)';
+            inputElement.style.backgroundColor = 'rgba(255, 255, 255, 0.1)';
+            inputElement.style.color = 'white';
+            inputElement.style.fontWeight = 'normal';
+            inputElement.style.textDecoration = 'none';
+            inputElement.value = "";
+        }
+        
+        if (feedbackElement) {
+            feedbackElement.style.color = '';
+            feedbackElement.style.fontWeight = '';
+        }
+        
+        if (currentIndex < currentList.length) {
+            nextWord();
+        } else {
+            showSummary();
+        }
+    }, 2000);
 }
 
-// ENHANCED SUMMARY FUNCTION WITH DETAILED REPORT
+// Summary function
 function showSummary() {
-    const mode = currentMode;
-    const trainerArea = document.getElementById(`${mode}-area`);
-    const mainContent = trainerArea.querySelector('.trainer-content');
-    const scorePercentage = Math.round((score / currentList.length) * 100);
-    
-    let summaryHTML = `
-        <div class="summary-card" style="background: rgba(255,255,255,0.1); padding: 30px; border-radius: var(--radius); max-width: 600px; margin: 0 auto;">
-            <h3 style="text-align: center; margin-bottom: 20px;">
-                <i class="fa fa-chart-bar"></i> Training Complete!
-            </h3>
-            
-            <div class="score-display" style="text-align: center; margin-bottom: 30px;">
-                <div class="score-circle" style="width: 120px; height: 120px; border-radius: 50%; background: linear-gradient(135deg, #7b2ff7, #f107a3); display: inline-flex; align-items: center; justify-content: center; font-size: 2rem; font-weight: bold; color: white; margin-bottom: 20px;">
-                    ${scorePercentage}%
-                </div>
-                <p style="font-size: 1.2rem;">
-                    ${score} out of ${currentList.length} correct
-                </p>
-            </div>
-            
-            <div class="results-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 30px;">
-                <div class="correct-words" style="background: rgba(76, 175, 80, 0.2); padding: 15px; border-radius: var(--radius);">
-                    <h4 style="color: #4CAF50; margin-bottom: 10px;">
-                        <i class="fa fa-check-circle"></i> Correct (${correctWords.length})
-                    </h4>
-                    <div style="max-height: 150px; overflow-y: auto;">
-                        ${correctWords.map(word => `<div style="padding: 2px 0;">${word}</div>`).join('')}
-                    </div>
-                </div>
-                
-                <div class="incorrect-words" style="background: rgba(244, 67, 54, 0.2); padding: 15px; border-radius: var(--radius);">
-                    <h4 style="color: #f44336; margin-bottom: 10px;">
-                        <i class="fa fa-times-circle"></i> Needs Work (${incorrectWords.length})
-                    </h4>
-                    <div style="max-height: 150px; overflow-y: auto;">
-                        ${incorrectWords.map(item => `<div style="padding: 2px 0;">
-                            <strong>${item.word}</strong> (you wrote: ${item.answer})
-                        </div>`).join('')}
-                    </div>
-                </div>
-            </div>
-            
-            <div class="summary-actions" style="text-align: center;">
-                <button onclick="restartTraining()" class="nav-btn" style="margin: 5px;">
-                    <i class="fa fa-redo"></i> Try Again
-                </button>
-                <button onclick="startTraining('${mode}')" class="nav-btn" style="margin: 5px;">
-                    <i class="fa fa-play"></i> New Session
-                </button>
-                <button onclick="showMainMenu()" class="nav-btn" style="margin: 5px;">
-                    <i class="fa fa-home"></i> Main Menu
-                </button>
-            </div>
-        </div>
+  const summaryElement = document.getElementById(`${currentMode}Summary`);
+  if (!summaryElement) return;
+  
+  let summaryHTML = `
+    <div class="summary-header">
+      <h3>Session Complete</h3>
+      <div class="score">Score: ${score}/${currentList.length}</div>
+    </div>
+  `;
+  
+  if (incorrectWords.length > 0) {
+    summaryHTML += `
+      <div class="incorrect-words">
+        <h4>❌ Incorrect Words (${incorrectWords.length})</h4>
+        <div class="word-list">
     `;
     
-    mainContent.innerHTML = summaryHTML;
-}
-
-function restartTraining() {
-    resetTraining();
-    nextWord();
-}
-
-function showMainMenu() {
-    document.querySelectorAll(".trainer-area").forEach(a => {
-        a.style.display = "none";
-        a.classList.remove("active");
+    incorrectWords.forEach(item => {
+      summaryHTML += `
+        <div class="word-item">
+          <strong>${item.word}</strong> - You said: "${item.answer}"
+        </div>
+      `;
     });
     
-    const mainContent = document.querySelector('.trainer-area.active .trainer-content');
-    if (mainContent) {
-        mainContent.innerHTML = mainContent.dataset.originalContent || '';
-    }
+    summaryHTML += `</div></div>`;
+  }
+  
+  if (flaggedWords.size > 0) {
+    summaryHTML += `
+      <div class="flagged-words">
+        <h4>🚩 Flagged Words (${flaggedWords.size})</h4>
+        <div class="word-list">
+    `;
     
-    resetTraining();
+    flaggedWords.forEach(word => {
+      summaryHTML += `<div class="word-item">${word}</div>`;
+    });
+    
+    summaryHTML += `</div></div>`;
+  }
+  
+  if (correctWords.length > 0 && incorrectWords.length === 0) {
+    summaryHTML += `
+      <div class="correct-words">
+        <h4>✅ Correct Words (${correctWords.length})</h4>
+        <div class="word-list">
+    `;
+    
+    correctWords.forEach(word => {
+      summaryHTML += `<div class="word-item">${word}</div>`;
+    });
+    
+    summaryHTML += `</div></div>`;
+  }
+  
+  summaryElement.innerHTML = summaryHTML;
+  summaryElement.style.display = "block";
 }
 
-// Utility functions
-function shuffle(array) {
-    for (let i = array.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [array[i], array[j]] = [array[j], array[i]];
-    }
-    return array;
+function flagCurrentWord() {
+  if (currentIndex >= currentList.length) return;
+  
+  const word = currentList[currentIndex];
+  if (flaggedWords.has(word)) {
+    flaggedWords.delete(word);
+    showFeedback(`🚩 Removed flag from "${word}"`, "info");
+  } else {
+    flaggedWords.add(word);
+    showFeedback(`🚩 Flagged "${word}" for review`, "success");
+  }
 }
 
-// Initialize the app
+function shuffle(arr) {
+  return [...arr].sort(() => Math.random() - 0.5);
+}
+
+// =======================================================
+// EVENT LISTENERS
+// =======================================================
+
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('SpellRightPro Premium initializing...');
-    
-    // Load saved custom lists
-    loadCustomLists();
-    
-    // Initialize voice recognition
-    initializeSpeechRecognition();
-    
-    // Initialize real-time validation
-    initializeRealTimeValidation();
-    
-    // Create custom words UI
-    createCustomWordsUI();
-    
-    // Update custom lists display
-    updateCustomListsDisplay();
-    
-    // Initialize premium status
-    auth.onAuthStateChanged(async (user) => {
-        if (user) {
-            await checkPremiumStatus(user);
-        }
+  // Say Again buttons
+  document.querySelectorAll('[id$="SayAgain"]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      if (currentIndex < currentList.length) {
+        const word = currentList[currentIndex];
+        speakWord(word);
+      }
     });
-    
-    console.log('SpellRightPro Premium initialized');
+  });
+  
+  // Bee Listen button
+  document.getElementById('beeListen')?.addEventListener('click', startVoiceRecognition);
+  
+  // Flag buttons
+  document.querySelectorAll('[id$="Flag"]').forEach(btn => {
+    btn.addEventListener('click', flagCurrentWord);
+  });
+  
+  // Submit buttons
+  document.querySelectorAll('[id$="Submit"]').forEach(btn => {
+    btn.addEventListener('click', checkAnswer);
+  });
+  
+  // End buttons
+  document.querySelectorAll('[id$="End"]').forEach(btn => {
+    btn.addEventListener('click', showSummary);
+  });
+  
+  // Input field enter key support
+  document.querySelectorAll('.answer-input').forEach(input => {
+    input.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') {
+        checkAnswer();
+      }
+    });
+  });
+});
+
+// Initialize speech synthesis and recognition
+function initializeSpeechSynthesis() {
+  if ('speechSynthesis' in window) {
+    speechSynthesis.getVoices();
+    window.speechSynthesis.onvoiceschanged = function() {
+      console.log("Voices loaded:", speechSynthesis.getVoices().length);
+    };
+  }
+  
+  initializeSpeechRecognition();
+}
+
+// =======================================================
+// FINAL INITIALIZATION
+// =======================================================
+
+document.addEventListener('DOMContentLoaded', function() {
+  initializeSpeechSynthesis();
+  createCustomWordsUI();
+  initializeCustomWords();
+  initializeRealTimeValidation(); // REAL-TIME MARKING INITIALIZATION
+  console.log("SpellRightPro Premium with Real-time Marking initialized");
 });
