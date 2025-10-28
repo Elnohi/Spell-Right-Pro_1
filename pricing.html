@@ -6,14 +6,93 @@
   <title>SpellRightPro – Pricing</title>
 
   <!-- Styles -->
-  <link rel="stylesheet" href="css/styles.css" />
-  <link rel="icon" href="assets/logo.png" />
+  <link rel="stylesheet" href="/css/styles.css" />
+  <link rel="icon" href="/assets/logo.png" />
   <link rel="stylesheet"
         href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" />
 
   <!-- Analytics -->
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-H09MF13297"></script>
-  <script src="js/analytics.js"></script>
+  <script src="/js/analytics.js"></script>
+  
+  <style>
+    .pricing-card {
+      background: white;
+      border-radius: 12px;
+      padding: 30px;
+      margin: 20px 0;
+      box-shadow: 0 8px 16px rgba(0,0,0,0.1);
+      border: 1px solid #e7e7e7;
+    }
+    
+    .pricing-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 25px;
+      margin: 30px 0;
+    }
+    
+    .pricing-feature {
+      display: flex;
+      align-items: center;
+      margin: 8px 0;
+    }
+    
+    .pricing-feature i {
+      width: 20px;
+      margin-right: 10px;
+    }
+    
+    .feature-included {
+      color: #28a745;
+    }
+    
+    .feature-excluded {
+      color: #dc3545;
+    }
+    
+    .price-amount {
+      font-size: 2.5em;
+      font-weight: bold;
+      color: #7b2ff7;
+      margin: 15px 0;
+    }
+    
+    .price-period {
+      color: #666;
+      font-size: 1em;
+    }
+    
+    .promo-badge {
+      background: linear-gradient(135deg, #ff6b6b, #ffa726);
+      color: white;
+      padding: 5px 12px;
+      border-radius: 20px;
+      font-size: 0.8em;
+      font-weight: bold;
+      display: inline-block;
+      margin-left: 10px;
+    }
+    
+    .recommended-card {
+      border: 2px solid #7b2ff7;
+      position: relative;
+      transform: scale(1.05);
+    }
+    
+    .recommended-badge {
+      position: absolute;
+      top: -10px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #7b2ff7;
+      color: white;
+      padding: 5px 15px;
+      border-radius: 15px;
+      font-size: 0.8em;
+      font-weight: bold;
+    }
+  </style>
 </head>
 
 <body>
@@ -21,19 +100,19 @@
     <!-- ===== NAVBAR ===== -->
     <nav class="navbar">
       <div class="brand">
-        <img src="assets/logo.png" alt="Logo" class="logo" />
+        <img src="/assets/logo.png" alt="Logo" class="logo" />
         <span>SpellRightPro</span>
       </div>
       <div class="nav-actions">
-        <a href="index.html" class="btn-secondary"><i class="fa fa-home"></i> Home</a>
-        <a href="premium.html" class="premium-button">
+        <a href="/index.html" class="btn-secondary"><i class="fa fa-home"></i> Home</a>
+        <a href="/premium.html" class="premium-button">
           <i class="fa fa-crown"></i> Upgrade
         </a>
       </div>
     </nav>
 
     <!-- ===== PROMO BANNER ===== -->
-    <div id="promo-banner" class="ad-banner" style="display:none;">
+    <div id="promo-banner" class="ad-banner" style="display:none; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 15px; border-radius: 8px; text-align: center; margin: 20px 0;">
       <i class="fa fa-bolt"></i>
       <strong>Special Offer:</strong> Get Premium for only <b>CAD $39.99/year</b> (was $69.99)!
       <br />
@@ -41,63 +120,117 @@
     </div>
 
     <!-- ===== PRICING SECTION ===== -->
-    <div class="training-card fade-in">
-      <h1 class="card-title"><i class="fa fa-tags"></i> Choose Your Plan</h1>
+    <div class="pricing-card fade-in">
+      <h1 class="card-title" style="text-align: center; margin-bottom: 10px;">
+        <i class="fa fa-tags"></i> Choose Your Plan
+      </h1>
+      <p style="text-align: center; color: #666; margin-bottom: 30px;">
+        Start free, upgrade when you're ready. No hidden fees.
+      </p>
 
-      <div class="results-grid">
+      <div class="pricing-grid">
         <!-- Free Plan -->
-        <div class="results-card">
-          <h3><i class="fa fa-leaf"></i> Freemium</h3>
-          <p>Perfect for casual learners or first-time users.</p>
-          <ul>
-            <li>✔ OET practice word list</li>
-            <li>✔ One custom list per day</li>
-            <li>✔ Limited Bee & School modes</li>
-            <li>✖ No progress tracking</li>
-            <li>✖ Ads displayed</li>
-          </ul>
-          <div class="score-number">Free</div>
-          <button class="btn-secondary" onclick="window.location.href='index.html'">
+        <div class="pricing-card">
+          <h3 style="color: #28a745;"><i class="fa fa-leaf"></i> Freemium</h3>
+          <p style="color: #666;">Perfect for casual learners or first-time users.</p>
+          
+          <div class="price-amount">Free</div>
+          
+          <div style="margin: 25px 0;">
+            <div class="pricing-feature">
+              <i class="fa fa-check feature-included"></i>
+              <span>OET practice word list</span>
+            </div>
+            <div class="pricing-feature">
+              <i class="fa fa-check feature-included"></i>
+              <span>One custom list per day</span>
+            </div>
+            <div class="pricing-feature">
+              <i class="fa fa-check feature-included"></i>
+              <span>Limited Bee & School modes</span>
+            </div>
+            <div class="pricing-feature">
+              <i class="fa fa-times feature-excluded"></i>
+              <span style="color: #999;">No progress tracking</span>
+            </div>
+            <div class="pricing-feature">
+              <i class="fa fa-times feature-excluded"></i>
+              <span style="color: #999;">Ads displayed</span>
+            </div>
+          </div>
+          
+          <button class="btn-secondary" onclick="window.location.href='/index.html'" style="width: 100%;">
             Start Free
           </button>
         </div>
 
         <!-- Premium Plan -->
-        <div class="results-card">
-          <h3><i class="fa fa-crown"></i> Premium</h3>
-          <p>Best for dedicated learners and professionals.</p>
-          <ul>
-            <li>✔ Full OET, School, and Bee modes</li>
-            <li>✔ Unlimited custom lists</li>
-            <li>✔ Audio spelling + recognition</li>
-            <li>✔ Error tracking & flagged words</li>
-            <li>✔ Ad-free learning experience</li>
-          </ul>
-
-          <div class="score-number">
+        <div class="pricing-card recommended-card">
+          <div class="recommended-badge">MOST POPULAR</div>
+          <h3 style="color: #7b2ff7;"><i class="fa fa-crown"></i> Premium</h3>
+          <p style="color: #666;">Best for dedicated learners and professionals.</p>
+          
+          <div class="price-amount">
             <span id="annual-price">CAD $69.99</span>
-            <small style="font-size:1rem; color:gray;">/year</small>
+            <span class="price-period">/year</span>
+            <span class="promo-badge" id="promo-badge" style="display: none;">SAVE 43%</span>
           </div>
-
-          <button class="btn-primary" onclick="window.location.href='premium.html'">
-            Upgrade to Premium
+          <div id="original-price" style="text-decoration: line-through; color: #999; display: none;">
+            CAD $69.99
+          </div>
+          
+          <div style="margin: 25px 0;">
+            <div class="pricing-feature">
+              <i class="fa fa-check feature-included"></i>
+              <span>Full OET, School, and Bee modes</span>
+            </div>
+            <div class="pricing-feature">
+              <i class="fa fa-check feature-included"></i>
+              <span>Unlimited custom lists</span>
+            </div>
+            <div class="pricing-feature">
+              <i class="fa fa-check feature-included"></i>
+              <span>Audio spelling + voice recognition</span>
+            </div>
+            <div class="pricing-feature">
+              <i class="fa fa-check feature-included"></i>
+              <span>Error tracking & flagged words</span>
+            </div>
+            <div class="pricing-feature">
+              <i class="fa fa-check feature-included"></i>
+              <span>Ad-free learning experience</span>
+            </div>
+            <div class="pricing-feature">
+              <i class="fa fa-check feature-included"></i>
+              <span>Real-time spelling feedback</span>
+            </div>
+          </div>
+          
+          <button class="btn-primary" onclick="window.location.href='/premium.html'" style="width: 100%; background: #7b2ff7; border: none;">
+            <i class="fa fa-crown"></i> Upgrade to Premium
           </button>
         </div>
       </div>
 
-      <!-- ===== Pricing Toggle (Optional Future Feature) ===== -->
-      <div class="text-center mt-4">
-        <small style="color:gray;">Monthly billing available soon.</small>
+      <!-- ===== GUARANTEE SECTION ===== -->
+      <div style="text-align: center; margin-top: 40px; padding: 20px; background: #f8f9fa; border-radius: 8px;">
+        <h4><i class="fa fa-shield-alt"></i> Risk-Free Guarantee</h4>
+        <p style="color: #666; margin: 10px 0;">
+          48-hour money-back guarantee. If Premium isn't right for you, we'll refund your payment.
+        </p>
+        <small style="color: #999;">
+          <a href="/refund-policy.html" style="color: #7b2ff7;">View refund policy</a>
+        </small>
       </div>
     </div>
 
     <!-- ===== FOOTER ===== -->
-    <footer class="text-center mt-4">
+    <footer class="text-center mt-4" style="padding: 30px 0; border-top: 1px solid #e7e7e7;">
       <p>
-        <a href="terms.html">Terms</a> ·
-        <a href="privacy.html">Privacy</a> ·
-        <a href="refund.html">Refund Policy</a> ·
-        <a href="contact.html">Contact</a>
+        <a href="/terms.html">Terms</a> ·
+        <a href="/privacy.html">Privacy</a> ·
+        <a href="/refund-policy.html">Refund Policy</a> ·
+        <a href="/contact.html">Contact</a>
       </p>
       <p style="font-size: 0.8rem; color: gray;">© 2025 SpellRightPro</p>
     </footer>
@@ -109,24 +242,43 @@
     const banner = document.getElementById("promo-banner");
     const countdown = document.getElementById("promo-countdown");
     const annualPrice = document.getElementById("annual-price");
+    const originalPrice = document.getElementById("original-price");
+    const promoBadge = document.getElementById("promo-badge");
 
     function updateCountdown() {
       const now = new Date();
       const diff = promoEnd - now;
+      
       if (diff <= 0) {
+        // Promo ended
         banner.style.display = "none";
         annualPrice.textContent = "CAD $69.99";
+        originalPrice.style.display = "none";
+        promoBadge.style.display = "none";
         return;
       }
+      
+      // Promo active
       banner.style.display = "block";
       annualPrice.textContent = "CAD $39.99";
-      const hrs = Math.floor(diff / 1000 / 60 / 60);
-      const mins = Math.floor((diff / 1000 / 60) % 60);
-      countdown.textContent = `${hrs}h ${mins}m`;
+      originalPrice.style.display = "block";
+      promoBadge.style.display = "inline-block";
+      
+      // Calculate time remaining
+      const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+      const hrs = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+      const mins = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+      
+      if (days > 0) {
+        countdown.textContent = `${days}d ${hrs}h ${mins}m`;
+      } else {
+        countdown.textContent = `${hrs}h ${mins}m`;
+      }
     }
 
+    // Initialize
     updateCountdown();
-    setInterval(updateCountdown, 60000);
+    setInterval(updateCountdown, 60000); // Update every minute
   </script>
 </body>
 </html>
