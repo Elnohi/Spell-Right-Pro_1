@@ -6,95 +6,158 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 
   <meta name="robots" content="noindex, nofollow" />
-  <link rel="manifest" href="manifest.json" />
-  <meta name="theme-color" content="#4361ee" />
+  <link rel="manifest" href="/manifest.json" />
+  <meta name="theme-color" content="#7b2ff7" />
 
   <!-- Styles -->
-  <link rel="stylesheet" href="css/styles.css" />
-  <link rel="stylesheet" href="css/premium.css" />
-  <link rel="icon" href="assets/logo.png" />
-  <link rel="apple-touch-icon" href="assets/icons/icon-192x192.png" />
+  <link rel="stylesheet" href="/css/styles.css" />
+  <link rel="icon" href="/assets/logo.png" />
+  <link rel="apple-touch-icon" href="/assets/icons/icon-192x192.png" />
 
   <!-- Icons -->
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"/>
 
   <style>
     body {
-      background: linear-gradient(180deg, #f9f9ff, #eef1ff);
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
       min-height: 100vh;
       display: flex;
       align-items: center;
       justify-content: center;
       font-family: 'Inter', sans-serif;
+      margin: 0;
+      padding: 20px;
     }
     .thank-container {
       background: #fff;
       padding: 3rem 2rem;
       text-align: center;
       border-radius: 16px;
-      box-shadow: 0 10px 20px rgba(0,0,0,0.05);
-      max-width: 600px;
-      width: 90%;
+      box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+      max-width: 500px;
+      width: 100%;
     }
     .thank-icon {
       font-size: 4rem;
-      color: #4cc9f0;
+      color: #7b2ff7;
       margin-bottom: 1rem;
     }
     .thank-container h1 {
-      font-size: 1.8rem;
-      margin-bottom: 0.5rem;
-      color: #212529;
+      font-size: 2rem;
+      margin-bottom: 1rem;
+      color: #333;
     }
     .thank-container p {
-      color: #6c757d;
-      font-size: 1rem;
+      color: #666;
+      font-size: 1.1rem;
       margin-bottom: 2rem;
+      line-height: 1.6;
     }
-    .btn-primary, .btn-outline {
-      display: inline-block;
-      padding: 0.75rem 1.5rem;
+    .btn-group {
+      display: flex;
+      gap: 15px;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+    .btn-primary, .btn-secondary {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 12px 24px;
       border-radius: 8px;
       font-weight: 600;
       text-decoration: none;
-      transition: all 0.2s ease;
-      margin: 0.3rem;
+      transition: all 0.3s ease;
+      border: none;
+      cursor: pointer;
+      font-size: 1rem;
     }
     .btn-primary {
-      background: #4361ee;
+      background: #7b2ff7;
       color: #fff;
     }
     .btn-primary:hover {
-      background: #364ed9;
+      background: #6a1df0;
+      transform: translateY(-2px);
     }
-    .btn-outline {
-      border: 2px solid #4361ee;
-      color: #4361ee;
+    .btn-secondary {
+      background: #f8f9fa;
+      color: #333;
+      border: 2px solid #e9ecef;
     }
-    .btn-outline:hover {
-      background: #4361ee;
-      color: #fff;
+    .btn-secondary:hover {
+      background: #e9ecef;
+      transform: translateY(-2px);
+    }
+    .premium-features {
+      background: #f8f9fa;
+      padding: 20px;
+      border-radius: 10px;
+      margin: 25px 0;
+      text-align: left;
+    }
+    .premium-features h3 {
+      color: #7b2ff7;
+      margin-bottom: 15px;
+      text-align: center;
+    }
+    .feature-list {
+      list-style: none;
+      padding: 0;
+    }
+    .feature-list li {
+      padding: 8px 0;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .feature-list i {
+      color: #28a745;
     }
   </style>
-
-  <script>
-    if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
-      const base = location.pathname.split('/')[1] ? `/${location.pathname.split('/')[1]}` : '';
-      window.addEventListener('load', () =>
-        navigator.serviceWorker.register(`${base}/sw.js`).catch(console.warn)
-      );
-    }
-  </script>
 </head>
 <body>
   <main class="thank-container">
     <div class="thank-icon"><i class="fa-solid fa-crown"></i></div>
-    <h1>Thank You for Upgrading!</h1>
-    <p>Your SpellRightPro Premium plan is now active.<br>
-    Enjoy unlimited access to all spelling modes and features.</p>
+    <h1>Welcome to Premium! 🎉</h1>
+    <p>Your SpellRightPro Premium subscription is now active. You now have full access to all features and spelling modes.</p>
 
-    <a href="premium.html" class="btn-primary"><i class="fa-solid fa-star"></i> Go to Premium</a>
-    <a href="index.html" class="btn-outline"><i class="fa-solid fa-house"></i> Back to Home</a>
+    <div class="premium-features">
+      <h3>Your Premium Features</h3>
+      <ul class="feature-list">
+        <li><i class="fa-solid fa-check"></i> Unlimited custom word lists</li>
+        <li><i class="fa-solid fa-check"></i> All spelling modes (Bee, School, OET)</li>
+        <li><i class="fa-solid fa-check"></i> Voice recognition & audio spelling</li>
+        <li><i class="fa-solid fa-check"></i> Real-time progress tracking</li>
+        <li><i class="fa-solid fa-check"></i> Ad-free experience</li>
+        <li><i class="fa-solid fa-check"></i> Priority support</li>
+      </ul>
+    </div>
+
+    <div class="btn-group">
+      <a href="/premium.html" class="btn-primary">
+        <i class="fa-solid fa-rocket"></i> Start Learning
+      </a>
+      <a href="/index.html" class="btn-secondary">
+        <i class="fa-solid fa-house"></i> Back Home
+      </a>
+    </div>
   </main>
+
+  <script>
+    // Check if premium was actually activated
+    document.addEventListener('DOMContentLoaded', function() {
+      const premiumData = localStorage.getItem('premiumUser');
+      if (!premiumData) {
+        // If no premium data, redirect to pricing
+        setTimeout(() => {
+          window.location.href = '/pricing.html';
+        }, 3000);
+      }
+      
+      // Log the activation for analytics
+      console.log('Premium activated:', JSON.parse(premiumData));
+    });
+  </script>
 </body>
 </html>
