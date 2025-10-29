@@ -23,11 +23,17 @@
       margin: 20px 0;
       box-shadow: 0 8px 16px rgba(0,0,0,0.1);
       border: 1px solid #e7e7e7;
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+    
+    .pricing-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 12px 24px rgba(0,0,0,0.15);
     }
     
     .pricing-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
       gap: 25px;
       margin: 30px 0;
     }
@@ -77,7 +83,7 @@
     .recommended-card {
       border: 2px solid #7b2ff7;
       position: relative;
-      transform: scale(1.05);
+      transform: scale(1.02);
     }
     
     .recommended-badge {
@@ -91,6 +97,94 @@
       border-radius: 15px;
       font-size: 0.8em;
       font-weight: bold;
+    }
+
+    .plan-toggle {
+      display: flex;
+      justify-content: center;
+      margin: 20px 0 30px 0;
+      background: #f8f9fa;
+      padding: 10px;
+      border-radius: 50px;
+      max-width: 300px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    .plan-toggle button {
+      padding: 10px 20px;
+      border: none;
+      background: none;
+      border-radius: 25px;
+      cursor: pointer;
+      font-weight: 600;
+      transition: all 0.3s ease;
+      flex: 1;
+    }
+
+    .plan-toggle button.active {
+      background: #7b2ff7;
+      color: white;
+    }
+
+    .monthly-plans, .annual-plans {
+      display: none;
+    }
+
+    .monthly-plans.active, .annual-plans.active {
+      display: block;
+    }
+
+    .savings-badge {
+      background: #28a745;
+      color: white;
+      padding: 4px 8px;
+      border-radius: 12px;
+      font-size: 0.7em;
+      font-weight: bold;
+      margin-left: 8px;
+    }
+
+    .logo {
+      height: 40px;
+      width: auto;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .brand span {
+      font-size: 1.5rem;
+      font-weight: bold;
+      color: #7b2ff7;
+    }
+
+    .payment-options {
+      margin-top: 20px;
+      padding: 15px;
+      background: #f8f9fa;
+      border-radius: 8px;
+      text-align: center;
+    }
+
+    .payment-options h4 {
+      margin-bottom: 10px;
+      color: #333;
+    }
+
+    .payment-icons {
+      display: flex;
+      justify-content: center;
+      gap: 15px;
+      margin-top: 10px;
+    }
+
+    .payment-icons i {
+      font-size: 2rem;
+      color: #666;
     }
   </style>
 </head>
@@ -106,7 +200,7 @@
       <div class="nav-actions">
         <a href="/index.html" class="btn-secondary"><i class="fa fa-home"></i> Home</a>
         <a href="/premium.html" class="premium-button">
-          <i class="fa fa-crown"></i> Upgrade
+          <i class="fa fa-crown"></i> Premium
         </a>
       </div>
     </nav>
@@ -128,87 +222,199 @@
         Start free, upgrade when you're ready. No hidden fees.
       </p>
 
-      <div class="pricing-grid">
-        <!-- Free Plan -->
-        <div class="pricing-card">
-          <h3 style="color: #28a745;"><i class="fa fa-leaf"></i> Freemium</h3>
-          <p style="color: #666;">Perfect for casual learners or first-time users.</p>
-          
-          <div class="price-amount">Free</div>
-          
-          <div style="margin: 25px 0;">
-            <div class="pricing-feature">
-              <i class="fa fa-check feature-included"></i>
-              <span>OET practice word list</span>
-            </div>
-            <div class="pricing-feature">
-              <i class="fa fa-check feature-included"></i>
-              <span>One custom list per day</span>
-            </div>
-            <div class="pricing-feature">
-              <i class="fa fa-check feature-included"></i>
-              <span>Limited Bee & School modes</span>
-            </div>
-            <div class="pricing-feature">
-              <i class="fa fa-times feature-excluded"></i>
-              <span style="color: #999;">No progress tracking</span>
-            </div>
-            <div class="pricing-feature">
-              <i class="fa fa-times feature-excluded"></i>
-              <span style="color: #999;">Ads displayed</span>
-            </div>
-          </div>
-          
-          <button class="btn-secondary" onclick="window.location.href='/index.html'" style="width: 100%;">
-            Start Free
-          </button>
-        </div>
+      <!-- Plan Toggle -->
+      <div class="plan-toggle">
+        <button id="monthlyToggle" class="active">Monthly</button>
+        <button id="annualToggle">Annual <span class="savings-badge">Save 17%</span></button>
+      </div>
 
-        <!-- Premium Plan -->
-        <div class="pricing-card recommended-card">
-          <div class="recommended-badge">MOST POPULAR</div>
-          <h3 style="color: #7b2ff7;"><i class="fa fa-crown"></i> Premium</h3>
-          <p style="color: #666;">Best for dedicated learners and professionals.</p>
-          
-          <div class="price-amount">
-            <span id="annual-price">CAD $69.99</span>
-            <span class="price-period">/year</span>
-            <span class="promo-badge" id="promo-badge" style="display: none;">SAVE 43%</span>
+      <!-- Monthly Plans -->
+      <div id="monthlyPlans" class="monthly-plans active">
+        <div class="pricing-grid">
+          <!-- Free Plan -->
+          <div class="pricing-card">
+            <h3 style="color: #28a745;"><i class="fa fa-leaf"></i> Freemium</h3>
+            <p style="color: #666;">Perfect for casual learners or first-time users.</p>
+            
+            <div class="price-amount">Free</div>
+            <div class="price-period">forever</div>
+            
+            <div style="margin: 25px 0;">
+              <div class="pricing-feature">
+                <i class="fa fa-check feature-included"></i>
+                <span>OET practice word list</span>
+              </div>
+              <div class="pricing-feature">
+                <i class="fa fa-check feature-included"></i>
+                <span>One custom list per day</span>
+              </div>
+              <div class="pricing-feature">
+                <i class="fa fa-check feature-included"></i>
+                <span>Limited Bee & School modes</span>
+              </div>
+              <div class="pricing-feature">
+                <i class="fa fa-times feature-excluded"></i>
+                <span style="color: #999;">No progress tracking</span>
+              </div>
+              <div class="pricing-feature">
+                <i class="fa fa-times feature-excluded"></i>
+                <span style="color: #999;">Ads displayed</span>
+              </div>
+            </div>
+            
+            <button class="btn-secondary" onclick="window.location.href='/index.html'" style="width: 100%;">
+              Start Free
+            </button>
           </div>
-          <div id="original-price" style="text-decoration: line-through; color: #999; display: none;">
-            CAD $69.99
+
+          <!-- Monthly Premium Plan -->
+          <div class="pricing-card recommended-card">
+            <div class="recommended-badge">MOST POPULAR</div>
+            <h3 style="color: #7b2ff7;"><i class="fa fa-crown"></i> Premium Monthly</h3>
+            <p style="color: #666;">Best for dedicated learners and professionals.</p>
+            
+            <div class="price-amount">
+              CAD $4.99
+            </div>
+            <div class="price-period">per month</div>
+            
+            <div style="margin: 25px 0;">
+              <div class="pricing-feature">
+                <i class="fa fa-check feature-included"></i>
+                <span>Full OET, School, and Bee modes</span>
+              </div>
+              <div class="pricing-feature">
+                <i class="fa fa-check feature-included"></i>
+                <span>Unlimited custom lists</span>
+              </div>
+              <div class="pricing-feature">
+                <i class="fa fa-check feature-included"></i>
+                <span>Audio spelling + voice recognition</span>
+              </div>
+              <div class="pricing-feature">
+                <i class="fa fa-check feature-included"></i>
+                <span>Error tracking & flagged words</span>
+              </div>
+              <div class="pricing-feature">
+                <i class="fa fa-check feature-included"></i>
+                <span>Ad-free learning experience</span>
+              </div>
+              <div class="pricing-feature">
+                <i class="fa fa-check feature-included"></i>
+                <span>Real-time spelling feedback</span>
+              </div>
+            </div>
+            
+            <button class="btn-primary" onclick="selectPlan('monthly')" style="width: 100%; background: #7b2ff7; border: none;">
+              <i class="fa fa-crown"></i> Get Monthly Plan
+            </button>
           </div>
-          
-          <div style="margin: 25px 0;">
-            <div class="pricing-feature">
-              <i class="fa fa-check feature-included"></i>
-              <span>Full OET, School, and Bee modes</span>
+        </div>
+      </div>
+
+      <!-- Annual Plans -->
+      <div id="annualPlans" class="annual-plans">
+        <div class="pricing-grid">
+          <!-- Free Plan (Annual View) -->
+          <div class="pricing-card">
+            <h3 style="color: #28a745;"><i class="fa fa-leaf"></i> Freemium</h3>
+            <p style="color: #666;">Perfect for casual learners or first-time users.</p>
+            
+            <div class="price-amount">Free</div>
+            <div class="price-period">forever</div>
+            
+            <div style="margin: 25px 0;">
+              <div class="pricing-feature">
+                <i class="fa fa-check feature-included"></i>
+                <span>OET practice word list</span>
+              </div>
+              <div class="pricing-feature">
+                <i class="fa fa-check feature-included"></i>
+                <span>One custom list per day</span>
+              </div>
+              <div class="pricing-feature">
+                <i class="fa fa-check feature-included"></i>
+                <span>Limited Bee & School modes</span>
+              </div>
+              <div class="pricing-feature">
+                <i class="fa fa-times feature-excluded"></i>
+                <span style="color: #999;">No progress tracking</span>
+              </div>
+              <div class="pricing-feature">
+                <i class="fa fa-times feature-excluded"></i>
+                <span style="color: #999;">Ads displayed</span>
+              </div>
             </div>
-            <div class="pricing-feature">
-              <i class="fa fa-check feature-included"></i>
-              <span>Unlimited custom lists</span>
-            </div>
-            <div class="pricing-feature">
-              <i class="fa fa-check feature-included"></i>
-              <span>Audio spelling + voice recognition</span>
-            </div>
-            <div class="pricing-feature">
-              <i class="fa fa-check feature-included"></i>
-              <span>Error tracking & flagged words</span>
-            </div>
-            <div class="pricing-feature">
-              <i class="fa fa-check feature-included"></i>
-              <span>Ad-free learning experience</span>
-            </div>
-            <div class="pricing-feature">
-              <i class="fa fa-check feature-included"></i>
-              <span>Real-time spelling feedback</span>
-            </div>
+            
+            <button class="btn-secondary" onclick="window.location.href='/index.html'" style="width: 100%;">
+              Start Free
+            </button>
           </div>
-          
-          <button class="btn-primary" onclick="window.location.href='/premium.html'" style="width: 100%; background: #7b2ff7; border: none;">
-            <i class="fa fa-crown"></i> Upgrade to Premium
-          </button>
+
+          <!-- Annual Premium Plan -->
+          <div class="pricing-card recommended-card">
+            <div class="recommended-badge">BEST VALUE</div>
+            <h3 style="color: #7b2ff7;"><i class="fa fa-crown"></i> Premium Annual</h3>
+            <p style="color: #666;">Best for dedicated learners and professionals.</p>
+            
+            <div class="price-amount">
+              <span id="annual-price">CAD $49.99</span>
+              <span class="promo-badge" id="promo-badge" style="display: none;">SAVE 17%</span>
+            </div>
+            <div class="price-period">per year</div>
+            <div style="color: #666; font-size: 0.9em; margin-top: 5px;">
+              Equivalent to $4.16 per month
+            </div>
+            
+            <div style="margin: 25px 0;">
+              <div class="pricing-feature">
+                <i class="fa fa-check feature-included"></i>
+                <span>Full OET, School, and Bee modes</span>
+              </div>
+              <div class="pricing-feature">
+                <i class="fa fa-check feature-included"></i>
+                <span>Unlimited custom lists</span>
+              </div>
+              <div class="pricing-feature">
+                <i class="fa fa-check feature-included"></i>
+                <span>Audio spelling + voice recognition</span>
+              </div>
+              <div class="pricing-feature">
+                <i class="fa fa-check feature-included"></i>
+                <span>Error tracking & flagged words</span>
+              </div>
+              <div class="pricing-feature">
+                <i class="fa fa-check feature-included"></i>
+                <span>Ad-free learning experience</span>
+              </div>
+              <div class="pricing-feature">
+                <i class="fa fa-check feature-included"></i>
+                <span>Real-time spelling feedback</span>
+              </div>
+              <div class="pricing-feature">
+                <i class="fa fa-check feature-included"></i>
+                <span>Priority email support</span>
+              </div>
+            </div>
+            
+            <button class="btn-primary" onclick="selectPlan('annual')" style="width: 100%; background: #7b2ff7; border: none;">
+              <i class="fa fa-crown"></i> Get Annual Plan
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Payment Options -->
+      <div class="payment-options">
+        <h4><i class="fa fa-shield-alt"></i> Secure Payment</h4>
+        <p style="color: #666; margin: 10px 0; font-size: 0.9rem;">
+          All payments are secure and encrypted. We accept:
+        </p>
+        <div class="payment-icons">
+          <i class="fab fa-cc-visa" title="Visa"></i>
+          <i class="fab fa-cc-mastercard" title="Mastercard"></i>
+          <i class="fab fa-cc-amex" title="American Express"></i>
+          <i class="fab fa-cc-paypal" title="PayPal"></i>
         </div>
       </div>
 
@@ -236,13 +442,44 @@
     </footer>
   </div>
 
-  <!-- ===== PROMO COUNTDOWN SCRIPT ===== -->
+  <!-- ===== PRICING & PLAN SELECTION SCRIPT ===== -->
   <script>
+    // Plan Toggle Functionality
+    const monthlyToggle = document.getElementById('monthlyToggle');
+    const annualToggle = document.getElementById('annualToggle');
+    const monthlyPlans = document.getElementById('monthlyPlans');
+    const annualPlans = document.getElementById('annualPlans');
+
+    monthlyToggle.addEventListener('click', () => {
+      monthlyToggle.classList.add('active');
+      annualToggle.classList.remove('active');
+      monthlyPlans.classList.add('active');
+      annualPlans.classList.remove('active');
+    });
+
+    annualToggle.addEventListener('click', () => {
+      annualToggle.classList.add('active');
+      monthlyToggle.classList.remove('active');
+      annualPlans.classList.add('active');
+      monthlyPlans.classList.remove('active');
+    });
+
+    // Plan Selection Function - Redirects to Payment Page
+    function selectPlan(planType) {
+      // Store the selected plan in localStorage
+      localStorage.setItem('selectedPlan', planType);
+      localStorage.setItem('selectedPlanPrice', planType === 'monthly' ? '4.99' : '49.99');
+      localStorage.setItem('selectedPlanCurrency', 'CAD');
+      
+      // Redirect to payment page with plan parameters
+      window.location.href = `/payment.html?plan=${planType}&price=${planType === 'monthly' ? '4.99' : '49.99'}&currency=CAD`;
+    }
+
+    // Promo Countdown Logic
     const promoEnd = new Date("2025-10-15T23:59:59");
     const banner = document.getElementById("promo-banner");
     const countdown = document.getElementById("promo-countdown");
     const annualPrice = document.getElementById("annual-price");
-    const originalPrice = document.getElementById("original-price");
     const promoBadge = document.getElementById("promo-badge");
 
     function updateCountdown() {
@@ -252,16 +489,11 @@
       if (diff <= 0) {
         // Promo ended
         banner.style.display = "none";
-        annualPrice.textContent = "CAD $69.99";
-        originalPrice.style.display = "none";
-        promoBadge.style.display = "none";
         return;
       }
       
       // Promo active
       banner.style.display = "block";
-      annualPrice.textContent = "CAD $39.99";
-      originalPrice.style.display = "block";
       promoBadge.style.display = "inline-block";
       
       // Calculate time remaining
@@ -279,6 +511,14 @@
     // Initialize
     updateCountdown();
     setInterval(updateCountdown, 60000); // Update every minute
+
+    // Check if user came from premium page and show annual plans by default
+    document.addEventListener('DOMContentLoaded', function() {
+      const urlParams = new URLSearchParams(window.location.search);
+      if (urlParams.get('show') === 'annual') {
+        annualToggle.click();
+      }
+    });
   </script>
 </body>
 </html>
