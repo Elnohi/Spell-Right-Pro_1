@@ -1,4 +1,4 @@
-/* /js/main-freemium-school.js - COMPLETE FIXED VERSION */
+/* /js/main-freemium-school.js - COMPLETE FIXED VERSION WITH DAILY LIMIT */
 (() => {
   const $ = s => document.querySelector(s);
   const ui = {
@@ -28,6 +28,66 @@
     flags: new Set(), 
     active: false 
   };
+
+  // DAILY CUSTOM WORD LIMIT FUNCTIONS
+  function checkDailyCustomWordLimit() {
+    const today = new Date().toDateString();
+    const lastUsedDate = localStorage.getItem('lastCustomWordDate');
+    const customWordsUsed = localStorage.getItem('customWordsUsedToday') === 'true';
+    
+    // If it's a new day, reset the counter
+    if (lastUsedDate !== today) {
+      localStorage.setItem('lastCustomWordDate', today);
+      localStorage.setItem('customWordsUsedToday', 'false');
+      return true; // Allow usage on new day
+    }
+    
+    // If already used today, deny
+    if (customWordsUsed) {
+      return false;
+    }
+    
+    return true;
+  }
+
+  function markCustomWordsUsed() {
+    const today = new Date().toDateString();
+    localStorage.setItem('lastCustomWordDate', today);
+    localStorage.setItem('customWordsUsedToday', 'true');
+  }
+
+  function showDailyLimitMessage() {
+    t(ui.feedback, '❌ Daily custom word limit reached. Free users can only use one custom list per day. Upgrade to Premium for unlimited custom lists.');
+    
+    // Show upgrade suggestion
+    setTimeout(() => {
+      const upgradeMsg = document.createElement('div');
+      upgradeMsg.style.cssText = `
+        background: linear-gradient(135deg, #7b2ff7, #9d4edd);
+        color: white;
+        padding: 15px;
+        border-radius: 8px;
+        margin: 10px 0;
+        text-align: center;
+      `;
+      upgradeMsg.innerHTML = `
+        <strong>💎 Upgrade to Premium!</strong><br>
+        <small>Get unlimited custom lists, all spelling modes, and no ads</small><br>
+        <button onclick="window.location.href='/pricing.html'" 
+                style="background: white; color: #7b2ff7; border: none; padding: 8px 16px; border-radius: 6px; margin-top: 8px; font-weight: bold; cursor: pointer;">
+          View Plans
+        </button>
+      `;
+      
+      const existingUpgrade = document.querySelector('.upgrade-message');
+      if (existingUpgrade) existingUpgrade.remove();
+      
+      upgradeMsg.className = 'upgrade-message';
+      if (ui.feedback) {
+        ui.feedback.parentNode.insertBefore(upgradeMsg, ui.feedback.nextSibling);
+      }
+    }, 1000);
+  }
 
   function t(el, s) { if (el) el.textContent = s; }
   function norm(s) { return (s || '').toLowerCase().trim(); }
@@ -100,8 +160,17 @@
     const customText = (ui.customBox?.value || '').trim();
     
     if (customText) {
+      // CHECK DAILY LIMIT
+      if (!checkDailyCustomWordLimit()) {
+        showDailyLimitMessage();
+        return;
+      }
+      
       state.words = loadCustomWords(customText);
       t(ui.feedback, `Custom list loaded: ${state.words.length} words`);
+      
+      // MARK AS USED
+      markCustomWordsUsed();
     } else {
       t(ui.feedback, 'Loading school words...');
       state.words = await loadDefault();
@@ -291,6 +360,13 @@
         const file = e.target.files?.[0];
         if (!file) return;
 
+        // CHECK DAILY LIMIT
+        if (!checkDailyCustomWordLimit()) {
+          showDailyLimitMessage();
+          e.target.value = ''; // Clear the file input
+          return;
+        }
+
         if (ui.fileName) ui.fileName.textContent = file.name;
 
         try {
@@ -298,6 +374,9 @@
           const words = loadCustomWords(text);
           state.words = words;
           t(ui.feedback, `Loaded ${words.length} words from file. Ready to start!`);
+          
+          // MARK AS USED
+          markCustomWordsUsed();
         } catch (error) {
           t(ui.feedback, 'Error reading file. Please try again.');
         }
@@ -311,9 +390,19 @@
           t(ui.feedback, 'Please enter words in the custom words box first.');
           return;
         }
+        
+        // CHECK DAILY LIMIT
+        if (!checkDailyCustomWordLimit()) {
+          showDailyLimitMessage();
+          return;
+        }
+        
         const words = loadCustomWords(customText);
         state.words = words;
         t(ui.feedback, `Custom list loaded: ${words.length} words. Ready to start!`);
+        
+        // MARK AS USED
+        markCustomWordsUsed();
       });
     }
   }
@@ -363,7 +452,7 @@
       initializeDarkModeToggle();
     }
 
-    console.log('School Spelling Trainer ready - Fixed version');
+    console.log('School Spelling Trainer ready - Fixed version with daily limit');
   }
 
   window.restartTraining = restartTraining;
