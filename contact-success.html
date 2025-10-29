@@ -4,81 +4,132 @@
   <meta charset="UTF-8" />
   <title>Message Received – SpellRightPro</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <link rel="icon" href="assets/logo.png" />
-  <link rel="stylesheet" href="css/styles.css" />
-  <link rel="stylesheet" href="css/premium.css" />
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+  <link rel="icon" href="/assets/logo.png" />
+  <link rel="stylesheet" href="/css/styles.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" />
 
   <style>
     body {
-      background: linear-gradient(135deg, #0b0d17, #1a1f33);
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
       color: #fff;
       font-family: 'Inter', sans-serif;
       display: flex;
       align-items: center;
       justify-content: center;
       min-height: 100vh;
-      padding: 2rem;
+      margin: 0;
+      padding: 20px;
     }
     .contact-thank {
-      background: rgba(255,255,255,0.08);
-      border: 1px solid rgba(255,255,255,0.15);
+      background: rgba(255,255,255,0.95);
+      color: #333;
       border-radius: 16px;
       padding: 3rem 2rem;
       text-align: center;
-      max-width: 600px;
+      max-width: 500px;
       width: 100%;
-      backdrop-filter: blur(20px);
-      box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+      box-shadow: 0 20px 40px rgba(0,0,0,0.1);
     }
     .contact-thank i {
-      font-size: 3.5rem;
-      color: #4cc9f0;
+      font-size: 4rem;
+      color: #7b2ff7;
       margin-bottom: 1rem;
     }
     .contact-thank h1 {
-      font-size: 1.8rem;
-      margin-bottom: 0.8rem;
+      font-size: 2rem;
+      margin-bottom: 1rem;
+      color: #333;
     }
     .contact-thank p {
-      font-size: 1rem;
-      color: #adb5bd;
+      font-size: 1.1rem;
+      color: #666;
       margin-bottom: 2rem;
+      line-height: 1.6;
     }
-    .contact-thank a {
-      display: inline-block;
-      padding: 0.75rem 1.5rem;
-      border-radius: 10px;
-      margin: 0.3rem;
+    .btn-group {
+      display: flex;
+      gap: 15px;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+    .btn-primary, .btn-secondary {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 12px 24px;
+      border-radius: 8px;
       font-weight: 600;
       text-decoration: none;
       transition: all 0.3s ease;
+      border: none;
+      cursor: pointer;
+      font-size: 1rem;
     }
-    .btn-home {
-      background: #4361ee;
-      color: white;
-    }
-    .btn-home:hover {
-      background: #3651cc;
-    }
-    .btn-premium {
-      border: 2px solid #f8961e;
-      color: #f8961e;
-    }
-    .btn-premium:hover {
-      background: #f8961e;
+    .btn-primary {
+      background: #7b2ff7;
       color: #fff;
+    }
+    .btn-primary:hover {
+      background: #6a1df0;
+      transform: translateY(-2px);
+    }
+    .btn-secondary {
+      background: #f8f9fa;
+      color: #333;
+      border: 2px solid #e9ecef;
+    }
+    .btn-secondary:hover {
+      background: #e9ecef;
+      transform: translateY(-2px);
+    }
+    .response-time {
+      background: #f8f9fa;
+      padding: 15px;
+      border-radius: 8px;
+      margin: 20px 0;
+      color: #666;
+    }
+    .response-time i {
+      font-size: 1.2rem;
+      color: #28a745;
+      margin-right: 8px;
     }
   </style>
 </head>
 <body>
   <div class="contact-thank fade-in">
     <i class="fa-solid fa-envelope-circle-check"></i>
-    <h1>Thank You for Contacting Us!</h1>
-    <p>Your message has been received successfully.<br>
-    We’ll respond to your inquiry as soon as possible.</p>
-    <a href="index.html" class="btn-home"><i class="fa-solid fa-house"></i> Home</a>
-    <a href="premium.html" class="btn-premium"><i class="fa-solid fa-crown"></i> Try Premium</a>
+    <h1>Message Received! ✅</h1>
+    <p>Thank you for contacting SpellRightPro. We've received your message and will get back to you shortly.</p>
+    
+    <div class="response-time">
+      <i class="fa-solid fa-clock"></i>
+      <strong>Typical response time:</strong> 24-48 hours
+    </div>
+
+    <div class="btn-group">
+      <a href="/index.html" class="btn-primary">
+        <i class="fa-solid fa-house"></i> Home Page
+      </a>
+      <a href="/premium.html" class="btn-secondary">
+        <i class="fa-solid fa-crown"></i> Try Premium
+      </a>
+    </div>
   </div>
+
+  <script>
+    // Optional: Add analytics or tracking for contact form submissions
+    document.addEventListener('DOMContentLoaded', function() {
+      console.log('Contact form success page loaded');
+      
+      // You can add analytics tracking here
+      if (typeof gtag !== 'undefined') {
+        gtag('event', 'contact_form_success', {
+          'event_category': 'engagement',
+          'event_label': 'contact_form_submission'
+        });
+      }
+    });
+  </script>
 </body>
 </html>
