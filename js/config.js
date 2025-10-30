@@ -4,7 +4,7 @@
 // ------------------------------
 
 // Firebase Configuration
-window.firebaseConfig = {
+const firebaseConfig = {
   apiKey: "AIzaSyCZ-rAPnRgVjSRFOFvbiQlowE6A3RVvwWo",
   authDomain: "spellrightpro-firebase.firebaseapp.com",
   projectId: "spellrightpro-firebase",
