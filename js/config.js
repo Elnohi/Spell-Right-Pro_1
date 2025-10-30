@@ -1,10 +1,10 @@
-// js/config.js - UPDATED SECURE VERSION
+// js/config.js - FIXED FIREBASE VERSION
 // ------------------------------
 // Frontend runtime configuration
 // ------------------------------
 
 // Firebase Configuration
-const firebaseConfig = {
+window.firebaseConfig = {
   apiKey: "AIzaSyCZ-rAPnRgVjSRFOFvbiQlowE6A3RVvwWo",
   authDomain: "spellrightpro-firebase.firebaseapp.com",
   projectId: "spellrightpro-firebase",
@@ -15,24 +15,36 @@ const firebaseConfig = {
 };
 
 // Initialize Firebase safely
-(function initFirebaseOnce() {
+window.initFirebase = function() {
   try {
     if (typeof firebase !== 'undefined' && firebase.apps && firebase.apps.length === 0) {
-      firebase.initializeApp(window.firebaseConfig);
+      const app = firebase.initializeApp(window.firebaseConfig);
       
       // Initialize Analytics only if user consents
       if (localStorage.getItem('cookieConsent') === 'true') {
         try { 
-          firebase.analytics(); 
+          if (firebase.analytics) {
+            firebase.analytics();
+          }
         } catch (e) {
           console.log('Analytics not available');
         }
       }
+      
+      console.log('Firebase initialized successfully');
+      return app;
+    } else if (firebase.apps.length > 0) {
+      console.log('Firebase already initialized');
+      return firebase.apps[0];
     }
   } catch (e) {
     console.error("Firebase init failed:", e);
+    return null;
   }
-})();
+};
+
+// Make initialization function globally available
+window.__initFirebaseOnce = window.initFirebase;
 
 // App Configuration
 window.appConfig = {
@@ -50,6 +62,13 @@ window.stripeConfig = {
 
 // AdSense Configuration
 window.adsenseConfig = {
-  enabled: false, // Set to true after AdSense approval
+  enabled: false,
   client: "ca-pub-7632930282249669"
 };
+
+// Initialize Firebase on config load
+document.addEventListener('DOMContentLoaded', function() {
+  setTimeout(() => {
+    window.initFirebase();
+  }, 1000);
+});
