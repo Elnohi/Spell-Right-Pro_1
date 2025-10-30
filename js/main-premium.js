@@ -1190,3 +1190,4 @@ function simulatePremiumAccess() {
 // Make simulatePremiumAccess available globally for testing
 window.simulatePremiumAccess = simulatePremiumAccess;
 window.quickTest = quickTest;
+
