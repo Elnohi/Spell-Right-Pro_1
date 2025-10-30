@@ -138,6 +138,66 @@ window.adsenseConfig = {
   enabled: false,
   client: "ca-pub-7632930282249669"
 };
+// =============================================================================
+// ANALYTICS HELPER FUNCTIONS - ADD THIS SECTION TO config.js
+// =============================================================================
+
+// Analytics tracking for user actions
+window.trackUserAction = function(action, details = {}) {
+  const commonParams = {
+    page: window.location.pathname,
+    timestamp: new Date().toISOString(),
+    user_agent: navigator.userAgent
+  };
+  
+  window.trackEvent(action, { ...commonParams, ...details });
+};
+
+// Track training sessions
+window.trackTrainingStart = function(mode, wordCount) {
+  window.trackUserAction('training_started', {
+    training_mode: mode,
+    word_count: wordCount
+  });
+};
+
+window.trackTrainingComplete = function(mode, score, totalWords) {
+  window.trackUserAction('training_completed', {
+    training_mode: mode,
+    score: score,
+    total_words: totalWords,
+    accuracy: totalWords > 0 ? (score / totalWords * 100).toFixed(1) : 0
+  });
+};
+
+window.trackWordAttempt = function(mode, word, isCorrect) {
+  window.trackUserAction('word_attempt', {
+    training_mode: mode,
+    word: word,
+    correct: isCorrect
+  });
+};
+
+// Track custom list usage
+window.trackCustomListUpload = function(listName, wordCount) {
+  window.trackUserAction('custom_list_upload', {
+    list_name: listName,
+    word_count: wordCount
+  });
+};
+
+// Track UI interactions
+window.trackUIInteraction = function(element, action) {
+  window.trackUserAction('ui_interaction', {
+    element: element,
+    action: action,
+    page: window.location.pathname
+  });
+};
+
+// =============================================================================
+// END OF ANALYTICS HELPER FUNCTIONS
+// =============================================================================
 
 // Initialize Firebase when DOM is ready
 document.addEventListener('DOMContentLoaded', function() {
