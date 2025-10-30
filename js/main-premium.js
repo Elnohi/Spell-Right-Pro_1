@@ -1,21 +1,12 @@
 /* =======================================================
-   SpellRightPro Premium Logic - WITH VOICE RECOGNITION & REAL-TIME MARKING
+   SpellRightPro Premium Logic - UPDATED FIREBASE HANDLING
    ======================================================= */
 
-const firebaseConfig = window.firebaseConfig;
-
-// --- Firebase Setup ---
-if (!firebase.apps.length) {
-  firebase.initializeApp(firebaseConfig);
-}
-
-const auth = firebase.auth();
-const db = firebase.firestore();
-
-// --- Elements ---
-const overlay = document.getElementById("loginOverlay");
-const logoutBtn = document.getElementById("btnLogout");
-const mainContent = document.querySelector("main");
+// Wait for Firebase utils to be ready
+let auth = null;
+let db = null;
+let currentUser = null;
+let userIsPremium = false;
 
 // --- Voice Recognition ---
 let recognition = null;
@@ -23,10 +14,6 @@ let isListening = false;
 
 // --- Real-time Marking Variables ---
 let realTimeMarkingEnabled = true;
-
-// --- Premium Access Variables ---
-let currentUser = null;
-let userIsPremium = false;
 
 // --- Training Variables ---
 let currentMode = null;
@@ -41,264 +28,253 @@ let flaggedWords = new Set();
 let customLists = JSON.parse(localStorage.getItem('premiumCustomLists') || '{}');
 let currentCustomList = null;
 
-// =======================================================
-// ENHANCED AUTHENTICATION WITH PREMIUM ACCESS CONTROL
-// =======================================================
-
-function showOverlay() {
-  if (overlay) overlay.style.display = "flex";
-  if (mainContent) mainContent.style.display = "none";
-}
-
-function hideOverlay() {
-  if (overlay) overlay.style.display = "none";
-  if (mainContent) mainContent.style.display = "block";
-}
-
-// Enhanced premium status check with better error handling
-async function checkPremiumStatus(user) {
-  try {
-    if (!user) {
-      userIsPremium = false;
-      return;
-    }
-    
-    const userDoc = await db.collection('premiumUsers').doc(user.uid).get();
-    
-    if (userDoc.exists) {
-      const userData = userDoc.data();
-      const now = new Date();
-      const expiryDate = userData.expiryDate?.toDate();
-      
-      // Check if subscription is still valid
-      if (expiryDate && expiryDate > now && userData.active !== false) {
-        userIsPremium = true;
-        console.log('✅ User has active premium subscription');
-      } else {
-        userIsPremium = false;
-        console.log('❌ Premium subscription expired or inactive');
+// Initialize Firebase components when ready
+function initializeFirebase() {
+    if (window.firebaseUtils && window.firebaseUtils.initialized) {
+        auth = window.firebaseUtils.auth;
+        db = window.firebaseUtils.db;
+        console.log('✅ Firebase components initialized');
         
-        // Optional: Mark as inactive in database
-        if (userData.active !== false) {
-          await db.collection('premiumUsers').doc(user.uid).update({
-            active: false
-          });
-        }
-      }
+        // Test connection
+        window.firebaseUtils.testConnection();
+        
+        // Start auth state listener
+        setupAuthListener();
     } else {
-      userIsPremium = false;
-      console.log('❌ User not found in premium users');
+        console.log('⏳ Waiting for Firebase utils...');
+        setTimeout(initializeFirebase, 500);
     }
-  } catch (error) {
-    console.error('Error checking premium status:', error);
-    userIsPremium = false;
-    
-    // Fallback: Check if we have premium status in localStorage (for demo purposes)
-    const localPremium = localStorage.getItem(`premium_${user.uid}`);
-    if (localPremium === 'true') {
-      userIsPremium = true;
-      console.log('✅ Using local premium status');
-    }
-  }
 }
 
 // Enhanced auth state handler
-auth.onAuthStateChanged(async (user) => {
-  if (user) {
-    console.log('✅ User authenticated:', user.email);
-    currentUser = user;
-    
-    // Check if user has premium access
-    await checkPremiumStatus(user);
-    
-    if (userIsPremium) {
-      hideOverlay();
-      showFeedback('Welcome back to Premium!', 'success');
-      initializePremiumFeatures();
-    } else {
-      // FIX: User is logged in but not premium - show upgrade message with redirect option
-      showOverlay();
-      const feedbackDiv = document.createElement('div');
-      feedbackDiv.innerHTML = `
-        <div style="text-align: center; margin: 15px 0;">
-          <p>Premium access required for full features.</p>
-          <button onclick="window.location.href='/pricing.html'" 
-                  style="background: #7b2ff7; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; margin: 10px 0;">
-            <i class="fa fa-crown"></i> Upgrade to Premium
-          </button>
-          <br>
-          <button onclick="quickTest()" 
-                  style="background: #6c757d; color: white; border: none; padding: 8px 15px; border-radius: 6px; cursor: pointer; margin: 5px 0;">
-            <i class="fa fa-bolt"></i> Quick Test Mode
-          </button>
-        </div>
-      `;
-      
-      // Add to the login overlay
-      const glassCard = document.querySelector('.glass-card');
-      const existingFeedback = glassCard.querySelector('.premium-redirect');
-      if (existingFeedback) existingFeedback.remove();
-      
-      feedbackDiv.className = 'premium-redirect';
-      glassCard.appendChild(feedbackDiv);
+function setupAuthListener() {
+    if (!auth) {
+        console.error('❌ Auth not available');
+        return;
     }
-  } else {
-    console.log('❌ No user, showing login');
-    currentUser = null;
-    userIsPremium = false;
-    showOverlay();
-  }
-});
+
+    auth.onAuthStateChanged(async (user) => {
+        console.log('🔐 Auth state changed:', user ? user.email : 'No user');
+        
+        if (user) {
+            currentUser = user;
+            console.log('✅ User authenticated:', user.email);
+            
+            // Check premium status
+            if (window.firebaseUtils) {
+                userIsPremium = await window.firebaseUtils.checkPremiumStatus(user);
+                console.log('💎 Premium status:', userIsPremium);
+            } else {
+                userIsPremium = false;
+            }
+            
+            if (userIsPremium) {
+                hideOverlay();
+                showFeedback('Welcome back to Premium!', 'success');
+                initializePremiumFeatures();
+            } else {
+                showOverlay();
+                showNonPremiumMessage();
+            }
+        } else {
+            console.log('❌ No user, showing login');
+            currentUser = null;
+            userIsPremium = false;
+            showOverlay();
+        }
+    });
+}
+
+// Show message for non-premium users
+function showNonPremiumMessage() {
+    const glassCard = document.querySelector('.glass-card');
+    if (!glassCard) return;
+    
+    // Remove existing premium redirect messages
+    const existingMessages = glassCard.querySelectorAll('.premium-redirect');
+    existingMessages.forEach(msg => msg.remove());
+    
+    const messageDiv = document.createElement('div');
+    messageDiv.className = 'premium-redirect';
+    messageDiv.innerHTML = `
+        <div style="text-align: center; margin: 15px 0; padding: 15px; background: rgba(123, 47, 247, 0.1); border-radius: 8px;">
+            <p style="margin: 0 0 10px 0;">Premium access required for full features.</p>
+            <button onclick="window.location.href='/pricing.html'" 
+                    style="background: #7b2ff7; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; margin: 5px 0;">
+                <i class="fa fa-crown"></i> Upgrade to Premium
+            </button>
+            <br>
+            <button onclick="quickTest()" 
+                    style="background: #6c757d; color: white; border: none; padding: 8px 15px; border-radius: 6px; cursor: pointer; margin: 5px 0;">
+                <i class="fa fa-bolt"></i> Quick Test Mode
+            </button>
+        </div>
+    `;
+    
+    glassCard.appendChild(messageDiv);
+}
+
+// UI Functions
+function showOverlay() {
+    const overlay = document.getElementById("loginOverlay");
+    const mainContent = document.querySelector("main");
+    if (overlay) overlay.style.display = "flex";
+    if (mainContent) mainContent.style.display = "none";
+}
+
+function hideOverlay() {
+    const overlay = document.getElementById("loginOverlay");
+    const mainContent = document.querySelector("main");
+    if (overlay) overlay.style.display = "none";
+    if (mainContent) mainContent.style.display = "block";
+}
+
+function showFeedback(message, type = "info") {
+    const existing = document.querySelector(".feedback-message");
+    if (existing) existing.remove();
+
+    const feedback = document.createElement("div");
+    feedback.className = `feedback-message ${type}`;
+    feedback.textContent = message;
+    feedback.style.cssText = `
+        margin-top: 10px; padding: 8px 12px; border-radius: 6px; font-size: 0.9rem;
+        background: ${type === 'success' ? '#d4edda' : type === 'error' ? '#f8d7da' : type === 'warning' ? '#fff3cd' : '#d1ecf1'};
+        color: ${type === 'success' ? '#155724' : type === 'error' ? '#721c24' : type === 'warning' ? '#856404' : '#0c5460'};
+        border: 1px solid ${type === 'success' ? '#c3e6cb' : type === 'error' ? '#f5c6cb' : type === 'warning' ? '#ffeaa7' : '#bee5eb'};
+    `;
+
+    document.querySelector('.glass-card')?.appendChild(feedback);
+    setTimeout(() => feedback.remove(), 4000);
+}
 
 // Enhanced login form
 document.getElementById('loginForm')?.addEventListener('submit', async (e) => {
-  e.preventDefault();
-  const email = document.getElementById('loginEmail').value;
-  const password = document.getElementById('loginPassword').value;
+    e.preventDefault();
+    const email = document.getElementById('loginEmail').value;
+    const password = document.getElementById('loginPassword').value;
 
-  try {
-    showFeedback('Logging in...', 'info');
-    const userCredential = await auth.signInWithEmailAndPassword(email, password);
-    
-    // Check premium status after login
-    await checkPremiumStatus(userCredential.user);
-    
-    if (userIsPremium) {
-      hideOverlay();
-      showFeedback('Welcome back to Premium!', 'success');
-      initializePremiumFeatures();
-    } else {
-      // FIX: User is logged in but not premium - redirect to pricing
-      showFeedback('Premium access required. Redirecting to pricing...', 'info');
-      setTimeout(() => {
-        window.location.href = '/pricing.html';
-      }, 2000);
+    try {
+        showFeedback('Logging in...', 'info');
+        
+        if (!auth) {
+            throw new Error('Authentication service not available');
+        }
+        
+        const userCredential = await auth.signInWithEmailAndPassword(email, password);
+        
+        // Check premium status
+        if (window.firebaseUtils) {
+            userIsPremium = await window.firebaseUtils.checkPremiumStatus(userCredential.user);
+        }
+        
+        if (userIsPremium) {
+            hideOverlay();
+            showFeedback('Welcome back to Premium!', 'success');
+            initializePremiumFeatures();
+        } else {
+            showFeedback('Premium access required. Redirecting to pricing...', 'info');
+            setTimeout(() => {
+                window.location.href = '/pricing.html';
+            }, 2000);
+        }
+    } catch (error) {
+        console.error('Login error:', error);
+        showFeedback(`Login failed: ${error.message}`, 'error');
     }
-  } catch (error) {
-    showFeedback('Login failed. Please check your credentials.', 'error');
-  }
 });
 
-// Enhanced register form - ALWAYS requires payment
+// Enhanced register form
 document.getElementById('registerForm')?.addEventListener('submit', async (e) => {
-  e.preventDefault();
-  const email = document.getElementById('regEmail').value;
-  const password = document.getElementById('regPassword').value;
-  const confirmPassword = document.getElementById('regConfirmPassword').value;
+    e.preventDefault();
+    const email = document.getElementById('regEmail').value;
+    const password = document.getElementById('regPassword').value;
+    const confirmPassword = document.getElementById('regConfirmPassword').value;
 
-  if (password !== confirmPassword) {
-    showFeedback('Passwords do not match', 'error');
-    return;
-  }
+    if (password !== confirmPassword) {
+        showFeedback('Passwords do not match', 'error');
+        return;
+    }
 
-  try {
-    showFeedback('Creating account...', 'info');
-    const userCredential = await auth.createUserWithEmailAndPassword(email, password);
-    
-    // NEW FIX: Redirect to pricing page after successful registration
-    showFeedback('Account created! Redirecting to pricing...', 'success');
-    
-    // Redirect to pricing page after a short delay
-    setTimeout(() => {
-      window.location.href = '/pricing.html';
-    }, 2000);
-    
-  } catch (error) {
-    showFeedback('Registration failed: ' + error.message, 'error');
-  }
+    try {
+        showFeedback('Creating account...', 'info');
+        
+        if (!auth) {
+            throw new Error('Authentication service not available');
+        }
+        
+        const userCredential = await auth.createUserWithEmailAndPassword(email, password);
+        
+        // NEW FIX: Redirect to pricing page after successful registration
+        showFeedback('Account created! Redirecting to pricing...', 'success');
+        
+        // Redirect to pricing page after a short delay
+        setTimeout(() => {
+            window.location.href = '/pricing.html';
+        }, 2000);
+        
+    } catch (error) {
+        console.error('Registration error:', error);
+        showFeedback(`Registration failed: ${error.message}`, 'error');
+    }
 });
 
 // Form toggle
 document.getElementById('showRegister')?.addEventListener('click', () => {
-  document.getElementById('loginForm').style.display = 'none';
-  document.getElementById('registerForm').style.display = 'block';
-  document.getElementById('showRegister').style.display = 'none';
-  document.getElementById('showLogin').style.display = 'inline';
+    document.getElementById('loginForm').style.display = 'none';
+    document.getElementById('registerForm').style.display = 'block';
+    document.getElementById('showRegister').style.display = 'none';
+    document.getElementById('showLogin').style.display = 'inline';
 });
 
 document.getElementById('showLogin')?.addEventListener('click', () => {
-  document.getElementById('registerForm').style.display = 'none';
-  document.getElementById('loginForm').style.display = 'block';
-  document.getElementById('showLogin').style.display = 'none';
-  document.getElementById('showRegister').style.display = 'inline';
+    document.getElementById('registerForm').style.display = 'none';
+    document.getElementById('loginForm').style.display = 'block';
+    document.getElementById('showLogin').style.display = 'none';
+    document.getElementById('showRegister').style.display = 'inline';
 });
 
 // Logout
-logoutBtn?.addEventListener('click', () => {
-  auth.signOut();
-  showOverlay();
-  showFeedback('Logged out successfully', 'info');
+document.getElementById('btnLogout')?.addEventListener('click', () => {
+    if (auth) {
+        auth.signOut();
+        showOverlay();
+        showFeedback('Logged out successfully', 'info');
+    }
 });
 
-// Function to activate premium access (call this after payment)
-async function activatePremiumAccess(userId, planType) {
-  try {
-    const now = new Date();
-    const expiryDate = new Date();
-    
-    // Set expiry date based on plan
-    if (planType === 'monthly') {
-      expiryDate.setMonth(now.getMonth() + 1);
-    } else if (planType === 'yearly') {
-      expiryDate.setFullYear(now.getFullYear() + 1);
-    }
-    
-    await db.collection('premiumUsers').doc(userId).set({
-      plan: planType,
-      activatedAt: firebase.firestore.FieldValue.serverTimestamp(),
-      expiryDate: expiryDate,
-      active: true
-    });
-    
-    userIsPremium = true;
-    console.log('✅ Premium access activated for user:', userId);
-    
-  } catch (error) {
-    console.error('Error activating premium access:', error);
-  }
+// Quick Test function
+function quickTest() {
+    document.getElementById('loginOverlay').style.display = 'none';
+    document.querySelector('main').style.display = 'block';
+    // Create a temporary feedback message
+    const feedback = document.createElement('div');
+    feedback.style.cssText = 'position: fixed; top: 20px; right: 20px; background: #4CAF50; color: white; padding: 15px; border-radius: 5px; z-index: 10000;';
+    feedback.innerHTML = '<i class="fa fa-bolt"></i> Quick test mode activated!';
+    document.body.appendChild(feedback);
+    setTimeout(() => feedback.remove(), 3000);
 }
+
+// Dark Mode Toggle
+document.getElementById('toggleDark')?.addEventListener('click', () => {
+    document.body.classList.toggle('dark-mode');
+    const icon = document.getElementById('toggleDark').querySelector('i');
+    if (icon) {
+        icon.classList.toggle('fa-moon');
+        icon.classList.toggle('fa-sun');
+    }
+});
 
 // Initialize premium features only for paid users
 function initializePremiumFeatures() {
-  console.log('Initializing premium features for:', currentUser.email);
-  // Premium features are automatically available when userIsPremium = true
-}
-
-function showFeedback(message, type = "info") {
-  const existing = document.querySelector(".feedback-message");
-  if (existing) existing.remove();
-
-  const feedback = document.createElement("div");
-  feedback.className = `feedback-message ${type}`;
-  feedback.textContent = message;
-  feedback.style.cssText = `
-    margin-top: 10px; padding: 8px 12px; border-radius: 6px; font-size: 0.9rem;
-    background: ${type === 'success' ? '#d4edda' : type === 'error' ? '#f8d7da' : type === 'warning' ? '#fff3cd' : '#d1ecf1'};
-    color: ${type === 'success' ? '#155724' : type === 'error' ? '#721c24' : type === 'warning' ? '#856404' : '#0c5460'};
-    border: 1px solid ${type === 'success' ? '#c3e6cb' : type === 'error' ? '#f5c6cb' : type === 'warning' ? '#ffeaa7' : '#bee5eb'};
-  `;
-
-  document.querySelector('.glass-card')?.appendChild(feedback);
-  setTimeout(() => feedback.remove(), 4000);
+    console.log('Initializing premium features for:', currentUser.email);
+    initializeSpeechSynthesis();
+    createCustomWordsUI();
+    initializeCustomWords();
+    initializeRealTimeValidation();
 }
 
 // =======================================================
-// DARK MODE TOGGLE
-// =======================================================
-const toggleDark = document.getElementById("toggleDark");
-if (toggleDark) {
-  toggleDark.addEventListener("click", () => {
-    document.body.classList.toggle("dark-mode");
-    const icon = toggleDark.querySelector("i");
-    if (icon) {
-      icon.classList.toggle("fa-moon");
-      icon.classList.toggle("fa-sun");
-    }
-  });
-}
-
-// =======================================================
-// VOICE RECOGNITION
+// VOICE RECOGNITION (Existing code remains the same)
 // =======================================================
 
 function initializeSpeechRecognition() {
@@ -431,7 +407,7 @@ function checkBeeAnswer(spokenText) {
 }
 
 // =======================================================
-// REAL-TIME MARKING
+// REAL-TIME MARKING (Existing code remains the same)
 // =======================================================
 
 function initializeRealTimeValidation() {
@@ -525,7 +501,7 @@ function clearRealTimeFeedback() {
 }
 
 // =======================================================
-// CUSTOM WORDS MANAGEMENT
+// CUSTOM WORDS MANAGEMENT (Existing code remains the same)
 // =======================================================
 
 function createCustomWordsUI() {
@@ -770,7 +746,7 @@ function loadCustomLists() {
 }
 
 // =======================================================
-// TRAINING LOGIC
+// TRAINING LOGIC (Existing code remains the same)
 // =======================================================
 
 // Mode selection
@@ -1185,10 +1161,32 @@ function initializeSpeechSynthesis() {
 // FINAL INITIALIZATION
 // =======================================================
 
+// Start Firebase initialization when DOM is ready
 document.addEventListener('DOMContentLoaded', function() {
-  initializeSpeechSynthesis();
-  createCustomWordsUI();
-  initializeCustomWords();
-  initializeRealTimeValidation(); // REAL-TIME MARKING INITIALIZATION
-  console.log("SpellRightPro Premium with Real-time Marking initialized");
+    console.log('🚀 Starting Firebase initialization...');
+    initializeFirebase();
+    
+    // Initialize other features
+    initializeSpeechSynthesis();
+    createCustomWordsUI();
+    initializeCustomWords();
+    initializeRealTimeValidation();
+    console.log("SpellRightPro Premium with Real-time Marking initialized");
 });
+
+// Enhanced function to handle premium access simulation for testing
+function simulatePremiumAccess() {
+  // This function can be called from browser console for testing
+  if (auth && auth.currentUser) {
+    const userId = auth.currentUser.uid;
+    localStorage.setItem(`premium_${userId}`, 'true');
+    console.log('✅ Premium access simulated for user:', userId);
+    location.reload();
+  } else {
+    console.log('❌ No user logged in');
+  }
+}
+
+// Make simulatePremiumAccess available globally for testing
+window.simulatePremiumAccess = simulatePremiumAccess;
+window.quickTest = quickTest;
