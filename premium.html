@@ -9,10 +9,11 @@
   <link rel="stylesheet" href="/css/premium.css" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" />
 
-  <!-- Firebase -->
-  <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore-compat.js"></script>
+  <!-- Firebase SDKs - UPDATED VERSION -->
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-analytics.js"></script>
 </head>
 
 <body>
@@ -212,38 +213,10 @@
     </div>
   </div>
 
-  <!-- JS -->
+  <!-- JS - CORRECT ORDER -->
   <script src="/js/config.js"></script>
+  <script src="/js/firebase-utils.js"></script>
   <script src="/js/main-premium.js"></script>
-  
-  <script>
-    function quickTest() {
-      document.getElementById('loginOverlay').style.display = 'none';
-      document.querySelector('main').style.display = 'block';
-      // Create a temporary feedback message
-      const feedback = document.createElement('div');
-      feedback.style.cssText = 'position: fixed; top: 20px; right: 20px; background: #4CAF50; color: white; padding: 15px; border-radius: 5px; z-index: 10000;';
-      feedback.innerHTML = '<i class="fa fa-bolt"></i> Quick test mode activated!';
-      document.body.appendChild(feedback);
-      setTimeout(() => feedback.remove(), 3000);
-    }
-
-    // Enhanced function to handle premium access simulation for testing
-    function simulatePremiumAccess() {
-      // This function can be called from browser console for testing
-      if (typeof firebase !== 'undefined' && firebase.auth().currentUser) {
-        const userId = firebase.auth().currentUser.uid;
-        localStorage.setItem(`premium_${userId}`, 'true');
-        console.log('✅ Premium access simulated for user:', userId);
-        location.reload();
-      } else {
-        console.log('❌ No user logged in');
-      }
-    }
-
-    // Make simulatePremiumAccess available globally for testing
-    window.simulatePremiumAccess = simulatePremiumAccess;
-  </script>
 
 <!-- Legal Footer -->
 <footer style="text-align: center; margin-top: 40px; padding: 20px; color: rgba(255,255,255,0.7);">
