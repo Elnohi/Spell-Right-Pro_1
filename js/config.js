@@ -16,9 +16,16 @@ window.firebaseConfig = {
 
 // Global analytics instance
 window.firebaseAnalytics = null;
+window.firebaseInitialized = false;
 
 // Initialize Firebase safely with Analytics
 window.initFirebase = function() {
+  // Prevent multiple initializations
+  if (window.firebaseInitialized) {
+    console.log('🔁 Firebase already initialized, skipping...');
+    return firebase.apps[0];
+  }
+  
   try {
     if (typeof firebase === 'undefined') {
       console.error('Firebase SDK not loaded');
@@ -31,7 +38,7 @@ window.initFirebase = function() {
       console.log('✅ Firebase app initialized');
     } else {
       app = firebase.apps[0];
-      console.log('✅ Firebase app already initialized');
+      console.log('✅ Using existing Firebase app');
     }
 
     // Initialize Analytics only with user consent
@@ -56,6 +63,7 @@ window.initFirebase = function() {
       console.log('🔕 Analytics disabled - no cookie consent');
     }
 
+    window.firebaseInitialized = true;
     return app;
   } catch (error) {
     console.error("Firebase initialization failed:", error);
@@ -102,44 +110,8 @@ window.trackPageView = function(pageName = null) {
   });
 };
 
-// Track training events
-window.trackTrainingEvent = function(action, mode, details = {}) {
-  window.trackEvent('training_' + action, {
-    training_mode: mode,
-    ...details,
-    timestamp: new Date().toISOString()
-  });
-};
-
-// Track user authentication events
-window.trackAuthEvent = function(action, method = 'email') {
-  window.trackEvent('auth_' + action, {
-    method: method,
-    timestamp: new Date().toISOString()
-  });
-};
-
-// App Configuration
-window.appConfig = {
-  apiBaseUrl: "https://spellrightpro-api-798456641137.us-central1.run.app",
-  adClient: "ca-pub-7632930282249669",
-  trialDays: 0,
-  successUrl: "https://spellrightpro.org/premium.html?payment_success=1",
-  cancelUrl:  "https://spellrightpro.org/premium.html"
-};
-
-// Stripe Configuration
-window.stripeConfig = {
-  publicKey: "pk_live_51RuKs1El99zwdEZr9wjVF3EhADOk4c9x8JjvjPLH8Y16cCPwykZRFVtC1Fr0hSJesStbqcvfvvNOy4NHRa0GPvg004IIcPfC8"
-};
-
-// AdSense Configuration
-window.adsenseConfig = {
-  enabled: false,
-  client: "ca-pub-7632930282249669"
-};
 // =============================================================================
-// ANALYTICS HELPER FUNCTIONS - ADD THIS SECTION TO config.js
+// ANALYTICS HELPER FUNCTIONS
 // =============================================================================
 
 // Analytics tracking for user actions
@@ -195,9 +167,46 @@ window.trackUIInteraction = function(element, action) {
   });
 };
 
+// Track user authentication events
+window.trackAuthEvent = function(action, method = 'email') {
+  window.trackEvent('auth_' + action, {
+    method: method,
+    timestamp: new Date().toISOString()
+  });
+};
+
+// Track training events
+window.trackTrainingEvent = function(action, mode, details = {}) {
+  window.trackEvent('training_' + action, {
+    training_mode: mode,
+    ...details,
+    timestamp: new Date().toISOString()
+  });
+};
+
 // =============================================================================
 // END OF ANALYTICS HELPER FUNCTIONS
 // =============================================================================
+
+// App Configuration
+window.appConfig = {
+  apiBaseUrl: "https://spellrightpro-api-798456641137.us-central1.run.app",
+  adClient: "ca-pub-7632930282249669",
+  trialDays: 0,
+  successUrl: window.location.origin + "/premium.html?payment_success=1",
+  cancelUrl: window.location.origin + "/premium.html"
+};
+
+// Stripe Configuration
+window.stripeConfig = {
+  publicKey: "pk_live_51RuKs1El99zwdEZr9wjVF3EhADOk4c9x8JjvjPLH8Y16cCPwykZRFVtC1Fr0hSJesStbqcvfvvNOy4NHRa0GPvg004IIcPfC8"
+};
+
+// AdSense Configuration
+window.adsenseConfig = {
+  enabled: false,
+  client: "ca-pub-7632930282249669"
+};
 
 // Initialize Firebase when DOM is ready
 document.addEventListener('DOMContentLoaded', function() {
