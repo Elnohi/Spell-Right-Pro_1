@@ -9,6 +9,12 @@
   <link rel="stylesheet" href="/css/premium.css"/>
   <link rel="preload" href="/assets/logo.png" as="image"/>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"/>
+
+  <!-- Firebase SDKs - CORRECT ORDER -->
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-analytics.js"></script>
 </head>
 <body data-page="index">
   <header class="navbar">
@@ -25,19 +31,7 @@
     </div>
   </header>
 
-  <!-- Firebase SDKs -->
-  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-analytics.js"></script>
-
-  <!-- Your config -->
-  <script src="/js/config.js"></script>
-  <script src="/js/firebase-utils.js"></script>
-
-  <!-- AdSense (Freemium pages only, but index can show a banner) -->
-  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7632930282249669" crossorigin="anonymous"></script>
-
+  <!-- Ad Container -->
   <div class="ad-container" style="margin-top:10px;">
     <div class="ad-label">Advertisement</div>
     <ins class="adsbygoogle" style="display:block"
@@ -81,29 +75,8 @@
     <a href="/contact.html">Contact</a>
   </footer>
 
-  <!-- Dark mode remembering -->
-  <script>
-    (function(){
-      const toggle = document.getElementById('darkModeToggle');
-      function apply() {
-        const on = localStorage.getItem('dark') === 'true';
-        document.body.classList.toggle('dark-mode', on);
-        if (toggle) toggle.querySelector('i').className = on ? 'fa fa-sun' : 'fa fa-moon';
-      }
-      toggle?.addEventListener('click', ()=>{
-        const on = !(localStorage.getItem('dark') === 'true');
-        localStorage.setItem('dark', on);
-        apply();
-      });
-      apply();
-    })();
-  </script>
-
-  <!-- SW -->
-  <script>if('serviceWorker' in navigator){navigator.serviceWorker.register('/sw.js').catch(()=>{});}</script>
-
-  <!-- Cookie Consent Banner -->
-<div id="cookieConsentBanner" style="display: none; position: fixed; bottom: 0; left: 0; right: 0; background: #333; color: white; padding: 15px; text-align: center; z-index: 1000;">
+  <!-- COOKIE CONSENT BANNER -->
+  <div id="cookieConsentBanner" style="display: none; position: fixed; bottom: 0; left: 0; right: 0; background: #333; color: white; padding: 15px; text-align: center; z-index: 1000;">
     <p>We use cookies to provide our services and for analytics and ads. 
        <a href="/privacy.html" style="color: #7b2ff7;">Learn more</a>
     </p>
@@ -113,31 +86,73 @@
     <button onclick="declineCookies()" style="background: #666; color: white; border: none; padding: 8px 15px; margin: 0 5px; border-radius: 5px; cursor: pointer;">
         Decline
     </button>
-</div>
+  </div>
 
-<script>
-// Cookie consent functions
-function showCookieBanner() {
-    if (!localStorage.getItem('cookieConsent')) {
-        document.getElementById('cookieConsentBanner').style.display = 'block';
+  <!-- YOUR CONFIG & SCRIPTS -->
+  <script src="/js/config.js"></script>
+  <script src="/js/firebase-utils.js"></script>
+
+  <!-- COOKIE CONSENT SCRIPT -->
+  <script>
+  // Enhanced Cookie Consent with Analytics
+  function showCookieBanner() {
+      const consent = localStorage.getItem('cookieConsent');
+      // Show banner if no consent decision has been made
+      if (consent === null) {
+          document.getElementById('cookieConsentBanner').style.display = 'block';
+      } else if (consent === 'true') {
+          // If consent was given, initialize analytics
+          initializeAnalytics();
+      }
+  }
+
+  function acceptCookies() {
+      localStorage.setItem('cookieConsent', 'true');
+      document.getElementById('cookieConsentBanner').style.display = 'none';
+      
+      // Initialize analytics immediately
+      initializeAnalytics();
+      
+      // Show feedback but don't reload
+      console.log('✅ Cookies accepted - Analytics enabled');
+  }
+
+  function declineCookies() {
+      localStorage.setItem('cookieConsent', 'false');
+      document.getElementById('cookieConsentBanner').style.display = 'none';
+      console.log('🔕 Cookies declined - Analytics disabled');
+  }
+
+  function initializeAnalytics() {
+      // Reinitialize Firebase with analytics
+      if (typeof window.initFirebase === 'function') {
+          setTimeout(() => {
+              window.initFirebase();
+          }, 500);
+      }
+  }
+
+  // Show banner immediately
+  setTimeout(showCookieBanner, 500);
+
+  // Dark mode remembering
+  (function(){
+    const toggle = document.getElementById('darkModeToggle');
+    function apply() {
+      const on = localStorage.getItem('dark') === 'true';
+      document.body.classList.toggle('dark-mode', on);
+      if (toggle) toggle.querySelector('i').className = on ? 'fa fa-sun' : 'fa fa-moon';
     }
-}
+    toggle?.addEventListener('click', ()=>{
+      const on = !(localStorage.getItem('dark') === 'true');
+      localStorage.setItem('dark', on);
+      apply();
+    });
+    apply();
+  })();
+  </script>
 
-function acceptCookies() {
-    localStorage.setItem('cookieConsent', 'true');
-    document.getElementById('cookieConsentBanner').style.display = 'none';
-    // Reload to enable analytics and ads
-    location.reload();
-}
-
-function declineCookies() {
-    localStorage.setItem('cookieConsent', 'false');
-    document.getElementById('cookieConsentBanner').style.display = 'none';
-}
-
-// Show banner on page load
-document.addEventListener('DOMContentLoaded', showCookieBanner);
-</script>
-  
+  <!-- SW -->
+  <script>if('serviceWorker' in navigator){navigator.serviceWorker.register('/sw.js').catch(()=>{});}</script>
 </body>
 </html>
