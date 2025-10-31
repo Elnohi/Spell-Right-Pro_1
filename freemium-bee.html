@@ -135,27 +135,49 @@
 </div>
 
 <script>
-// Cookie consent functions
+// Enhanced Cookie Consent with Analytics
 function showCookieBanner() {
-    if (!localStorage.getItem('cookieConsent')) {
+    const consent = localStorage.getItem('cookieConsent');
+    // Show banner if no consent decision has been made
+    if (consent === null) {
         document.getElementById('cookieConsentBanner').style.display = 'block';
+    } else if (consent === 'true') {
+        // If consent was given, initialize analytics
+        initializeAnalytics();
     }
 }
 
 function acceptCookies() {
     localStorage.setItem('cookieConsent', 'true');
     document.getElementById('cookieConsentBanner').style.display = 'none';
-    // Reload to enable analytics and ads
-    location.reload();
+    
+    // Initialize analytics immediately
+    initializeAnalytics();
+    
+    // Show feedback but don't reload
+    console.log('✅ Cookies accepted - Analytics enabled');
 }
 
 function declineCookies() {
     localStorage.setItem('cookieConsent', 'false');
     document.getElementById('cookieConsentBanner').style.display = 'none';
+    console.log('🔕 Cookies declined - Analytics disabled');
+}
+
+function initializeAnalytics() {
+    // Reinitialize Firebase with analytics
+    if (typeof window.initFirebase === 'function') {
+        setTimeout(() => {
+            window.initFirebase();
+        }, 500);
+    }
 }
 
 // Show banner on page load
-document.addEventListener('DOMContentLoaded', showCookieBanner);
+document.addEventListener('DOMContentLoaded', function() {
+    // Wait a bit for page to load
+    setTimeout(showCookieBanner, 1000);
+});
 </script>
   
 </body>
