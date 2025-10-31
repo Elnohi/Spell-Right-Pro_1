@@ -6,6 +6,12 @@
   <title>School Practice - SpellRightPro</title>
   <link rel="stylesheet" href="/css/styles.css" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" />
+
+  <!-- Firebase SDKs - CORRECT ORDER -->
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-analytics.js"></script>
 </head>
 <body data-mode="school">
   <!-- Header with Dark Mode Toggle -->
@@ -58,10 +64,10 @@
       </div>
     </div>
 
-    <!-- Ad Container - Will only show after AdSense approval -->
-<div id="ad-container" style="margin: 25px 0; text-align: center; min-height: 90px; display: none;">
-    <p style="color: #666; font-size: 0.9em;">Ad placeholder - will show ads after AdSense approval</p>
-</div>
+    <!-- Ad Container -->
+    <div id="ad-container" style="margin: 25px 0; text-align: center; min-height: 90px; display: none;">
+      <p style="color: #666; font-size: 0.9em;">Ad placeholder - will show ads after AdSense approval</p>
+    </div>
 
     <!-- Progress and Feedback -->
     <div id="progress" data-role="progress" style="font-weight: 700; margin: 15px 0;"></div>
@@ -99,17 +105,68 @@
     <div class="summary-area hidden" style="margin-top: 20px; padding: 15px; background: rgba(0,0,0,0.05); border-radius: 8px;"></div>
   </main>
 
-    <!-- Firebase SDKs for Freemium -->
-  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-analytics.js"></script>
+  <!-- COOKIE CONSENT BANNER -->
+  <div id="cookieConsentBanner" style="display: none; position: fixed; bottom: 0; left: 0; right: 0; background: #333; color: white; padding: 15px; text-align: center; z-index: 1000;">
+    <p>We use cookies to provide our services and for analytics and ads. 
+       <a href="/privacy.html" style="color: #7b2ff7;">Learn more</a>
+    </p>
+    <button onclick="acceptCookies()" style="background: #7b2ff7; color: white; border: none; padding: 8px 15px; margin: 0 5px; border-radius: 5px; cursor: pointer;">
+        Accept
+    </button>
+    <button onclick="declineCookies()" style="background: #666; color: white; border: none; padding: 8px 15px; margin: 0 5px; border-radius: 5px; cursor: pointer;">
+        Decline
+    </button>
+  </div>
 
-  <!-- Your config -->
+  <!-- YOUR CONFIG & SCRIPTS -->
   <script src="/js/config.js"></script>
   <script src="/js/firebase-utils.js"></script>
   <script src="/js/main-freemium-school.js"></script>
-  
+
+  <!-- COOKIE CONSENT SCRIPT -->
+  <script>
+  // Enhanced Cookie Consent with Analytics
+  function showCookieBanner() {
+      const consent = localStorage.getItem('cookieConsent');
+      // Show banner if no consent decision has been made
+      if (consent === null) {
+          document.getElementById('cookieConsentBanner').style.display = 'block';
+      } else if (consent === 'true') {
+          // If consent was given, initialize analytics
+          initializeAnalytics();
+      }
+  }
+
+  function acceptCookies() {
+      localStorage.setItem('cookieConsent', 'true');
+      document.getElementById('cookieConsentBanner').style.display = 'none';
+      
+      // Initialize analytics immediately
+      initializeAnalytics();
+      
+      // Show feedback but don't reload
+      console.log('✅ Cookies accepted - Analytics enabled');
+  }
+
+  function declineCookies() {
+      localStorage.setItem('cookieConsent', 'false');
+      document.getElementById('cookieConsentBanner').style.display = 'none';
+      console.log('🔕 Cookies declined - Analytics disabled');
+  }
+
+  function initializeAnalytics() {
+      // Reinitialize Firebase with analytics
+      if (typeof window.initFirebase === 'function') {
+          setTimeout(() => {
+              window.initFirebase();
+          }, 500);
+      }
+  }
+
+  // Show banner immediately
+  setTimeout(showCookieBanner, 500);
+  </script>
+
   <!-- File input handler -->
   <script>
     document.getElementById('fileInput').addEventListener('change', function(e) {
@@ -120,8 +177,8 @@
     });
   </script>
 
-<!-- Legal Footer -->
-<footer style="text-align: center; margin-top: 40px; padding: 20px; color: #666; border-top: 1px solid rgba(255,255,255,0.1);">
+  <!-- Legal Footer -->
+  <footer style="text-align: center; margin-top: 40px; padding: 20px; color: #666; border-top: 1px solid rgba(255,255,255,0.1);">
     <p>
         <a href="/privacy.html" style="color: #7b2ff7; text-decoration: none;">Privacy Policy</a> 
         • 
@@ -132,44 +189,6 @@
         <a href="/contact.html" style="color: #7b2ff7; text-decoration: none;">Contact</a>
     </p>
     <p style="margin-top: 10px; font-size: 0.9em;">&copy; 2025 SpellRightPro. All rights reserved.</p>
-</footer>
-
-  <!-- Cookie Consent Banner -->
-<div id="cookieConsentBanner" style="display: none; position: fixed; bottom: 0; left: 0; right: 0; background: #333; color: white; padding: 15px; text-align: center; z-index: 1000;">
-    <p>We use cookies to provide our services and for analytics and ads. 
-       <a href="/privacy.html" style="color: #7b2ff7;">Learn more</a>
-    </p>
-    <button onclick="acceptCookies()" style="background: #7b2ff7; color: white; border: none; padding: 8px 15px; margin: 0 5px; border-radius: 5px; cursor: pointer;">
-        Accept
-    </button>
-    <button onclick="declineCookies()" style="background: #666; color: white; border: none; padding: 8px 15px; margin: 0 5px; border-radius: 5px; cursor: pointer;">
-        Decline
-    </button>
-</div>
-
-<script>
-// Cookie consent functions
-function showCookieBanner() {
-    if (!localStorage.getItem('cookieConsent')) {
-        document.getElementById('cookieConsentBanner').style.display = 'block';
-    }
-}
-
-function acceptCookies() {
-    localStorage.setItem('cookieConsent', 'true');
-    document.getElementById('cookieConsentBanner').style.display = 'none';
-    // Reload to enable analytics and ads
-    location.reload();
-}
-
-function declineCookies() {
-    localStorage.setItem('cookieConsent', 'false');
-    document.getElementById('cookieConsentBanner').style.display = 'none';
-}
-
-// Show banner on page load
-document.addEventListener('DOMContentLoaded', showCookieBanner);
-</script>
-  
+  </footer>
 </body>
 </html>
