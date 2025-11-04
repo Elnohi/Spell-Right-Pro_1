@@ -43,6 +43,7 @@ header {
   max-width: 720px;
   margin-bottom: 20px;
   color: #2a2a2a;
+  border: 1px solid rgba(0, 0, 0, 0.1); /* Added for better visibility */
 }
 header img {
   height: 70px;
@@ -63,6 +64,7 @@ header .btn-premium {
   cursor: pointer;
   box-shadow: var(--shadow);
   transition: background 0.3s ease, transform 0.2s ease;
+  border: 1px solid rgba(255, 255, 255, 0.2); /* Added for better visibility */
 }
 header .btn-premium:hover {
   background: var(--primary-dark);
@@ -74,13 +76,15 @@ body.dark-mode header {
   background: rgba(40, 15, 70, 0.9);
   color: #fff;
   border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.15); /* Enhanced visibility */
 }
 body.dark-mode .btn-premium {
   background: rgba(255, 255, 255, 0.15);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.3); /* Enhanced contrast */
 }
 body.dark-mode .btn-premium:hover {
   background: rgba(255, 255, 255, 0.25);
+  border: 1px solid rgba(255, 255, 255, 0.4); /* Enhanced on hover */
 }
 
 /* =======================================================
@@ -94,10 +98,12 @@ body.dark-mode .btn-premium:hover {
   max-width: 680px;
   text-align: center;
   color: #222;
+  border: 1px solid rgba(0, 0, 0, 0.1); /* Added for better visibility */
 }
 body.dark-mode .main-card {
   background: rgba(255, 255, 255, 0.08);
   color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.15); /* Crucial fix for dark mode */
 }
 
 /* =======================================================
@@ -120,6 +126,7 @@ button {
   cursor: pointer;
   box-shadow: var(--shadow);
   transition: transform 0.2s ease, background 0.3s ease;
+  border: 1px solid rgba(0, 0, 0, 0.1); /* Added for light mode */
 }
 button:hover {
   transform: translateY(-2px);
@@ -130,9 +137,11 @@ body.dark-mode button {
   box-shadow: none;
   background: rgba(255, 255, 255, 0.15);
   color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.25); /* Crucial fix for visibility */
 }
 body.dark-mode button:hover {
   background: rgba(255, 255, 255, 0.25);
+  border: 1px solid rgba(255, 255, 255, 0.35); /* Enhanced on hover */
 }
 
 /* =======================================================
@@ -224,6 +233,7 @@ body.dark-mode button:hover {
   cursor: pointer;
   transition: background-color 0.2s ease;
   box-shadow: var(--shadow);
+  border: 1px solid rgba(255, 255, 255, 0.2); /* Added for visibility */
 }
 
 .send-button:hover {
@@ -257,7 +267,7 @@ body.dark-mode .support-header p {
 
 body.dark-mode .support-form {
   background: rgba(255, 255, 255, 0.08);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.15); /* Enhanced border */
 }
 
 body.dark-mode .form-group label {
@@ -268,7 +278,7 @@ body.dark-mode .form-group input[type="email"],
 body.dark-mode .form-group input[type="text"],
 body.dark-mode .form-group textarea {
   background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.25); /* Enhanced border contrast */
   color: #fff;
 }
 
