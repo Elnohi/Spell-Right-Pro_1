@@ -43,7 +43,7 @@ header {
   max-width: 720px;
   margin-bottom: 20px;
   color: #2a2a2a;
-  border: 1px solid rgba(0, 0, 0, 0.1); /* Added for better visibility */
+  border: 1px solid rgba(0, 0, 0, 0.1);
 }
 header img {
   height: 70px;
@@ -64,7 +64,7 @@ header .btn-premium {
   cursor: pointer;
   box-shadow: var(--shadow);
   transition: background 0.3s ease, transform 0.2s ease;
-  border: 1px solid rgba(255, 255, 255, 0.2); /* Added for better visibility */
+  border: 1px solid rgba(255, 255, 255, 0.2);
 }
 header .btn-premium:hover {
   background: var(--primary-dark);
@@ -76,15 +76,15 @@ body.dark-mode header {
   background: rgba(40, 15, 70, 0.9);
   color: #fff;
   border-bottom: 1px solid rgba(255, 255, 255, 0.2);
-  border: 1px solid rgba(255, 255, 255, 0.15); /* Enhanced visibility */
+  border: 1px solid rgba(255, 255, 255, 0.15);
 }
 body.dark-mode .btn-premium {
   background: rgba(255, 255, 255, 0.15);
-  border: 1px solid rgba(255, 255, 255, 0.3); /* Enhanced contrast */
+  border: 1px solid rgba(255, 255, 255, 0.3);
 }
 body.dark-mode .btn-premium:hover {
   background: rgba(255, 255, 255, 0.25);
-  border: 1px solid rgba(255, 255, 255, 0.4); /* Enhanced on hover */
+  border: 1px solid rgba(255, 255, 255, 0.4);
 }
 
 /* =======================================================
@@ -98,12 +98,103 @@ body.dark-mode .btn-premium:hover {
   max-width: 680px;
   text-align: center;
   color: #222;
-  border: 1px solid rgba(0, 0, 0, 0.1); /* Added for better visibility */
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  width: 100%; /* Ensure it takes full width */
+  box-sizing: border-box; /* Include padding in width calculation */
 }
 body.dark-mode .main-card {
   background: rgba(255, 255, 255, 0.08);
   color: #fff;
-  border: 1px solid rgba(255, 255, 255, 0.15); /* Crucial fix for dark mode */
+  border: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+/* =======================================================
+   FORM ELEMENTS - CRITICAL FIX FOR DESKTOP
+======================================================= */
+/* Radio buttons and labels */
+.main-card input[type="radio"] {
+  margin-right: 8px;
+}
+
+.main-card label {
+  color: #222; /* Force dark text for light mode */
+  display: flex;
+  align-items: center;
+  margin: 10px 0;
+  cursor: pointer;
+}
+
+body.dark-mode .main-card label {
+  color: #fff; /* White text for dark mode */
+}
+
+/* Textarea for custom word list */
+.main-card textarea {
+  width: 100%;
+  min-height: 100px;
+  padding: 12px;
+  border: 1px solid #dcdfe3;
+  border-radius: 8px;
+  font-family: var(--font-main);
+  font-size: 1rem;
+  margin: 15px 0;
+  box-sizing: border-box;
+  background: #fff;
+  color: #222; /* Force dark text */
+  resize: vertical;
+}
+
+body.dark-mode .main-card textarea {
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  color: #fff; /* White text for dark mode */
+}
+
+/* File input and custom file upload */
+.main-card input[type="file"] {
+  margin: 10px 0;
+  width: 100%;
+}
+
+.main-card .file-upload-container {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 15px 0;
+}
+
+.main-card .file-upload-btn {
+  background: var(--primary);
+  color: white;
+  padding: 10px 15px;
+  border-radius: var(--radius);
+  cursor: pointer;
+  text-align: center;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+/* Ensure all text in main card is visible */
+.main-card * {
+  color: inherit; /* Inherit color from parent */
+}
+
+/* Specific fix for any light text that might be inheriting body color */
+.main-card h1,
+.main-card h2,
+.main-card h3,
+.main-card p,
+.main-card label,
+.main-card span {
+  color: #222; /* Force dark color in light mode */
+}
+
+body.dark-mode .main-card h1,
+body.dark-mode .main-card h2,
+body.dark-mode .main-card h3,
+body.dark-mode .main-card p,
+body.dark-mode .main-card label,
+body.dark-mode .main-card span {
+  color: #fff; /* Force white color in dark mode */
 }
 
 /* =======================================================
@@ -126,7 +217,8 @@ button {
   cursor: pointer;
   box-shadow: var(--shadow);
   transition: transform 0.2s ease, background 0.3s ease;
-  border: 1px solid rgba(0, 0, 0, 0.1); /* Added for light mode */
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  color: #222; /* Ensure button text is visible */
 }
 button:hover {
   transform: translateY(-2px);
@@ -137,11 +229,11 @@ body.dark-mode button {
   box-shadow: none;
   background: rgba(255, 255, 255, 0.15);
   color: #fff;
-  border: 1px solid rgba(255, 255, 255, 0.25); /* Crucial fix for visibility */
+  border: 1px solid rgba(255, 255, 255, 0.25);
 }
 body.dark-mode button:hover {
   background: rgba(255, 255, 255, 0.25);
-  border: 1px solid rgba(255, 255, 255, 0.35); /* Enhanced on hover */
+  border: 1px solid rgba(255, 255, 255, 0.35);
 }
 
 /* =======================================================
@@ -233,7 +325,7 @@ body.dark-mode button:hover {
   cursor: pointer;
   transition: background-color 0.2s ease;
   box-shadow: var(--shadow);
-  border: 1px solid rgba(255, 255, 255, 0.2); /* Added for visibility */
+  border: 1px solid rgba(255, 255, 255, 0.2);
 }
 
 .send-button:hover {
@@ -267,7 +359,7 @@ body.dark-mode .support-header p {
 
 body.dark-mode .support-form {
   background: rgba(255, 255, 255, 0.08);
-  border: 1px solid rgba(255, 255, 255, 0.15); /* Enhanced border */
+  border: 1px solid rgba(255, 255, 255, 0.15);
 }
 
 body.dark-mode .form-group label {
@@ -278,7 +370,7 @@ body.dark-mode .form-group input[type="email"],
 body.dark-mode .form-group input[type="text"],
 body.dark-mode .form-group textarea {
   background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.25); /* Enhanced border contrast */
+  border: 1px solid rgba(255, 255, 255, 0.25);
   color: #fff;
 }
 
@@ -321,5 +413,33 @@ body.dark-mode .back-home-link:hover {
   }
   .support-form {
     padding: 20px;
+  }
+}
+
+/* =======================================================
+   DESKTOP-SPECIFIC FIXES
+======================================================= */
+@media (min-width: 601px) {
+  .main-card {
+    max-width: 600px; /* Slightly smaller max-width for better desktop appearance */
+  }
+  
+  /* Ensure form elements have proper contrast on desktop */
+  .main-card input[type="text"],
+  .main-card input[type="email"],
+  .main-card textarea,
+  .main-card select {
+    background: #fff !important;
+    color: #222 !important;
+    border: 1px solid #dcdfe3 !important;
+  }
+  
+  body.dark-mode .main-card input[type="text"],
+  body.dark-mode .main-card input[type="email"],
+  body.dark-mode .main-card textarea,
+  body.dark-mode .main-card select {
+    background: rgba(255, 255, 255, 0.1) !important;
+    color: #fff !important;
+    border: 1px solid rgba(255, 255, 255, 0.25) !important;
   }
 }
