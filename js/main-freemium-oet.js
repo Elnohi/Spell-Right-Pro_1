@@ -1,4 +1,4 @@
-/* /js/main-freemium-oet.js - COMPLETE FIXED WITH ACCENT SUPPORT */
+/* /js/main-freemium-oet.js - COMPLETE WITH PREVIOUS AND RESUME FEATURES */
 (() => {
   const $ = s => document.querySelector(s);
   const ui = {
@@ -7,6 +7,7 @@
     upload: $('#fileInput'),
     start: $('#btnStart'),
     say: $('#btnSayAgain'),
+    previous: $('#btnPrevious'), // NEW: Previous button
     flag: $('#btnFlag'),
     end: $('#btnEnd'),
     progress: $('#progress'),
@@ -17,8 +18,10 @@
     summary: $('.summary-area'),
     tabExam: $('#tabExam'),
     tabPractice: $('#tabPractice'),
-    // FIXED: Added accent selection
-    accentSelect: $('#oetAccent')
+    accentSelect: $('#oetAccent'),
+    resumeIncorrect: $('#btnResumeIncorrect'),
+    resumeFlagged: $('#btnResumeFlagged'),
+    resumeFrom: $('#btnResumeFrom')
   };
 
   const state = { 
@@ -28,7 +31,11 @@
     incorrect: [], 
     flags: new Set(), 
     active: false,
-    isExam: false
+    isExam: false,
+    // NEW: Track navigation history for Previous button
+    history: [],
+    // NEW: Session storage key
+    sessionKey: 'spellrightpro_oet_session'
   };
 
   function t(el, s) { if(el) el.textContent = s; }
@@ -42,6 +49,48 @@
     if (arr.length <= n) return [...arr];
     const shuffled = [...arr].sort(() => Math.random() - 0.5);
     return shuffled.slice(0, n);
+  }
+
+  // NEW: Save session state to localStorage
+  function saveSessionState() {
+    const sessionData = {
+      words: state.words,
+      currentIndex: state.i,
+      correct: state.correct,
+      incorrect: state.incorrect,
+      flags: Array.from(state.flags),
+      isExam: state.isExam,
+      timestamp: Date.now()
+    };
+    localStorage.setItem(state.sessionKey, JSON.stringify(sessionData));
+    console.log('Session saved:', sessionData);
+  }
+
+  // NEW: Load session state from localStorage
+  function loadSessionState() {
+    try {
+      const saved = localStorage.getItem(state.sessionKey);
+      if (!saved) return null;
+      
+      const sessionData = JSON.parse(saved);
+      
+      // Check if session is less than 24 hours old
+      const hoursOld = (Date.now() - sessionData.timestamp) / (1000 * 60 * 60);
+      if (hoursOld > 24) {
+        localStorage.removeItem(state.sessionKey);
+        return null;
+      }
+      
+      return sessionData;
+    } catch (error) {
+      console.error('Error loading session:', error);
+      return null;
+    }
+  }
+
+  // NEW: Clear saved session
+  function clearSessionState() {
+    localStorage.removeItem(state.sessionKey);
   }
 
   async function loadOETWords() {
@@ -95,7 +144,6 @@
     }
   }
 
-  // FIXED: Text-to-speech with PROPER accent support
   function speakWord(word) {
     if (!window.speechSynthesis) {
       t(ui.feedback, "Text-to-speech not supported in this browser");
@@ -110,32 +158,26 @@
       utterance.pitch = 1;
       utterance.volume = 1;
       
-      // FIXED: Use selected accent from dropdown
       const selectedAccent = ui.accentSelect ? ui.accentSelect.value : 'en-US';
       utterance.lang = selectedAccent;
       
-      // Get available voices and filter for the selected accent
       const voices = speechSynthesis.getVoices();
       let preferredVoice = null;
       
       if (voices.length > 0) {
-        // Try to find exact match for selected accent
         preferredVoice = voices.find(voice => voice.lang === selectedAccent);
         
-        // If not found, try to find similar accent
         if (!preferredVoice) {
           const baseLang = selectedAccent.split('-')[0];
           preferredVoice = voices.find(voice => voice.lang.startsWith(baseLang));
         }
         
-        // If still not found, use first available English voice
         if (!preferredVoice) {
           preferredVoice = voices.find(voice => voice.lang.includes('en')) || voices[0];
         }
         
         if (preferredVoice) {
           utterance.voice = preferredVoice;
-          console.log("Using voice:", preferredVoice.name, "for accent:", selectedAccent);
         }
       }
       
@@ -157,7 +199,6 @@
     }
   }
 
-  // Helper function to get accent display name
   function getAccentName(accentCode) {
     const accentMap = {
       'en-US': 'American',
@@ -168,8 +209,116 @@
     return accentMap[accentCode] || accentCode;
   }
 
-  // FIXED: Proper exam/practice mode handling
+  // NEW: Go to previous word
+  function goToPreviousWord() {
+    if (!state.active || state.i <= 0) {
+      t(ui.feedback, "No previous word available");
+      return;
+    }
+    
+    // Store current position in history
+    if (state.history.length < 10) { // Limit history to 10 items
+      state.history.push(state.i);
+    }
+    
+    // Go to previous word
+    state.i--;
+    
+    // If we were at the end of the list and had submitted all words
+    // we need to remove the last correct/incorrect entry
+    if (state.i < state.words.length - 1) {
+      const lastWord = state.words[state.i + 1];
+      
+      // Remove from correct array if it was there
+      const correctIndex = state.correct.indexOf(lastWord);
+      if (correctIndex > -1) {
+        state.correct.splice(correctIndex, 1);
+      }
+      
+      // Remove from incorrect array if it was there
+      const incorrectIndex = state.incorrect.findIndex(item => item.word === lastWord);
+      if (incorrectIndex > -1) {
+        state.incorrect.splice(incorrectIndex, 1);
+      }
+    }
+    
+    showProgress();
+    speakCurrentWord();
+    if (ui.area) ui.area.value = '';
+    t(ui.feedback, `← Went back to word ${state.i + 1}`);
+    
+    saveSessionState();
+  }
+
+  // NEW: Resume session from saved state
+  function resumeSession() {
+    const sessionData = loadSessionState();
+    if (!sessionData) {
+      t(ui.feedback, "No saved session found. Starting fresh.");
+      return false;
+    }
+    
+    const resume = confirm(`You have a saved session with ${sessionData.words.length} words.\nResume from word ${sessionData.currentIndex + 1}?`);
+    
+    if (resume) {
+      state.words = sessionData.words;
+      state.i = sessionData.currentIndex;
+      state.correct = sessionData.correct;
+      state.incorrect = sessionData.incorrect;
+      state.flags = new Set(sessionData.flags);
+      state.isExam = sessionData.isExam;
+      state.active = true;
+      
+      // Update UI
+      if (state.isExam) {
+        if (ui.tabExam) ui.tabExam.classList.add('active');
+        if (ui.tabPractice) ui.tabPractice.classList.remove('active');
+      } else {
+        if (ui.tabPractice) ui.tabPractice.classList.add('active');
+        if (ui.tabExam) ui.tabExam.classList.remove('active');
+      }
+      
+      showProgress();
+      speakCurrentWord();
+      t(ui.feedback, `✅ Resumed session from word ${state.i + 1}`);
+      
+      return true;
+    }
+    
+    return false;
+  }
+
+  // NEW: Start specific type of practice
+  function startSpecificPractice(words, type) {
+    if (!words || words.length === 0) {
+      t(ui.feedback, `No ${type} words to practice`);
+      return;
+    }
+    
+    state.words = words;
+    state.i = 0;
+    state.correct = [];
+    state.incorrect = [];
+    state.flags.clear();
+    state.active = true;
+    
+    if (ui.summary) ui.summary.style.display = 'none';
+    if (ui.area) ui.area.value = '';
+    
+    showProgress();
+    t(ui.feedback, `Practicing ${words.length} ${type} words`);
+    
+    setTimeout(() => {
+      speakCurrentWord();
+    }, 1000);
+  }
+
   async function startSession() {
+    // Check for existing session
+    if (resumeSession()) {
+      return;
+    }
+    
     const customText = (ui.customBox?.value || '').trim();
     let wordList = [];
     
@@ -199,11 +348,16 @@
     state.correct = [];
     state.incorrect = [];
     state.flags.clear();
+    state.history = [];
     state.active = true;
 
     if (ui.summary) ui.summary.style.display = 'none';
+    if (ui.area) ui.area.value = '';
 
     showProgress();
+    
+    // Save initial state
+    saveSessionState();
     
     setTimeout(() => {
       speakCurrentWord();
@@ -240,6 +394,10 @@
     if (ui.area) ui.area.value = '';
 
     state.i++;
+    
+    // Save progress after each answer
+    saveSessionState();
+    
     if (state.i < state.words.length) {
       showProgress();
       setTimeout(speakCurrentWord, 1500);
@@ -258,11 +416,15 @@
       state.flags.add(word);
       t(ui.feedback, `🚩 Flagged "${word}" for review`);
     }
+    saveSessionState();
   }
 
   function endSession() {
     state.active = false;
     speechSynthesis.cancel();
+    
+    // Clear saved session when completed
+    clearSessionState();
 
     const total = state.words.length;
     const correctCount = state.correct.length;
@@ -320,6 +482,40 @@
       `;
     }
 
+    // Add resume options if there are incorrect or flagged words
+    if (state.incorrect.length > 0 || flaggedWords.length > 0) {
+      summaryHTML += `
+        <div id="resumeOptions" style="margin: 30px 0; padding: 20px; background: rgba(123, 47, 247, 0.05); border-radius: 10px; border: 1px dashed rgba(123, 47, 247, 0.3);">
+          <h4 style="color: #7b2ff7; margin-bottom: 15px;">📚 Continue Practicing</h4>
+          <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+      `;
+      
+      if (state.incorrect.length > 0) {
+        summaryHTML += `
+          <button onclick="practiceIncorrectWords()" class="nav-btn" style="background: #f72585; color: white; padding: 10px 15px; border: none; border-radius: 6px; cursor: pointer;">
+            <i class="fa fa-redo"></i> Practice Incorrect (${state.incorrect.length})
+          </button>
+        `;
+      }
+      
+      if (flaggedWords.length > 0) {
+        summaryHTML += `
+          <button onclick="practiceFlaggedWords()" class="nav-btn" style="background: #ffd166; color: #333; padding: 10px 15px; border: none; border-radius: 6px; cursor: pointer;">
+            <i class="fa fa-flag"></i> Practice Flagged (${flaggedWords.length})
+          </button>
+        `;
+      }
+      
+      summaryHTML += `
+            <button onclick="restartOETTraining()" class="nav-btn" style="background: #7b2ff7; color: white; padding: 10px 15px; border: none; border-radius: 6px; cursor: pointer;">
+              <i class="fa fa-play-circle"></i> New Full Session
+            </button>
+          </div>
+          <p style="margin-top: 10px; font-size: 0.9em; color: #666;">Or specify word number: <input type="number" id="resumeFromNumber" min="1" max="${state.words.length}" value="1" style="width: 60px; padding: 5px;"> <button onclick="resumeFromSpecificWord()" style="background: #7b2ff7; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer;">Go</button></p>
+        </div>
+      `;
+    }
+
     summaryHTML += `
       <div style="text-align: center; margin-top: 25px;">
         <button onclick="restartOETTraining()" style="background: #7b2ff7; color: white; border: none; padding: 12px 24px; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 1rem;">
@@ -338,11 +534,51 @@
     t(ui.feedback, `Session completed! Check results below.`);
   }
 
+  // NEW: Practice only incorrect words
+  function practiceIncorrectWords() {
+    const incorrectWords = state.incorrect.map(item => item.word);
+    startSpecificPractice(incorrectWords, 'incorrect');
+  }
+
+  // NEW: Practice only flagged words
+  function practiceFlaggedWords() {
+    const flaggedWords = Array.from(state.flags);
+    startSpecificPractice(flaggedWords, 'flagged');
+  }
+
+  // NEW: Resume from specific word number
+  function resumeFromSpecificWord() {
+    const input = document.getElementById('resumeFromNumber');
+    if (!input) return;
+    
+    const wordNumber = parseInt(input.value);
+    if (isNaN(wordNumber) || wordNumber < 1 || wordNumber > state.words.length) {
+      t(ui.feedback, `Please enter a number between 1 and ${state.words.length}`);
+      return;
+    }
+    
+    // Start from the specified word (subtract 1 for zero-based index)
+    state.i = wordNumber - 1;
+    state.correct = [];
+    state.incorrect = [];
+    state.flags.clear();
+    state.active = true;
+    
+    if (ui.summary) ui.summary.style.display = 'none';
+    if (ui.area) ui.area.value = '';
+    
+    showProgress();
+    speakCurrentWord();
+    t(ui.feedback, `Resumed from word ${wordNumber}`);
+  }
+
   function restartOETTraining() {
+    clearSessionState();
     state.i = 0;
     state.correct = [];
     state.incorrect = [];
     state.flags.clear();
+    state.history = [];
     if (ui.summary) ui.summary.style.display = 'none';
     if (ui.area) ui.area.value = '';
     t(ui.feedback, 'Ready to start new session');
@@ -353,6 +589,7 @@
     if (ui.start) ui.start.addEventListener('click', startSession);
     if (ui.submit) ui.submit.addEventListener('click', checkAnswer);
     if (ui.say) ui.say.addEventListener('click', speakCurrentWord);
+    if (ui.previous) ui.previous.addEventListener('click', goToPreviousWord); // NEW
     if (ui.flag) ui.flag.addEventListener('click', toggleFlag);
     if (ui.end) ui.end.addEventListener('click', endSession);
 
@@ -414,7 +651,6 @@
       });
     }
 
-    // FIXED: Accent selection change handler
     if (ui.accentSelect) {
       ui.accentSelect.addEventListener('change', function() {
         const accentName = getAccentName(this.value);
@@ -428,19 +664,6 @@
       speechSynthesis.getVoices();
       window.speechSynthesis.onvoiceschanged = function() {
         console.log("Voices loaded:", speechSynthesis.getVoices().length);
-        // Update accent selection based on available voices
-        if (ui.accentSelect) {
-          const voices = speechSynthesis.getVoices();
-          const availableAccents = new Set();
-          
-          voices.forEach(voice => {
-            if (voice.lang.includes('en')) {
-              availableAccents.add(voice.lang);
-            }
-          });
-          
-          console.log("Available English accents:", Array.from(availableAccents));
-        }
       };
     }
   }
@@ -475,6 +698,14 @@
     setupEventListeners();
     initializeSpeechSynthesis();
     
+    // Check for saved session on load
+    const savedSession = loadSessionState();
+    if (savedSession) {
+      console.log('Saved session found, ready to resume');
+      // Show resume option in feedback
+      t(ui.feedback, `You have a saved session. Click "Start" to resume from word ${savedSession.currentIndex + 1}.`);
+    }
+    
     if (document.readyState === 'loading') {
       document.addEventListener('DOMContentLoaded', initializeDarkModeToggle);
     } else {
@@ -486,9 +717,13 @@
       state.isExam = false;
     }
 
+    // Expose functions to global scope
     window.restartOETTraining = restartOETTraining;
+    window.practiceIncorrectWords = practiceIncorrectWords;
+    window.practiceFlaggedWords = practiceFlaggedWords;
+    window.resumeFromSpecificWord = resumeFromSpecificWord;
 
-    console.log('OET Spelling Trainer ready - Fixed with proper accent support');
+    console.log('OET Spelling Trainer ready - with Previous button and Resume features');
   }
 
   initialize();
