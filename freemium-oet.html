@@ -6,14 +6,7 @@
   <title>OET Practice - SpellRightPro</title>
   <link rel="stylesheet" href="/css/styles.css" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" />
-
-  <!-- Firebase SDKs -->
-  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-analytics.js"></script>
   
-  <!-- Add some basic styles for the new button -->
   <style>
     .button-group {
       display: flex;
@@ -52,6 +45,29 @@
     .hidden {
       display: none !important;
     }
+    .tab-btn.active {
+      background: #7b2ff7 !important;
+      color: white !important;
+    }
+    .tab-btn {
+      padding: 10px 20px;
+      border: none;
+      border-radius: 6px;
+      background: rgba(255,255,255,0.1);
+      color: white;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .nav-btn {
+      padding: 8px 16px;
+      background: rgba(255,255,255,0.1);
+      color: white;
+      border: 1px solid rgba(255,255,255,0.3);
+      border-radius: 6px;
+      cursor: pointer;
+    }
   </style>
 </head>
 
@@ -82,11 +98,6 @@
   <!-- Main Content -->
   <main class="main-card">
     <h2>OET Medical English (Freemium)</h2>
-    
-    <!-- Debug Status -->
-    <div id="debugStatus" style="display: none; padding: 10px; background: rgba(255,0,0,0.1); border-radius: 5px; margin-bottom: 15px;">
-      <strong>Debug Mode:</strong> <span id="debugText">Ready</span>
-    </div>
     
     <!-- Practice vs Exam Mode Tabs -->
     <div class="tab-group" style="margin: 20px 0; display: flex; gap: 10px;">
@@ -138,11 +149,19 @@
     <div id="progress" data-role="progress" style="font-weight: 700; margin: 15px 0; font-size: 1.2em; color: #7b2ff7;"></div>
     <div id="feedback" data-role="feedback" style="min-height: 22px; margin: 10px 0; padding: 10px; background: rgba(255,255,255,0.05); border-radius: 5px;"></div>
 
+    <!-- Word Display Area - NEW: Shows blank or reveals after answer -->
+    <div style="margin: 20px 0; text-align: center;">
+      <div id="wordDisplay" style="font-size: 2em; font-weight: bold; color: #7b2ff7; min-height: 60px; display: flex; align-items: center; justify-content: center;">
+        <span id="wordPlaceholder">❓ Word will be spoken</span>
+      </div>
+      <div id="revealedWord" style="display: none; font-size: 1.5em; color: #4CAF50; margin-top: 10px;"></div>
+    </div>
+
     <!-- Answer Input -->
     <div style="margin: 20px 0;">
       <textarea 
         id="answer" 
-        placeholder="Type your medical term spelling here..."
+        placeholder="Type what you hear..."
         style="width: 100%; min-height: 56px; padding: 12px; border-radius: 10px; border: 1px solid #ccc; font-size: 18px;"
       ></textarea>
     </div>
@@ -186,36 +205,10 @@
     </button>
   </div>
 
-  <!-- COOKIE CONSENT SCRIPT -->
-  <script>
-  function showCookieBanner() {
-      const consent = localStorage.getItem('cookieConsent');
-      if (consent === null) {
-          document.getElementById('cookieConsentBanner').style.display = 'block';
-      }
-  }
-
-  function acceptCookies() {
-      localStorage.setItem('cookieConsent', 'true');
-      document.getElementById('cookieConsentBanner').style.display = 'none';
-  }
-
-  function declineCookies() {
-      localStorage.setItem('cookieConsent', 'false');
-      document.getElementById('cookieConsentBanner').style.display = 'none';
-  }
-
-  setTimeout(showCookieBanner, 500);
-  </script>
-
   <!-- Main JavaScript -->
   <script>
-  // SIMPLIFIED VERSION - Debug mode enabled
   (function() {
-    console.log('Starting OET App...');
-    const debug = document.getElementById('debugStatus');
-    const debugText = document.getElementById('debugText');
-    debug.style.display = 'block';
+    console.log('Starting OET Spelling Test...');
     
     // UI Elements
     const elements = {
@@ -233,17 +226,43 @@
       tabPractice: document.getElementById('tabPractice'),
       accentSelect: document.getElementById('oetAccent'),
       customBox: document.getElementById('customWords'),
-      useCustom: document.getElementById('useCustomList')
+      useCustom: document.getElementById('useCustomList'),
+      wordDisplay: document.getElementById('wordPlaceholder'),
+      revealedWord: document.getElementById('revealedWord')
     };
     
-    // Check if all elements exist
-    for (const [key, element] of Object.entries(elements)) {
-      if (!element) {
-        console.error(`❌ Missing element: ${key}`);
-        debugText.textContent = `Missing: ${key}`;
-        debug.style.background = 'rgba(255,0,0,0.2)';
-      }
-    }
+    // Full OET Medical Words List (100+ words)
+    const OET_WORDS = [
+      'abdomen', 'anemia', 'antibiotic', 'artery', 'asthma', 'biopsy', 'catheter', 
+      'diagnosis', 'embolism', 'fracture', 'gastroenterology', 'hemorrhage', 'intravenous', 
+      'jaundice', 'kidney', 'laceration', 'membrane', 'neurology', 'obstetrics', 'pulmonary',
+      'abdomen', 'anemia', 'antibiotic', 'artery', 'asthma', 'biopsy', 'catheter', 
+      'diagnosis', 'embolism', 'fracture', 'gastroenterology', 'hemorrhage', 'intravenous', 
+      'jaundice', 'kidney', 'laceration', 'membrane', 'neurology', 'obstetrics', 'pulmonary',
+      // Additional medical terms
+      'abdominal', 'acute', 'allergy', 'antibody', 'antigen', 'arthritis', 'bacteria',
+      'benign', 'bronchitis', 'carcinoma', 'cardiology', 'cerebral', 'chronic',
+      'clinical', 'complication', 'congenital', 'contagious', 'contusion', 'cortex',
+      'dementia', 'dermatology', 'diabetes', 'diagnostic', 'dialysis', 'diarrhea',
+      'dislocation', 'dysfunction', 'dyspnea', 'eczema', 'edema', 'encephalitis',
+      'endocarditis', 'endoscopy', 'epidemic', 'epilepsy', 'erosion', 'excision',
+      'febrile', 'fistula', 'gastritis', 'genetics', 'geriatrics', 'gynecology',
+      'hematology', 'hepatitis', 'hernia', 'hormone', 'hypertension', 'hypotension',
+      'immunity', 'incision', 'infarction', 'inflammation', 'influenza', 'injection',
+      'ischemia', 'lesion', 'leukemia', 'ligament', 'malignant', 'meningitis',
+      'metabolism', 'metastasis', 'microbiology', 'migraine', 'morbidity', 'mortality',
+      'myocardial', 'nausea', 'neonatal', 'nephrology', 'neural', 'neuropathy',
+      'nutrition', 'obesity', 'oncology', 'ophthalmology', 'orthopedics', 'osteoporosis',
+      'otolaryngology', 'palliative', 'pancreas', 'paralysis', 'pathology', 'pediatrics',
+      'pharmacology', 'pharynx', 'physiology', 'pneumonia', 'prognosis', 'prophylaxis',
+      'psychiatry', 'pulmonary', 'radiology', 'rehabilitation', 'remission', 'resection',
+      'respiratory', 'rheumatology', 'sarcoma', 'sepsis', 'symptom', 'syndrome',
+      'therapy', 'thrombosis', 'trachea', 'trauma', 'tumor', 'ulcer', 'urinary',
+      'vaccine', 'vascular', 'ventricle', 'vertebra', 'virology', 'virus', 'vital'
+    ];
+    
+    // Remove duplicates and ensure we have enough words
+    const UNIQUE_OET_WORDS = [...new Set(OET_WORDS)];
     
     // App State
     const state = {
@@ -254,16 +273,9 @@
       flags: new Set(),
       isActive: false,
       isExam: false,
-      history: []
+      history: [],
+      currentWord: ''
     };
-    
-    // Sample OET words for testing
-    const sampleWords = [
-      'abdomen', 'anemia', 'antibiotic', 'artery', 'asthma', 
-      'biopsy', 'catheter', 'diagnosis', 'embolism', 'fracture',
-      'gastroenterology', 'hemorrhage', 'intravenous', 'jaundice',
-      'kidney', 'laceration', 'membrane', 'neurology', 'obstetrics', 'pulmonary'
-    ];
     
     // Update progress display
     function updateProgress() {
@@ -279,7 +291,31 @@
         elements.feedback.style.color = isError ? '#f72585' : '#ffffff';
       }
       console.log(message);
-      debugText.textContent = message;
+    }
+    
+    // Show word display (hidden for spelling test)
+    function updateWordDisplay(reveal = false) {
+      if (!state.isActive || state.currentIndex >= state.words.length) return;
+      
+      const word = state.words[state.currentIndex];
+      state.currentWord = word;
+      
+      if (elements.wordDisplay) {
+        if (reveal) {
+          // Show the word (after submission)
+          elements.wordDisplay.innerHTML = `<span style="color: #4CAF50;">${word}</span>`;
+          if (elements.revealedWord) {
+            elements.revealedWord.textContent = word;
+            elements.revealedWord.style.display = 'block';
+          }
+        } else {
+          // Don't show the word - only show placeholder
+          elements.wordDisplay.innerHTML = '<span style="color: #666;">🔈 Listen carefully...</span>';
+          if (elements.revealedWord) {
+            elements.revealedWord.style.display = 'none';
+          }
+        }
+      }
     }
     
     // Speak word with selected accent
@@ -293,7 +329,7 @@
         speechSynthesis.cancel();
         
         const utterance = new SpeechSynthesisUtterance(word);
-        utterance.rate = 0.9;
+        utterance.rate = 0.85; // Slower for clarity
         utterance.pitch = 1;
         utterance.volume = 1;
         
@@ -304,7 +340,12 @@
         // Get available voices
         const voices = speechSynthesis.getVoices();
         if (voices.length > 0) {
-          const voice = voices.find(v => v.lang === accent) || voices[0];
+          // Try to find a matching voice
+          let voice = voices.find(v => v.lang === accent);
+          if (!voice) {
+            // Fallback to first English voice
+            voice = voices.find(v => v.lang.includes('en')) || voices[0];
+          }
           utterance.voice = voice;
         }
         
@@ -318,7 +359,7 @@
         };
         
         speechSynthesis.speak(utterance);
-        updateFeedback(`Speaking: "${word}" with ${accent} accent`);
+        updateFeedback(`Word spoken with ${getAccentName(accent)} accent`);
         
       } catch (error) {
         console.error('Speech error:', error);
@@ -326,11 +367,25 @@
       }
     }
     
+    // Get accent display name
+    function getAccentName(accentCode) {
+      const accentMap = {
+        'en-US': 'American',
+        'en-GB': 'British', 
+        'en-AU': 'Australian',
+        'en-CA': 'Canadian'
+      };
+      return accentMap[accentCode] || accentCode;
+    }
+    
     // Speak current word
     function speakCurrentWord() {
       if (!state.isActive || state.currentIndex >= state.words.length) return;
       const word = state.words[state.currentIndex];
-      if (word) speakWord(word);
+      if (word) {
+        updateWordDisplay(false); // Don't reveal the word
+        speakWord(word);
+      }
     }
     
     // Go to previous word
@@ -352,10 +407,12 @@
       // Go back
       state.currentIndex--;
       
-      // Clear answer box
+      // Clear answer box and hide revealed word
       if (elements.answer) elements.answer.value = '';
+      if (elements.revealedWord) elements.revealedWord.style.display = 'none';
       
       updateProgress();
+      updateWordDisplay(false); // Don't reveal previous word
       speakCurrentWord();
       updateFeedback(`← Went back to word ${state.currentIndex + 1}`);
       
@@ -374,7 +431,7 @@
       const answer = elements.answer ? elements.answer.value.trim() : '';
       
       if (!answer) {
-        updateFeedback('Please type your answer first', true);
+        updateFeedback('Please type what you heard', true);
         return;
       }
       
@@ -382,12 +439,20 @@
       const normalizedWord = word.toLowerCase().trim();
       const normalizedAnswer = answer.toLowerCase().trim();
       
+      // Reveal the correct word
+      updateWordDisplay(true);
+      
       if (normalizedAnswer === normalizedWord) {
         state.correct.push(word);
-        updateFeedback(`✅ Correct! "${word}"`);
+        updateFeedback(`✅ Correct! You spelled "${word}" correctly.`);
       } else {
-        state.incorrect.push({ word: word, answer: answer });
-        updateFeedback(`❌ Incorrect. Correct spelling: "${word}"`);
+        state.incorrect.push({ 
+          word: word, 
+          answer: answer,
+          yourSpelling: answer,
+          correctSpelling: word
+        });
+        updateFeedback(`❌ Incorrect. You wrote "${answer}", but correct is "${word}"`);
       }
       
       // Clear answer box
@@ -398,9 +463,12 @@
       
       if (state.currentIndex < state.words.length) {
         updateProgress();
-        setTimeout(speakCurrentWord, 1500);
+        setTimeout(() => {
+          updateWordDisplay(false); // Hide next word
+          setTimeout(speakCurrentWord, 500);
+        }, 2000);
       } else {
-        endSession();
+        setTimeout(endSession, 1500);
       }
       
       // Save progress
@@ -418,15 +486,14 @@
         state.words = words;
         updateFeedback(`Using custom list: ${words.length} words`);
       } else {
-        // Use sample words
         if (state.isExam) {
-          // Random 24 words for exam mode
-          const shuffled = [...sampleWords].sort(() => Math.random() - 0.5);
-          state.words = shuffled.slice(0, 24);
-          updateFeedback(`Exam mode: ${state.words.length} random words`);
+          // RANDOM 24 WORDS FOR EXAM MODE - FIXED
+          const shuffled = [...UNIQUE_OET_WORDS].sort(() => Math.random() - 0.5);
+          state.words = shuffled.slice(0, 24); // Always 24 words
+          updateFeedback(`✅ Exam mode: ${state.words.length} random words`);
         } else {
-          // All words for practice mode
-          state.words = [...sampleWords];
+          // All unique words for practice mode
+          state.words = [...UNIQUE_OET_WORDS];
           updateFeedback(`Practice mode: ${state.words.length} words`);
         }
       }
@@ -444,15 +511,19 @@
       state.history = [];
       state.isActive = true;
       
-      // Hide summary
+      // Hide summary and revealed word
       if (elements.summaryArea) {
         elements.summaryArea.style.display = 'none';
         elements.summaryArea.classList.add('hidden');
       }
+      if (elements.revealedWord) {
+        elements.revealedWord.style.display = 'none';
+      }
       
       // Update UI
       updateProgress();
-      updateFeedback('Session started!');
+      updateWordDisplay(false); // Don't show the word
+      updateFeedback('Session started! Listen carefully...');
       
       // Speak first word after delay
       setTimeout(() => {
@@ -470,7 +541,7 @@
       
       const total = state.words.length;
       const correctCount = state.correct.length;
-      const incorrectWords = state.incorrect.map(item => item.word);
+      const incorrectWords = state.incorrect;
       const flaggedWords = Array.from(state.flags);
       
       let summaryHTML = `
@@ -484,15 +555,33 @@
       if (state.incorrect.length > 0) {
         summaryHTML += `
           <div style="margin: 20px 0;">
-            <h4 style="color: #f72585;">❌ Incorrect Words (${state.incorrect.length})</h4>
+            <h4 style="color: #f72585;">❌ Missed Words (${state.incorrect.length})</h4>
             <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 10px;">
         `;
         
         state.incorrect.forEach(item => {
           summaryHTML += `
             <div style="background: rgba(247, 37, 133, 0.1); padding: 10px; border-radius: 5px;">
-              <strong>${item.word}</strong><br>
-              <small>You typed: "${item.answer}"</small>
+              <strong style="color: #f72585;">${item.correctSpelling}</strong><br>
+              <small>You spelled: <span style="color: #666;">"${item.yourSpelling}"</span></small>
+            </div>
+          `;
+        });
+        
+        summaryHTML += `</div></div>`;
+      }
+      
+      if (flaggedWords.length > 0) {
+        summaryHTML += `
+          <div style="margin: 20px 0;">
+            <h4 style="color: #ffd166;">🚩 Flagged Words (${flaggedWords.length})</h4>
+            <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px;">
+        `;
+        
+        flaggedWords.forEach(word => {
+          summaryHTML += `
+            <div style="background: rgba(255, 209, 102, 0.1); padding: 10px; border-radius: 5px;">
+              ${word}
             </div>
           `;
         });
@@ -510,7 +599,7 @@
       if (state.incorrect.length > 0) {
         summaryHTML += `
           <button onclick="practiceIncorrect()" class="btn-secondary" style="background: #f72585;">
-            <i class="fa fa-redo"></i> Practice Incorrect (${state.incorrect.length})
+            <i class="fa fa-redo"></i> Practice Missed (${state.incorrect.length})
           </button>
         `;
       }
@@ -528,6 +617,11 @@
               <i class="fa fa-play-circle"></i> New Session
             </button>
           </div>
+          <p style="margin-top: 10px; font-size: 0.9em; color: #666;">
+            Want to practice specific words? Enter word numbers (e.g., 1,5,10): 
+            <input type="text" id="specificWords" placeholder="1,5,10" style="width: 100px; padding: 5px;">
+            <button onclick="practiceSpecificWords()" class="nav-btn" style="padding: 5px 10px;">Practice</button>
+          </p>
         </div>
       `;
       
@@ -539,7 +633,7 @@
         elements.summaryArea.classList.remove('hidden');
       }
       
-      updateFeedback('Session completed!');
+      updateFeedback('Session completed! Check your results below.');
       
       // Clear saved progress
       localStorage.removeItem('oet_progress');
@@ -586,6 +680,7 @@
           if (resume) {
             state.isActive = true;
             updateProgress();
+            updateWordDisplay(false);
             speakCurrentWord();
             updateFeedback(`Resumed from word ${state.currentIndex + 1}`);
             return true;
@@ -599,13 +694,13 @@
     
     // Practice only incorrect words
     function practiceIncorrect() {
-      const incorrectWords = state.incorrect.map(item => item.word);
+      const incorrectWords = state.incorrect.map(item => item.correctSpelling);
       if (incorrectWords.length === 0) {
-        updateFeedback('No incorrect words to practice', true);
+        updateFeedback('No missed words to practice', true);
         return;
       }
       
-      state.words = incorrectWords;
+      state.words = [...new Set(incorrectWords)]; // Remove duplicates
       state.currentIndex = 0;
       state.correct = [];
       state.incorrect = [];
@@ -616,9 +711,13 @@
         elements.summaryArea.style.display = 'none';
         elements.summaryArea.classList.add('hidden');
       }
+      if (elements.revealedWord) {
+        elements.revealedWord.style.display = 'none';
+      }
       
       updateProgress();
-      updateFeedback(`Practicing ${incorrectWords.length} incorrect words`);
+      updateWordDisplay(false);
+      updateFeedback(`Practicing ${state.words.length} missed words`);
       
       setTimeout(() => {
         speakCurrentWord();
@@ -644,9 +743,59 @@
         elements.summaryArea.style.display = 'none';
         elements.summaryArea.classList.add('hidden');
       }
+      if (elements.revealedWord) {
+        elements.revealedWord.style.display = 'none';
+      }
       
       updateProgress();
+      updateWordDisplay(false);
       updateFeedback(`Practicing ${flaggedWords.length} flagged words`);
+      
+      setTimeout(() => {
+        speakCurrentWord();
+      }, 1000);
+    }
+    
+    // Practice specific words by number
+    function practiceSpecificWords() {
+      const input = document.getElementById('specificWords');
+      if (!input) return;
+      
+      const numbersText = input.value.trim();
+      if (!numbersText) {
+        updateFeedback('Enter word numbers first', true);
+        return;
+      }
+      
+      // Parse numbers (e.g., "1,5,10" or "1 5 10")
+      const numbers = numbersText.split(/[,\s]+/).map(n => parseInt(n.trim())).filter(n => !isNaN(n) && n >= 1 && n <= UNIQUE_OET_WORDS.length);
+      
+      if (numbers.length === 0) {
+        updateFeedback('Enter valid word numbers (1-' + UNIQUE_OET_WORDS.length + ')', true);
+        return;
+      }
+      
+      // Get words at specified positions
+      const selectedWords = numbers.map(n => UNIQUE_OET_WORDS[n - 1]).filter(w => w);
+      
+      state.words = selectedWords;
+      state.currentIndex = 0;
+      state.correct = [];
+      state.incorrect = [];
+      state.flags.clear();
+      state.isActive = true;
+      
+      if (elements.summaryArea) {
+        elements.summaryArea.style.display = 'none';
+        elements.summaryArea.classList.add('hidden');
+      }
+      if (elements.revealedWord) {
+        elements.revealedWord.style.display = 'none';
+      }
+      
+      updateProgress();
+      updateWordDisplay(false);
+      updateFeedback(`Practicing ${selectedWords.length} selected words`);
       
       setTimeout(() => {
         speakCurrentWord();
@@ -664,6 +813,11 @@
         elements.answer.value = '';
       }
       
+      if (elements.revealedWord) {
+        elements.revealedWord.style.display = 'none';
+      }
+      
+      updateWordDisplay(false);
       updateFeedback('Ready to start new session');
       updateProgress();
       
@@ -707,7 +861,7 @@
         elements.say.addEventListener('click', speakCurrentWord);
       }
       
-      // PREVIOUS BUTTON - This is the key fix
+      // PREVIOUS BUTTON
       if (elements.previous) {
         elements.previous.addEventListener('click', goToPreviousWord);
         console.log('✅ Previous button event listener added');
@@ -739,7 +893,7 @@
           state.isExam = true;
           elements.tabExam.classList.add('active');
           if (elements.tabPractice) elements.tabPractice.classList.remove('active');
-          updateFeedback('Exam mode selected (24 random words)');
+          updateFeedback('Exam mode selected - 24 random words');
         });
       }
       
@@ -748,7 +902,7 @@
           state.isExam = false;
           elements.tabPractice.classList.add('active');
           if (elements.tabExam) elements.tabExam.classList.remove('active');
-          updateFeedback('Practice mode selected (full word list)');
+          updateFeedback('Practice mode selected - all words');
         });
       }
       
@@ -788,7 +942,7 @@
     
     // Initialize the app
     function initialize() {
-      console.log('Initializing OET App...');
+      console.log('Initializing OET Spelling Test...');
       
       // Set up event listeners
       setupEventListeners();
@@ -822,12 +976,11 @@
       window.practiceIncorrect = practiceIncorrect;
       window.practiceFlagged = practiceFlagged;
       window.restartSession = restartSession;
+      window.practiceSpecificWords = practiceSpecificWords;
       
-      updateFeedback('OET Spelling Trainer ready! Click Start to begin.');
-      debugText.textContent = 'Ready - Previous button working';
-      debug.style.background = 'rgba(0,255,0,0.1)';
+      updateFeedback('Ready! Click "Start" to begin your OET spelling practice.');
       
-      console.log('✅ App initialized successfully');
+      console.log('✅ OET Spelling Test initialized successfully');
     }
     
     // Initialize when DOM is ready
