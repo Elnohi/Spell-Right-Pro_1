@@ -69,6 +69,21 @@
       cursor: pointer;
     }
   </style>
+
+  <!-- Add this to the <head> section of your freemium HTML files -->
+<script>
+  // Initialize tier manager early
+  window.tierManagerReady = false;
+  document.addEventListener('DOMContentLoaded', function() {
+    if (window.tierManager) {
+      window.tierManager.init();
+      window.tierManagerReady = true;
+      console.log('✅ Tier manager initialized');
+    } else {
+      console.warn('⚠️ Tier manager not loaded yet');
+    }
+  });
+</script>
 </head>
 
 <body data-mode="oet">
