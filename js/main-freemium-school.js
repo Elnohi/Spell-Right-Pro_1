@@ -1,4 +1,4 @@
-/* /js/main-freemium-school.js - COMPLETE FIXED VERSION WITH DAILY LIMIT */
+/* /js/main-freemium-school.js - COMPLETE WITH TIER MANAGEMENT */
 (() => {
   const $ = s => document.querySelector(s);
   const ui = {
@@ -29,8 +29,16 @@
     active: false 
   };
 
-  // DAILY CUSTOM WORD LIMIT FUNCTIONS
-  function checkDailyCustomWordLimit() {
+  // ========================================================
+  // TIER-AWARE FUNCTIONS
+  // ========================================================
+  
+  function checkCustomAccess() {
+    // Premium users have unlimited access
+    if (window.tierManager?.currentTier === 'premium') {
+      return { allowed: true, reason: 'premium' };
+    }
+    
     const today = new Date().toDateString();
     const lastUsedDate = localStorage.getItem('lastCustomWordDate');
     const customWordsUsed = localStorage.getItem('customWordsUsedToday') === 'true';
@@ -39,55 +47,90 @@
     if (lastUsedDate !== today) {
       localStorage.setItem('lastCustomWordDate', today);
       localStorage.setItem('customWordsUsedToday', 'false');
-      return true; // Allow usage on new day
+      return { allowed: true, reason: 'new_day' };
     }
     
     // If already used today, deny
     if (customWordsUsed) {
-      return false;
+      return { allowed: false, reason: 'daily_limit_reached' };
     }
     
-    return true;
+    return { allowed: true, reason: 'available' };
   }
 
-  function markCustomWordsUsed() {
-    const today = new Date().toDateString();
-    localStorage.setItem('lastCustomWordDate', today);
-    localStorage.setItem('customWordsUsedToday', 'true');
+  function trackUsage() {
+    // Only track for free users
+    if (window.tierManager?.currentTier === 'free') {
+      const today = new Date().toDateString();
+      localStorage.setItem('lastCustomWordDate', today);
+      localStorage.setItem('customWordsUsedToday', 'true');
+    }
   }
 
-  function showDailyLimitMessage() {
-    t(ui.feedback, '❌ Daily custom word limit reached. Free users can only use one custom list per day. Upgrade to Premium for unlimited custom lists.');
+  function showTierUpgrade(trigger, context = '') {
+    const messages = {
+      daily_limit: '❌ Daily custom word limit reached. Free users can only use one custom list per day.',
+      list_limit: `❌ Custom list limit reached. Free users can create up to ${window.tierManager?.getLimit('customLists') || 3} lists.`,
+      history_limit: '🔒 Viewing limited to recent sessions. Upgrade for full history.',
+      feature_locked: '🔒 This feature requires Premium access.',
+      school_content: '🔒 Full school content requires Premium access.'
+    };
     
-    // Show upgrade suggestion
+    t(ui.feedback, messages[trigger] || messages.feature_locked);
+    
+    // Show tier manager upgrade prompt if available
     setTimeout(() => {
-      const upgradeMsg = document.createElement('div');
-      upgradeMsg.style.cssText = `
-        background: linear-gradient(135deg, #7b2ff7, #9d4edd);
-        color: white;
-        padding: 15px;
-        border-radius: 8px;
-        margin: 10px 0;
-        text-align: center;
-      `;
-      upgradeMsg.innerHTML = `
-        <strong>💎 Upgrade to Premium!</strong><br>
-        <small>Get unlimited custom lists, all spelling modes, and no ads</small><br>
-        <button onclick="window.location.href='/pricing.html'" 
-                style="background: white; color: #7b2ff7; border: none; padding: 8px 16px; border-radius: 6px; margin-top: 8px; font-weight: bold; cursor: pointer;">
-          View Plans
-        </button>
-      `;
-      
-      const existingUpgrade = document.querySelector('.upgrade-message');
-      if (existingUpgrade) existingUpgrade.remove();
-      
-      upgradeMsg.className = 'upgrade-message';
-      if (ui.feedback) {
-        ui.feedback.parentNode.insertBefore(upgradeMsg, ui.feedback.nextSibling);
+      if (window.tierManager) {
+        const upgradeContext = {
+          daily_limit: 'customLists',
+          list_limit: 'customLists',
+          history_limit: 'practiceHistory',
+          feature_locked: 'premiumContent',
+          school_content: 'premiumContent'
+        };
+        
+        window.tierManager.showUpgradePrompt(
+          upgradeContext[trigger] || 'premiumContent',
+          context || `Try unlimited access with Premium.`
+        );
+      } else {
+        // Fallback upgrade message
+        showFallbackUpgradeMessage();
       }
     }, 1000);
   }
+
+  function showFallbackUpgradeMessage() {
+    const upgradeMsg = document.createElement('div');
+    upgradeMsg.style.cssText = `
+      background: linear-gradient(135deg, #7b2ff7, #9d4edd);
+      color: white;
+      padding: 15px;
+      border-radius: 8px;
+      margin: 10px 0;
+      text-align: center;
+    `;
+    upgradeMsg.innerHTML = `
+      <strong>💎 Upgrade to Premium!</strong><br>
+      <small>Get unlimited custom lists, all spelling modes, and no ads</small><br>
+      <button onclick="window.location.href='/pricing.html'" 
+              style="background: white; color: #7b2ff7; border: none; padding: 8px 16px; border-radius: 6px; margin-top: 8px; font-weight: bold; cursor: pointer;">
+        View Plans
+      </button>
+    `;
+    
+    const existingUpgrade = document.querySelector('.upgrade-message');
+    if (existingUpgrade) existingUpgrade.remove();
+    
+    upgradeMsg.className = 'upgrade-message';
+    if (ui.feedback) {
+      ui.feedback.parentNode.insertBefore(upgradeMsg, ui.feedback.nextSibling);
+    }
+  }
+
+  // ========================================================
+  // EXISTING FUNCTIONS (Mostly Unchanged)
+  // ========================================================
 
   function t(el, s) { if (el) el.textContent = s; }
   function norm(s) { return (s || '').toLowerCase().trim(); }
@@ -96,7 +139,7 @@
     t(ui.progress, `Word ${Math.min(state.i + 1, state.words.length)} of ${state.words.length}`); 
   }
 
-  // FIXED: Proper text-to-speech implementation
+  // Text-to-speech implementation
   function speakWord(word) {
     if (!window.speechSynthesis) {
       t(ui.feedback, "Text-to-speech not supported in this browser");
@@ -141,6 +184,13 @@
       if (!r.ok) throw new Error('Failed to fetch');
       const j = await r.json();
       const arr = Array.isArray(j?.words) ? j.words : (Array.isArray(j) ? j : []);
+      
+      // Apply tier-based content limits
+      if (window.tierManager?.currentTier === 'free') {
+        // Free users get limited content
+        return arr.length > 20 ? arr.slice(0, 20) : arr;
+      }
+      
       return arr.length ? arr : FALLBACK;
     } catch (_) { 
       return FALLBACK; 
@@ -156,25 +206,45 @@
     }
   }
 
+  // ========================================================
+  // UPDATED START FUNCTION WITH TIER CHECKS
+  // ========================================================
+
   async function start() {
     const customText = (ui.customBox?.value || '').trim();
     
     if (customText) {
-      // CHECK DAILY LIMIT
-      if (!checkDailyCustomWordLimit()) {
-        showDailyLimitMessage();
+      // CHECK TIER-BASED ACCESS
+      const access = checkCustomAccess();
+      if (!access.allowed) {
+        showTierUpgrade('daily_limit');
         return;
       }
       
       state.words = loadCustomWords(customText);
       t(ui.feedback, `Custom list loaded: ${state.words.length} words`);
       
-      // MARK AS USED
-      markCustomWordsUsed();
+      // TRACK USAGE
+      trackUsage();
+      
+      // TRACK FOR ANALYTICS
+      if (window.trackEvent) {
+        window.trackEvent('custom_list_used', {
+          mode: 'school',
+          word_count: state.words.length,
+          tier: window.tierManager?.currentTier || 'free'
+        });
+      }
     } else {
       t(ui.feedback, 'Loading school words...');
       state.words = await loadDefault();
-      t(ui.feedback, `School words loaded: ${state.words.length} words`);
+      
+      // Show content limit message for free users
+      if (window.tierManager?.currentTier === 'free' && state.words.length <= 20) {
+        t(ui.feedback, `Free school content: ${state.words.length} words. Upgrade for full vocabulary.`);
+      } else {
+        t(ui.feedback, `School words loaded: ${state.words.length} words`);
+      }
     }
 
     if (!state.words.length) {
@@ -249,10 +319,45 @@
     }
   }
 
-  // FIXED: Enhanced summary showing actual words
+  // ========================================================
+  // ENHANCED END SESSION WITH TIER SUPPORT
+  // ========================================================
+
+  function saveSessionHistory() {
+    const sessionData = {
+      mode: 'school',
+      words: state.words,
+      correct: state.correct.length,
+      incorrect: state.incorrect.length,
+      date: new Date().toISOString(),
+      score: state.words.length > 0 ? (state.correct.length / state.words.length * 100) : 0
+    };
+    
+    // Get existing history
+    const history = JSON.parse(localStorage.getItem('practiceHistory') || '[]');
+    
+    // Add new session
+    history.unshift(sessionData);
+    
+    // Apply tier-based limit
+    let limitedHistory = history;
+    if (window.tierManager?.currentTier === 'free') {
+      const limit = window.tierManager.getLimit('practiceHistory') || 5;
+      limitedHistory = history.slice(0, limit);
+    }
+    
+    // Save back to localStorage
+    localStorage.setItem('practiceHistory', JSON.stringify(limitedHistory));
+    
+    return limitedHistory;
+  }
+
   function endSession() {
     state.active = false;
     speechSynthesis.cancel();
+
+    // Save session history with tier limits
+    const history = saveSessionHistory();
 
     const total = state.words.length;
     const correctCount = state.correct.length;
@@ -326,6 +431,53 @@
     }
     
     t(ui.feedback, `Session completed! Check results below.`);
+    
+    // Add history preview for free users
+    if (window.tierManager?.currentTier === 'free' && history.length > 0) {
+      setTimeout(() => {
+        addHistoryPreview(history);
+      }, 500);
+    }
+  }
+
+  function addHistoryPreview(history) {
+    const preview = document.createElement('div');
+    preview.className = 'history-preview';
+    preview.style.cssText = `
+      margin-top: 20px;
+      padding: 15px;
+      background: rgba(123, 47, 247, 0.05);
+      border-radius: 8px;
+      border: 1px solid rgba(123, 47, 247, 0.1);
+    `;
+    
+    const limit = window.tierManager?.getLimit('practiceHistory') || 5;
+    
+    preview.innerHTML = `
+      <h4 style="margin-top: 0; color: #7b2ff7; font-size: 1rem;">
+        <i class="fa fa-history"></i> Recent School Sessions (${Math.min(history.length, limit)} shown)
+      </h4>
+      <div style="max-height: 150px; overflow-y: auto;">
+        ${history.slice(0, limit).map(session => `
+          <div style="padding: 8px; border-bottom: 1px solid rgba(0,0,0,0.05); font-size: 0.9em;">
+            <span style="color: #666;">${new Date(session.date).toLocaleDateString()}</span>
+            <span style="float: right; font-weight: 600; color: ${session.score > 70 ? '#4CAF50' : '#f72585'}">
+              ${session.score.toFixed(0)}% (${session.correct}/${session.words.length})
+            </span>
+          </div>
+        `).join('')}
+      </div>
+      ${history.length >= limit ? 
+        `<div style="margin-top: 10px; padding: 8px; background: rgba(123, 47, 247, 0.1); border-radius: 4px; font-size: 0.85em; text-align: center;">
+          <i class="fa fa-lock"></i> Free users see last ${limit} sessions. 
+          <a href="#" onclick="window.tierManager?.showUpgradePrompt('practiceHistory')" style="color: #7b2ff7; font-weight: 600;">Upgrade</a> for unlimited history.
+        </div>` : ''
+      }
+    `;
+    
+    if (ui.summary) {
+      ui.summary.appendChild(preview);
+    }
   }
 
   function restartTraining() {
@@ -338,6 +490,67 @@
     t(ui.feedback, 'Ready to start new session');
     showProgress();
   }
+
+  // ========================================================
+  // ADD CUSTOM LIST MANAGEMENT UI
+  // ========================================================
+  
+  function addCustomListUI() {
+    // Only show for free users
+    if (window.tierManager?.currentTier === 'premium') return;
+    
+    const container = document.querySelector('.main-card');
+    if (!container) return;
+    
+    // Check if UI already exists
+    if (document.querySelector('.custom-list-counter')) return;
+    
+    const listCounter = document.createElement('div');
+    listCounter.className = 'custom-list-counter';
+    listCounter.style.cssText = `
+      margin: 15px 0;
+      padding: 12px;
+      background: rgba(123, 47, 247, 0.05);
+      border-radius: 8px;
+      border: 1px solid rgba(123, 47, 247, 0.1);
+    `;
+    
+    // Get current list count
+    const savedLists = JSON.parse(localStorage.getItem('userCustomLists') || '{}');
+    const listCount = Object.keys(savedLists).length;
+    const limit = window.tierManager?.getLimit('customLists') || 3;
+    const percent = Math.min((listCount / limit) * 100, 100);
+    
+    listCounter.innerHTML = `
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+        <span style="font-weight: 600; color: #7b2ff7;">Custom Lists</span>
+        <span class="counter-text" style="font-weight: 600; color: ${listCount >= limit ? '#f72585' : '#7b2ff7'};">${listCount}/${limit}</span>
+      </div>
+      <div class="progress-bar" style="height: 6px; background: rgba(0,0,0,0.1); border-radius: 3px; overflow: hidden;">
+        <div class="progress-fill" style="height: 100%; width: ${percent}%; background: linear-gradient(90deg, #7b2ff7, #f72585); border-radius: 3px; transition: width 0.3s ease;"></div>
+      </div>
+      ${listCount >= limit ? 
+        `<div style="margin-top: 8px; font-size: 0.9em; color: #f72585;">
+          <i class="fa fa-lock"></i> Limit reached. <a href="#" onclick="window.tierManager?.showUpgradePrompt('customLists')" style="color: #7b2ff7; font-weight: 600;">Upgrade</a> for unlimited lists.
+        </div>` : 
+        `<div style="margin-top: 8px; font-size: 0.9em; color: #666;">
+          Free users can create up to ${limit} custom lists.
+        </div>`
+      }
+    `;
+    
+    // Insert before the button group
+    const buttonGroup = document.querySelector('.button-group');
+    if (buttonGroup) {
+      buttonGroup.parentNode.insertBefore(listCounter, buttonGroup);
+    } else if (ui.feedback) {
+      ui.feedback.parentNode.insertBefore(listCounter, ui.feedback.nextSibling);
+    }
+  }
+
+  // ========================================================
+  // UPDATED EVENT LISTENERS
+  // ========================================================
 
   function setupEventListeners() {
     if (ui.start) ui.start.addEventListener('click', start);
@@ -360,9 +573,10 @@
         const file = e.target.files?.[0];
         if (!file) return;
 
-        // CHECK DAILY LIMIT
-        if (!checkDailyCustomWordLimit()) {
-          showDailyLimitMessage();
+        // CHECK TIER-BASED ACCESS
+        const access = checkCustomAccess();
+        if (!access.allowed) {
+          showTierUpgrade('daily_limit');
           e.target.value = ''; // Clear the file input
           return;
         }
@@ -375,8 +589,17 @@
           state.words = words;
           t(ui.feedback, `Loaded ${words.length} words from file. Ready to start!`);
           
-          // MARK AS USED
-          markCustomWordsUsed();
+          // TRACK USAGE
+          trackUsage();
+          
+          // TRACK FILE UPLOAD
+          if (window.trackEvent) {
+            window.trackEvent('file_upload', {
+              mode: 'school',
+              word_count: words.length,
+              tier: window.tierManager?.currentTier || 'free'
+            });
+          }
         } catch (error) {
           t(ui.feedback, 'Error reading file. Please try again.');
         }
@@ -391,9 +614,10 @@
           return;
         }
         
-        // CHECK DAILY LIMIT
-        if (!checkDailyCustomWordLimit()) {
-          showDailyLimitMessage();
+        // CHECK TIER-BASED ACCESS
+        const access = checkCustomAccess();
+        if (!access.allowed) {
+          showTierUpgrade('daily_limit');
           return;
         }
         
@@ -401,8 +625,8 @@
         state.words = words;
         t(ui.feedback, `Custom list loaded: ${words.length} words. Ready to start!`);
         
-        // MARK AS USED
-        markCustomWordsUsed();
+        // TRACK USAGE
+        trackUsage();
       });
     }
   }
@@ -442,9 +666,31 @@
     }
   }
 
+  // ========================================================
+  // ENHANCED INITIALIZATION WITH TIER SUPPORT
+  // ========================================================
+
   function initialize() {
     setupEventListeners();
     initializeSpeechSynthesis();
+    
+    // Wait for tier manager to be ready
+    const checkTierManager = setInterval(() => {
+      if (window.tierManager) {
+        clearInterval(checkTierManager);
+        console.log('🎯 Tier manager loaded for School:', window.tierManager.currentTier);
+        
+        // Add custom list UI for free users
+        addCustomListUI();
+        
+        // Set up tier change listener
+        document.addEventListener('tierChange', (e) => {
+          console.log('School: Tier changed to:', e.detail.tier);
+          // Refresh UI
+          addCustomListUI();
+        });
+      }
+    }, 100);
     
     if (document.readyState === 'loading') {
       document.addEventListener('DOMContentLoaded', initializeDarkModeToggle);
@@ -452,7 +698,7 @@
       initializeDarkModeToggle();
     }
 
-    console.log('School Spelling Trainer ready - Fixed version with daily limit');
+    console.log('School Spelling Trainer ready - with tier management');
   }
 
   window.restartTraining = restartTraining;
