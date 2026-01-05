@@ -266,11 +266,26 @@ document.getElementById('toggleDark')?.addEventListener('click', () => {
 
 // Initialize premium features only for paid users
 function initializePremiumFeatures() {
-    console.log('Initializing premium features for:', currentUser.email);
-    initializeSpeechSynthesis();
-    createCustomWordsUI();
-    initializeCustomWords();
-    initializeRealTimeValidation();
+  console.log('Initializing premium features for:', currentUser.email);
+  
+  // REMOVE ADS for premium users
+  if (window.adManager) {
+    window.adManager.removeAds();
+  }
+  
+  initializeSpeechSynthesis();
+  createCustomWordsUI();
+  initializeCustomWords();
+  initializeRealTimeValidation();
+  
+  // Set user as premium
+  if (window.tierManager) {
+    window.tierManager.setTier('premium', {
+      plan: 'premium',
+      activatedAt: new Date().toISOString(),
+      active: true
+    });
+  }
 }
 
 // =======================================================
@@ -1190,3 +1205,4 @@ function simulatePremiumAccess() {
 // Make simulatePremiumAccess available globally for testing
 window.simulatePremiumAccess = simulatePremiumAccess;
 window.quickTest = quickTest;
+
