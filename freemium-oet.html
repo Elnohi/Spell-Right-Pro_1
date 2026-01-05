@@ -7,6 +7,12 @@
   <link rel="stylesheet" href="/css/styles.css" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" />
   
+  <!-- FIREBASE SDKs -->
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-analytics.js"></script>
+
   <style>
     .button-group {
       display: flex;
@@ -69,21 +75,6 @@
       cursor: pointer;
     }
   </style>
-
-  <!-- Add this to the <head> section of your freemium HTML files -->
-<script>
-  // Initialize tier manager early
-  window.tierManagerReady = false;
-  document.addEventListener('DOMContentLoaded', function() {
-    if (window.tierManager) {
-      window.tierManager.init();
-      window.tierManagerReady = true;
-      console.log('✅ Tier manager initialized');
-    } else {
-      console.warn('⚠️ Tier manager not loaded yet');
-    }
-  });
-</script>
 </head>
 
 <body data-mode="oet">
@@ -164,7 +155,7 @@
     <div id="progress" data-role="progress" style="font-weight: 700; margin: 15px 0; font-size: 1.2em; color: #7b2ff7;"></div>
     <div id="feedback" data-role="feedback" style="min-height: 22px; margin: 10px 0; padding: 10px; background: rgba(255,255,255,0.05); border-radius: 5px;"></div>
 
-    <!-- Word Display Area - NEW: Shows blank or reveals after answer -->
+    <!-- Word Display Area -->
     <div style="margin: 20px 0; text-align: center;">
       <div id="wordDisplay" style="font-size: 2em; font-weight: bold; color: #7b2ff7; min-height: 60px; display: flex; align-items: center; justify-content: center;">
         <span id="wordPlaceholder">❓ Word will be spoken</span>
@@ -220,8 +211,168 @@
     </button>
   </div>
 
-  <!-- Main JavaScript -->
+  <!-- ALL JAVASCRIPT EMBEDDED - NO EXTERNAL FILES NEEDED -->
   <script>
+  // ==================== FIREBASE CONFIG ====================
+  const firebaseConfig = {
+    apiKey: "AIzaSyC4R6ANRkm6H3v8v0Xk6x0qYJqY6wZ8abc",
+    authDomain: "spellrightpro.firebaseapp.com",
+    projectId: "spellrightpro",
+    storageBucket: "spellrightpro.appspot.com",
+    messagingSenderId: "123456789012",
+    appId: "1:123456789012:web:abcdef1234567890",
+    measurementId: "G-ABCDEF1234"
+  };
+
+  // Initialize Firebase
+  window.initFirebase = function() {
+    if (!firebase.apps.length) {
+      firebase.initializeApp(firebaseConfig);
+      
+      // Only initialize analytics if cookies accepted
+      const consent = localStorage.getItem('cookieConsent');
+      if (consent === 'true') {
+        firebase.analytics();
+        console.log('📊 Firebase Analytics initialized');
+      }
+    }
+    return firebase;
+  };
+
+  // ==================== COOKIE CONSENT ====================
+  function showCookieBanner() {
+    const consent = localStorage.getItem('cookieConsent');
+    if (consent === null) {
+      document.getElementById('cookieConsentBanner').style.display = 'block';
+    } else if (consent === 'true') {
+      initializeAnalytics();
+    }
+  }
+
+  function acceptCookies() {
+    localStorage.setItem('cookieConsent', 'true');
+    document.getElementById('cookieConsentBanner').style.display = 'none';
+    initializeAnalytics();
+    console.log('✅ Cookies accepted - Analytics enabled');
+  }
+
+  function declineCookies() {
+    localStorage.setItem('cookieConsent', 'false');
+    document.getElementById('cookieConsentBanner').style.display = 'none';
+    console.log('🔕 Cookies declined - Analytics disabled');
+  }
+
+  function initializeAnalytics() {
+    if (typeof window.initFirebase === 'function') {
+      setTimeout(() => {
+        window.initFirebase();
+      }, 500);
+    }
+  }
+
+  // ==================== TIER MANAGER ====================
+  window.tierManager = {
+    init: function() {
+      console.log('🎯 Tier Manager Initialized for OET');
+      
+      // Check user tier and apply restrictions
+      this.applyFreemiumLimitations();
+      
+      // Show/hide premium features
+      this.togglePremiumFeatures();
+      
+      // Initialize ads if applicable
+      this.initializeAds();
+    },
+    
+    applyFreemiumLimitations: function() {
+      // Freemium limitations for OET
+      const maxCustomWords = 50; // Freemium limit
+      const maxSessionWords = 100; // Freemium limit
+      
+      console.log(`🎯 Freemium mode: Max ${maxCustomWords} custom words, ${maxSessionWords} words per session`);
+      
+      // Apply word count limitations
+      this.limitCustomWords(maxCustomWords);
+    },
+    
+    limitCustomWords: function(maxWords) {
+      const customBox = document.getElementById('customWords');
+      if (customBox) {
+        customBox.addEventListener('input', function() {
+          const words = this.value.split(/[\n,]+/).filter(w => w.trim());
+          if (words.length > maxWords) {
+            const limitedWords = words.slice(0, maxWords);
+            this.value = limitedWords.join('\n');
+            document.getElementById('feedback').textContent = 
+              `Freemium limit: Using first ${maxWords} words only`;
+            document.getElementById('feedback').style.color = '#f72585';
+          }
+        });
+      }
+    },
+    
+    togglePremiumFeatures: function() {
+      // Hide premium-only features in freemium
+      const premiumFeatures = document.querySelectorAll('.premium-only');
+      premiumFeatures.forEach(feature => {
+        feature.style.display = 'none';
+      });
+      
+      // Add upgrade prompts
+      this.addUpgradePrompts();
+    },
+    
+    addUpgradePrompts: function() {
+      // Add upgrade message after summary
+      const summaryArea = document.getElementById('summaryArea');
+      if (summaryArea) {
+        const upgradeHTML = `
+          <div style="margin-top: 20px; padding: 15px; background: linear-gradient(135deg, #7b2ff7, #f72585); border-radius: 10px; color: white;">
+            <h4 style="margin: 0 0 10px 0;">🚀 Want More Features?</h4>
+            <p style="margin: 0 0 15px 0; font-size: 0.9em;">
+              Upgrade to Premium for:<br>
+              • Unlimited custom words<br>
+              • No ads<br>
+              • Progress tracking<br>
+              • Advanced analytics<br>
+              • All accents unlocked
+            </p>
+            <button onclick="window.location.href='/premium.html'" 
+              style="background: white; color: #7b2ff7; border: none; padding: 8px 20px; border-radius: 5px; font-weight: bold; cursor: pointer;">
+              <i class="fa fa-crown"></i> Upgrade Now
+            </button>
+          </div>
+        `;
+        
+        // Store the HTML to add later
+        window.premiumUpgradeHTML = upgradeHTML;
+      }
+    },
+    
+    initializeAds: function() {
+      // Simple ad simulation for freemium
+      const adContainer = document.getElementById('ad-container');
+      if (adContainer) {
+        setTimeout(() => {
+          adContainer.style.display = 'block';
+          adContainer.innerHTML = `
+            <div style="background: rgba(0,0,0,0.05); padding: 10px; border-radius: 8px;">
+              <p style="color: #666; font-size: 0.9em; margin: 0;">
+                🔥 <strong>Upgrade to Premium</strong> for an ad-free experience!
+              </p>
+              <button onclick="window.location.href='/premium.html'" 
+                style="background: #7b2ff7; color: white; border: none; padding: 5px 15px; border-radius: 4px; font-size: 0.8em; margin-top: 5px; cursor: pointer;">
+                Remove Ads
+              </button>
+            </div>
+          `;
+        }, 3000);
+      }
+    }
+  };
+
+  // ==================== OET MAIN APPLICATION ====================
   (function() {
     console.log('Starting OET Spelling Test...');
     
@@ -251,9 +402,6 @@
       'abdomen', 'anemia', 'antibiotic', 'artery', 'asthma', 'biopsy', 'catheter', 
       'diagnosis', 'embolism', 'fracture', 'gastroenterology', 'hemorrhage', 'intravenous', 
       'jaundice', 'kidney', 'laceration', 'membrane', 'neurology', 'obstetrics', 'pulmonary',
-      'abdomen', 'anemia', 'antibiotic', 'artery', 'asthma', 'biopsy', 'catheter', 
-      'diagnosis', 'embolism', 'fracture', 'gastroenterology', 'hemorrhage', 'intravenous', 
-      'jaundice', 'kidney', 'laceration', 'membrane', 'neurology', 'obstetrics', 'pulmonary',
       // Additional medical terms
       'abdominal', 'acute', 'allergy', 'antibody', 'antigen', 'arthritis', 'bacteria',
       'benign', 'bronchitis', 'carcinoma', 'cardiology', 'cerebral', 'chronic',
@@ -276,7 +424,7 @@
       'vaccine', 'vascular', 'ventricle', 'vertebra', 'virology', 'virus', 'vital'
     ];
     
-    // Remove duplicates and ensure we have enough words
+    // Remove duplicates
     const UNIQUE_OET_WORDS = [...new Set(OET_WORDS)];
     
     // App State
@@ -317,14 +465,12 @@
       
       if (elements.wordDisplay) {
         if (reveal) {
-          // Show the word (after submission)
           elements.wordDisplay.innerHTML = `<span style="color: #4CAF50;">${word}</span>`;
           if (elements.revealedWord) {
             elements.revealedWord.textContent = word;
             elements.revealedWord.style.display = 'block';
           }
         } else {
-          // Don't show the word - only show placeholder
           elements.wordDisplay.innerHTML = '<span style="color: #666;">🔈 Listen carefully...</span>';
           if (elements.revealedWord) {
             elements.revealedWord.style.display = 'none';
@@ -344,21 +490,17 @@
         speechSynthesis.cancel();
         
         const utterance = new SpeechSynthesisUtterance(word);
-        utterance.rate = 0.85; // Slower for clarity
+        utterance.rate = 0.85;
         utterance.pitch = 1;
         utterance.volume = 1;
         
-        // Get selected accent
         const accent = elements.accentSelect ? elements.accentSelect.value : 'en-US';
         utterance.lang = accent;
         
-        // Get available voices
         const voices = speechSynthesis.getVoices();
         if (voices.length > 0) {
-          // Try to find a matching voice
           let voice = voices.find(v => v.lang === accent);
           if (!voice) {
-            // Fallback to first English voice
             voice = voices.find(v => v.lang.includes('en')) || voices[0];
           }
           utterance.voice = voice;
@@ -398,7 +540,7 @@
       if (!state.isActive || state.currentIndex >= state.words.length) return;
       const word = state.words[state.currentIndex];
       if (word) {
-        updateWordDisplay(false); // Don't reveal the word
+        updateWordDisplay(false);
         speakWord(word);
       }
     }
@@ -415,23 +557,19 @@
         return;
       }
       
-      // Store current position in history
       state.history.push(state.currentIndex);
       if (state.history.length > 10) state.history.shift();
       
-      // Go back
       state.currentIndex--;
       
-      // Clear answer box and hide revealed word
       if (elements.answer) elements.answer.value = '';
       if (elements.revealedWord) elements.revealedWord.style.display = 'none';
       
       updateProgress();
-      updateWordDisplay(false); // Don't reveal previous word
+      updateWordDisplay(false);
       speakCurrentWord();
       updateFeedback(`← Went back to word ${state.currentIndex + 1}`);
       
-      // Save to localStorage
       saveProgress();
     }
     
@@ -450,11 +588,9 @@
         return;
       }
       
-      // Simple normalization for comparison
       const normalizedWord = word.toLowerCase().trim();
       const normalizedAnswer = answer.toLowerCase().trim();
       
-      // Reveal the correct word
       updateWordDisplay(true);
       
       if (normalizedAnswer === normalizedWord) {
@@ -470,46 +606,45 @@
         updateFeedback(`❌ Incorrect. You wrote "${answer}", but correct is "${word}"`);
       }
       
-      // Clear answer box
       if (elements.answer) elements.answer.value = '';
       
-      // Move to next word or end session
       state.currentIndex++;
       
       if (state.currentIndex < state.words.length) {
         updateProgress();
         setTimeout(() => {
-          updateWordDisplay(false); // Hide next word
+          updateWordDisplay(false);
           setTimeout(speakCurrentWord, 500);
         }, 2000);
       } else {
         setTimeout(endSession, 1500);
       }
       
-      // Save progress
       saveProgress();
     }
     
     // Start session
     function startSession() {
-      // Check for custom words
       const customText = elements.customBox ? elements.customBox.value.trim() : '';
       
       if (customText) {
-        // Parse custom words
         const words = customText.split(/[\n,]+/).map(w => w.trim()).filter(w => w);
-        state.words = words;
-        updateFeedback(`Using custom list: ${words.length} words`);
+        // Apply freemium limit
+        const limitedWords = words.slice(0, 50);
+        state.words = limitedWords;
+        if (words.length > 50) {
+          updateFeedback(`Freemium: Using first 50 of ${words.length} words`);
+        } else {
+          updateFeedback(`Using custom list: ${words.length} words`);
+        }
       } else {
         if (state.isExam) {
-          // RANDOM 24 WORDS FOR EXAM MODE - FIXED
           const shuffled = [...UNIQUE_OET_WORDS].sort(() => Math.random() - 0.5);
-          state.words = shuffled.slice(0, 24); // Always 24 words
+          state.words = shuffled.slice(0, 24);
           updateFeedback(`✅ Exam mode: ${state.words.length} random words`);
         } else {
-          // All unique words for practice mode
-          state.words = [...UNIQUE_OET_WORDS];
-          updateFeedback(`Practice mode: ${state.words.length} words`);
+          state.words = [...UNIQUE_OET_WORDS].slice(0, 100); // Freemium limit
+          updateFeedback(`Practice mode: ${state.words.length} words (freemium limit)`);
         }
       }
       
@@ -518,7 +653,6 @@
         return;
       }
       
-      // Reset state
       state.currentIndex = 0;
       state.correct = [];
       state.incorrect = [];
@@ -526,7 +660,6 @@
       state.history = [];
       state.isActive = true;
       
-      // Hide summary and revealed word
       if (elements.summaryArea) {
         elements.summaryArea.style.display = 'none';
         elements.summaryArea.classList.add('hidden');
@@ -535,17 +668,14 @@
         elements.revealedWord.style.display = 'none';
       }
       
-      // Update UI
       updateProgress();
-      updateWordDisplay(false); // Don't show the word
+      updateWordDisplay(false);
       updateFeedback('Session started! Listen carefully...');
       
-      // Speak first word after delay
       setTimeout(() => {
         speakCurrentWord();
       }, 1000);
       
-      // Save initial state
       saveProgress();
     }
     
@@ -604,7 +734,6 @@
         summaryHTML += `</div></div>`;
       }
       
-      // Add resume options
       summaryHTML += `
         <div style="margin: 20px 0; padding: 15px; background: rgba(123, 47, 247, 0.1); border-radius: 8px;">
           <h4 style="color: #7b2ff7;">Continue Practicing</h4>
@@ -640,6 +769,25 @@
         </div>
       `;
       
+      // Add premium upgrade prompt
+      summaryHTML += `
+        <div style="margin-top: 20px; padding: 15px; background: linear-gradient(135deg, #7b2ff7, #f72585); border-radius: 10px; color: white;">
+          <h4 style="margin: 0 0 10px 0;">🚀 Want More Features?</h4>
+          <p style="margin: 0 0 15px 0; font-size: 0.9em;">
+            Upgrade to Premium for:<br>
+            • Unlimited custom words<br>
+            • No ads<br>
+            • Progress tracking<br>
+            • Advanced analytics<br>
+            • All accents unlocked
+          </p>
+          <button onclick="window.location.href='/premium.html'" 
+            style="background: white; color: #7b2ff7; border: none; padding: 8px 20px; border-radius: 5px; font-weight: bold; cursor: pointer;">
+            <i class="fa fa-crown"></i> Upgrade Now
+          </button>
+        </div>
+      `;
+      
       summaryHTML += `</div>`;
       
       if (elements.summaryArea) {
@@ -649,8 +797,6 @@
       }
       
       updateFeedback('Session completed! Check your results below.');
-      
-      // Clear saved progress
       localStorage.removeItem('oet_progress');
     }
     
@@ -682,7 +828,6 @@
           return false;
         }
         
-        // Restore state
         state.words = progress.words || [];
         state.currentIndex = progress.currentIndex || 0;
         state.correct = progress.correct || [];
@@ -715,7 +860,7 @@
         return;
       }
       
-      state.words = [...new Set(incorrectWords)]; // Remove duplicates
+      state.words = [...new Set(incorrectWords)];
       state.currentIndex = 0;
       state.correct = [];
       state.incorrect = [];
@@ -782,7 +927,6 @@
         return;
       }
       
-      // Parse numbers (e.g., "1,5,10" or "1 5 10")
       const numbers = numbersText.split(/[,\s]+/).map(n => parseInt(n.trim())).filter(n => !isNaN(n) && n >= 1 && n <= UNIQUE_OET_WORDS.length);
       
       if (numbers.length === 0) {
@@ -790,10 +934,9 @@
         return;
       }
       
-      // Get words at specified positions
       const selectedWords = numbers.map(n => UNIQUE_OET_WORDS[n - 1]).filter(w => w);
       
-      state.words = selectedWords;
+      state.words = selectedWords.slice(0, 50); // Freemium limit
       state.currentIndex = 0;
       state.correct = [];
       state.incorrect = [];
@@ -836,7 +979,6 @@
       updateFeedback('Ready to start new session');
       updateProgress();
       
-      // Clear localStorage
       localStorage.removeItem('oet_progress');
     }
     
@@ -861,38 +1003,13 @@
     
     // Set up event listeners
     function setupEventListeners() {
-      // Start button
-      if (elements.start) {
-        elements.start.addEventListener('click', startSession);
-      }
+      if (elements.start) elements.start.addEventListener('click', startSession);
+      if (elements.submit) elements.submit.addEventListener('click', checkAnswer);
+      if (elements.say) elements.say.addEventListener('click', speakCurrentWord);
+      if (elements.previous) elements.previous.addEventListener('click', goToPreviousWord);
+      if (elements.flag) elements.flag.addEventListener('click', toggleFlag);
+      if (elements.end) elements.end.addEventListener('click', endSession);
       
-      // Submit button
-      if (elements.submit) {
-        elements.submit.addEventListener('click', checkAnswer);
-      }
-      
-      // Say Again button
-      if (elements.say) {
-        elements.say.addEventListener('click', speakCurrentWord);
-      }
-      
-      // PREVIOUS BUTTON
-      if (elements.previous) {
-        elements.previous.addEventListener('click', goToPreviousWord);
-        console.log('✅ Previous button event listener added');
-      }
-      
-      // Flag button
-      if (elements.flag) {
-        elements.flag.addEventListener('click', toggleFlag);
-      }
-      
-      // End button
-      if (elements.end) {
-        elements.end.addEventListener('click', endSession);
-      }
-      
-      // Enter key in answer box
       if (elements.answer) {
         elements.answer.addEventListener('keydown', (e) => {
           if (e.key === 'Enter') {
@@ -902,7 +1019,6 @@
         });
       }
       
-      // Tab switching
       if (elements.tabExam) {
         elements.tabExam.addEventListener('click', () => {
           state.isExam = true;
@@ -921,7 +1037,6 @@
         });
       }
       
-      // Use custom list
       if (elements.useCustom) {
         elements.useCustom.addEventListener('click', () => {
           const customText = elements.customBox ? elements.customBox.value.trim() : '';
@@ -930,12 +1045,11 @@
             return;
           }
           const words = customText.split(/[\n,]+/).map(w => w.trim()).filter(w => w);
-          state.words = words;
-          updateFeedback(`Custom list loaded: ${words.length} words`);
+          state.words = words.slice(0, 50); // Freemium limit
+          updateFeedback(`Custom list loaded: ${Math.min(words.length, 50)} words (freemium limit)`);
         });
       }
       
-      // File input
       const fileInput = document.getElementById('fileInput');
       if (fileInput) {
         fileInput.addEventListener('change', (e) => {
@@ -959,10 +1073,7 @@
     function initialize() {
       console.log('Initializing OET Spelling Test...');
       
-      // Set up event listeners
       setupEventListeners();
-      
-      // Check for saved progress
       loadProgress();
       
       // Initialize dark mode toggle
@@ -978,7 +1089,6 @@
           localStorage.setItem('dark', document.body.classList.contains('dark-mode'));
         });
         
-        // Load dark mode preference
         const savedDarkMode = localStorage.getItem('dark') === 'true';
         if (savedDarkMode) {
           document.body.classList.add('dark-mode');
@@ -993,8 +1103,17 @@
       window.restartSession = restartSession;
       window.practiceSpecificWords = practiceSpecificWords;
       
-      updateFeedback('Ready! Click "Start" to begin your OET spelling practice.');
+      // Initialize tier manager
+      if (window.tierManager) {
+        window.tierManager.init();
+      }
       
+      // Show cookie banner after delay
+      setTimeout(() => {
+        showCookieBanner();
+      }, 1500);
+      
+      updateFeedback('Ready! Click "Start" to begin your OET spelling practice.');
       console.log('✅ OET Spelling Test initialized successfully');
     }
     
