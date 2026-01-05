@@ -7,26 +7,11 @@
   <link rel="stylesheet" href="/css/styles.css" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" />
 
-  <!-- 🔥 FIREBASE SDKs MUST BE IN HEAD - CORRECT ORDER -->
+  <!-- FIREBASE SDKs -->
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-analytics.js"></script>
-
-  <!-- Add this to the <head> section of your freemium HTML files -->
-<script>
-  // Initialize tier manager early
-  window.tierManagerReady = false;
-  document.addEventListener('DOMContentLoaded', function() {
-    if (window.tierManager) {
-      window.tierManager.init();
-      window.tierManagerReady = true;
-      console.log('✅ Tier manager initialized');
-    } else {
-      console.warn('⚠️ Tier manager not loaded yet');
-    }
-  });
-</script>
 </head>
 
 <body data-mode="bee">
@@ -44,7 +29,6 @@
       <button class="nav-btn" onclick="window.location.href='/'">
         <i class="fa fa-home"></i> Home
       </button>
-      <!-- DARK MODE TOGGLE -->
       <button class="nav-btn" id="toggleDark">
         <i class="fa fa-moon"></i> Dark Mode
       </button>
@@ -79,7 +63,7 @@
       </div>
     </div>
 
-    <!-- Ad Container - Will only show after AdSense approval -->
+    <!-- Ad Container -->
     <div id="ad-container" style="margin: 25px 0; text-align: center; min-height: 90px; display: none;">
       <p style="color: #666; font-size: 0.9em;">Ad placeholder - will show ads after AdSense approval</p>
     </div>
@@ -108,7 +92,7 @@
     <div class="summary-area hidden" style="margin-top: 20px; padding: 15px; background: rgba(0,0,0,0.05); border-radius: 8px;"></div>
   </main>
 
-  <!-- 🔥 COOKIE CONSENT BANNER - MOVED UP -->
+  <!-- COOKIE CONSENT BANNER -->
   <div id="cookieConsentBanner" style="display: none; position: fixed; bottom: 0; left: 0; right: 0; background: #333; color: white; padding: 15px; text-align: center; z-index: 1000;">
     <p>We use cookies to provide our services and for analytics and ads. 
        <a href="/privacy.html" style="color: #7b2ff7;">Learn more</a>
@@ -121,54 +105,807 @@
     </button>
   </div>
 
-  <!-- 🔥 COOKIE CONSENT SCRIPT - MUST BE FIRST -->
+  <!-- ALL JAVASCRIPT EMBEDDED -->
   <script>
-  // Enhanced Cookie Consent with Analytics
-  function showCookieBanner() {
+  // ==================== FIREBASE CONFIG ====================
+  const firebaseConfig = {
+    apiKey: "AIzaSyC4R6ANRkm6H3v8v0Xk6x0qYJqY6wZ8abc",
+    authDomain: "spellrightpro.firebaseapp.com",
+    projectId: "spellrightpro",
+    storageBucket: "spellrightpro.appspot.com",
+    messagingSenderId: "123456789012",
+    appId: "1:123456789012:web:abcdef1234567890",
+    measurementId: "G-ABCDEF1234"
+  };
+
+  // Initialize Firebase
+  window.initFirebase = function() {
+    if (!firebase.apps.length) {
+      firebase.initializeApp(firebaseConfig);
+      
       const consent = localStorage.getItem('cookieConsent');
-      // Show banner if no consent decision has been made
-      if (consent === null) {
-          document.getElementById('cookieConsentBanner').style.display = 'block';
-      } else if (consent === 'true') {
-          // If consent was given, initialize analytics
-          initializeAnalytics();
+      if (consent === 'true') {
+        firebase.analytics();
+        console.log('📊 Firebase Analytics initialized');
       }
+    }
+    return firebase;
+  };
+
+  // ==================== COOKIE CONSENT ====================
+  function showCookieBanner() {
+    const consent = localStorage.getItem('cookieConsent');
+    if (consent === null) {
+      document.getElementById('cookieConsentBanner').style.display = 'block';
+    } else if (consent === 'true') {
+      initializeAnalytics();
+    }
   }
 
   function acceptCookies() {
-      localStorage.setItem('cookieConsent', 'true');
-      document.getElementById('cookieConsentBanner').style.display = 'none';
-      
-      // Initialize analytics immediately
-      initializeAnalytics();
-      
-      // Show feedback but don't reload
-      console.log('✅ Cookies accepted - Analytics enabled');
+    localStorage.setItem('cookieConsent', 'true');
+    document.getElementById('cookieConsentBanner').style.display = 'none';
+    initializeAnalytics();
+    console.log('✅ Cookies accepted - Analytics enabled');
   }
 
   function declineCookies() {
-      localStorage.setItem('cookieConsent', 'false');
-      document.getElementById('cookieConsentBanner').style.display = 'none';
-      console.log('🔕 Cookies declined - Analytics disabled');
+    localStorage.setItem('cookieConsent', 'false');
+    document.getElementById('cookieConsentBanner').style.display = 'none';
+    console.log('🔕 Cookies declined - Analytics disabled');
   }
 
   function initializeAnalytics() {
-      // Reinitialize Firebase with analytics
-      if (typeof window.initFirebase === 'function') {
-          setTimeout(() => {
-              window.initFirebase();
-          }, 500);
-      }
+    if (typeof window.initFirebase === 'function') {
+      setTimeout(() => {
+        window.initFirebase();
+      }, 500);
+    }
   }
 
-  // Show banner immediately
-  setTimeout(showCookieBanner, 500);
-  </script>
+  // ==================== TIER MANAGER ====================
+  window.tierManager = {
+    init: function() {
+      console.log('🎯 Tier Manager Initialized for Spelling Bee');
+      this.applyFreemiumLimitations();
+      this.togglePremiumFeatures();
+      this.initializeAds();
+    },
+    
+    applyFreemiumLimitations: function() {
+      const maxCustomWords = 40; // Bee freemium limit
+      const maxSessionWords = 25; // Shorter sessions for bee
+      
+      console.log(`🎯 Bee Freemium: Max ${maxCustomWords} custom words, ${maxSessionWords} words per session`);
+      
+      this.limitCustomWords(maxCustomWords);
+    },
+    
+    limitCustomWords: function(maxWords) {
+      const customBox = document.getElementById('customWords');
+      if (customBox) {
+        customBox.addEventListener('input', function() {
+          const words = this.value.split(/[\n,]+/).filter(w => w.trim());
+          if (words.length > maxWords) {
+            const limitedWords = words.slice(0, maxWords);
+            this.value = limitedWords.join('\n');
+            document.getElementById('feedback').textContent = 
+              `Bee Freemium limit: Using first ${maxWords} words only`;
+            document.getElementById('feedback').style.color = '#f72585';
+          }
+        });
+      }
+    },
+    
+    togglePremiumFeatures: function() {
+      const premiumFeatures = document.querySelectorAll('.premium-only');
+      premiumFeatures.forEach(feature => {
+        feature.style.display = 'none';
+      });
+      
+      this.addUpgradePrompts();
+    },
+    
+    addUpgradePrompts: function() {
+      const summaryArea = document.querySelector('.summary-area');
+      if (summaryArea) {
+        const upgradeHTML = `
+          <div style="margin-top: 20px; padding: 15px; background: linear-gradient(135deg, #7b2ff7, #f72585); border-radius: 10px; color: white;">
+            <h4 style="margin: 0 0 10px 0;">🐝 Become a Spelling Bee Champion!</h4>
+            <p style="margin: 0 0 15px 0; font-size: 0.9em;">
+              Upgrade to Bee Premium for:<br>
+              • Unlimited competition words<br>
+              • Voice recognition feedback<br>
+              • Leaderboard access<br>
+              • Advanced difficulty levels<br>
+              • No ads during competitions
+            </p>
+            <button onclick="window.location.href='/premium.html'" 
+              style="background: white; color: #7b2ff7; border: none; padding: 8px 20px; border-radius: 5px; font-weight: bold; cursor: pointer;">
+              <i class="fa fa-crown"></i> Get Bee Premium
+            </button>
+          </div>
+        `;
+        
+        window.beePremiumUpgradeHTML = upgradeHTML;
+      }
+    },
+    
+    initializeAds: function() {
+      const adContainer = document.getElementById('ad-container');
+      if (adContainer) {
+        setTimeout(() => {
+          adContainer.style.display = 'block';
+          adContainer.innerHTML = `
+            <div style="background: rgba(0,0,0,0.05); padding: 10px; border-radius: 8px;">
+              <p style="color: #666; font-size: 0.9em; margin: 0;">
+                🐝 <strong>Bee Premium</strong> - Compete like a champion!
+              </p>
+              <button onclick="window.location.href='/premium.html'" 
+                style="background: #7b2ff7; color: white; border: none; padding: 5px 15px; border-radius: 4px; font-size: 0.8em; margin-top: 5px; cursor: pointer;">
+                Join Competition
+              </button>
+            </div>
+          `;
+        }, 2500);
+      }
+    }
+  };
 
-  <!-- 🔥 YOUR CONFIG & SCRIPTS - IN CORRECT ORDER -->
-  <script src="/js/config.js"></script>
-  <script src="/js/firebase-utils.js"></script>
-  <script src="/js/main-freemium-bee.js"></script>
+  // ==================== SPELLING BEE MAIN APPLICATION ====================
+  (function() {
+    console.log('Starting Spelling Bee Competition...');
+    
+    // UI Elements
+    const elements = {
+      start: document.getElementById('btnStart'),
+      say: document.getElementById('btnSayAgain'),
+      flag: document.getElementById('btnFlag'),
+      end: document.getElementById('btnEnd'),
+      progress: document.getElementById('progress'),
+      feedback: document.getElementById('feedback'),
+      summaryArea: document.querySelector('.summary-area'),
+      customBox: document.getElementById('customWords'),
+      useCustom: document.getElementById('useCustomList')
+    };
+    
+    // Spelling Bee competition words
+    const BEE_WORDS = [
+      'accommodate', 'acquiesce', 'amateur', 'apparatus', 'asthma', 'barbecue',
+      'bouquet', 'camouflage', 'conscience', 'dilemma', 'ecstasy', 'embarrass',
+      'exhilarate', 'flamboyant', 'gauge', 'harass', 'idiosyncrasy', 'jewelry',
+      'liaison', 'maneuver', 'noticeable', 'occasion', 'pneumonia', 'queue',
+      'raspberry', 'rhythm', 'schedule', 'sergeant', 'subtle', 'thorough',
+      'tongue', 'vacuum', 'weird', 'yacht', 'zucchini', 'analysis', 'bureau',
+      'caribbean', 'dachshund', 'fuchsia', 'giraffe', 'hypocrisy', 'jeopardy',
+      'kaleidoscope', 'liaison', 'mnemonic', 'nausea', 'pharaoh', 'quinoa',
+      'rendezvous', 'silhouette', 'tarantula', 'ukulele', 'vichyssoise', 'whimsical',
+      'xylophone', 'yogurt', 'zeitgeist', 'aardvark', 'bouillon', 'chauffeur',
+      'dilettante', 'epitome', 'fiancé', 'guacamole', 'hors d\'oeuvre', 'ingenious',
+      'jaundice', 'knickknack', 'labyrinth', 'mayonnaise', 'naïve', 'obbligato',
+      'paparazzi', 'quixotic', 'restaurateur', 'sapphire', 'toboggan', 'ubiquitous',
+      'ventriloquist', 'wisteria', 'xenophobia', 'yosemite', 'zaftig', 'ambiguity',
+      'braggadocio', 'cappuccino', 'debutante', 'entrepreneur', 'facsimile',
+      'glockenspiel', 'hegemony', 'infinitesimal', 'jugular', 'kitsch', 'lascivious',
+      'malfeasance', 'nonplussed', 'onomatopoeia', 'perseverance', 'quandary',
+      'reconnaissance', 'savoir faire', 'tautology', 'ubiquity', 'vaudeville',
+      'weltschmerz', 'xanthophyll', 'yesteryear', 'zeugma'
+    ];
+    
+    // App State
+    const state = {
+      words: [],
+      currentIndex: 0,
+      correct: [],
+      incorrect: [],
+      flags: new Set(),
+      isActive: false,
+      history: [],
+      score: 0,
+      streak: 0,
+      maxStreak: 0
+    };
+    
+    // Update progress display
+    function updateProgress() {
+      if (elements.progress) {
+        elements.progress.textContent = `Word ${state.currentIndex + 1} of ${state.words.length} | Score: ${state.score} | Streak: ${state.streak}`;
+      }
+    }
+    
+    // Update feedback
+    function updateFeedback(message, isError = false) {
+      if (elements.feedback) {
+        elements.feedback.textContent = message;
+        elements.feedback.style.color = isError ? '#f72585' : '#ffffff';
+      }
+      console.log(message);
+    }
+    
+    // Speak word
+    function speakWord(word) {
+      if (!window.speechSynthesis) {
+        updateFeedback('Speech synthesis not supported', true);
+        return;
+      }
+      
+      try {
+        speechSynthesis.cancel();
+        
+        const utterance = new SpeechSynthesisUtterance(word);
+        utterance.rate = 0.8; // Slower for spelling bee
+        utterance.pitch = 1;
+        utterance.volume = 1;
+        utterance.lang = 'en-US';
+        
+        // Use a clear, distinct voice
+        const voices = speechSynthesis.getVoices();
+        if (voices.length > 0) {
+          // Prefer female voices for clarity
+          let voice = voices.find(v => v.name.includes('Female') && v.lang.includes('en')) ||
+                     voices.find(v => v.lang.includes('en')) || 
+                     voices[0];
+          utterance.voice = voice;
+        }
+        
+        utterance.onend = () => {
+          console.log('Finished speaking bee word:', word);
+          // After speaking, start voice recognition
+          startVoiceRecognition(word);
+        };
+        
+        utterance.onerror = (e) => {
+          console.error('Speech error:', e);
+          updateFeedback('Error speaking word', true);
+        };
+        
+        speechSynthesis.speak(utterance);
+        updateFeedback(`🐝 Spell: "${word.toUpperCase()}"`);
+        
+      } catch (error) {
+        console.error('Speech error:', error);
+        updateFeedback('Could not speak word', true);
+      }
+    }
+    
+    // Start voice recognition
+    function startVoiceRecognition(expectedWord) {
+      if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
+        updateFeedback('Voice recognition not supported in your browser', true);
+        // Fallback to manual input
+        setTimeout(() => {
+          const userSpelling = prompt(`Please spell: ${expectedWord}`);
+          if (userSpelling) {
+            checkSpelling(expectedWord, userSpelling.trim());
+          } else {
+            skipWord();
+          }
+        }, 500);
+        return;
+      }
+      
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      const recognition = new SpeechRecognition();
+      
+      recognition.lang = 'en-US';
+      recognition.interimResults = false;
+      recognition.maxAlternatives = 1;
+      
+      recognition.onstart = function() {
+        updateFeedback('🎤 Listening... Spell the word now');
+      };
+      
+      recognition.onresult = function(event) {
+        const spokenWord = event.results[0][0].transcript.trim().toLowerCase();
+        console.log('Recognized:', spokenWord);
+        checkSpelling(expectedWord, spokenWord);
+      };
+      
+      recognition.onerror = function(event) {
+        console.error('Speech recognition error:', event.error);
+        updateFeedback('Voice recognition failed. Please try typing.', true);
+        
+        // Fallback to manual input
+        setTimeout(() => {
+          const userSpelling = prompt(`Please spell: ${expectedWord}`);
+          if (userSpelling) {
+            checkSpelling(expectedWord, userSpelling.trim().toLowerCase());
+          } else {
+            skipWord();
+          }
+        }, 500);
+      };
+      
+      recognition.onend = function() {
+        console.log('Speech recognition ended');
+      };
+      
+      // Start recognition with delay
+      setTimeout(() => {
+        recognition.start();
+      }, 1000);
+      
+      // Timeout after 10 seconds
+      setTimeout(() => {
+        try {
+          recognition.stop();
+          updateFeedback('Time\'s up! Moving to next word.', true);
+          skipWord();
+        } catch (e) {
+          console.log('Recognition already stopped');
+        }
+      }, 10000);
+    }
+    
+    // Check spelling
+    function checkSpelling(expectedWord, spokenWord) {
+      const normalizedExpected = expectedWord.toLowerCase().trim();
+      const normalizedSpoken = spokenWord.toLowerCase().trim();
+      
+      // For spelling bee, we allow letter-by-letter spelling
+      const lettersExpected = normalizedExpected.split('').join(' ').toLowerCase();
+      const lettersSpoken = normalizedSpoken.split('').join(' ').toLowerCase();
+      
+      // Check if they spelled letter by letter or said the whole word
+      if (normalizedSpoken === normalizedExpected || lettersSpoken === lettersExpected) {
+        state.correct.push(expectedWord);
+        state.score += 10;
+        state.streak++;
+        if (state.streak > state.maxStreak) state.maxStreak = state.streak;
+        
+        updateFeedback(`✅ Correct! "${expectedWord}" - Score: +10 | Streak: ${state.streak}`);
+        
+        // Bonus for streak
+        if (state.streak >= 3) {
+          state.score += 5;
+          updateFeedback(`🔥 ${state.streak} in a row! Bonus +5 points!`);
+        }
+        
+        // Special bonus for 5+ streak
+        if (state.streak >= 5) {
+          state.score += 10;
+          updateFeedback(`🏆 Amazing! ${state.streak} streak! Bonus +10 points!`);
+        }
+      } else {
+        state.incorrect.push({ 
+          word: expectedWord, 
+          spoken: spokenWord,
+          correctSpelling: expectedWord
+        });
+        state.streak = 0;
+        
+        updateFeedback(`❌ Incorrect. You said "${spokenWord}", correct is "${expectedWord}" | Streak broken`);
+      }
+      
+      state.currentIndex++;
+      
+      if (state.currentIndex < state.words.length) {
+        updateProgress();
+        setTimeout(() => {
+          speakCurrentWord();
+        }, 2000);
+      } else {
+        setTimeout(endSession, 1500);
+      }
+      
+      saveProgress();
+    }
+    
+    // Skip current word
+    function skipWord() {
+      state.incorrect.push({ 
+        word: state.words[state.currentIndex], 
+        spoken: '(skipped)',
+        correctSpelling: state.words[state.currentIndex]
+      });
+      state.streak = 0;
+      
+      state.currentIndex++;
+      
+      if (state.currentIndex < state.words.length) {
+        updateProgress();
+        setTimeout(() => {
+          speakCurrentWord();
+        }, 1000);
+      } else {
+        setTimeout(endSession, 1000);
+      }
+      
+      saveProgress();
+    }
+    
+    // Speak current word
+    function speakCurrentWord() {
+      if (!state.isActive || state.currentIndex >= state.words.length) return;
+      const word = state.words[state.currentIndex];
+      if (word) {
+        speakWord(word);
+      }
+    }
+    
+    // Start session
+    function startSession() {
+      const customText = elements.customBox ? elements.customBox.value.trim() : '';
+      
+      if (customText) {
+        const words = customText.split(/[\n,]+/).map(w => w.trim()).filter(w => w);
+        const limitedWords = words.slice(0, 40); // Bee freemium limit
+        state.words = limitedWords;
+        if (words.length > 40) {
+          updateFeedback(`Bee Freemium: Using first 40 of ${words.length} words`);
+        } else {
+          updateFeedback(`Using custom list: ${words.length} bee words`);
+        }
+      } else {
+        const shuffled = [...BEE_WORDS].sort(() => Math.random() - 0.5);
+        state.words = shuffled.slice(0, 25); // Bee freemium session limit
+        updateFeedback(`Competition mode: ${state.words.length} challenging words`);
+      }
+      
+      if (state.words.length === 0) {
+        updateFeedback('No words available', true);
+        return;
+      }
+      
+      state.currentIndex = 0;
+      state.correct = [];
+      state.incorrect = [];
+      state.flags.clear();
+      state.history = [];
+      state.isActive = true;
+      state.score = 0;
+      state.streak = 0;
+      state.maxStreak = 0;
+      
+      if (elements.summaryArea) {
+        elements.summaryArea.style.display = 'none';
+        elements.summaryArea.classList.add('hidden');
+      }
+      
+      updateProgress();
+      updateFeedback('🐝 Spelling Bee started! Listen and spell...');
+      
+      setTimeout(() => {
+        speakCurrentWord();
+      }, 1000);
+      
+      saveProgress();
+    }
+    
+    // End session and show summary
+    function endSession() {
+      state.isActive = false;
+      speechSynthesis.cancel();
+      
+      const total = state.words.length;
+      const correctCount = state.correct.length;
+      const incorrectWords = state.incorrect;
+      const flaggedWords = Array.from(state.flags);
+      
+      // Calculate grade
+      let grade = 'Beginner';
+      let gradeEmoji = '🐣';
+      if (state.score >= 200) {
+        grade = 'Champion';
+        gradeEmoji = '🏆';
+      } else if (state.score >= 150) {
+        grade = 'Expert';
+        gradeEmoji = '⭐';
+      } else if (state.score >= 100) {
+        grade = 'Advanced';
+        gradeEmoji = '🚀';
+      } else if (state.score >= 50) {
+        grade = 'Intermediate';
+        gradeEmoji = '📚';
+      }
+      
+      let summaryHTML = `
+        <div style="background: rgba(0,0,0,0.1); padding: 20px; border-radius: 10px;">
+          <h3 style="margin-top: 0; color: #7b2ff7;">Spelling Bee Complete! ${gradeEmoji}</h3>
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin: 20px 0;">
+            <div style="background: rgba(123, 47, 247, 0.1); padding: 15px; border-radius: 8px; text-align: center;">
+              <div style="font-size: 2em; font-weight: bold; color: #7b2ff7;">${state.score}</div>
+              <div style="font-size: 0.9em; color: #666;">Total Score</div>
+            </div>
+            <div style="background: rgba(76, 175, 80, 0.1); padding: 15px; border-radius: 8px; text-align: center;">
+              <div style="font-size: 2em; font-weight: bold; color: #4CAF50;">${correctCount}/${total}</div>
+              <div style="font-size: 0.9em; color: #666;">Correct Words</div>
+            </div>
+            <div style="background: rgba(255, 209, 102, 0.1); padding: 15px; border-radius: 8px; text-align: center;">
+              <div style="font-size: 2em; font-weight: bold; color: #ffd166;">${state.maxStreak}</div>
+              <div style="font-size: 0.9em; color: #666;">Best Streak</div>
+            </div>
+            <div style="background: rgba(247, 37, 133, 0.1); padding: 15px; border-radius: 8px; text-align: center;">
+              <div style="font-size: 2em; font-weight: bold; color: #f72585;">${grade}</div>
+              <div style="font-size: 0.9em; color: #666;">Your Grade</div>
+            </div>
+          </div>
+      `;
+      
+      if (state.incorrect.length > 0) {
+        summaryHTML += `
+          <div style="margin: 20px 0;">
+            <h4 style="color: #f72585;">Words to Master (${state.incorrect.length})</h4>
+            <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 10px;">
+        `;
+        
+        state.incorrect.forEach(item => {
+          summaryHTML += `
+            <div style="background: rgba(247, 37, 133, 0.1); padding: 10px; border-radius: 5px;">
+              <strong style="color: #f72585;">${item.correctSpelling}</strong><br>
+              <small style="color: #666;">You said: "${item.spoken}"</small>
+            </div>
+          `;
+        });
+        
+        summaryHTML += `</div></div>`;
+      }
+      
+      summaryHTML += `
+        <div style="margin: 20px 0; padding: 15px; background: rgba(123, 47, 247, 0.1); border-radius: 8px;">
+          <h4 style="color: #7b2ff7;">Practice More</h4>
+          <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+      `;
+      
+      if (state.incorrect.length > 0) {
+        summaryHTML += `
+          <button onclick="practiceIncorrect()" class="btn-secondary" style="background: #f72585;">
+            <i class="fa fa-redo"></i> Practice Missed (${state.incorrect.length})
+          </button>
+        `;
+      }
+      
+      summaryHTML += `
+            <button onclick="restartSession()" class="btn-primary">
+              <i class="fa fa-play-circle"></i> New Competition
+            </button>
+          </div>
+        </div>
+      `;
+      
+      // Add bee premium upgrade prompt
+      summaryHTML += `
+        <div style="margin-top: 20px; padding: 15px; background: linear-gradient(135deg, #7b2ff7, #f72585); border-radius: 10px; color: white;">
+          <h4 style="margin: 0 0 10px 0;">🐝 Become a Spelling Bee Champion!</h4>
+          <p style="margin: 0 0 15px 0; font-size: 0.9em;">
+            Upgrade to Bee Premium for:<br>
+            • Unlimited competition words<br>
+            • Voice recognition feedback<br>
+            • Leaderboard access<br>
+            • Advanced difficulty levels<br>
+            • No ads during competitions
+          </p>
+          <button onclick="window.location.href='/premium.html'" 
+            style="background: white; color: #7b2ff7; border: none; padding: 8px 20px; border-radius: 5px; font-weight: bold; cursor: pointer;">
+            <i class="fa fa-crown"></i> Get Bee Premium
+          </button>
+        </div>
+      `;
+      
+      summaryHTML += `</div>`;
+      
+      if (elements.summaryArea) {
+        elements.summaryArea.innerHTML = summaryHTML;
+        elements.summaryArea.style.display = 'block';
+        elements.summaryArea.classList.remove('hidden');
+      }
+      
+      updateFeedback(`Competition complete! Your score: ${state.score} points`);
+      localStorage.removeItem('bee_progress');
+    }
+    
+    // Save progress to localStorage
+    function saveProgress() {
+      const progress = {
+        words: state.words,
+        currentIndex: state.currentIndex,
+        correct: state.correct,
+        incorrect: state.incorrect,
+        flags: Array.from(state.flags),
+        score: state.score,
+        streak: state.streak,
+        maxStreak: state.maxStreak,
+        timestamp: Date.now()
+      };
+      localStorage.setItem('bee_progress', JSON.stringify(progress));
+    }
+    
+    // Load progress from localStorage
+    function loadProgress() {
+      try {
+        const saved = localStorage.getItem('bee_progress');
+        if (!saved) return false;
+        
+        const progress = JSON.parse(saved);
+        const hoursOld = (Date.now() - progress.timestamp) / (1000 * 60 * 60);
+        
+        if (hoursOld > 24) {
+          localStorage.removeItem('bee_progress');
+          return false;
+        }
+        
+        state.words = progress.words || [];
+        state.currentIndex = progress.currentIndex || 0;
+        state.correct = progress.correct || [];
+        state.incorrect = progress.incorrect || [];
+        state.flags = new Set(progress.flags || []);
+        state.score = progress.score || 0;
+        state.streak = progress.streak || 0;
+        state.maxStreak = progress.maxStreak || 0;
+        
+        if (state.words.length > 0 && state.currentIndex < state.words.length) {
+          const resume = confirm(`You have an incomplete Spelling Bee.\nResume from word ${state.currentIndex + 1} of ${state.words.length}?`);
+          if (resume) {
+            state.isActive = true;
+            updateProgress();
+            speakCurrentWord();
+            updateFeedback(`Resumed from word ${state.currentIndex + 1}`);
+            return true;
+          }
+        }
+      } catch (error) {
+        console.error('Error loading progress:', error);
+      }
+      return false;
+    }
+    
+    // Practice only incorrect words
+    function practiceIncorrect() {
+      const incorrectWords = state.incorrect.map(item => item.correctSpelling);
+      if (incorrectWords.length === 0) {
+        updateFeedback('No missed words to practice', true);
+        return;
+      }
+      
+      state.words = [...new Set(incorrectWords)];
+      state.currentIndex = 0;
+      state.correct = [];
+      state.incorrect = [];
+      state.flags.clear();
+      state.isActive = true;
+      state.score = 0;
+      state.streak = 0;
+      state.maxStreak = 0;
+      
+      if (elements.summaryArea) {
+        elements.summaryArea.style.display = 'none';
+        elements.summaryArea.classList.add('hidden');
+      }
+      
+      updateProgress();
+      updateFeedback(`Practicing ${state.words.length} missed bee words`);
+      
+      setTimeout(() => {
+        speakCurrentWord();
+      }, 1000);
+    }
+    
+    // Restart session
+    function restartSession() {
+      if (elements.summaryArea) {
+        elements.summaryArea.style.display = 'none';
+        elements.summaryArea.classList.add('hidden');
+      }
+      
+      updateFeedback('Ready for new competition!');
+      updateProgress();
+      
+      localStorage.removeItem('bee_progress');
+    }
+    
+    // Toggle flag for current word
+    function toggleFlag() {
+      if (!state.isActive || state.currentIndex >= state.words.length) {
+        updateFeedback('No active word to flag', true);
+        return;
+      }
+      
+      const word = state.words[state.currentIndex];
+      if (state.flags.has(word)) {
+        state.flags.delete(word);
+        updateFeedback(`🚩 Removed flag from "${word}"`);
+      } else {
+        state.flags.add(word);
+        updateFeedback(`🚩 Flagged "${word}" for practice`);
+      }
+      
+      saveProgress();
+    }
+    
+    // Set up event listeners
+    function setupEventListeners() {
+      if (elements.start) elements.start.addEventListener('click', startSession);
+      if (elements.say) elements.say.addEventListener('click', speakCurrentWord);
+      if (elements.flag) elements.flag.addEventListener('click', toggleFlag);
+      if (elements.end) elements.end.addEventListener('click', endSession);
+      
+      if (elements.useCustom) {
+        elements.useCustom.addEventListener('click', () => {
+          const customText = elements.customBox ? elements.customBox.value.trim() : '';
+          if (!customText) {
+            updateFeedback('Please enter words in the custom box first', true);
+            return;
+          }
+          const words = customText.split(/[\n,]+/).map(w => w.trim()).filter(w => w);
+          state.words = words.slice(0, 40); // Bee freemium limit
+          updateFeedback(`Custom list loaded: ${Math.min(words.length, 40)} words (bee freemium limit)`);
+        });
+      }
+      
+      const fileInput = document.getElementById('fileInput');
+      if (fileInput) {
+        fileInput.addEventListener('change', (e) => {
+          const file = e.target.files[0];
+          if (file) {
+            document.getElementById('fileName').textContent = file.name;
+            const reader = new FileReader();
+            reader.onload = (e) => {
+              if (elements.customBox) {
+                elements.customBox.value = e.target.result;
+                updateFeedback(`File loaded: ${file.name}`);
+              }
+            };
+            reader.readAsText(file);
+          }
+        });
+      }
+    }
+    
+    // Initialize the app
+    function initialize() {
+      console.log('Initializing Spelling Bee...');
+      
+      setupEventListeners();
+      loadProgress();
+      
+      // Initialize dark mode toggle
+      const darkModeToggle = document.getElementById('toggleDark');
+      if (darkModeToggle) {
+        darkModeToggle.addEventListener('click', () => {
+          document.body.classList.toggle('dark-mode');
+          const icon = darkModeToggle.querySelector('i');
+          if (icon) {
+            icon.classList.toggle('fa-moon');
+            icon.classList.toggle('fa-sun');
+          }
+          localStorage.setItem('dark', document.body.classList.contains('dark-mode'));
+        });
+        
+        const savedDarkMode = localStorage.getItem('dark') === 'true';
+        if (savedDarkMode) {
+          document.body.classList.add('dark-mode');
+          const icon = darkModeToggle.querySelector('i');
+          if (icon) icon.className = 'fa fa-sun';
+        }
+      }
+      
+      // Expose functions globally
+      window.practiceIncorrect = practiceIncorrect;
+      window.restartSession = restartSession;
+      
+      // Initialize tier manager
+      if (window.tierManager) {
+        window.tierManager.init();
+      }
+      
+      // Show cookie banner after delay
+      setTimeout(() => {
+        showCookieBanner();
+      }, 1500);
+      
+      updateFeedback('Ready! Click "Start" to begin the Spelling Bee competition.');
+      console.log('✅ Spelling Bee initialized successfully');
+    }
+    
+    // Initialize when DOM is ready
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', initialize);
+    } else {
+      initialize();
+    }
+    
+  })();
+  </script>
   
   <!-- File input handler -->
   <script>
