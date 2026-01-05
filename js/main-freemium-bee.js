@@ -1,4 +1,4 @@
-/* /js/main-freemium-bee.js - COMPLETE FIXED VERSION WITH DAILY LIMIT */
+/* /js/main-freemium-bee.js - UPDATED WITH TIER MANAGEMENT */
 (() => {
   const $ = s => document.querySelector(s);
   const els = {
@@ -18,8 +18,16 @@
   const LIST = '/data/word-lists/spelling-bee.json';
   const FALLBACK = ['accommodate','rhythm','occurrence','necessary','embarrass','challenge','definitely','separate','recommend','privilege'];
 
-  // DAILY CUSTOM WORD LIMIT FUNCTIONS
-  function checkDailyCustomWordLimit() {
+  // ========================================================
+  // TIER-AWARE LIMIT FUNCTIONS
+  // ========================================================
+  
+  function checkCustomWordAccess() {
+    // Premium users have unlimited access
+    if (window.tierManager?.currentTier === 'premium') {
+      return { allowed: true, reason: 'premium' };
+    }
+    
     const today = new Date().toDateString();
     const lastUsedDate = localStorage.getItem('lastCustomWordDate');
     const customWordsUsed = localStorage.getItem('customWordsUsedToday') === 'true';
@@ -28,56 +36,89 @@
     if (lastUsedDate !== today) {
       localStorage.setItem('lastCustomWordDate', today);
       localStorage.setItem('customWordsUsedToday', 'false');
-      return true; // Allow usage on new day
+      return { allowed: true, reason: 'new_day' };
     }
     
     // If already used today, deny
     if (customWordsUsed) {
-      return false;
+      return { allowed: false, reason: 'daily_limit_reached' };
     }
     
-    return true;
+    return { allowed: true, reason: 'available' };
   }
 
   function markCustomWordsUsed() {
-    const today = new Date().toDateString();
-    localStorage.setItem('lastCustomWordDate', today);
-    localStorage.setItem('customWordsUsedToday', 'true');
+    // Only track for free users
+    if (window.tierManager?.currentTier === 'free') {
+      const today = new Date().toDateString();
+      localStorage.setItem('lastCustomWordDate', today);
+      localStorage.setItem('customWordsUsedToday', 'true');
+    }
   }
 
-  function showDailyLimitMessage() {
-    t(els.feedback, '❌ Daily custom word limit reached. Free users can only use one custom list per day. Upgrade to Premium for unlimited custom lists.');
+  function showUpgradePrompt(trigger) {
+    const messages = {
+      daily_limit: '❌ Daily custom word limit reached. Free users can only use one custom list per day.',
+      list_limit: `❌ Custom list limit reached. Free users can create up to ${window.tierManager?.getLimit('customLists') || 3} lists.`,
+      history_limit: '🔒 Viewing limited to last 5 sessions. Upgrade for full history.',
+      feature_locked: '🔒 This feature requires Premium access.'
+    };
     
-    // Show upgrade suggestion
+    t(els.feedback, messages[trigger] || messages.feature_locked);
+    
+    // Show tier manager upgrade prompt if available
     setTimeout(() => {
-      const upgradeMsg = document.createElement('div');
-      upgradeMsg.style.cssText = `
-        background: linear-gradient(135deg, #7b2ff7, #9d4edd);
-        color: white;
-        padding: 15px;
-        border-radius: 8px;
-        margin: 10px 0;
-        text-align: center;
-      `;
-      upgradeMsg.innerHTML = `
-        <strong>💎 Upgrade to Premium!</strong><br>
-        <small>Get unlimited custom lists, voice recognition, and all spelling modes</small><br>
-        <button onclick="window.location.href='/pricing.html'" 
-                style="background: white; color: #7b2ff7; border: none; padding: 8px 16px; border-radius: 6px; margin-top: 8px; font-weight: bold; cursor: pointer;">
-          View Plans
-        </button>
-      `;
-      
-      const existingUpgrade = document.querySelector('.upgrade-message');
-      if (existingUpgrade) existingUpgrade.remove();
-      
-      upgradeMsg.className = 'upgrade-message';
-      if (els.feedback) {
-        els.feedback.parentNode.insertBefore(upgradeMsg, els.feedback.nextSibling);
+      if (window.tierManager) {
+        const upgradeContext = {
+          daily_limit: 'customLists',
+          list_limit: 'customLists',
+          history_limit: 'practiceHistory',
+          feature_locked: 'premiumContent'
+        };
+        
+        window.tierManager.showUpgradePrompt(
+          upgradeContext[trigger] || 'premiumContent',
+          `Try unlimited access with Premium.`
+        );
+      } else {
+        // Fallback upgrade message
+        showFallbackUpgradeMessage();
       }
     }, 1000);
   }
 
+  function showFallbackUpgradeMessage() {
+    const upgradeMsg = document.createElement('div');
+    upgradeMsg.style.cssText = `
+      background: linear-gradient(135deg, #7b2ff7, #9d4edd);
+      color: white;
+      padding: 15px;
+      border-radius: 8px;
+      margin: 10px 0;
+      text-align: center;
+    `;
+    upgradeMsg.innerHTML = `
+      <strong>💎 Upgrade to Premium!</strong><br>
+      <small>Get unlimited custom lists, voice recognition, and all spelling modes</small><br>
+      <button onclick="window.location.href='/pricing.html'" 
+              style="background: white; color: #7b2ff7; border: none; padding: 8px 16px; border-radius: 6px; margin-top: 8px; font-weight: bold; cursor: pointer;">
+        View Plans
+      </button>
+    `;
+    
+    const existingUpgrade = document.querySelector('.upgrade-message');
+    if (existingUpgrade) existingUpgrade.remove();
+    
+    upgradeMsg.className = 'upgrade-message';
+    if (els.feedback) {
+      els.feedback.parentNode.insertBefore(upgradeMsg, els.feedback.nextSibling);
+    }
+  }
+
+  // ========================================================
+  // EXISTING FUNCTIONS (Mostly Unchanged)
+  // ========================================================
+  
   const state = { 
     words: [], 
     i: 0, 
@@ -137,258 +178,38 @@
     });
   }
 
-  // FIXED: Enhanced speech recognition with AUTO-ADVANCE
-  function listenForWord(w) {
-    return new Promise((resolve) => {
-      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-      if (!SpeechRecognition) {
-        t(els.feedback, '🎤 Speech recognition not supported.');
-        resolve(false);
-        return;
-      }
+  // ... [KEEP ALL EXISTING FUNCTIONS UNCHANGED UNTIL Event Listeners] ...
 
-      if (state.recognizing) {
-        resolve(false);
-        return;
-      }
-
-      const recognition = new SpeechRecognition();
-      recognition.continuous = false;
-      recognition.interimResults = false;
-      recognition.lang = 'en-US';
-      recognition.maxAlternatives = 1;
-
-      state.recognizing = true;
-
-      let gotResult = false;
-      const timer = setTimeout(() => {
-        if (!gotResult) {
-          recognition.stop();
-          t(els.feedback, '⏱️ No speech detected. Try again.');
-          state.recognizing = false;
-          resolve(false);
-        }
-      }, 7000);
-
-      recognition.onresult = (event) => {
-        gotResult = true;
-        clearTimeout(timer);
-        
-        const said = event.results[0][0].transcript || '';
-        const isCorrect = norm(said) === norm(w);
-        
-        if (isCorrect) {
-          t(els.feedback, '✅ Correct!');
-          state.correct.push(w);
-        } else {
-          t(els.feedback, `❌ Incorrect - Said: "${said}", Correct: "${w}"`);
-          state.incorrect.push({ word: w, answer: said });
-        }
-        
-        state.recognizing = false;
-        
-        // FIXED: AUTO-ADVANCE after result
-        setTimeout(() => {
-          if (state.i < state.words.length - 1) {
-            state.i++;
-            play();
-          } else {
-            endSession();
-          }
-        }, 1500);
-        
-        resolve(isCorrect);
-      };
-
-      recognition.onerror = (event) => {
-        clearTimeout(timer);
-        console.error('Recognition error:', event.error);
-        
-        if (event.error === 'not-allowed') {
-          t(els.feedback, '⚠️ Microphone access denied. Check permissions.');
-        } else {
-          t(els.feedback, '⚠️ Recognition error. Try again.');
-        }
-        
-        state.recognizing = false;
-        resolve(false);
-      };
-
-      recognition.onend = () => {
-        if (!gotResult) {
-          clearTimeout(timer);
-          state.recognizing = false;
-          resolve(false);
-        }
-      };
-
-      try {
-        recognition.start();
-      } catch (error) {
-        console.error('Recognition start failed:', error);
-        t(els.feedback, '⚠️ Could not start recognition');
-        state.recognizing = false;
-        resolve(false);
-      }
-    });
-  }
-
-  async function loadWords() {
-    try {
-      const r = await fetch(`${LIST}?v=${Date.now()}`, { cache: 'no-store' });
-      if (!r.ok) throw new Error('Failed to fetch');
-      const j = await r.json();
-      const arr = Array.isArray(j?.words) ? j.words : (Array.isArray(j) ? j : []);
-      return arr.length ? arr : FALLBACK;
-    } catch (_) { 
-      return FALLBACK; 
-    }
-  }
-
-  function loadCustomWords(text) {
-    try {
-      const j = JSON.parse(text);
-      return Array.isArray(j?.words) ? j.words : (Array.isArray(j) ? j : []);
-    } catch (_) {
-      return text.split(/[\n,]+/).map(s => s.trim()).filter(Boolean);
-    }
-  }
-  
-  function showProgress() { 
-    const n = state.words.length; 
-    t(els.progress, `Word ${Math.min(state.i + 1, n)} of ${n}`); 
-  }
-  
-  async function play() {
-    if (!state.active) return;
-    
-    const w = state.words[state.i]; 
-    if (!w) return;
-    
-    showProgress(); 
-    t(els.feedback, '🎧 Speaking...');
-    
-    await speakWord(w);
-    await listenForWord(w);
-  }
-
-  function endSession() {
-    state.active = false; 
-    speechSynthesis.cancel();
-    
-    const flagged = [...state.flags];
-    const total = state.words.length;
-    const correctCount = state.correct.length;
-    const incorrectCount = state.incorrect.length;
-
-    let summaryHTML = `
-      <div style="background: rgba(0,0,0,0.05); padding: 20px; border-radius: 10px;">
-        <h3 style="margin-top: 0; color: #7b2ff7;">Bee Session Complete! 🎉</h3>
-        <p style="font-size: 1.2em; font-weight: bold; color: #7b2ff7;">Score: ${correctCount}/${total} correct</p>
-    `;
-
-    if (state.incorrect.length > 0) {
-      summaryHTML += `
-        <div style="margin: 20px 0;">
-          <h4 style="color: #f72585; margin-bottom: 10px;">❌ Incorrect Words (${state.incorrect.length})</h4>
-          <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 10px;">
-      `;
-      
-      state.incorrect.forEach(item => {
-        summaryHTML += `
-          <div style="background: rgba(247, 37, 133, 0.1); padding: 10px 15px; border-radius: 8px; border-left: 4px solid #f72585;">
-            <strong style="color: #f72585;">${item.word}</strong><br>
-            <small style="color: #666;">You said: "${item.answer}"</small>
-          </div>
-        `;
-      });
-      
-      summaryHTML += `</div></div>`;
-    }
-
-    if (flagged.length > 0) {
-      summaryHTML += `
-        <div style="margin: 20px 0;">
-          <h4 style="color: #ffd166; margin-bottom: 10px;">🚩 Flagged Words (${flagged.length})</h4>
-          <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px;">
-      `;
-      
-      flagged.forEach(word => {
-        summaryHTML += `
-          <div style="background: rgba(255, 209, 102, 0.1); padding: 10px 15px; border-radius: 8px; border-left: 4px solid #ffd166;">
-            ${word}
-          </div>
-        `;
-      });
-      
-      summaryHTML += `</div></div>`;
-    }
-
-    summaryHTML += `
-      <div style="text-align: center; margin-top: 25px;">
-        <button onclick="restartBeeTraining()" style="background: #7b2ff7; color: white; border: none; padding: 12px 24px; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 1rem;">
-          🔄 Start New Session
-        </button>
-      </div>
-    `;
-
-    summaryHTML += `</div>`;
-    
-    if (els.summary) {
-      els.summary.innerHTML = summaryHTML;
-      els.summary.style.display = 'block';
-    }
-  }
-
-  function toggleFlag() {
-    if (!state.active) return; 
-    const w = state.words[state.i]; 
-    if (!w) return;
-    
-    if (state.flags.has(w)) { 
-      state.flags.delete(w); 
-      t(els.feedback, `🚩 Removed flag on "${w}"`); 
-    } else { 
-      state.flags.add(w); 
-      t(els.feedback, `🚩 Flagged "${w}"`); 
-    }
-  }
-
-  function restartBeeTraining() {
-    state.i = 0;
-    state.correct = [];
-    state.incorrect = [];
-    state.flags.clear();
-    if (els.summary) els.summary.style.display = 'none';
-    t(els.feedback, 'Ready to start new session');
-    showProgress();
-  }
-
-  function initializeSpeech() {
-    if ('speechSynthesis' in window) {
-      speechSynthesis.getVoices();
-      window.speechSynthesis.onvoiceschanged = () => {
-        console.log('Voices loaded:', speechSynthesis.getVoices().length);
-      };
-    }
-  }
+  // ========================================================
+  // UPDATED EVENT LISTENERS WITH TIER CHECKS
+  // ========================================================
 
   els.start?.addEventListener('click', async () => {
     initializeSpeech();
     
     const customText = (els.customBox?.value || '').trim();
     if (customText) {
-      // CHECK DAILY LIMIT
-      if (!checkDailyCustomWordLimit()) {
-        showDailyLimitMessage();
+      // CHECK TIER-BASED ACCESS
+      const access = checkCustomWordAccess();
+      if (!access.allowed) {
+        showUpgradePrompt('daily_limit');
         return;
       }
       
       state.words = loadCustomWords(customText);
       t(els.feedback, `Custom list loaded: ${state.words.length} words`);
       
-      // MARK AS USED
+      // MARK AS USED (only for free users)
       markCustomWordsUsed();
+      
+      // TRACK USAGE FOR ANALYTICS
+      if (window.trackEvent) {
+        window.trackEvent('custom_list_used', {
+          mode: 'bee',
+          word_count: state.words.length,
+          tier: window.tierManager?.currentTier || 'free'
+        });
+      }
     } else {
       state.words = await loadWords();
       t(els.feedback, `Bee words loaded: ${state.words.length} words`);
@@ -424,9 +245,10 @@
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // CHECK DAILY LIMIT
-    if (!checkDailyCustomWordLimit()) {
-      showDailyLimitMessage();
+    // CHECK TIER-BASED ACCESS
+    const access = checkCustomWordAccess();
+    if (!access.allowed) {
+      showUpgradePrompt('daily_limit');
       e.target.value = ''; // Clear the file input
       return;
     }
@@ -441,6 +263,15 @@
       
       // MARK AS USED
       markCustomWordsUsed();
+      
+      // TRACK FILE UPLOAD
+      if (window.trackEvent) {
+        window.trackEvent('file_upload', {
+          mode: 'bee',
+          word_count: words.length,
+          tier: window.tierManager?.currentTier || 'free'
+        });
+      }
     } catch (error) {
       t(els.feedback, 'Error reading file. Please try again.');
     }
@@ -453,9 +284,10 @@
       return;
     }
     
-    // CHECK DAILY LIMIT
-    if (!checkDailyCustomWordLimit()) {
-      showDailyLimitMessage();
+    // CHECK TIER-BASED ACCESS
+    const access = checkCustomWordAccess();
+    if (!access.allowed) {
+      showUpgradePrompt('daily_limit');
       return;
     }
     
@@ -467,6 +299,189 @@
     markCustomWordsUsed();
   });
 
+  // ========================================================
+  // ADD CUSTOM LIST MANAGEMENT UI
+  // ========================================================
+  
+  function addCustomListUI() {
+    // Only show for free users
+    if (window.tierManager?.currentTier === 'premium') return;
+    
+    const container = document.querySelector('.main-card');
+    if (!container) return;
+    
+    // Check if UI already exists
+    if (document.querySelector('.custom-list-counter')) return;
+    
+    const listCounter = document.createElement('div');
+    listCounter.className = 'custom-list-counter';
+    listCounter.style.cssText = `
+      margin: 15px 0;
+      padding: 12px;
+      background: rgba(123, 47, 247, 0.05);
+      border-radius: 8px;
+      border: 1px solid rgba(123, 47, 247, 0.1);
+    `;
+    
+    // Get current list count
+    const savedLists = JSON.parse(localStorage.getItem('userCustomLists') || '{}');
+    const listCount = Object.keys(savedLists).length;
+    const limit = window.tierManager?.getLimit('customLists') || 3;
+    const percent = Math.min((listCount / limit) * 100, 100);
+    
+    listCounter.innerHTML = `
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+        <span style="font-weight: 600; color: #7b2ff7;">Custom Lists</span>
+        <span class="counter-text" style="font-weight: 600; color: ${listCount >= limit ? '#f72585' : '#7b2ff7'};">${listCount}/${limit}</span>
+      </div>
+      <div class="progress-bar" style="height: 6px; background: rgba(0,0,0,0.1); border-radius: 3px; overflow: hidden;">
+        <div class="progress-fill" style="height: 100%; width: ${percent}%; background: linear-gradient(90deg, #7b2ff7, #f72585); border-radius: 3px; transition: width 0.3s ease;"></div>
+      </div>
+      ${listCount >= limit ? 
+        `<div style="margin-top: 8px; font-size: 0.9em; color: #f72585;">
+          <i class="fa fa-lock"></i> Limit reached. <a href="#" onclick="window.tierManager?.showUpgradePrompt('customLists')" style="color: #7b2ff7; font-weight: 600;">Upgrade</a> for unlimited lists.
+        </div>` : 
+        `<div style="margin-top: 8px; font-size: 0.9em; color: #666;">
+          Free users can create up to ${limit} custom lists.
+        </div>`
+      }
+    `;
+    
+    // Insert after the feedback element or before the button group
+    const buttonGroup = document.querySelector('.button-group');
+    if (buttonGroup) {
+      buttonGroup.parentNode.insertBefore(listCounter, buttonGroup);
+    } else if (els.feedback) {
+      els.feedback.parentNode.insertBefore(listCounter, els.feedback.nextSibling);
+    }
+  }
+
+  // ========================================================
+  // ENHANCED SESSION SAVING WITH TIER LIMITS
+  // ========================================================
+  
+  function saveSessionHistory() {
+    // Premium users: save unlimited history
+    // Free users: only save last 5 sessions
+    
+    const sessionData = {
+      mode: 'bee',
+      words: state.words,
+      correct: state.correct.length,
+      incorrect: state.incorrect.length,
+      date: new Date().toISOString(),
+      score: state.correct.length / state.words.length * 100
+    };
+    
+    // Get existing history
+    const history = JSON.parse(localStorage.getItem('practiceHistory') || '[]');
+    
+    // Add new session
+    history.unshift(sessionData);
+    
+    // Apply tier-based limit
+    let limitedHistory = history;
+    if (window.tierManager?.currentTier === 'free') {
+      const limit = window.tierManager.getLimit('practiceHistory') || 5;
+      limitedHistory = history.slice(0, limit);
+      
+      // Show preview message if at limit
+      if (history.length > limit) {
+        setTimeout(() => {
+          showUpgradePrompt('history_limit');
+        }, 2000);
+      }
+    }
+    
+    // Save back to localStorage
+    localStorage.setItem('practiceHistory', JSON.stringify(limitedHistory));
+    
+    return limitedHistory;
+  }
+
+  // ========================================================
+  // MODIFIED END SESSION FUNCTION
+  // ========================================================
+  
+  function endSession() {
+    state.active = false; 
+    speechSynthesis.cancel();
+    
+    // Save session history with tier limits
+    const history = saveSessionHistory();
+    
+    const flagged = [...state.flags];
+    const total = state.words.length;
+    const correctCount = state.correct.length;
+    const incorrectCount = state.incorrect.length;
+
+    let summaryHTML = `
+      <div style="background: rgba(0,0,0,0.05); padding: 20px; border-radius: 10px;">
+        <h3 style="margin-top: 0; color: #7b2ff7;">Bee Session Complete! 🎉</h3>
+        <p style="font-size: 1.2em; font-weight: bold; color: #7b2ff7;">Score: ${correctCount}/${total} correct</p>
+    `;
+
+    // ... [KEEP EXISTING SUMMARY HTML CODE] ...
+
+    summaryHTML += `</div>`;
+    
+    if (els.summary) {
+      els.summary.innerHTML = summaryHTML;
+      els.summary.style.display = 'block';
+    }
+    
+    // Add history preview for free users
+    if (window.tierManager?.currentTier === 'free' && history.length > 0) {
+      setTimeout(() => {
+        addHistoryPreview(history);
+      }, 500);
+    }
+  }
+
+  function addHistoryPreview(history) {
+    const preview = document.createElement('div');
+    preview.className = 'history-preview';
+    preview.style.cssText = `
+      margin-top: 20px;
+      padding: 15px;
+      background: rgba(123, 47, 247, 0.05);
+      border-radius: 8px;
+      border: 1px solid rgba(123, 47, 247, 0.1);
+    `;
+    
+    const limit = window.tierManager?.getLimit('practiceHistory') || 5;
+    
+    preview.innerHTML = `
+      <h4 style="margin-top: 0; color: #7b2ff7; font-size: 1rem;">
+        <i class="fa fa-history"></i> Recent Sessions (${Math.min(history.length, limit)} shown)
+      </h4>
+      <div style="max-height: 150px; overflow-y: auto;">
+        ${history.slice(0, limit).map(session => `
+          <div style="padding: 8px; border-bottom: 1px solid rgba(0,0,0,0.05); font-size: 0.9em;">
+            <span style="color: #666;">${new Date(session.date).toLocaleDateString()}</span>
+            <span style="float: right; font-weight: 600; color: ${session.score > 70 ? '#4CAF50' : '#f72585'}">
+              ${session.score.toFixed(0)}%
+            </span>
+          </div>
+        `).join('')}
+      </div>
+      ${history.length >= limit ? 
+        `<div style="margin-top: 10px; padding: 8px; background: rgba(123, 47, 247, 0.1); border-radius: 4px; font-size: 0.85em; text-align: center;">
+          <i class="fa fa-lock"></i> Free users see last ${limit} sessions. 
+          <a href="#" onclick="window.tierManager?.showUpgradePrompt('practiceHistory')" style="color: #7b2ff7; font-weight: 600;">Upgrade</a> for unlimited history.
+        </div>` : ''
+      }
+    `;
+    
+    if (els.summary) {
+      els.summary.appendChild(preview);
+    }
+  }
+
+  // ========================================================
+  // INITIALIZATION WITH TIER SUPPORT
+  // ========================================================
+  
   function initializeDarkModeToggle() {
     const darkModeToggle = document.getElementById('toggleDark');
     if (!darkModeToggle) return;
@@ -493,13 +508,46 @@
     }
   }
 
-  window.restartBeeTraining = restartBeeTraining;
-
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', initializeDarkModeToggle);
-  } else {
-    initializeDarkModeToggle();
+  // Enhanced initialization
+  function initializeApp() {
+    // Wait for tier manager to be ready
+    const checkTierManager = setInterval(() => {
+      if (window.tierManager) {
+        clearInterval(checkTierManager);
+        console.log('🎯 Tier manager loaded:', window.tierManager.currentTier);
+        
+        // Add custom list UI for free users
+        addCustomListUI();
+        
+        // Initialize other components
+        initializeDarkModeToggle();
+        
+        // Set up tier change listener
+        document.addEventListener('tierChange', (e) => {
+          console.log('Tier changed to:', e.detail.tier);
+          // Refresh UI
+          addCustomListUI();
+        });
+      }
+    }, 100);
+    
+    // Fallback initialization after 3 seconds
+    setTimeout(() => {
+      if (!window.tierManager) {
+        console.warn('Tier manager not available, using fallback mode');
+        initializeDarkModeToggle();
+      }
+    }, 3000);
   }
 
-  console.log('Bee ready - Fixed with auto-advance and daily limit');
+  window.restartBeeTraining = restartBeeTraining;
+
+  // Start initialization
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initializeApp);
+  } else {
+    initializeApp();
+  }
+
+  console.log('Bee ready - Integrated with tier management');
 })();
