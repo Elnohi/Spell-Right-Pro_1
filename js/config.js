@@ -202,10 +202,39 @@ window.stripeConfig = {
   publicKey: "pk_live_51RuKs1El99zwdEZr9wjVF3EhADOk4c9x8JjvjPLH8Y16cCPwykZRFVtC1Fr0hSJesStbqcvfvvNOy4NHRa0GPvg004IIcPfC8"
 };
 
-// AdSense Configuration
+// In config.js, update the adsenseConfig:
 window.adsenseConfig = {
-  enabled: false,
-  client: "ca-pub-7632930282249669"
+  enabled: true, // CHANGED FROM false TO true
+  client: "ca-pub-7632930282249669",
+  // Only show ads to free users
+  showAds: function() {
+    return window.tierManager?.currentTier === 'free';
+  }
+};
+
+// Add ad loading function
+window.loadAds = function() {
+  if (window.adsenseConfig.enabled && window.adsenseConfig.showAds()) {
+    console.log('Loading ads for free user...');
+    
+    // Load AdSense script if not already loaded
+    if (!document.querySelector('script[src*="adsbygoogle"]')) {
+      const script = document.createElement('script');
+      script.src = "https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js";
+      script.async = true;
+      script.crossOrigin = "anonymous";
+      document.head.appendChild(script);
+    }
+    
+    // Initialize ads
+    (adsbygoogle = window.adsbygoogle || []).push({});
+    
+    // Track ad view
+    window.trackEvent('ad_view', {
+      page: window.location.pathname,
+      tier: 'free'
+    });
+  }
 };
 
 // Initialize Firebase when DOM is ready
