@@ -899,6 +899,52 @@ const firebaseConfig = {
     });
   </script>
 
+  <script>
+  // Performance monitoring
+  window.addEventListener('load', function() {
+    // Measure page load time
+    const timing = window.performance.timing;
+    const loadTime = timing.loadEventEnd - timing.navigationStart;
+    
+    // Log to console
+    console.log(`Page loaded in ${loadTime}ms`);
+    
+    // Send to analytics if load time is slow
+    if (loadTime > 3000 && typeof gtag !== 'undefined') {
+      gtag('event', 'slow_load_time', {
+        load_time: loadTime,
+        page_path: window.location.pathname
+      });
+    }
+    
+    // Monitor premium feature usage
+    if (window.tierManager) {
+      console.log('Tier manager active:', window.tierManager);
+    }
+    
+    // Track page view
+    if (typeof gtag !== 'undefined') {
+      gtag('event', 'page_view', {
+        page_title: document.title,
+        page_path: window.location.pathname
+      });
+    }
+  });
+  
+  // Monitor errors
+  window.addEventListener('error', function(e) {
+    console.error('Page error:', e.error);
+    
+    // Send to error tracking service
+    if (typeof gtag !== 'undefined') {
+      gtag('event', 'exception', {
+        description: e.error.message,
+        fatal: false
+      });
+    }
+  });
+</script>
+
   <!-- Legal Footer -->
 <footer style="text-align: center; margin-top: 40px; padding: 20px; color: #666; border-top: 1px solid rgba(255,255,255,0.1);">
   <div style="display: flex; justify-content: center; gap: 30px; margin-bottom: 20px; flex-wrap: wrap;">
