@@ -1,258 +1,524 @@
-'use strict';
-
-require('dotenv').config();
 const express = require('express');
-const admin = require('firebase-admin');
-const Stripe = require('stripe');
+const cors = require('cors');
+const helmet = require('helmet');
+const morgan = require('morgan');
+const nodemailer = require('nodemailer');
+require('dotenv').config();
 
 const app = express();
-app.disable('x-powered-by');
+const PORT = process.env.PORT || 3001;
 
-/* ---------- CORS (strict, dynamic, with preflight) ---------- */
-const FRONTEND_URL = process.env.FRONTEND_URL || 'https://spellrightpro.org';
-if (!FRONTEND_URL) throw new Error('Missing env var FRONTEND_URL');
-
-const extraHosts = (process.env.EXTRA_FRONTEND_HOSTS || '')
-  .split(',')
-  .map(s => s.trim())
-  .filter(Boolean);
-
-const primaryHost = new URL(FRONTEND_URL).host;
-const allowedHosts = new Set([primaryHost, ...extraHosts]);
-
-function corsMiddleware(req, res, next) {
-  const origin = req.headers.origin;
-  if (origin) {
-    try {
-      const host = new URL(origin).host;
-      if (allowedHosts.has(host) || /\.netlify\.app$/i.test(host)) {
-        res.setHeader('Access-Control-Allow-Origin', origin);
-        res.setHeader('Vary', 'Origin');
-        res.setHeader('Access-Control-Allow-Credentials', 'true');
-        res.setHeader('Access-Control-Allow-Headers', 'Authorization, Content-Type, X-Requested-With');
-        res.setHeader('Access-Control-Allow-Methods', 'GET,POST,OPTIONS');
-      }
-    } catch {}
-  }
-  if (req.method === 'OPTIONS') {
-    res.status(204).end();
-    return;
-  }
-  next();
-}
-app.use(corsMiddleware);
-
-/* ---------- Env validation ---------- */
-const REQUIRED = [
-  'FRONTEND_URL',
-  'STRIPE_SECRET_KEY',
-  'STRIPE_MONTHLY_PRICE_ID',
-  'STRIPE_ANNUAL_PRICE_ID',
-  'STRIPE_WEBHOOK_SECRET',
-  'FIREBASE_SERVICE_ACCOUNT_JSON',
-];
-const missing = REQUIRED.filter(k => !process.env[k] || !String(process.env[k]).trim());
-if (missing.length) {
-  throw new Error(`Missing env vars: ${missing.join(', ')}`);
-}
-
-// Optional path overrides
-const SUCCESS_PATH = process.env.SUCCESS_PATH || '/premium.html?payment_success=true';
-const CANCEL_PATH  = process.env.CANCEL_PATH  || '/premium.html?payment_cancelled=true';
-
-/* ---------- Stripe & Firebase ---------- */
-const stripe = Stripe(process.env.STRIPE_SECRET_KEY, { apiVersion: '2023-10-16' });
-
-let serviceAccount;
-try {
-  const raw = process.env.FIREBASE_SERVICE_ACCOUNT_JSON || '';
-  const json = raw.trim().startsWith('{') ? raw : Buffer.from(raw, 'base64').toString('utf8');
-  serviceAccount = JSON.parse(json);
-} catch (e) {
-  console.error('Invalid FIREBASE_SERVICE_ACCOUNT_JSON:', e.message);
-  throw e;
-}
-admin.initializeApp({ credential: admin.credential.cert(serviceAccount) });
-const db = admin.firestore();
-
-/* ---------- Utilities ---------- */
-function slimPrice(p) {
-  return {
-    id: p.id,
-    currency: p.currency,
-    unit_amount: p.unit_amount,
-    recurring_interval: p.recurring?.interval || null,
-    product: p.product,
-    active: p.active,
-    nickname: p.nickname || null,
-  };
-}
-
-/* ---------- Health ---------- */
-app.get('/', (_req, res) => res.status(200).send('OK'));
-app.get('/health', (_req, res) => res.json({ ok: true }));
-
-/* ---------- Stripe webhook (raw body) ---------- */
-/**
- * IMPORTANT:
- * - This route must be registered BEFORE express.json()
- * - It verifies Stripe's signature using the raw request body
- * - It always returns 200 after verification to avoid endless retries
- *   (app logic errors are logged instead of surfacing as 500s)
- */
-app.post('/stripe-webhook', express.raw({ type: 'application/json' }), async (req, res) => {
-  const sig = req.headers['stripe-signature'];
-  const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET;
-
-  let event;
-  try {
-    event = stripe.webhooks.constructEvent(req.body, sig, endpointSecret);
-  } catch (err) {
-    console.error('[stripe-webhook] signature verification failed:', err.message);
-    return res.status(400).send(`Webhook Error: ${err.message}`);
-  }
-
-  try {
-    switch (event.type) {
-      case 'checkout.session.completed':
-        await handlePaymentSuccess(event.data.object);
-        break;
-
-      case 'invoice.paid':
-      case 'invoice.payment_succeeded':
-        await handleSubscriptionRenewal(event.data.object);
-        break;
-
-      case 'customer.subscription.updated':
-        await handleSubscriptionUpdated(event.data.object);
-        break;
-
-      case 'customer.subscription.deleted':
-        await handleSubscriptionCancelled(event.data.object);
-        break;
-
-      default:
-        console.log('[stripe-webhook] unhandled event:', event.type);
-        break;
-    }
-  } catch (err) {
-    // Never 500 back to Stripe; log and acknowledge so retries stop.
-    console.error('[stripe-webhook] handler error:', err);
-  }
-
-  // Acknowledge receipt no matter what to prevent retries
-  return res.status(200).json({ received: true });
-});
-
-/* ---------- JSON for other routes ---------- */
+// Security middleware
+app.use(helmet());
+app.use(cors());
+app.use(morgan('combined'));
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
-/* ---------- Auth (Firebase ID token) ---------- */
-async function authenticate(req, res, next) {
-  const authHeader = req.headers.authorization || '';
-  if (!authHeader.startsWith('Bearer ')) return res.status(401).json({ error: 'Unauthorized' });
-  try {
-    const idToken = authHeader.split(' ')[1];
-    req.user = await admin.auth().verifyIdToken(idToken);
-    next();
-  } catch {
-    return res.status(401).json({ error: 'Invalid token' });
-  }
+// Email transporter configuration
+let transporter;
+if (process.env.EMAIL_SERVICE === 'gmail') {
+  transporter = nodemailer.createTransport({
+    service: 'gmail',
+    auth: {
+      user: process.env.EMAIL_USER,
+      pass: process.env.EMAIL_PASS
+    }
+  });
+} else if (process.env.EMAIL_SERVICE === 'smtp') {
+  transporter = nodemailer.createTransport({
+    host: process.env.SMTP_HOST,
+    port: process.env.SMTP_PORT,
+    secure: process.env.SMTP_SECURE === 'true',
+    auth: {
+      user: process.env.SMTP_USER,
+      pass: process.env.SMTP_PASS
+    }
+  });
+} else {
+  // Fallback to ethereal email for testing
+  nodemailer.createTestAccount().then(testAccount => {
+    transporter = nodemailer.createTransport({
+      host: 'smtp.ethereal.email',
+      port: 587,
+      secure: false,
+      auth: {
+        user: testAccount.user,
+        pass: testAccount.pass
+      }
+    });
+    console.log('Using Ethereal email for testing:', testAccount.user);
+  });
 }
 
-/* ---------- Prices (public) ---------- */
-app.get('/prices', async (_req, res) => {
+// Premium Plan Configuration
+const PLANS = {
+  'school': {
+    name: 'School Premium',
+    price: 4.99,
+    features: [
+      'Unlimited school words',
+      'Save 50 custom lists',
+      'Basic progress tracking',
+      'School-focused words',
+      'Export to PDF',
+      'Email support'
+    ]
+  },
+  'complete': {
+    name: 'Complete Premium',
+    price: 8.99,
+    features: [
+      'All features from all modes',
+      'Unlimited custom word lists',
+      'Advanced progress analytics',
+      'All voice accents unlocked',
+      'Priority email & chat support',
+      'Export to PDF & Excel',
+      'Early access to new features'
+    ]
+  },
+  'family': {
+    name: 'Family Plan',
+    price: 14.99,
+    features: [
+      'Up to 5 users',
+      'All Complete Premium features',
+      'Separate progress tracking',
+      'Family dashboard',
+      'Group learning challenges',
+      'Dedicated account manager'
+    ]
+  }
+};
+
+// Generate email HTML template
+function generateEmailHTML(plan, userEmail, transactionId, amount) {
+  const planDetails = PLANS[plan] || PLANS.complete;
+  
+  return `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <style>
+    body {
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      line-height: 1.6;
+      color: #333;
+      max-width: 600px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    .header {
+      background: linear-gradient(135deg, #7b2ff7 0%, #f72585 100%);
+      color: white;
+      padding: 30px;
+      border-radius: 15px 15px 0 0;
+      text-align: center;
+    }
+    .content {
+      background: #f9f9f9;
+      padding: 30px;
+      border-radius: 0 0 15px 15px;
+    }
+    .badge {
+      display: inline-block;
+      background: #7b2ff7;
+      color: white;
+      padding: 5px 15px;
+      border-radius: 20px;
+      font-size: 0.9em;
+      font-weight: bold;
+      margin-bottom: 20px;
+    }
+    .receipt {
+      background: white;
+      border: 2px solid #7b2ff7;
+      border-radius: 10px;
+      padding: 20px;
+      margin: 20px 0;
+    }
+    .feature-list {
+      list-style: none;
+      padding: 0;
+    }
+    .feature-list li {
+      padding: 8px 0;
+      border-bottom: 1px solid #eee;
+      display: flex;
+      align-items: center;
+    }
+    .feature-list li:before {
+      content: "✓";
+      color: #4CAF50;
+      font-weight: bold;
+      margin-right: 10px;
+    }
+    .cta-button {
+      display: inline-block;
+      background: #7b2ff7;
+      color: white;
+      padding: 15px 30px;
+      text-decoration: none;
+      border-radius: 8px;
+      font-weight: bold;
+      margin: 20px 0;
+    }
+    .footer {
+      text-align: center;
+      font-size: 0.8em;
+      color: #666;
+      margin-top: 30px;
+      padding-top: 20px;
+      border-top: 1px solid #eee;
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1>🎉 Welcome to SpellRightPro Premium!</h1>
+    <p>Your spelling journey just got an upgrade</p>
+  </div>
+  
+  <div class="content">
+    <div class="badge">ACTIVE SUBSCRIPTION</div>
+    
+    <h2>Thank you for choosing ${planDetails.name}</h2>
+    
+    <div class="receipt">
+      <h3>📋 Order Confirmation</h3>
+      <p><strong>Transaction ID:</strong> ${transactionId}</p>
+      <p><strong>Plan:</strong> ${planDetails.name}</p>
+      <p><strong>Amount:</strong> $${amount.toFixed(2)}</p>
+      <p><strong>Date:</strong> ${new Date().toLocaleDateString()}</p>
+      <p><strong>Email:</strong> ${userEmail}</p>
+    </div>
+    
+    <h3>✨ Your Premium Features:</h3>
+    <ul class="feature-list">
+      ${planDetails.features.map(feature => `<li>${feature}</li>`).join('')}
+    </ul>
+    
+    <div style="text-align: center;">
+      <a href="${process.env.APP_URL || 'https://spellrightpro.org'}" class="cta-button">
+        Start Learning Now →
+      </a>
+    </div>
+    
+    <div style="background: #e8f4fd; padding: 15px; border-radius: 8px; margin: 20px 0;">
+      <h4>📞 Need Help?</h4>
+      <p>Our support team is ready to assist you:</p>
+      <ul style="list-style: none; padding: 0;">
+        <li>📧 Email: spellrightpro@gmail.com</li>
+        <li>🕒 Hours: 24/7 Premium Support</li>
+        <li>🔒 Secure: All communications encrypted</li>
+      </ul>
+    </div>
+    
+    <div class="footer">
+      <p>SpellRightPro Premium • Transforming Spelling Education</p>
+      <p>This is an automated message. Please do not reply to this email.</p>
+      <p>© ${new Date().getFullYear()} SpellRightPro. All rights reserved.</p>
+    </div>
+  </div>
+</body>
+</html>
+  `;
+}
+
+// API Routes
+
+// Health check
+app.get('/api/health', (req, res) => {
+  res.json({
+    status: 'healthy',
+    timestamp: new Date().toISOString(),
+    service: 'SpellRightPro Premium API',
+    version: '1.0.0'
+  });
+});
+
+// Get premium plans
+app.get('/api/plans', (req, res) => {
+  res.json({
+    success: true,
+    plans: PLANS
+  });
+});
+
+// Send confirmation email
+app.post('/api/send-confirmation', async (req, res) => {
   try {
-    const [m, a] = await Promise.all([
-      stripe.prices.retrieve(process.env.STRIPE_MONTHLY_PRICE_ID),
-      stripe.prices.retrieve(process.env.STRIPE_ANNUAL_PRICE_ID),
-    ]);
-    res.json({ monthly: slimPrice(m), annual: slimPrice(a) });
-  } catch (e) {
-    console.error('prices error:', e);
-    res.status(500).json({ error: 'prices_failed', message: e.message });
+    const { email, plan, amount, transactionId } = req.body;
+    
+    // Validate input
+    if (!email || !plan || !amount) {
+      return res.status(400).json({
+        success: false,
+        message: 'Missing required fields: email, plan, amount'
+      });
+    }
+    
+    if (!PLANS[plan]) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid plan selected'
+      });
+    }
+    
+    // Generate email content
+    const mailOptions = {
+      from: process.env.EMAIL_FROM || 'SpellRightPro <spellrightpro@gmail.com>',
+      to: email,
+      subject: `🎉 Welcome to SpellRightPro ${PLANS[plan].name}!`,
+      html: generateEmailHTML(plan, email, transactionId, amount),
+      text: `Welcome to SpellRightPro ${PLANS[plan].name}!\n\nThank you for your purchase of $${amount}.\n\nTransaction ID: ${transactionId}\n\nStart learning at: ${process.env.APP_URL || 'https://spellrightpro.org'}\n\nNeed help? Contact spellrightpro@gmail.com`
+    };
+    
+    // Send email
+    const info = await transporter.sendMail(mailOptions);
+    
+    console.log('Email sent:', info.messageId);
+    if (process.env.NODE_ENV !== 'production') {
+      console.log('Preview URL:', nodemailer.getTestMessageUrl(info));
+    }
+    
+    // Log the transaction (in production, save to database)
+    const transactionLog = {
+      transactionId,
+      email,
+      plan,
+      amount,
+      timestamp: new Date().toISOString(),
+      emailSent: true,
+      emailId: info.messageId
+    };
+    
+    console.log('Transaction logged:', transactionLog);
+    
+    res.json({
+      success: true,
+      message: 'Confirmation email sent successfully',
+      transactionId,
+      previewUrl: process.env.NODE_ENV !== 'production' ? nodemailer.getTestMessageUrl(info) : null
+    });
+    
+  } catch (error) {
+    console.error('Email sending error:', error);
+    
+    // Try to send a fallback email if primary fails
+    try {
+      const fallbackMailOptions = {
+        from: process.env.EMAIL_FROM || 'SpellRightPro <spellrightpro@gmail.com>',
+        to: req.body.email,
+        subject: 'Your SpellRightPro Purchase',
+        text: `Thank you for your SpellRightPro purchase. We're experiencing email issues but your transaction was successful. Transaction ID: ${req.body.transactionId}`
+      };
+      
+      await transporter.sendMail(fallbackMailOptions);
+      console.log('Fallback email sent');
+      
+    } catch (fallbackError) {
+      console.error('Fallback email also failed:', fallbackError);
+    }
+    
+    res.status(500).json({
+      success: false,
+      message: 'Failed to send confirmation email',
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
   }
 });
 
-/* ---------- Validate promo (public) ---------- */
-async function validatePromoHandler(req, res) {
+// Mock payment processing endpoint
+app.post('/api/process-payment', async (req, res) => {
   try {
-    const code = (req.query.code || '').trim().toUpperCase();
-    if (!code || code.length > 20) {
+    const { plan, paymentMethod, email } = req.body;
+    
+    if (!PLANS[plan]) {
       return res.status(400).json({
-        valid: false,
-        reason: 'invalid_format',
-        message: 'Please enter a valid promo code'
+        success: false,
+        message: 'Invalid plan selected'
       });
     }
-
-    const list = await stripe.promotionCodes.list({
-      code,
-      active: true,
-      limit: 1,
-      expand: ['data.coupon'],
-    });
-
-    if (!list.data.length) {
-      const inactiveList = await stripe.promotionCodes.list({
-        code,
-        active: false,
-        limit: 1,
-      });
-
-      if (inactiveList.data.length) {
-        return res.json({
-          valid: false,
-          reason: 'code_inactive',
-          message: 'This promo code is no longer active'
-        });
+    
+    // Generate transaction ID
+    const transactionId = 'SPRP_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+    const amount = PLANS[plan].price;
+    
+    // In production, integrate with Stripe/PayPal here
+    // For now, simulate successful payment
+    const paymentResult = {
+      success: true,
+      transactionId,
+      amount,
+      plan: PLANS[plan].name,
+      timestamp: new Date().toISOString(),
+      message: 'Payment processed successfully'
+    };
+    
+    // Send confirmation email
+    if (email) {
+      try {
+        const mailOptions = {
+          from: process.env.EMAIL_FROM || 'SpellRightPro <spellrightpro@gmail.com>',
+          to: email,
+          subject: `🎉 Welcome to SpellRightPro ${PLANS[plan].name}!`,
+          html: generateEmailHTML(plan, email, transactionId, amount)
+        };
+        
+        await transporter.sendMail(mailOptions);
+        console.log('Payment confirmation email sent to:', email);
+        
+      } catch (emailError) {
+        console.error('Failed to send payment email:', emailError);
       }
-      return res.json({
-        valid: false,
-        reason: 'not_found',
-        message: 'Promo code not found'
-      });
     }
-
-    const promo = list.data[0];
-    const coupon = promo.coupon;
-
-    if (coupon?.redeem_by && coupon.redeem_by < Math.floor(Date.now() / 1000)) {
-      return res.json({
-        valid: false,
-        reason: 'expired',
-        message: 'This promo code has expired'
-      });
-    }
-
-    if (promo.max_redemptions && promo.times_redeemed >= promo.max_redemptions) {
-      return res.json({
-        valid: false,
-        reason: 'maxed_out',
-        message: 'This promo code has reached its maximum redemptions'
-      });
-    }
-
-    if (coupon && coupon.valid === false) {
-      return res.json({
-        valid: false,
-        reason: 'coupon_invalid',
-        message: 'This promo code is no longer valid'
-      });
-    }
-
-    return res.json({
-      valid: true,
-      promotion_code_id: promo.id,
-      coupon_id: coupon?.id ?? null,
-      percent_off: coupon?.percent_off ?? null,
-      amount_off: coupon?.amount_off ?? null,
-      currency: coupon?.currency ?? null,
-      message: 'Promo code applied successfully'
-    });
-  } catch (e) {
-    console.error('validate-promo error:', e.type || 'Unknown', e.code || 'No code', e.message);
+    
+    res.json(paymentResult);
+    
+  } catch (error) {
+    console.error('Payment processing error:', error);
     res.status(500).json({
-      valid: false,
-      reason: 'server_error',
-      message: 'Error validating promo code'
+      success: false,
+      message: 'Payment processing failed',
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
+  }
+});
+
+// Webhook for payment notifications (for Stripe/PayPal)
+app.post('/api/webhooks/payment', express.raw({type: 'application/json'}), (req, res) => {
+  const signature = req.headers['stripe-signature'];
+  
+  // Verify webhook signature in production
+  console.log('Payment webhook received:', req.body);
+  
+  // Process webhook event
+  res.json({ received: true });
+});
+
+// Customer support contact form
+app.post('/api/contact-support', async (req, res) => {
+  try {
+    const { name, email, subject, message, plan } = req.body;
+    
+    if (!email || !message) {
+      return res.status(400).json({
+        success: false,
+        message: 'Email and message are required'
+      });
+    }
+    
+    const supportMailOptions = {
+      from: process.env.EMAIL_FROM || 'SpellRightPro <spellrightpro@gmail.com>',
+      to: process.env.SUPPORT_EMAIL || 'spellrightpro@gmail.com',
+      subject: `Support Request: ${subject || 'No subject'}`,
+      html: `
+        <h2>New Support Request</h2>
+        <p><strong>From:</strong> ${name || 'Anonymous'} (${email})</p>
+        <p><strong>Plan:</strong> ${plan || 'Not specified'}</p>
+        <p><strong>Message:</strong></p>
+        <p>${message}</p>
+      `,
+      replyTo: email
+    };
+    
+    await transporter.sendMail(supportMailOptions);
+    
+    // Send auto-reply to customer
+    const autoReplyOptions = {
+      from: process.env.EMAIL_FROM || 'SpellRightPro <spellrightpro@gmail.com>',
+      to: email,
+      subject: 'We Received Your Support Request',
+      html: `
+        <h2>Thank You for Contacting SpellRightPro Support</h2>
+        <p>We've received your message and our team will get back to you within 24 hours.</p>
+        <p><strong>Your Reference:</strong> SRP_${Date.now()}</p>
+        <p>If this is urgent, please email us directly at spellrightpro@gmail.com</p>
+      `
+    };
+    
+    await transporter.sendMail(autoReplyOptions);
+    
+    res.json({
+      success: true,
+      message: 'Support request submitted successfully'
+    });
+    
+  } catch (error) {
+    console.error('Support request error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to submit support request'
+    });
+  }
+});
+
+// Analytics endpoint (for tracking conversions)
+app.post('/api/track-conversion', (req, res) => {
+  const { event, data } = req.body;
+  
+  console.log('Conversion tracked:', {
+    event,
+    data,
+    timestamp: new Date().toISOString(),
+    ip: req.ip,
+    userAgent: req.get('User-Agent')
+  });
+  
+  // In production, save to database or analytics service
+  res.json({
+    success: true,
+    tracked: true
+  });
+});
+
+// Serve static files (if your frontend is in the same project)
+app.use(express.static('public'));
+
+// Catch-all route for SPA
+app.get('*', (req, res) => {
+  if (req.url.startsWith('/api/')) {
+    return res.status(404).json({
+      success: false,
+      message: 'API endpoint not found'
+    });
+  }
+  res.sendFile('index.html', { root: 'public' });
+});
+
+// Error handling middleware
+app.use((err, req, res, next) => {
+  console.error('Server error:', err);
+  res.status(500).json({
+    success: false,
+    message: 'Internal server error',
+    error: process.env.NODE_ENV === 'development' ? err.message : undefined
+  });
+});
+
+// Start server
+app.listen(PORT, () => {
+  console.log(`
+╔══════════════════════════════════════════════════════╗
+║     SpellRightPro Premium Backend Server            ║
+║                                                      ║
+║     🚀 Server running on port ${PORT}               ║
+║     📧 Email service: ${process.env.EMAIL_SERVICE || 'Ethereal (test)'}
+║     🌐 Environment: ${process.env.NODE_ENV || 'development'}
+║     ⏰ Started: ${new Date().toLocaleString()}       ║
+║                                                      ║
+║     Endpoints:                                      ║
+║     • Health: GET /api/health                       ║
+║     • Plans: GET /api/plans                         ║
+║     • Email: POST /api/send-confirmation            ║
+║     • Payment: POST /api/process-payment            ║
+║     • Support: POST /api/contact-support            ║
+║     • Track: POST /api/track-conversion             ║
+╚══════════════════════════════════════════════════════╝
+  `);
+});
+
+module.exports = app;
