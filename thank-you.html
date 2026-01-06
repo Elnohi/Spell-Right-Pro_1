@@ -86,6 +86,7 @@
     <div style="background: rgba(255,255,255,0.1); padding: 20px; border-radius: 10px; margin: 30px 0;">
       <p><i class="fa fa-envelope"></i> Check your email for confirmation and receipt</p>
       <p><i class="fa fa-rocket"></i> Your premium features are now active</p>
+      <p><i class="fa fa-shield-alt"></i> Payment processed securely</p>
     </div>
     
     <div class="features">
@@ -117,17 +118,35 @@
     </div>
     
     <p style="font-size: 0.9em; opacity: 0.8;">
-      Need help? Contact <a href="mailto:support@spellrightpro.com" style="color: white;">support@spellrightpro.com</a>
+      Need help? Contact <a href="mailto:support@spellrightpro.com" style="color: white;">spellrightpro@gmail.com</a>
     </p>
   </div>
   
   <script>
+    // Get plan from URL
+    const urlParams = new URLSearchParams(window.location.search);
+    const plan = urlParams.get('plan') || 'Premium';
+    
+    // Update welcome message
+    document.querySelector('h1').innerHTML = `Welcome to ${plan}! 🎉`;
+    
     // Track conversion
     setTimeout(() => {
+      if (typeof gtag !== 'undefined') {
+        gtag('event', 'conversion', {
+          send_to: 'AW-CONVERSION_ID',
+          value: 1.0,
+          currency: 'USD',
+          transaction_id: ''
+        });
+      }
+      
       if (window.initFirebase) {
         window.initFirebase();
         if (typeof firebase !== 'undefined' && firebase.analytics) {
-          firebase.analytics().logEvent('premium_purchase');
+          firebase.analytics().logEvent('premium_activated', {
+            plan: plan
+          });
         }
       }
     }, 1000);
