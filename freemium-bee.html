@@ -12,6 +12,35 @@
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-analytics.js"></script>
+
+    <!-- Google Analytics -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-H09MF13297"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-H09MF13297');
+    
+    // Function to track premium clicks
+    function trackPremiumClick(source, plan) {
+      gtag('event', 'premium_click', {
+        event_category: 'premium_conversion',
+        event_label: source,
+        value: plan === 'complete' ? 8.99 : plan === 'school' ? 4.99 : 14.99
+      });
+    }
+    
+    // Function to track plan view
+    function trackPlanView(plan) {
+      gtag('event', 'view_item', {
+        items: [{
+          item_id: plan,
+          item_name: 'SpellRightPro ' + plan,
+          item_category: 'premium_plans'
+        }]
+      });
+    }
+  </script>
 </head>
 
 <body data-mode="bee">
