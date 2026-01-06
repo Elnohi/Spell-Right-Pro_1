@@ -904,3 +904,107 @@ body.dark-mode .real-time-marking-toggle {
     width: 200px;
   }
 }
+
+/* Premium Feature Badges */
+.premium-badge {
+  background: linear-gradient(135deg, #7b2ff7, #f107a3);
+  color: white;
+  padding: 3px 10px;
+  border-radius: 12px;
+  font-size: 0.7rem;
+  font-weight: bold;
+  margin-left: 8px;
+  vertical-align: middle;
+}
+
+.premium-feature {
+  position: relative;
+  animation: slideUp 0.5s ease;
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Spinner animation for sync */
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Progress Dashboard Animations */
+.stat-card {
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.stat-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+}
+
+/* Mistake Review Animations */
+.mistake-review-section .word-item {
+  transition: all 0.3s ease;
+}
+
+.mistake-review-section .word-item:hover {
+  transform: translateX(5px);
+  background: rgba(244, 67, 54, 0.2);
+}
+
+/* Adaptive Drill Animations */
+.pack-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 10px 20px rgba(0,0,0,0.15);
+}
+
+/* Dark mode adjustments for new features */
+body.dark-mode .progress-dashboard {
+  background: rgba(255,255,255,0.05);
+}
+
+body.dark-mode .stat-card {
+  background: rgba(255,255,255,0.08);
+}
+
+body.dark-mode .mistake-review-section {
+  background: rgba(244, 67, 54, 0.08);
+  border-color: rgba(244, 67, 54, 0.2);
+}
+
+body.dark-mode .adaptive-drill-section {
+  background: rgba(33, 150, 243, 0.08);
+  border-color: rgba(33, 150, 243, 0.2);
+}
+
+body.dark-mode .premium-content-packs {
+  background: rgba(255, 193, 7, 0.08);
+  border-color: rgba(255, 193, 7, 0.2);
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .stats-grid {
+    grid-template-columns: 1fr !important;
+  }
+  
+  .packs-grid {
+    grid-template-columns: 1fr !important;
+  }
+  
+  .mistake-stats {
+    flex-direction: column;
+    gap: 10px !important;
+  }
+  
+  .mistake-stats > div {
+    width: 100%;
+  }
+}
