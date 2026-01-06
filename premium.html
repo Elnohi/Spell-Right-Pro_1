@@ -1,294 +1,623 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>SpellRightPro — Premium</title>
-
-  <!-- Styles -->
-  <link rel="stylesheet" href="/css/premium.css" />
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" />
-
-  <!-- Firebase SDKs - CORRECT ORDER -->
-  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-analytics.js"></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SpellRightPro Premium Plans</title>
+  <link rel="stylesheet" href="/css/styles.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+  
+  <style>
+    :root {
+      --primary: #7b2ff7;
+      --secondary: #f72585;
+      --accent: #ffd166;
+      --dark-bg: #0f0f23;
+      --card-bg: rgba(255, 255, 255, 0.05);
+    }
+    
+    body {
+      background: var(--dark-bg);
+      color: white;
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      line-height: 1.6;
+    }
+    
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    
+    .hero {
+      text-align: center;
+      padding: 60px 20px;
+      background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+      border-radius: 20px;
+      margin-bottom: 40px;
+    }
+    
+    .hero h1 {
+      font-size: 3.5em;
+      margin-bottom: 20px;
+    }
+    
+    .plans-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 30px;
+      margin: 40px 0;
+    }
+    
+    .plan-card {
+      background: var(--card-bg);
+      border-radius: 20px;
+      padding: 40px 30px;
+      border: 2px solid rgba(255, 255, 255, 0.1);
+      transition: all 0.3s ease;
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .plan-card:hover {
+      transform: translateY(-10px);
+      border-color: var(--primary);
+      box-shadow: 0 20px 40px rgba(123, 47, 247, 0.2);
+    }
+    
+    .plan-card.popular {
+      border-color: var(--accent);
+      transform: scale(1.05);
+    }
+    
+    .plan-card.popular::before {
+      content: 'MOST POPULAR';
+      position: absolute;
+      top: 20px;
+      right: -40px;
+      background: var(--accent);
+      color: #333;
+      padding: 8px 40px;
+      transform: rotate(45deg);
+      font-weight: bold;
+      font-size: 0.8em;
+    }
+    
+    .plan-header {
+      text-align: center;
+      margin-bottom: 30px;
+    }
+    
+    .plan-price {
+      font-size: 3.5em;
+      font-weight: bold;
+      margin: 20px 0;
+    }
+    
+    .plan-price span {
+      font-size: 0.4em;
+      opacity: 0.8;
+    }
+    
+    .plan-features {
+      list-style: none;
+      padding: 0;
+      margin: 30px 0;
+    }
+    
+    .plan-features li {
+      padding: 12px 0;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    
+    .plan-features li i {
+      color: var(--primary);
+    }
+    
+    .btn-choose {
+      display: block;
+      width: 100%;
+      padding: 18px;
+      background: var(--primary);
+      color: white;
+      border: none;
+      border-radius: 12px;
+      font-size: 1.1em;
+      font-weight: bold;
+      cursor: pointer;
+      transition: all 0.3s;
+      text-align: center;
+      text-decoration: none;
+    }
+    
+    .btn-choose:hover {
+      background: var(--secondary);
+      transform: translateY(-3px);
+    }
+    
+    .testimonials {
+      margin: 80px 0;
+    }
+    
+    .testimonial-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 30px;
+      margin-top: 40px;
+    }
+    
+    .testimonial-card {
+      background: var(--card-bg);
+      padding: 30px;
+      border-radius: 15px;
+      border-left: 4px solid var(--primary);
+    }
+    
+    .faq-section {
+      margin: 80px 0;
+    }
+    
+    .faq-item {
+      background: var(--card-bg);
+      margin: 15px 0;
+      border-radius: 10px;
+      overflow: hidden;
+    }
+    
+    .faq-question {
+      padding: 20px;
+      cursor: pointer;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-weight: bold;
+    }
+    
+    .faq-answer {
+      padding: 0 20px;
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height 0.3s ease;
+    }
+    
+    .faq-answer.open {
+      padding: 0 20px 20px;
+      max-height: 500px;
+    }
+    
+    .trust-badges {
+      display: flex;
+      justify-content: center;
+      gap: 40px;
+      margin: 40px 0;
+      flex-wrap: wrap;
+    }
+    
+    .trust-badge {
+      text-align: center;
+      padding: 20px;
+    }
+    
+    .trust-badge i {
+      font-size: 2.5em;
+      color: var(--primary);
+      margin-bottom: 10px;
+    }
+    
+    @media (max-width: 768px) {
+      .plans-grid {
+        grid-template-columns: 1fr;
+      }
+      
+      .plan-card.popular {
+        transform: none;
+      }
+      
+      .hero h1 {
+        font-size: 2.5em;
+      }
+    }
+  </style>
 </head>
-
 <body>
-  <!-- Header -->
-  <header>
-    <div class="brand">
-      <img src="/assets/logo.png" alt="SpellRightPro Logo" />
-      <div>
-        <span>SpellRightPro</span><br />
-        <small>Premium</small>
-      </div>
-    </div>
+  <div class="container">
+    <!-- Navigation -->
+    <nav style="display: flex; justify-content: space-between; align-items: center; padding: 20px 0; margin-bottom: 40px;">
+      <a href="/index.html" style="display: flex; align-items: center; gap: 10px; color: white; text-decoration: none; font-size: 1.2em; font-weight: bold;">
+        <i class="fa fa-crown" style="color: var(--accent);"></i>
+        SpellRightPro
+      </a>
+      <a href="/index.html" style="color: white; text-decoration: none;">
+        <i class="fa fa-arrow-left"></i> Back to Home
+      </a>
+    </nav>
 
-    <div class="nav-right">
-      <button class="nav-btn" id="btnHome" onclick="window.location.href='/'"><i class="fa fa-home"></i> Home</button>
-      <button class="nav-btn" id="toggleDark"><i class="fa fa-moon"></i></button>
-      <button class="nav-btn" id="btnLogout"><i class="fa fa-sign-out-alt"></i> Logout</button>
-    </div>
-  </header>
-
-  <!-- Main Dashboard -->
-  <main style="display:none;">
-    <h2>Premium Dashboard</h2>
-    <p><strong>New:</strong> Load your own word lists! Use the Custom Words section below.</p>
-
-    <!-- Mode Buttons -->
-    <div class="mode-select">
-      <button class="mode-btn" data-mode="bee"><i class="fa fa-microphone"></i> Bee</button>
-      <button class="mode-btn" data-mode="school"><i class="fa fa-pen"></i> School</button>
-      <button class="mode-btn" data-mode="oet"><i class="fa fa-stethoscope"></i> OET</button>
-    </div>
-
-    <!-- Bee Section -->
-    <section id="bee-area" class="trainer-area">
-      <h3>Spelling Bee Trainer</h3>
-      
-      <div class="accent-select">
-        <label for="beeAccent">Accent:</label>
-        <select id="beeAccent">
-          <option value="en-US">American</option>
-          <option value="en-GB">British</option>
-          <option value="en-AU">Australian</option>
-          <option value="en-CA">Canadian</option>
-        </select>
-      </div>
-
-      <div id="beeProgress" class="progress-display"></div>
-      <div id="beeFeedback" class="feedback-display"></div>
-      
-      <!-- Voice Recognition Status -->
-      <div id="beeVoiceStatus" class="voice-status" style="display: none;">
-        <i class="fa fa-microphone"></i> <span id="beeVoiceText">Listening...</span>
-        <div class="voice-visualizer">
-          <div class="voice-bar"></div>
-          <div class="voice-bar"></div>
-          <div class="voice-bar"></div>
-          <div class="voice-bar"></div>
-          <div class="voice-bar"></div>
+    <!-- Hero Section -->
+    <section class="hero">
+      <h1>Master Spelling with Premium</h1>
+      <p style="font-size: 1.2em; max-width: 600px; margin: 0 auto 30px;">
+        Join thousands of learners who transformed their spelling skills
+      </p>
+      <div style="display: flex; gap: 20px; justify-content: center; flex-wrap: wrap;">
+        <div style="text-align: center;">
+          <div style="font-size: 2em; font-weight: bold;">10,000+</div>
+          <div>Active Learners</div>
+        </div>
+        <div style="text-align: center;">
+          <div style="font-size: 2em; font-weight: bold;">4.9★</div>
+          <div>User Rating</div>
+        </div>
+        <div style="text-align: center;">
+          <div style="font-size: 2em; font-weight: bold;">98%</div>
+          <div>Success Rate</div>
         </div>
       </div>
-
-      <!-- Recognized Text Display -->
-      <div id="beeRecognizedText" class="recognized-text" style="display: none;">
-        <strong>You said:</strong> <span id="beeSpokenText"></span>
-      </div>
-      
-      <div class="button-group">
-        <button class="start-btn" data-mode="bee" id="beeStart"><i class="fa fa-play"></i> Start</button>
-        <button id="beeSayAgain"><i class="fa fa-volume-up"></i> Say Again</button>
-        <button id="beeListen"><i class="fa fa-microphone"></i> Listen & Spell</button>
-        <button id="beeFlag"><i class="fa fa-flag"></i> Flag</button>
-        <button id="beeEnd"><i class="fa fa-stop"></i> End</button>
-      </div>
-      <div id="beeSummary" class="summary"></div>
-    </section>
-    
-    <!-- School Section -->
-    <section id="school-area" class="trainer-area">
-      <h3>School Practice</h3>
-      
-      <div class="accent-select">
-        <label for="schoolAccent">Accent:</label>
-        <select id="schoolAccent">
-          <option value="en-US">American</option>
-          <option value="en-GB">British</option>
-          <option value="en-AU">Australian</option>
-          <option value="en-CA">Canadian</option>
-        </select>
-      </div>
-
-      <div id="schoolProgress" class="progress-display"></div>
-      <div id="schoolFeedback" class="feedback-display"></div>
-      
-      <input type="text" id="schoolInput" placeholder="Type the word..." class="answer-input" />
-      
-      <div class="button-group">
-        <button class="start-btn" data-mode="school" id="schoolStart"><i class="fa fa-play"></i> Start</button>
-        <button id="schoolSubmit"><i class="fa fa-check"></i> Submit</button>
-        <button id="schoolSayAgain"><i class="fa fa-volume-up"></i> Say Again</button>
-        <button id="schoolFlag"><i class="fa fa-flag"></i> Flag</button>
-        <button id="schoolEnd"><i class="fa fa-stop"></i> End</button>
-      </div>
-      <div id="schoolSummary" class="summary"></div>
     </section>
 
-    <!-- OET Section -->
-    <section id="oet-area" class="trainer-area">
-      <h3>OET Medical English</h3>
-
-      <!-- Practice vs Test Mode -->
-      <div class="exam-type">
-        <label><input type="radio" name="examType" value="practice" checked /> Practice (Full List)</label>
-        <label><input type="radio" name="examType" value="test" /> Test (Random 24)</label>
-      </div>
-
-      <div class="accent-select">
-        <label for="oetAccent">Accent:</label>
-        <select id="oetAccent">
-          <option value="en-US">American</option>
-          <option value="en-GB">British</option>
-          <option value="en-AU">Australian</option>
-          <option value="en-CA">Canadian</option>
-        </select>
-      </div>
-
-      <div id="oetProgress" class="progress-display"></div>
-      <div id="oetFeedback" class="feedback-display"></div>
+    <!-- Pricing Plans -->
+    <section class="pricing">
+      <h2 style="text-align: center; font-size: 2.5em; margin-bottom: 20px;">Choose Your Plan</h2>
+      <p style="text-align: center; max-width: 600px; margin: 0 auto 40px; opacity: 0.8;">
+        All plans include our 14-day money-back guarantee. Cancel anytime.
+      </p>
       
-      <input type="text" id="oetInput" placeholder="Type your answer..." class="answer-input" />
-      
-      <div class="button-group">
-        <button class="start-btn" data-mode="oet" id="oetStart"><i class="fa fa-play"></i> Start</button>
-        <button id="oetSubmit"><i class="fa fa-check"></i> Submit</button>
-        <button id="oetSayAgain"><i class="fa fa-volume-up"></i> Say Again</button>
-        <button id="oetFlag"><i class="fa fa-flag"></i> Flag</button>
-        <button id="oetEnd"><i class="fa fa-stop"></i> End</button>
+      <div class="plans-grid">
+        <!-- Basic Plan -->
+        <div class="plan-card">
+          <div class="plan-header">
+            <h3 style="margin: 0; font-size: 1.5em;">School Premium</h3>
+            <p style="opacity: 0.8;">Perfect for students</p>
+          </div>
+          
+          <div class="plan-price">
+            $4.99<span>/month</span>
+          </div>
+          
+          <ul class="plan-features">
+            <li><i class="fa fa-check"></i> Unlimited school words</li>
+            <li><i class="fa fa-check"></i> Save 50 custom lists</li>
+            <li><i class="fa fa-check"></i> Basic progress tracking</li>
+            <li><i class="fa fa-check"></i> School-focused words</li>
+            <li><i class="fa fa-check"></i> Export to PDF</li>
+            <li><i class="fa fa-check"></i> Email support</li>
+          </ul>
+          
+          <a href="#checkout" class="btn-choose" data-plan="school">
+            Choose School Premium
+          </a>
+        </div>
+
+        <!-- Popular Plan -->
+        <div class="plan-card popular">
+          <div class="plan-header">
+            <h3 style="margin: 0; font-size: 1.5em;">Complete Premium</h3>
+            <p style="opacity: 0.8;">Most Popular Choice</p>
+          </div>
+          
+          <div class="plan-price">
+            $8.99<span>/month</span>
+            <div style="font-size: 0.5em; opacity: 0.8;">Save 40% with annual billing</div>
+          </div>
+          
+          <ul class="plan-features">
+            <li><i class="fa fa-check"></i> <strong>All features from all modes</strong></li>
+            <li><i class="fa fa-check"></i> Unlimited custom word lists</li>
+            <li><i class="fa fa-check"></i> Advanced progress analytics</li>
+            <li><i class="fa fa-check"></i> All voice accents unlocked</li>
+            <li><i class="fa fa-check"></i> Priority email & chat support</li>
+            <li><i class="fa fa-check"></i> Export to PDF & Excel</li>
+            <li><i class="fa fa-check"></i> Early access to new features</li>
+          </ul>
+          
+          <a href="#checkout" class="btn-choose" data-plan="complete" style="background: var(--accent); color: #333;">
+            <i class="fa fa-bolt"></i> Choose Complete Premium
+          </a>
+        </div>
+
+        <!-- Family Plan -->
+        <div class="plan-card">
+          <div class="plan-header">
+            <h3 style="margin: 0; font-size: 1.5em;">Family Plan</h3>
+            <p style="opacity: 0.8;">For households & small groups</p>
+          </div>
+          
+          <div class="plan-price">
+            $14.99<span>/month</span>
+          </div>
+          
+          <ul class="plan-features">
+            <li><i class="fa fa-check"></i> <strong>Up to 5 users</strong></li>
+            <li><i class="fa fa-check"></i> All Complete Premium features</li>
+            <li><i class="fa fa-check"></i> Separate progress tracking</li>
+            <li><i class="fa fa-check"></i> Family dashboard</li>
+            <li><i class="fa fa-check"></i> Group learning challenges</li>
+            <li><i class="fa fa-check"></i> Dedicated account manager</li>
+          </ul>
+          
+          <a href="#checkout" class="btn-choose" data-plan="family">
+            Choose Family Plan
+          </a>
+        </div>
       </div>
-      <div id="oetSummary" class="summary"></div>
+      
+      <div style="text-align: center; margin-top: 40px;">
+        <p style="opacity: 0.8;">
+          <i class="fa fa-shield-alt"></i> Secure payment • 14-day money-back guarantee • Cancel anytime
+        </p>
+      </div>
     </section>
-  </main>
 
-  <!-- Login Overlay -->
-  <div class="glass-overlay" id="loginOverlay">
-    <div class="glass-card">
-      <h3>Login to SpellRightPro</h3>
-      
-      <!-- Quick Test Button -->
-      <button onclick="quickTest()" style="width: 100%; padding: 12px; margin: 10px 0; background: #6c757d; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 600;">
-        <i class="fa fa-bolt"></i> Quick Test (Skip Login)
-      </button>
-      
-      <div style="text-align: center; margin: 15px 0; color: rgba(255,255,255,0.7);">or</div>
-      
-      <!-- Login Form -->
-      <form id="loginForm">
-        <input type="email" id="loginEmail" placeholder="Email" required 
-               style="width: 100%; padding: 12px; margin: 8px 0; border-radius: 8px; border: 1px solid #ccc; font-size: 16px;">
-        <input type="password" id="loginPassword" placeholder="Password" required 
-               style="width: 100%; padding: 12px; margin: 8px 0; border-radius: 8px; border: 1px solid #ccc; font-size: 16px;">
-        <button type="submit" style="width: 100%; padding: 12px; margin: 10px 0; border-radius: 8px; background: var(--primary); color: white; border: none; cursor: pointer; font-weight: 600;">
-          <i class="fa fa-sign-in-alt"></i> Login
-        </button>
-      </form>
-
-      <!-- Register Form -->
-      <form id="registerForm" style="display: none;">
-        <input type="email" id="regEmail" placeholder="Email" required 
-               style="width: 100%; padding: 12px; margin: 8px 0; border-radius: 8px; border: 1px solid #ccc; font-size: 16px;">
-        <input type="password" id="regPassword" placeholder="Password" required 
-               style="width: 100%; padding: 12px; margin: 8px 0; border-radius: 8px; border: 1px solid #ccc; font-size: 16px;">
-        <input type="password" id="regConfirmPassword" placeholder="Confirm Password" required 
-               style="width: 100%; padding: 12px; margin: 8px 0; border-radius: 8px; border: 1px solid #ccc; font-size: 16px;">
-        <button type="submit" style="width: 100%; padding: 12px; margin: 10px 0; border-radius: 8px; background: var(--primary); color: white; border: none; cursor: pointer; font-weight: 600;">
-          <i class="fa fa-user-plus"></i> Register
-        </button>
-      </form>
-
-      <div style="margin-top: 15px; text-align: center;">
-        <button id="showRegister" style="background: none; border: none; color: #7b2ff7; cursor: pointer; text-decoration: underline; font-size: 14px;">
-          Create new account
-        </button>
-        <button id="showLogin" style="display: none; background: none; border: none; color: #7b2ff7; cursor: pointer; text-decoration: underline; font-size: 14px;">
-          Back to login
-        </button>
+    <!-- Trust Badges -->
+    <section class="trust-badges">
+      <div class="trust-badge">
+        <i class="fa fa-lock"></i>
+        <div>256-bit SSL</div>
+        <div style="font-size: 0.9em; opacity: 0.8;">Secure Payment</div>
       </div>
-
-      <!-- Upgrade Section -->
-      <div style="text-align: center; margin-top: 20px; padding: 15px; background: rgba(123, 47, 247, 0.1); border-radius: 8px;">
-        <p style="margin: 0 0 10px 0; font-size: 0.9rem;">Don't have premium access?</p>
-        <button onclick="window.location.href='/pricing.html'" 
-                style="background: #7b2ff7; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-weight: 600;">
-          <i class="fa fa-crown"></i> Upgrade to Premium
-        </button>
+      <div class="trust-badge">
+        <i class="fa fa-shield-alt"></i>
+        <div>14-Day Refund</div>
+        <div style="font-size: 0.9em; opacity: 0.8;">Risk-Free Trial</div>
       </div>
+      <div class="trust-badge">
+        <i class="fa fa-headset"></i>
+        <div>24/7 Support</div>
+        <div style="font-size: 0.9em; opacity: 0.8;">Always Available</div>
+      </div>
+      <div class="trust-badge">
+        <i class="fa fa-globe"></i>
+        <div>Global</div>
+        <div style="font-size: 0.9em; opacity: 0.8;">Used Worldwide</div>
+      </div>
+    </section>
 
-      <p style="margin-top:15px;font-size:0.9rem; text-align: center; color: rgba(255,255,255,0.8);">Premium access required to continue.</p>
-    </div>
+    <!-- Checkout Section -->
+    <section id="checkout" style="margin: 80px 0; display: none;">
+      <div style="max-width: 500px; margin: 0 auto; background: var(--card-bg); padding: 40px; border-radius: 20px;">
+        <h2 style="text-align: center; margin-bottom: 30px;">Complete Your Purchase</h2>
+        
+        <form id="checkoutForm">
+          <div style="margin-bottom: 20px;">
+            <label style="display: block; margin-bottom: 8px;">Selected Plan:</label>
+            <div id="selectedPlan" style="padding: 15px; background: rgba(123, 47, 247, 0.1); border-radius: 10px; font-weight: bold;">
+              <!-- Plan will be inserted here -->
+            </div>
+          </div>
+          
+          <div style="margin-bottom: 20px;">
+            <label style="display: block; margin-bottom: 8px;">Email Address</label>
+            <input type="email" required 
+                   style="width: 100%; padding: 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.2); background: rgba(255,255,255,0.05); color: white;">
+          </div>
+          
+          <div style="margin-bottom: 20px;">
+            <label style="display: block; margin-bottom: 8px;">Payment Method</label>
+            <div style="display: flex; gap: 10px; margin-bottom: 15px;">
+              <button type="button" class="payment-method active" data-method="card" 
+                      style="flex: 1; padding: 12px; border: 2px solid var(--primary); background: rgba(123, 47, 247, 0.1); border-radius: 8px; color: white; cursor: pointer;">
+                <i class="fa fa-credit-card"></i> Card
+              </button>
+              <button type="button" class="payment-method" data-method="paypal"
+                      style="flex: 1; padding: 12px; border: 2px solid rgba(255,255,255,0.2); background: rgba(255,255,255,0.05); border-radius: 8px; color: white; cursor: pointer;">
+                <i class="fa fa-paypal"></i> PayPal
+              </button>
+            </div>
+            
+            <div id="cardFields">
+              <input type="text" placeholder="Card Number" style="width: 100%; padding: 12px; margin-bottom: 10px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.2); background: rgba(255,255,255,0.05); color: white;">
+              <div style="display: flex; gap: 10px;">
+                <input type="text" placeholder="MM/YY" style="flex: 1; padding: 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.2); background: rgba(255,255,255,0.05); color: white;">
+                <input type="text" placeholder="CVC" style="flex: 1; padding: 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.2); background: rgba(255,255,255,0.05); color: white;">
+              </div>
+            </div>
+          </div>
+          
+          <div style="margin-bottom: 30px;">
+            <label style="display: flex; align-items: center; gap: 10px; cursor: pointer;">
+              <input type="checkbox" required style="width: 18px; height: 18px;">
+              <span>I agree to the <a href="/terms.html" style="color: var(--primary);">Terms of Service</a> and <a href="/privacy.html" style="color: var(--primary);">Privacy Policy</a></span>
+            </label>
+          </div>
+          
+          <button type="submit" 
+                  style="width: 100%; padding: 16px; background: var(--primary); color: white; border: none; border-radius: 12px; font-size: 1.1em; font-weight: bold; cursor: pointer;">
+            <i class="fa fa-lock"></i> Complete Purchase
+          </button>
+          
+          <p style="text-align: center; margin-top: 20px; font-size: 0.9em; opacity: 0.8;">
+            <i class="fa fa-lock"></i> Secure 256-bit SSL encryption
+          </p>
+        </form>
+      </div>
+    </section>
+
+    <!-- Testimonials -->
+    <section class="testimonials">
+      <h2 style="text-align: center; font-size: 2.5em; margin-bottom: 20px;">What Our Learners Say</h2>
+      
+      <div class="testimonial-grid">
+        <div class="testimonial-card">
+          <div style="font-size: 1.2em; margin-bottom: 15px;">"Transformed my teaching!"</div>
+          <p>"As a teacher, the School Premium has been invaluable. My students' spelling improved by 40% in just 2 months."</p>
+          <div style="display: flex; align-items: center; gap: 10px; margin-top: 20px;">
+            <div style="width: 40px; height: 40px; background: var(--primary); border-radius: 50%;"></div>
+            <div>
+              <div style="font-weight: bold;">Sarah M.</div>
+              <div style="font-size: 0.9em; opacity: 0.8;">8th Grade Teacher</div>
+            </div>
+          </div>
+        </div>
+        
+        <div class="testimonial-card">
+          <div style="font-size: 1.2em; margin-bottom: 15px;">"Worth every penny!"</div>
+          <p>"The OET preparation with Premium helped me pass my medical English exam. The accent training was especially helpful."</p>
+          <div style="display: flex; align-items: center; gap: 10px; margin-top: 20px;">
+            <div style="width: 40px; height: 40px; background: var(--secondary); border-radius: 50%;"></div>
+            <div>
+              <div style="font-weight: bold;">Dr. James K.</div>
+              <div style="font-size: 0.9em; opacity: 0.8;">Medical Resident</div>
+            </div>
+          </div>
+        </div>
+        
+        <div class="testimonial-card">
+          <div style="font-size: 1.2em; margin-bottom: 15px;">"Family learning made easy"</div>
+          <p>"With 3 kids at different grade levels, the Family Plan lets us all learn together. The group challenges are fantastic!"</p>
+          <div style="display: flex; align-items: center; gap: 10px; margin-top: 20px;">
+            <div style="width: 40px; height: 40px; background: var(--accent); border-radius: 50%; color: #333; display: flex; align-items: center; justify-content: center;">
+              <i class="fa fa-users"></i>
+            </div>
+            <div>
+              <div style="font-weight: bold;">The Rodriguez Family</div>
+              <div style="font-size: 0.9em; opacity: 0.8;">Family Plan Users</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- FAQ -->
+    <section class="faq-section">
+      <h2 style="text-align: center; font-size: 2.5em; margin-bottom: 40px;">Frequently Asked Questions</h2>
+      
+      <div class="faq-item">
+        <div class="faq-question" onclick="toggleFAQ(this)">
+          Can I cancel my subscription anytime?
+          <i class="fa fa-chevron-down"></i>
+        </div>
+        <div class="faq-answer">
+          Yes! You can cancel your subscription at any time. Your premium features will remain active until the end of your billing period.
+        </div>
+      </div>
+      
+      <div class="faq-item">
+        <div class="faq-question" onclick="toggleFAQ(this)">
+          Is there a free trial?
+          <i class="fa fa-chevron-down"></i>
+        </div>
+        <div class="faq-answer">
+          We offer a 14-day money-back guarantee. Try Premium risk-free, and if you're not satisfied, we'll give you a full refund.
+        </div>
+      </div>
+      
+      <div class="faq-item">
+        <div class="faq-question" onclick="toggleFAQ(this)">
+          Can I switch between plans?
+          <i class="fa fa-chevron-down"></i>
+        </div>
+        <div class="faq-answer">
+          Absolutely! You can upgrade or downgrade your plan at any time. Changes take effect at the start of your next billing cycle.
+        </div>
+      </div>
+      
+      <div class="faq-item">
+        <div class="faq-question" onclick="toggleFAQ(this)">
+          Do you offer educational discounts?
+          <i class="fa fa-chevron-down"></i>
+        </div>
+        <div class="faq-answer">
+          Yes! We offer special pricing for schools and educational institutions. Contact our sales team at edu@spellrightpro.com for more information.
+        </div>
+      </div>
+      
+      <div class="faq-item">
+        <div class="faq-question" onclick="toggleFAQ(this)">
+          What payment methods do you accept?
+          <i class="fa fa-chevron-down"></i>
+        </div>
+        <div class="faq-answer">
+          We accept all major credit cards (Visa, MasterCard, American Express) and PayPal. All payments are processed securely with 256-bit SSL encryption.
+        </div>
+      </div>
+    </section>
+
+    <!-- Final CTA -->
+    <section style="text-align: center; margin: 80px 0; padding: 60px; background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%); border-radius: 20px;">
+      <h2 style="font-size: 2.5em; margin-bottom: 20px;">Ready to Transform Your Spelling Skills?</h2>
+      <p style="font-size: 1.2em; margin-bottom: 40px; max-width: 600px; margin-left: auto; margin-right: auto;">
+        Join 10,000+ successful learners today. Risk-free with our 14-day money-back guarantee.
+      </p>
+      <a href="#pricing" class="btn-choose" style="background: white; color: var(--primary); max-width: 300px; margin: 0 auto;">
+        <i class="fa fa-crown"></i> Choose Your Plan Now
+      </a>
+    </section>
   </div>
 
-  <!-- COOKIE CONSENT BANNER -->
-  <div id="cookieConsentBanner" style="display: none; position: fixed; bottom: 0; left: 0; right: 0; background: #333; color: white; padding: 15px; text-align: center; z-index: 1000;">
-    <p>We use cookies to provide our services and for analytics and ads. 
-       <a href="/privacy.html" style="color: #7b2ff7;">Learn more</a>
-    </p>
-    <button onclick="acceptCookies()" style="background: #7b2ff7; color: white; border: none; padding: 8px 15px; margin: 0 5px; border-radius: 5px; cursor: pointer;">
-        Accept
-    </button>
-    <button onclick="declineCookies()" style="background: #666; color: white; border: none; padding: 8px 15px; margin: 0 5px; border-radius: 5px; cursor: pointer;">
-        Decline
-    </button>
-  </div>
-
-  <!-- YOUR CONFIG & SCRIPTS -->
-  <script src="/js/config.js"></script>
-  <script src="/js/firebase-utils.js"></script>
-  <script src="/js/main-premium.js"></script>
-
-  <!-- COOKIE CONSENT SCRIPT -->
   <script>
-  // Enhanced Cookie Consent with Analytics
-  function showCookieBanner() {
-      const consent = localStorage.getItem('cookieConsent');
-      // Show banner if no consent decision has been made
-      if (consent === null) {
-          document.getElementById('cookieConsentBanner').style.display = 'block';
-      } else if (consent === 'true') {
-          // If consent was given, initialize analytics
-          initializeAnalytics();
-      }
-  }
+    // Smooth scroll to pricing
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+      anchor.addEventListener('click', function (e) {
+        e.preventDefault();
+        const target = document.querySelector(this.getAttribute('href'));
+        if (target) {
+          target.scrollIntoView({ behavior: 'smooth' });
+        }
+      });
+    });
 
-  function acceptCookies() {
-      localStorage.setItem('cookieConsent', 'true');
-      document.getElementById('cookieConsentBanner').style.display = 'none';
+    // Plan selection
+    document.querySelectorAll('.btn-choose').forEach(button => {
+      button.addEventListener('click', function(e) {
+        e.preventDefault();
+        const plan = this.getAttribute('data-plan');
+        const planNames = {
+          'school': 'School Premium - $4.99/month',
+          'complete': 'Complete Premium - $8.99/month',
+          'family': 'Family Plan - $14.99/month'
+        };
+        
+        document.getElementById('selectedPlan').textContent = planNames[plan];
+        document.getElementById('checkout').style.display = 'block';
+        document.getElementById('checkout').scrollIntoView({ behavior: 'smooth' });
+      });
+    });
+
+    // Payment method toggle
+    document.querySelectorAll('.payment-method').forEach(button => {
+      button.addEventListener('click', function() {
+        document.querySelectorAll('.payment-method').forEach(b => {
+          b.style.borderColor = 'rgba(255,255,255,0.2)';
+          b.style.background = 'rgba(255,255,255,0.05)';
+        });
+        
+        this.style.borderColor = 'var(--primary)';
+        this.style.background = 'rgba(123, 47, 247, 0.1)';
+        
+        const method = this.getAttribute('data-method');
+        const cardFields = document.getElementById('cardFields');
+        if (method === 'paypal') {
+          cardFields.style.display = 'none';
+        } else {
+          cardFields.style.display = 'block';
+        }
+      });
+    });
+
+    // FAQ toggle
+    function toggleFAQ(element) {
+      const answer = element.nextElementSibling;
+      const icon = element.querySelector('i');
       
-      // Initialize analytics immediately
-      initializeAnalytics();
+      answer.classList.toggle('open');
+      icon.classList.toggle('fa-chevron-down');
+      icon.classList.toggle('fa-chevron-up');
+    }
+
+    // Form submission
+    document.getElementById('checkoutForm').addEventListener('submit', function(e) {
+      e.preventDefault();
       
-      // Show feedback but don't reload
-      console.log('✅ Cookies accepted - Analytics enabled');
-  }
-
-  function declineCookies() {
-      localStorage.setItem('cookieConsent', 'false');
-      document.getElementById('cookieConsentBanner').style.display = 'none';
-      console.log('🔕 Cookies declined - Analytics disabled');
-  }
-
-  function initializeAnalytics() {
-      // Reinitialize Firebase with analytics
-      if (typeof window.initFirebase === 'function') {
-          setTimeout(() => {
-              window.initFirebase();
-          }, 500);
-      }
-  }
-
-  // Show banner immediately
-  setTimeout(showCookieBanner, 500);
+      // In a real app, you would process payment here
+      alert('Thank you! Your premium subscription is being activated. Check your email for confirmation.');
+      
+      // Redirect to thank you page
+      setTimeout(() => {
+        window.location.href = '/thank-you.html';
+      }, 2000);
+    });
   </script>
-
-<!-- Legal Footer -->
-<footer style="text-align: center; margin-top: 40px; padding: 20px; color: rgba(255,255,255,0.7);">
-    <p>
-        <a href="/privacy.html" style="color: #fff; text-decoration: none;">Privacy Policy</a> 
-        • 
-        <a href="/terms.html" style="color: #fff; text-decoration: none;">Terms of Service</a>
-        • 
-        <a href="/refund-policy.html" style="color: #fff; text-decoration: none;">Refund Policy</a>
-        • 
-        <a href="/contact.html" style="color: #fff; text-decoration: none;">Contact</a>
-        • 
-        <a href="/pricing.html" style="color: #fff; text-decoration: none;">Pricing</a>
-    </p>
-    <p style="margin-top: 10px; font-size: 0.9em;">&copy; 2026 SpellRightPro. All rights reserved.</p>
-</footer>
 </body>
 </html>
