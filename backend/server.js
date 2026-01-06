@@ -8,6 +8,15 @@ require('dotenv').config();
 const app = express();
 const PORT = process.env.PORT || 3001;
 
+// Email transporter
+const transporter = nodemailer.createTransport({
+    service: 'gmail',
+    auth: {
+        user: process.env.EMAIL_USER,
+        pass: process.env.EMAIL_PASS
+    }
+});
+
 // Security middleware
 app.use(helmet());
 app.use(cors());
@@ -497,6 +506,54 @@ app.use((err, req, res, next) => {
     message: 'Internal server error',
     error: process.env.NODE_ENV === 'development' ? err.message : undefined
   });
+});
+
+// Email confirmation endpoint
+app.post('/api/send-confirmation', async (req, res) => {
+    try {
+        const { email, plan, amount } = req.body;
+        
+        if (!email || !plan) {
+            return res.status(400).json({
+                success: false,
+                message: 'Email and plan are required'
+            });
+        }
+        
+        const mailOptions = {
+            from: 'SpellRightPro <support@spellrightpro.com>',
+            to: email,
+            subject: `🎉 Welcome to SpellRightPro ${plan}!`,
+            html: `
+                <div style="font-family: Arial, sans-serif; padding: 20px;">
+                    <h1 style="color: #7b2ff7;">Welcome to SpellRightPro Premium!</h1>
+                    <p>Thank you for purchasing <strong>${plan}</strong>.</p>
+                    <p><strong>Amount:</strong> $${amount}</p>
+                    <p>Your account has been upgraded to premium.</p>
+                    <p>Start learning at: <a href="http://localhost:3000">http://localhost:3000</a></p>
+                    <p>Need help? Email support@spellrightpro.com</p>
+                </div>
+            `,
+            text: `Welcome to SpellRightPro ${plan}! Thank you for your purchase of $${amount}. Start learning at http://localhost:3000`
+        };
+        
+        await transporter.sendMail(mailOptions);
+        
+        console.log(`Confirmation email sent to ${email} for ${plan}`);
+        
+        res.json({
+            success: true,
+            message: 'Confirmation email sent successfully'
+        });
+        
+    } catch (error) {
+        console.error('Email error:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to send confirmation email',
+            error: error.message
+        });
+    }
 });
 
 // Start server
