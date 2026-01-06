@@ -273,10 +273,36 @@ function initializePremiumFeatures() {
     window.adManager.removeAds();
   }
   
+  // Initialize speech
   initializeSpeechSynthesis();
+  
+  // Initialize core features
   createCustomWordsUI();
   initializeCustomWords();
   initializeRealTimeValidation();
+  
+  // ===== NEW: INITIALIZE PREMIUM PILLARS =====
+  
+  // 1. Progress Dashboard
+  if (typeof ProgressDashboard !== 'undefined') {
+    window.progressDashboard = new ProgressDashboard();
+    console.log('✅ Progress Dashboard initialized');
+  }
+  
+  // 2. Mistake Review
+  if (typeof MistakeReview !== 'undefined') {
+    window.mistakeReview = new MistakeReview();
+    console.log('✅ Mistake Review initialized');
+  }
+  
+  // 3. Adaptive Drill
+  if (typeof AdaptiveDrill !== 'undefined') {
+    window.adaptiveDrill = new AdaptiveDrill();
+    console.log('✅ Adaptive Drill initialized');
+  }
+  
+  // 4. Premium Content Packs
+  loadPremiumContentPacks();
   
   // Set user as premium
   if (window.tierManager) {
@@ -287,6 +313,219 @@ function initializePremiumFeatures() {
     });
   }
 }
+
+// Add new function for premium content
+function loadPremiumContentPacks() {
+  const premiumContentHTML = `
+    <div class="premium-content-packs" style="
+      background: rgba(255, 193, 7, 0.1);
+      border: 2px solid rgba(255, 193, 7, 0.3);
+      border-radius: var(--radius);
+      padding: 25px;
+      margin: 25px 0;
+    ">
+      <h3><i class="fa fa-star"></i> Premium Content Packs <span class="premium-badge">NEW</span></h3>
+      <p style="opacity: 0.9; margin-bottom: 20px;">
+        Expert-curated word lists for specific goals and challenges.
+      </p>
+      
+      <div class="packs-grid" style="
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 20px;
+        margin-top: 20px;
+      ">
+        <!-- OET Medicine Pack -->
+        <div class="pack-card" style="
+          background: rgba(255,255,255,0.05);
+          border-radius: 10px;
+          padding: 20px;
+          border: 1px solid rgba(255,255,255,0.1);
+          transition: transform 0.3s ease;
+          cursor: pointer;
+        " onclick="loadPremiumPack('oet_medicine')">
+          <div style="
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            width: 50px;
+            height: 50px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 15px;
+            color: white;
+            font-size: 1.5rem;
+          ">
+            <i class="fa fa-stethoscope"></i>
+          </div>
+          <h4 style="margin-bottom: 10px;">OET Medicine: Specialist Terms</h4>
+          <p style="font-size: 0.9rem; opacity: 0.8; margin-bottom: 15px;">
+            200+ challenging medical terms from various specialties. Avoid fatal errors in documentation.
+          </p>
+          <div style="
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.9rem;
+          ">
+            <span>250 words</span>
+            <span style="
+              background: #7b2ff7;
+              color: white;
+              padding: 2px 8px;
+              border-radius: 12px;
+              font-size: 0.8rem;
+            ">PREMIUM</span>
+          </div>
+        </div>
+        
+        <!-- Spelling Champion Pack -->
+        <div class="pack-card" style="
+          background: rgba(255,255,255,0.05);
+          border-radius: 10px;
+          padding: 20px;
+          border: 1px solid rgba(255,255,255,0.1);
+          transition: transform 0.3s ease;
+          cursor: pointer;
+        " onclick="loadPremiumPack('spelling_champion')">
+          <div style="
+            background: linear-gradient(135deg, #ff6b6b, #ffa726);
+            width: 50px;
+            height: 50px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 15px;
+            color: white;
+            font-size: 1.5rem;
+          ">
+            <i class="fa fa-trophy"></i>
+          </div>
+          <h4 style="margin-bottom: 10px;">Spelling Champion's Drill</h4>
+          <p style="font-size: 0.9rem; opacity: 0.8; margin-bottom: 15px;">
+            The ultimate challenge: notoriously tricky words, homophones, and etymology-based patterns.
+          </p>
+          <div style="
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.9rem;
+          ">
+            <span>150 words</span>
+            <span style="
+              background: #7b2ff7;
+              color: white;
+              padding: 2px 8px;
+              border-radius: 12px;
+              font-size: 0.8rem;
+            ">PREMIUM</span>
+          </div>
+        </div>
+      </div>
+      
+      <div style="text-align: center; margin-top: 20px; opacity: 0.7; font-size: 0.9rem;">
+        <i class="fa fa-info-circle"></i> More packs coming soon!
+      </div>
+    </div>
+  `;
+  
+  // Insert premium content packs
+  const target = document.querySelector('.adaptive-drill-section') || 
+                 document.querySelector('.mistake-review-section') ||
+                 document.querySelector('.custom-words-area');
+  if (target) {
+    target.insertAdjacentHTML('afterend', premiumContentHTML);
+  }
+}
+
+// Add premium pack loading function
+function loadPremiumPack(packName) {
+  const packs = {
+    'oet_medicine': {
+      name: 'OET Medicine: Specialist Terms',
+      words: [
+        'anesthesiology', 'cardiovascular', 'dermatology', 'endocrinology', 'gastroenterology',
+        'hematology', 'immunology', 'nephrology', 'neurology', 'obstetrics', 'oncology',
+        'ophthalmology', 'orthopedics', 'otolaryngology', 'pediatrics', 'psychiatry',
+        'pulmonology', 'radiology', 'rheumatology', 'urology', 'anaphylaxis', 'arrhythmia',
+        'asymptomatic', 'benign', 'carcinoma', 'congenital', 'contraindication', 'edema',
+        'embolism', 'etiology', 'exacerbation', 'hematoma', 'hypertension', 'hypotension',
+        'idiopathic', 'ischemia', 'malignant', 'metastasis', 'morbidity', 'mortality',
+        'neoplasm', 'nosocomial', 'occlusion', 'pathology', 'prognosis', 'remission',
+        'septicemia', 'thrombosis', 'vasodilation'
+      ],
+      description: 'Specialist medical terminology for healthcare professionals'
+    },
+    'spelling_champion': {
+      name: 'Spelling Champion\'s Drill',
+      words: [
+        'accommodate', 'conscience', 'dilemma', 'embarrass', 'guarantee', 'harass', 
+        'immediately', 'liaison', 'manoeuvre', 'necessary', 'occurrence', 'parallel',
+        'privilege', 'queue', 'receive', 'separate', 'supersede', 'threshold', 
+        'unnecessary', 'weird', 'bureaucracy', 'conscientious', 'dachshund', 'ecstasy',
+        'fluorescent', 'gauge', 'hygiene', 'jewelry', 'liaison', 'mnemonic',
+        'nauseous', 'ophthalmology', 'phlegm', 'quinoa', 'rhythm', 'schedule',
+        'syringe', 'thorough', 'vacuum', 'yacht', 'zucchini', 'asthma',
+        'colonel', 'debt', 'gnaw', 'honest', 'island', 'knight', 'psalm', 'sword'
+      ],
+      description: 'The ultimate challenge for spelling perfectionists'
+    }
+  };
+  
+  const pack = packs[packName];
+  if (!pack) return;
+  
+  // Add to custom lists
+  if (!window.customLists) window.customLists = {};
+  window.customLists[pack.name] = {
+    words: pack.words,
+    createdAt: new Date().toISOString(),
+    wordCount: pack.words.length,
+    type: 'premium_pack',
+    description: pack.description
+  };
+  
+  localStorage.setItem('premiumCustomLists', JSON.stringify(window.customLists));
+  
+  // Load the pack
+  if (typeof window.loadCustomList === 'function') {
+    window.loadCustomList(pack.name);
+  }
+  
+  // Show success message
+  showFeedback(`Loaded "${pack.name}" premium pack!`, 'success');
+  
+  // Track usage
+  window.trackEvent('premium_pack_loaded', {
+    pack_name: packName,
+    word_count: pack.words.length
+  });
+}
+
+// Modify the checkAnswer function to record mistakes
+function checkAnswer() {
+  // ... existing code ...
+  
+  if (normalizedAnswer === normalizedWord) {
+    score++;
+    correctWords.push(word);
+    showFeedback("✅ Correct! Well done!", "success");
+    
+    // Record success for progress dashboard
+    if (window.progressDashboard) {
+      window.progressDashboard.recordSession(currentMode, score, currentList.length, [word]);
+    }
+    
+  } else {
+    incorrectWords.push({ word: word, answer: userAnswer });
+    showFeedback(`❌ Incorrect. The word was: ${word}`, "error");
+    
+    // Record mistake for review system
+    if (window.mistakeReview) {
+      window.mistakeReview.addMistake(word, currentMode);
+    }
+  }
 
 // =======================================================
 // VOICE RECOGNITION (Existing code remains the same)
@@ -1205,4 +1444,5 @@ function simulatePremiumAccess() {
 // Make simulatePremiumAccess available globally for testing
 window.simulatePremiumAccess = simulatePremiumAccess;
 window.quickTest = quickTest;
+
 
