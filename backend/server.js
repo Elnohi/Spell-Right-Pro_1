@@ -6,7 +6,7 @@ const nodemailer = require('nodemailer');
 require('dotenv').config();
 
 const app = express();
-const PORT = process.env.PORT || 3801; // Changed to 3801 to match your original port
+const PORT = process.env.PORT || 3000; // Changed to 3801 to match your original port
 
 // Security middleware
 app.use(helmet());
