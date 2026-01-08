@@ -6,59 +6,94 @@ const nodemailer = require('nodemailer');
 require('dotenv').config();
 
 const app = express();
-const PORT = process.env.PORT || 3001;
-
-// Email transporter
-const transporter = nodemailer.createTransport({
-    service: 'gmail',
-    auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASS
-    }
-});
+const PORT = process.env.PORT || 3801; // Changed to 3801 to match your original port
 
 // Security middleware
 app.use(helmet());
-app.use(cors());
+
+// CORS middleware with specific configuration
+const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:3000';
+const allowedOrigins = [FRONTEND_URL];
+if (process.env.EXTRA_FRONTEND_HOSTS) {
+  const extraHosts = process.env.EXTRA_FRONTEND_HOSTS.split(',').map(h => h.trim());
+  allowedOrigins.push(...extraHosts);
+}
+
+app.use(cors({
+  origin: function(origin, callback) {
+    // Allow requests with no origin (like mobile apps or curl requests)
+    if (!origin) return callback(null, true);
+    
+    if (allowedOrigins.indexOf(origin) === -1) {
+      // Check if origin matches a pattern
+      const allowedPatterns = [/\.spellrightpro\.org$/, /localhost:\d+$/];
+      const isAllowed = allowedPatterns.some(pattern => pattern.test(origin));
+      
+      if (!isAllowed) {
+        const msg = 'The CORS policy for this site does not allow access from the specified Origin.';
+        return callback(new Error(msg), false);
+      }
+    }
+    return callback(null, true);
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
+}));
+
 app.use(morgan('combined'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Email transporter configuration
+// Email transporter configuration (fixed single declaration)
 let transporter;
-if (process.env.EMAIL_SERVICE === 'gmail') {
-  transporter = nodemailer.createTransport({
-    service: 'gmail',
-    auth: {
-      user: process.env.EMAIL_USER,
-      pass: process.env.EMAIL_PASS
-    }
-  });
-} else if (process.env.EMAIL_SERVICE === 'smtp') {
-  transporter = nodemailer.createTransport({
-    host: process.env.SMTP_HOST,
-    port: process.env.SMTP_PORT,
-    secure: process.env.SMTP_SECURE === 'true',
-    auth: {
-      user: process.env.SMTP_USER,
-      pass: process.env.SMTP_PASS
-    }
-  });
-} else {
-  // Fallback to ethereal email for testing
-  nodemailer.createTestAccount().then(testAccount => {
+
+async function initializeTransporter() {
+  if (process.env.EMAIL_SERVICE === 'gmail') {
     transporter = nodemailer.createTransport({
-      host: 'smtp.ethereal.email',
-      port: 587,
-      secure: false,
+      service: 'gmail',
       auth: {
-        user: testAccount.user,
-        pass: testAccount.pass
+        user: process.env.EMAIL_USER,
+        pass: process.env.EMAIL_PASS
       }
     });
-    console.log('Using Ethereal email for testing:', testAccount.user);
-  });
+    console.log('Email service: Gmail configured');
+  } else if (process.env.EMAIL_SERVICE === 'smtp') {
+    transporter = nodemailer.createTransport({
+      host: process.env.SMTP_HOST,
+      port: process.env.SMTP_PORT,
+      secure: process.env.SMTP_SECURE === 'true',
+      auth: {
+        user: process.env.SMTP_USER,
+        pass: process.env.SMTP_PASS
+      }
+    });
+    console.log('Email service: SMTP configured');
+  } else {
+    // Fallback to ethereal email for testing
+    try {
+      const testAccount = await nodemailer.createTestAccount();
+      transporter = nodemailer.createTransport({
+        host: 'smtp.ethereal.email',
+        port: 587,
+        secure: false,
+        auth: {
+          user: testAccount.user,
+          pass: testAccount.pass
+        }
+      });
+      console.log('Email service: Using Ethereal for testing');
+      console.log('Test account:', testAccount.user);
+      console.log('Test password:', testAccount.pass);
+    } catch (error) {
+      console.error('Failed to create test email account:', error);
+      transporter = null;
+    }
+  }
 }
+
+// Initialize email transporter
+initializeTransporter();
 
 // Premium Plan Configuration
 const PLANS = {
@@ -244,7 +279,9 @@ app.get('/api/health', (req, res) => {
     status: 'healthy',
     timestamp: new Date().toISOString(),
     service: 'SpellRightPro Premium API',
-    version: '1.0.0'
+    version: '1.0.0',
+    port: PORT,
+    environment: process.env.NODE_ENV || 'development'
   });
 });
 
@@ -256,9 +293,17 @@ app.get('/api/plans', (req, res) => {
   });
 });
 
-// Send confirmation email
+// Send confirmation email (SINGLE VERSION - removed duplicate)
 app.post('/api/send-confirmation', async (req, res) => {
   try {
+    // Check if transporter is initialized
+    if (!transporter) {
+      await initializeTransporter();
+      if (!transporter) {
+        throw new Error('Email service not available');
+      }
+    }
+    
     const { email, plan, amount, transactionId } = req.body;
     
     // Validate input
@@ -281,21 +326,18 @@ app.post('/api/send-confirmation', async (req, res) => {
       from: process.env.EMAIL_FROM || 'SpellRightPro <spellrightpro@gmail.com>',
       to: email,
       subject: `🎉 Welcome to SpellRightPro ${PLANS[plan].name}!`,
-      html: generateEmailHTML(plan, email, transactionId, amount),
-      text: `Welcome to SpellRightPro ${PLANS[plan].name}!\n\nThank you for your purchase of $${amount}.\n\nTransaction ID: ${transactionId}\n\nStart learning at: ${process.env.APP_URL || 'https://spellrightpro.org'}\n\nNeed help? Contact spellrightpro@gmail.com`
+      html: generateEmailHTML(plan, email, transactionId || `SRP_${Date.now()}`, amount),
+      text: `Welcome to SpellRightPro ${PLANS[plan].name}!\n\nThank you for your purchase of $${amount}.\n\nTransaction ID: ${transactionId || 'N/A'}\n\nStart learning at: ${process.env.APP_URL || 'https://spellrightpro.org'}\n\nNeed help? Contact spellrightpro@gmail.com`
     };
     
     // Send email
     const info = await transporter.sendMail(mailOptions);
     
     console.log('Email sent:', info.messageId);
-    if (process.env.NODE_ENV !== 'production') {
-      console.log('Preview URL:', nodemailer.getTestMessageUrl(info));
-    }
     
-    // Log the transaction (in production, save to database)
+    // Log the transaction
     const transactionLog = {
-      transactionId,
+      transactionId: transactionId || `SRP_${Date.now()}`,
       email,
       plan,
       amount,
@@ -306,11 +348,18 @@ app.post('/api/send-confirmation', async (req, res) => {
     
     console.log('Transaction logged:', transactionLog);
     
+    // If using Ethereal, provide preview URL
+    let previewUrl = null;
+    if (process.env.NODE_ENV !== 'production' && info.response.includes('ethereal.email')) {
+      previewUrl = nodemailer.getTestMessageUrl(info);
+      console.log('Preview URL:', previewUrl);
+    }
+    
     res.json({
       success: true,
       message: 'Confirmation email sent successfully',
-      transactionId,
-      previewUrl: process.env.NODE_ENV !== 'production' ? nodemailer.getTestMessageUrl(info) : null
+      transactionId: transactionLog.transactionId,
+      previewUrl
     });
     
   } catch (error) {
@@ -322,7 +371,7 @@ app.post('/api/send-confirmation', async (req, res) => {
         from: process.env.EMAIL_FROM || 'SpellRightPro <spellrightpro@gmail.com>',
         to: req.body.email,
         subject: 'Your SpellRightPro Purchase',
-        text: `Thank you for your SpellRightPro purchase. We're experiencing email issues but your transaction was successful. Transaction ID: ${req.body.transactionId}`
+        text: `Thank you for your SpellRightPro purchase. We're experiencing email issues but your transaction was successful. Transaction ID: ${req.body.transactionId || 'N/A'}`
       };
       
       await transporter.sendMail(fallbackMailOptions);
@@ -343,6 +392,14 @@ app.post('/api/send-confirmation', async (req, res) => {
 // Mock payment processing endpoint
 app.post('/api/process-payment', async (req, res) => {
   try {
+    // Check if transporter is initialized
+    if (!transporter) {
+      await initializeTransporter();
+      if (!transporter) {
+        throw new Error('Email service not available');
+      }
+    }
+    
     const { plan, paymentMethod, email } = req.body;
     
     if (!PLANS[plan]) {
@@ -402,15 +459,27 @@ app.post('/api/webhooks/payment', express.raw({type: 'application/json'}), (req,
   const signature = req.headers['stripe-signature'];
   
   // Verify webhook signature in production
-  console.log('Payment webhook received:', req.body);
+  console.log('Payment webhook received:', {
+    body: req.body.toString(),
+    signature,
+    timestamp: new Date().toISOString()
+  });
   
   // Process webhook event
-  res.json({ received: true });
+  res.json({ received: true, timestamp: new Date().toISOString() });
 });
 
 // Customer support contact form
 app.post('/api/contact-support', async (req, res) => {
   try {
+    // Check if transporter is initialized
+    if (!transporter) {
+      await initializeTransporter();
+      if (!transporter) {
+        throw new Error('Email service not available');
+      }
+    }
+    
     const { name, email, subject, message, plan } = req.body;
     
     if (!email || !message) {
@@ -453,7 +522,8 @@ app.post('/api/contact-support', async (req, res) => {
     
     res.json({
       success: true,
-      message: 'Support request submitted successfully'
+      message: 'Support request submitted successfully',
+      reference: `SRP_${Date.now()}`
     });
     
   } catch (error) {
@@ -477,11 +547,58 @@ app.post('/api/track-conversion', (req, res) => {
     userAgent: req.get('User-Agent')
   });
   
-  // In production, save to database or analytics service
   res.json({
     success: true,
-    tracked: true
+    tracked: true,
+    timestamp: new Date().toISOString()
   });
+});
+
+// Test email endpoint
+app.get('/api/test-email', async (req, res) => {
+  try {
+    if (!transporter) {
+      await initializeTransporter();
+    }
+    
+    if (!transporter) {
+      return res.status(500).json({
+        success: false,
+        message: 'Email transporter not initialized'
+      });
+    }
+    
+    const testMailOptions = {
+      from: process.env.EMAIL_FROM || 'SpellRightPro <spellrightpro@gmail.com>',
+      to: 'test@example.com',
+      subject: 'SpellRightPro Test Email',
+      text: 'This is a test email from SpellRightPro server.',
+      html: '<h1>Test Email</h1><p>This is a test email from SpellRightPro server.</p>'
+    };
+    
+    const info = await transporter.sendMail(testMailOptions);
+    
+    let previewUrl = null;
+    if (process.env.NODE_ENV !== 'production' && info.response.includes('ethereal.email')) {
+      previewUrl = nodemailer.getTestMessageUrl(info);
+    }
+    
+    res.json({
+      success: true,
+      message: 'Test email sent successfully',
+      messageId: info.messageId,
+      previewUrl,
+      emailService: process.env.EMAIL_SERVICE || 'ethereal (test)'
+    });
+    
+  } catch (error) {
+    console.error('Test email error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to send test email',
+      error: error.message
+    });
+  }
 });
 
 // Serve static files (if your frontend is in the same project)
@@ -495,7 +612,26 @@ app.get('*', (req, res) => {
       message: 'API endpoint not found'
     });
   }
-  res.sendFile('index.html', { root: 'public' });
+  
+  // If you have a public folder with index.html
+  if (require('fs').existsSync('public/index.html')) {
+    return res.sendFile('index.html', { root: 'public' });
+  }
+  
+  res.json({
+    success: true,
+    service: 'SpellRightPro Premium API',
+    message: 'Server is running. Use API endpoints.',
+    endpoints: [
+      'GET /api/health',
+      'GET /api/plans',
+      'POST /api/send-confirmation',
+      'POST /api/process-payment',
+      'POST /api/contact-support',
+      'POST /api/track-conversion',
+      'GET /api/test-email'
+    ]
+  });
 });
 
 // Error handling middleware
@@ -508,56 +644,8 @@ app.use((err, req, res, next) => {
   });
 });
 
-// Email confirmation endpoint
-app.post('/api/send-confirmation', async (req, res) => {
-    try {
-        const { email, plan, amount } = req.body;
-        
-        if (!email || !plan) {
-            return res.status(400).json({
-                success: false,
-                message: 'Email and plan are required'
-            });
-        }
-        
-        const mailOptions = {
-            from: 'SpellRightPro <support@spellrightpro.com>',
-            to: email,
-            subject: `🎉 Welcome to SpellRightPro ${plan}!`,
-            html: `
-                <div style="font-family: Arial, sans-serif; padding: 20px;">
-                    <h1 style="color: #7b2ff7;">Welcome to SpellRightPro Premium!</h1>
-                    <p>Thank you for purchasing <strong>${plan}</strong>.</p>
-                    <p><strong>Amount:</strong> $${amount}</p>
-                    <p>Your account has been upgraded to premium.</p>
-                    <p>Start learning at: <a href="http://localhost:3000">http://localhost:3000</a></p>
-                    <p>Need help? Email support@spellrightpro.com</p>
-                </div>
-            `,
-            text: `Welcome to SpellRightPro ${plan}! Thank you for your purchase of $${amount}. Start learning at http://localhost:3000`
-        };
-        
-        await transporter.sendMail(mailOptions);
-        
-        console.log(`Confirmation email sent to ${email} for ${plan}`);
-        
-        res.json({
-            success: true,
-            message: 'Confirmation email sent successfully'
-        });
-        
-    } catch (error) {
-        console.error('Email error:', error);
-        res.status(500).json({
-            success: false,
-            message: 'Failed to send confirmation email',
-            error: error.message
-        });
-    }
-});
-
 // Start server
-app.listen(PORT, () => {
+app.listen(PORT, async () => {
   console.log(`
 ╔══════════════════════════════════════════════════════╗
 ║     SpellRightPro Premium Backend Server            ║
@@ -574,8 +662,17 @@ app.listen(PORT, () => {
 ║     • Payment: POST /api/process-payment            ║
 ║     • Support: POST /api/contact-support            ║
 ║     • Track: POST /api/track-conversion             ║
+║     • Test Email: GET /api/test-email               ║
 ╚══════════════════════════════════════════════════════╝
   `);
+  
+  // Initialize email service
+  await initializeTransporter();
+  if (transporter) {
+    console.log('✅ Email service initialized successfully');
+  } else {
+    console.log('⚠️  Email service not available - running in test mode');
+  }
 });
 
 module.exports = app;
