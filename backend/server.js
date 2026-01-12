@@ -9,7 +9,7 @@ const PORT = process.env.PORT || 3801;
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Email Configuration - YOUR GMAIL ACCOUNT
+// Email Configuration
 const emailConfig = {
   service: 'gmail',
   auth: {
@@ -237,7 +237,7 @@ app.use((err, req, res, next) => {
   });
 });
 
-// Start server
+// Start server - ONLY ONCE!
 app.listen(PORT, () => {
   console.log(`
 ╔══════════════════════════════════════════════════════╗
@@ -259,5 +259,3 @@ app.listen(PORT, () => {
 🔧 Email status: ${emailConfig.auth.pass ? '✅ REAL' : '⚠️  MOCK'}
   `);
 });
-
-module.exports = app;
