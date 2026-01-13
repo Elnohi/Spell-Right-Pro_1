@@ -140,5 +140,94 @@
        data-ad-format="auto"
        data-full-width-responsive="true"></ins>
   <script>(adsbygoogle=window.adsbygoogle||[]).push({});</script>
+  <!-- Add this RIGHT BEFORE </body> in ALL HTML files -->
+
+<script>
+// ==================== SERVICE WORKER REGISTRATION ====================
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', function() {
+    navigator.serviceWorker.register('sw.js')
+      .then(function(registration) {
+        console.log('✅ ServiceWorker registration successful with scope:', registration.scope);
+        
+        // Check for updates
+        registration.addEventListener('updatefound', function() {
+          const newWorker = registration.installing;
+          console.log('🔄 ServiceWorker update found!');
+          
+          newWorker.addEventListener('statechange', function() {
+            if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+              console.log('🆕 New content available. Refresh to update.');
+              // Optional: Show update notification to user
+              // showUpdateNotification();
+            }
+          });
+        });
+      })
+      .catch(function(error) {
+        console.log('❌ ServiceWorker registration failed:', error);
+      });
+  });
+}
+
+// ==================== ONLINE/OFFLINE DETECTION ====================
+window.addEventListener('online', function() {
+  console.log('🌐 You are online');
+  document.body.classList.remove('offline');
+  // Optional: Show online notification
+  // showToast('You are back online', 'success');
+});
+
+window.addEventListener('offline', function() {
+  console.log('📴 You are offline');
+  document.body.classList.add('offline');
+  // Optional: Show offline warning
+  // showToast('You are offline. Some features may be unavailable.', 'warning');
+});
+
+// ==================== APP INSTALL PROMPT ====================
+let deferredPrompt;
+window.addEventListener('beforeinstallprompt', function(e) {
+  // Prevent Chrome 67 and earlier from automatically showing the prompt
+  e.preventDefault();
+  deferredPrompt = e;
+  console.log('📱 PWA install prompt available');
+  
+  // Optional: Show install button
+  // showInstallPrompt();
+});
+
+// ==================== ERROR TRACKING ====================
+window.addEventListener('error', function(e) {
+  console.error('🚨 JavaScript Error:', e.message, 'at', e.filename, ':', e.lineno);
+  // Optional: Send to analytics
+  if (typeof gtag !== 'undefined') {
+    gtag('event', 'exception', {
+      description: e.message,
+      fatal: false
+    });
+  }
+});
+
+// ==================== PERFORMANCE MONITORING ====================
+if ('performance' in window) {
+  window.addEventListener('load', function() {
+    setTimeout(function() {
+      const perfData = window.performance.getEntriesByType('navigation')[0];
+      if (perfData) {
+        const loadTime = perfData.loadEventEnd - perfData.startTime;
+        console.log('⏱️ Page load time:', Math.round(loadTime), 'ms');
+        
+        if (loadTime > 3000 && typeof gtag !== 'undefined') {
+          gtag('event', 'slow_load', {
+            load_time: loadTime,
+            page_path: window.location.pathname
+          });
+        }
+      }
+    }, 0);
+  });
+}
+</script>
 </body>
 </html>
