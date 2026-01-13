@@ -817,7 +817,7 @@
         // Send confirmation email
         console.log('Sending email to:', email, 'Plan:', planName, 'Price:', price);
         
-        const response = await fetch(`${API_CONFIG.baseUrl}${API_CONFIG.endpoints.sendConfirmation}`, {
+        const response = await fetch('/api/send-confirmation', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
