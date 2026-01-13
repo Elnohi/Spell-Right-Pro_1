@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Paths</title>
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <h1>🛠️ Test Page</h1>
+    
+    <div class="test-results">
+        <h3>Testing file paths:</h3>
+        <ul id="results"></ul>
+    </div>
+    
+    <script src="js/config.js"></script>
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const results = document.getElementById('results');
+        
+        // Test 1: Check CSS loaded
+        const stylesLoaded = document.styleSheets.length > 0;
+        addResult('CSS Styles', stylesLoaded);
+        
+        // Test 2: Check config.js loaded
+        const configLoaded = typeof SpellRightProConfig !== 'undefined';
+        addResult('JavaScript Config', configLoaded);
+        
+        // Test 3: Test API endpoint
+        fetch('/health')
+            .then(res => res.json())
+            .then(data => addResult('API Server', data.status === 'OK'))
+            .catch(() => addResult('API Server', false));
+            
+        // Test 4: Check service worker
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('sw.js')
+                .then(() => addResult('Service Worker', true))
+                .catch(() => addResult('Service Worker', false));
+        } else {
+            addResult('Service Worker', false);
+        }
+        
+        function addResult(name, success) {
+            const li = document.createElement('li');
+            li.textContent = `${success ? '✅' : '❌'} ${name}`;
+            li.style.color = success ? 'green' : 'red';
+            results.appendChild(li);
+        }
+    });
+    </script>
+</body>
+</html>
