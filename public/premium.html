@@ -778,17 +778,22 @@
       }
     }
 
-   document.getElementById('checkoutForm').addEventListener('submit', async function(e) {
+
+document.getElementById('checkoutForm').addEventListener('submit', async function(e) {
     e.preventDefault();
     
-    // Get selected plan
+    // Get email from input field (you need to add this to your form)
+    const emailInput = document.querySelector('input[type="email"]') || 
+                      document.getElementById('emailInput') ||
+                      this.querySelector('input[type="email"]');
+    
+    const email = emailInput ? emailInput.value : '';
     const planElement = document.getElementById('selectedPlan');
-    const planText = planElement.textContent;
-    const email = document.getElementById('emailInput').value;
+    const planText = planElement ? planElement.textContent : 'Complete Premium';
     
     // Extract plan and price
-    let planName = 'Premium';
-    let price = 0;
+    let planName = 'Complete Premium';
+    let price = 8.99;
     
     if (planText.includes('School Premium')) {
         planName = 'School Premium';
@@ -814,9 +819,9 @@
     submitBtn.disabled = true;
     
     try {
-        // Send confirmation email
-        console.log('Sending email to:', email, 'Plan:', planName, 'Price:', price);
+        console.log('📧 Processing payment for:', email, 'Plan:', planName, 'Price:', price);
         
+        // 🚨 FIXED: Changed from localhost:3001 to /api/send-confirmation
         const response = await fetch('/api/send-confirmation', {
             method: 'POST',
             headers: {
@@ -828,6 +833,10 @@
                 amount: price
             })
         });
+        
+        if (!response.ok) {
+            throw new Error(`Server responded with ${response.status}`);
+        }
         
         const result = await response.json();
         
@@ -850,9 +859,17 @@
                 });
             }
             
-            // Redirect to thank you page after 2 seconds
+            // Store premium status
+            localStorage.setItem('premiumUser', JSON.stringify({
+                plan: planName,
+                email: email,
+                activatedAt: new Date().toISOString(),
+                active: true
+            }));
+            
+            // Redirect to thank you page
             setTimeout(() => {
-                window.location.href = '/thank-you.html?plan=' + 
+                window.location.href = 'thank-you.html?plan=' + 
                     encodeURIComponent(planName) + '&email=' + 
                     encodeURIComponent(email);
             }, 2000);
@@ -860,19 +877,19 @@
         } else {
             alert('✅ Purchase complete!\n\nHowever, we couldn\'t send the confirmation email. Please contact support@spellrightpro.com');
             
-            // Still redirect but show message
+            // Still redirect
             setTimeout(() => {
-                window.location.href = '/thank-you.html?plan=' + 
+                window.location.href = 'thank-you.html?plan=' + 
                     encodeURIComponent(planName);
             }, 2000);
         }
         
     } catch (error) {
-        console.error('Error:', error);
+        console.error('Payment error:', error);
         alert('✅ Purchase recorded!\n\nEmail service is temporarily unavailable. Your premium access is active.');
         
         setTimeout(() => {
-            window.location.href = '/thank-you.html?plan=' + 
+            window.location.href = 'thank-you.html?plan=' + 
                 encodeURIComponent(planName);
         }, 2000);
         
