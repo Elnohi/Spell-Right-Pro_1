@@ -911,24 +911,23 @@ function loadModeContent(mode) {
   return true;
 }
 
-// ==================== MAIN JAVASCRIPT - 修复版本 ====================
+// ==================== MAIN JAVASCRIPT - 简化修复版本 ====================
 document.addEventListener('DOMContentLoaded', function() {
-  console.log('DOM fully loaded, initializing premium page...');
+  console.log('DOM loaded, initializing premium page...');
   
-  // 修复1: 平滑滚动
+  // 1. 修复平滑滚动
   document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-    anchor.addEventListener('click', function (e) {
+    anchor.addEventListener('click', function(e) {
       e.preventDefault();
       const href = this.getAttribute('href');
       
-      // 如果是页面内锚点链接
       if (href.startsWith('#')) {
         const targetId = href.substring(1);
         const target = document.getElementById(targetId);
+        
         if (target) {
           target.scrollIntoView({ behavior: 'smooth' });
         } else if (targetId === 'pricing') {
-          // 滚动到定价部分
           const pricingSection = document.querySelector('.pricing');
           if (pricingSection) {
             pricingSection.scrollIntoView({ behavior: 'smooth' });
@@ -938,15 +937,13 @@ document.addEventListener('DOMContentLoaded', function() {
     });
   });
 
-  // 修复2: 计划选择 - 简化版本确保工作
+  // 2. 修复计划选择按钮 - 简单版本
   document.querySelectorAll('.btn-choose').forEach(button => {
     button.addEventListener('click', function(e) {
       e.preventDefault();
-      e.stopPropagation(); // 防止事件冒泡
+      console.log('Plan button clicked');
       
-      const plan = this.getAttribute('data-plan');
-      console.log('Selected plan:', plan);
-      
+      const plan = this.getAttribute('data-plan') || 'complete';
       const planNames = {
         'school': 'School Premium - $4.99/month',
         'complete': 'Complete Premium - $8.99/month',
@@ -956,7 +953,7 @@ document.addEventListener('DOMContentLoaded', function() {
       // 更新显示的计划
       const selectedPlanElement = document.getElementById('selectedPlan');
       if (selectedPlanElement) {
-        selectedPlanElement.textContent = planNames[plan] || 'Complete Premium - $8.99/month';
+        selectedPlanElement.textContent = planNames[plan] || planNames.complete;
       }
       
       // 显示结账区域
@@ -966,7 +963,7 @@ document.addEventListener('DOMContentLoaded', function() {
         checkoutSection.scrollIntoView({ behavior: 'smooth' });
       }
       
-      // 跟踪计划选择
+      // 跟踪
       if (typeof gtag !== 'undefined') {
         gtag('event', 'select_item', {
           items: [{
@@ -976,39 +973,30 @@ document.addEventListener('DOMContentLoaded', function() {
           }]
         });
       }
-      
-      return false;
     });
   });
 
-  // 修复3: 支付方式切换
+  // 3. 修复支付方式切换
   document.querySelectorAll('.payment-method').forEach(button => {
     button.addEventListener('click', function() {
-      // 移除所有按钮的活动状态
       document.querySelectorAll('.payment-method').forEach(b => {
         b.style.borderColor = 'rgba(255,255,255,0.2)';
         b.style.background = 'rgba(255,255,255,0.05)';
       });
       
-      // 设置当前按钮为活动状态
       this.style.borderColor = 'var(--primary)';
       this.style.background = 'rgba(123, 47, 247, 0.1)';
       
-      // 切换支付字段显示
       const method = this.getAttribute('data-method');
       const cardFields = document.getElementById('cardFields');
       if (cardFields) {
-        if (method === 'paypal') {
-          cardFields.style.display = 'none';
-        } else {
-          cardFields.style.display = 'block';
-        }
+        cardFields.style.display = method === 'paypal' ? 'none' : 'block';
       }
     });
   });
 
-  // 修复4: FAQ切换函数 - 确保全局可用
-  window.toggleFAQ = function(element) {
+  // 4. 修复FAQ函数
+  function toggleFAQ(element) {
     if (!element) return;
     
     const answer = element.nextElementSibling;
@@ -1016,10 +1004,8 @@ document.addEventListener('DOMContentLoaded', function() {
     
     if (!answer || !icon) return;
     
-    // 切换类名
     answer.classList.toggle('open');
     
-    // 切换图标
     if (icon.classList.contains('fa-chevron-down')) {
       icon.classList.remove('fa-chevron-down');
       icon.classList.add('fa-chevron-up');
@@ -1027,133 +1013,68 @@ document.addEventListener('DOMContentLoaded', function() {
       icon.classList.remove('fa-chevron-up');
       icon.classList.add('fa-chevron-down');
     }
-    
-    // 跟踪FAQ交互
-    if (typeof gtag !== 'undefined' && answer.classList.contains('open')) {
-      const question = element.textContent.replace('▼', '').replace('▲', '').trim();
-      gtag('event', 'faq_view', {
-        question: question.substring(0, 100)
-      });
-    }
-  };
+  }
 
-  // 为所有FAQ项添加点击事件
+  // 确保函数在全局可用
+  window.toggleFAQ = toggleFAQ;
+
+  // 为FAQ添加事件
   document.querySelectorAll('.faq-question').forEach(question => {
     question.addEventListener('click', function() {
-      window.toggleFAQ(this);
+      toggleFAQ(this);
     });
   });
 
-  // 修复5: 表单提交 - 简化版本
+  // 5. 修复表单提交
   const checkoutForm = document.getElementById('checkoutForm');
   if (checkoutForm) {
     checkoutForm.addEventListener('submit', function(e) {
       e.preventDefault();
       
-      // 获取电子邮件
       const emailInput = this.querySelector('input[type="email"]');
-      const email = emailInput ? emailInput.value : '';
+      const email = emailInput ? emailInput.value.trim() : '';
       
-      // 验证电子邮件
-      if (!email || !email.includes('@') || !email.includes('.')) {
+      if (!email || !email.includes('@')) {
         alert('Please enter a valid email address');
-        emailInput.focus();
+        if (emailInput) emailInput.focus();
         return;
       }
       
-      // 获取计划信息
       const selectedPlanElement = document.getElementById('selectedPlan');
       const planText = selectedPlanElement ? selectedPlanElement.textContent : 'Complete Premium - $8.99/month';
       
-      // 提取计划名称和价格
-      let planName = 'Complete Premium';
-      let price = 8.99;
+      // 显示成功消息
+      alert(`Thank you! Premium access will be activated for:\n\nEmail: ${email}\nPlan: ${planText}`);
       
-      if (planText.includes('School Premium')) {
-        planName = 'School Premium';
-        price = 4.99;
-      } else if (planText.includes('Family Plan')) {
-        planName = 'Family Plan';
-        price = 14.99;
-      }
-      
-      console.log('Processing purchase:', { email, planName, price });
-      
-      // 显示处理中状态
-      const submitBtn = this.querySelector('button[type="submit"]');
-      const originalText = submitBtn.innerHTML;
-      submitBtn.innerHTML = '<i class="fa fa-spinner fa-spin"></i> Processing...';
-      submitBtn.disabled = true;
-      
-      // 模拟处理延迟
-      setTimeout(() => {
-        // 模拟成功购买
-        alert(`✅ Success! Premium ${planName} activated for ${email}\n\nYou now have full premium access.`);
-        
-        // 跟踪购买
-        if (typeof gtag !== 'undefined') {
-          gtag('event', 'purchase', {
-            transaction_id: 'TXN_' + Date.now(),
-            value: price,
-            currency: 'USD',
-            items: [{
-              item_id: planName.toLowerCase().replace(' ', '_'),
-              item_name: planName,
-              price: price,
-              quantity: 1
-            }]
-          });
-        }
-        
-        // 存储Premium状态
-        localStorage.setItem('premiumUser', JSON.stringify({
-          plan: planName,
-          email: email,
-          activatedAt: new Date().toISOString(),
-          active: true
-        }));
-        
-        // 重定向到感谢页面
-        setTimeout(() => {
-          window.location.href = 'thank-you.html?plan=' + 
-            encodeURIComponent(planName) + '&email=' + 
-            encodeURIComponent(email);
-        }, 1500);
-        
-        // 恢复按钮状态
-        submitBtn.innerHTML = originalText;
-        submitBtn.disabled = false;
-      }, 2000);
+      console.log('Form submitted:', { email, plan: planText });
     });
   }
 
-  // 加载模式内容（如果URL中有模式参数）
+  // 6. 加载模式内容
   const urlParams = new URLSearchParams(window.location.search);
   const mode = urlParams.get('mode');
   
   if (mode) {
-    const success = loadModeContent(mode);
-    if (!success) {
-      console.log(`Mode "${mode}" not found. Using default content.`);
-    }
+    loadModeContent(mode);
   }
   
-  // 初始化支付方式显示
+  // 7. 初始化支付方式
   const cardFields = document.getElementById('cardFields');
   if (cardFields) {
     cardFields.style.display = 'block';
   }
   
-  // 设置默认活跃的支付方式按钮
-  const defaultPaymentMethod = document.querySelector('.payment-method.active');
-  if (defaultPaymentMethod) {
-    defaultPaymentMethod.click();
+  // 激活默认支付按钮
+  const defaultPaymentBtn = document.querySelector('.payment-method.active');
+  if (defaultPaymentBtn) {
+    defaultPaymentBtn.style.borderColor = 'var(--primary)';
+    defaultPaymentBtn.style.background = 'rgba(123, 47, 247, 0.1)';
   }
   
-  console.log('Premium page initialized successfully');
+  console.log('Premium page initialized');
 });
 
-// 页面加载完成后的额外初始化
+// ==================== 性能监控和PWA功能 ====================
 window.addEventListener('load', function() {
   console.log('Page fully loaded');
   
@@ -1169,83 +1090,37 @@ window.addEventListener('load', function() {
       });
     }
     
-    // 跟踪页面浏览
     gtag('event', 'page_view', {
       page_title: 'Premium Plans',
       page_path: window.location.pathname
     });
   }
+  
+  // Service Worker 注册
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('sw.js')
+      .then(function(registration) {
+        console.log('ServiceWorker registered:', registration.scope);
+      })
+      .catch(function(error) {
+        console.log('ServiceWorker registration failed:', error);
+      });
+  }
+  
+  // 在线/离线检测
+  window.addEventListener('online', function() {
+    document.body.classList.remove('offline');
+  });
+  
+  window.addEventListener('offline', function() {
+    document.body.classList.add('offline');
+  });
+  
+  // 错误跟踪
+  window.addEventListener('error', function(e) {
+    console.error('JavaScript error:', e.message);
+  });
 });
 </script>
-  
-   <script>
-    // ==================== SERVICE WORKER REGISTRATION ====================
-    if ('serviceWorker' in navigator) {
-      window.addEventListener('load', function() {
-        navigator.serviceWorker.register('sw.js')
-          .then(function(registration) {
-            console.log('✅ ServiceWorker registration successful with scope:', registration.scope);
-            
-            // Check for updates
-            registration.addEventListener('updatefound', function() {
-              const newWorker = registration.installing;
-              console.log('🔄 ServiceWorker update found!');
-              
-              newWorker.addEventListener('statechange', function() {
-                if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                  console.log('🆕 New content available. Refresh to update.');
-                }
-              });
-            });
-          })
-          .catch(function(error) {
-            console.log('❌ ServiceWorker registration failed:', error);
-          });
-      });
-    }
-
-    // ==================== ONLINE/OFFLINE DETECTION ====================
-    window.addEventListener('online', function() {
-      console.log('🌐 You are online');
-      document.body.classList.remove('offline');
-    });
-
-    window.addEventListener('offline', function() {
-      console.log('📴 You are offline');
-      document.body.classList.add('offline');
-    });
-
-    // ==================== APP INSTALL PROMPT ====================
-    let deferredPrompt;
-    window.addEventListener('beforeinstallprompt', function(e) {
-      e.preventDefault();
-      deferredPrompt = e;
-      console.log('📱 PWA install prompt available');
-    });
-
-    // ==================== ERROR TRACKING ====================
-    window.addEventListener('error', function(e) {
-      console.error('🚨 JavaScript Error:', e.message, 'at', e.filename, ':', e.lineno);
-      if (typeof gtag !== 'undefined') {
-        gtag('event', 'exception', {
-          description: e.message,
-          fatal: false
-        });
-      }
-    });
-
-    // ==================== PERFORMANCE MONITORING ====================
-    if ('performance' in window) {
-      window.addEventListener('load', function() {
-        setTimeout(function() {
-          const perfData = window.performance.getEntriesByType('navigation')[0];
-          if (perfData) {
-            const loadTime = perfData.loadEventEnd - perfData.startTime;
-            console.log('⏱️ Page load time:', Math.round(loadTime), 'ms');
-          }
-        }, 0);
-      });
-    }
-  </script>
 </body>
 </html>
