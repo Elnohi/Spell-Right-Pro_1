@@ -1,12 +1,14 @@
-// js/firebase-utils.js - COMPLETE FIXED VERSION WITH ANALYTICS
+// js/firebase-utils.js - FIXED VERSION (Firebase v8 compatible)
 class FirebaseUtils {
   constructor() {
     this.auth = null;
     this.db = null;
     this.initialized = false;
     this.initializationAttempts = 0;
-    this.maxInitializationAttempts = 10;
-    this.init();
+    this.maxInitializationAttempts = 5;
+    
+    // Wait for config.js to initialize first
+    setTimeout(() => this.init(), 1000);
   }
 
   init() {
@@ -25,25 +27,23 @@ class FirebaseUtils {
         return;
       }
 
-      // Initialize Firebase app if not already done
-      let app;
+      // Use the app initialized by config.js
       if (!firebase.apps.length) {
-        if (window.firebaseConfig) {
-          app = firebase.initializeApp(window.firebaseConfig);
-          console.log('✅ Firebase app initialized in utils');
-        } else {
-          console.error('❌ Firebase config not found');
-          setTimeout(() => this.init(), 1000);
-          return;
-        }
-      } else {
-        app = firebase.apps[0];
-        console.log('✅ Using existing Firebase app');
+        console.log('⚠️ Firebase app not initialized, waiting for config.js...');
+        setTimeout(() => this.init(), 1000);
+        return;
       }
 
-      // Get auth and firestore
-      this.auth = firebase.auth();
-      this.db = firebase.firestore();
+      // Get auth and firestore from existing app
+      const app = firebase.apps[0];
+      this.auth = firebase.auth(app);
+      this.db = firebase.firestore(app);
+      
+      // Initialize analytics if not done yet (v8 syntax)
+      if (!window.firebaseAnalytics && typeof firebase.analytics !== 'undefined') {
+        window.firebaseAnalytics = firebase.analytics();
+        console.log('✅ Firebase Analytics initialized in utils');
+      }
       
       // Set up auth state listener for analytics
       this.setupAuthStateListener();
@@ -90,11 +90,21 @@ class FirebaseUtils {
             window.trackEvent('premium_access_granted');
           }
         }
+        
+        // Update tier manager
+        if (window.tierManager) {
+          window.tierManager.setTier(isPremium ? 'premium' : 'free');
+        }
       } else {
         // User signed out
         if (window.firebaseAnalytics) {
           window.firebaseAnalytics.setUserId(null);
           window.trackAuthEvent('logout');
+        }
+        
+        // Set to free tier
+        if (window.tierManager) {
+          window.tierManager.setTier('free');
         }
       }
     });
@@ -218,7 +228,14 @@ class FirebaseUtils {
 
   // Track custom training events
   trackTrainingSession(mode, action, details = {}) {
-    window.trackTrainingEvent(action, mode, details);
+    if (window.trackTrainingEvent) {
+      window.trackTrainingEvent(action, mode, details);
+    } else {
+      window.trackEvent('training_' + action, {
+        training_mode: mode,
+        ...details
+      });
+    }
   }
 
   // Get current user
@@ -247,17 +264,52 @@ class FirebaseUtils {
   }
 }
 
-// Create global instance with error handling
-try {
-  window.firebaseUtils = new FirebaseUtils();
-} catch (error) {
-  console.error('❌ Failed to create FirebaseUtils instance:', error);
-  // Create a fallback object with basic functionality
-  window.firebaseUtils = {
+// Create global instance with error handling (delayed to avoid conflicts)
+setTimeout(() => {
+  try {
+    if (typeof firebase !== 'undefined') {
+      window.firebaseUtils = new FirebaseUtils();
+    } else {
+      console.log('⏳ Waiting for Firebase before creating utils...');
+      // Try again in 2 seconds
+      setTimeout(() => {
+        if (typeof firebase !== 'undefined') {
+          window.firebaseUtils = new FirebaseUtils();
+        } else {
+          // Create fallback
+          window.firebaseUtils = createFallbackUtils();
+        }
+      }, 2000);
+    }
+  } catch (error) {
+    console.error('❌ Failed to create FirebaseUtils instance:', error);
+    window.firebaseUtils = createFallbackUtils();
+  }
+}, 1500);
+
+// Fallback utility functions
+function createFallbackUtils() {
+  console.log('⚠️ Using fallback Firebase utils');
+  return {
     initialized: false,
     init: function() { console.log('FirebaseUtils not available'); },
-    checkPremiumStatus: async function() { return false; },
-    isUserLoggedIn: function() { return false; }
+    checkPremiumStatus: async function() { 
+      // Check localStorage for demo purposes
+      const uid = localStorage.getItem('demo_uid');
+      return localStorage.getItem(`premium_${uid}`) === 'true';
+    },
+    isUserLoggedIn: function() { 
+      return !!localStorage.getItem('demo_user');
+    },
+    getCurrentUser: function() {
+      const user = localStorage.getItem('demo_user');
+      return user ? { uid: localStorage.getItem('demo_uid'), email: user } : null;
+    },
+    signOut: async function() {
+      localStorage.removeItem('demo_user');
+      localStorage.removeItem('demo_uid');
+      return true;
+    }
   };
 }
 
