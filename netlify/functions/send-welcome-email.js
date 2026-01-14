@@ -5,10 +5,7 @@ exports.handler = async (event) => {
     const { customerEmail, customerName, plan } = JSON.parse(event.body || "{}");
 
     if (!customerEmail || !plan) {
-      return {
-        statusCode: 400,
-        body: JSON.stringify({ error: "Missing required fields" })
-      };
+      return { statusCode: 400, body: "Missing required fields" };
     }
 
     const transporter = nodemailer.createTransport({
@@ -23,11 +20,7 @@ exports.handler = async (event) => {
       from: "SpellRightPro <spellrightpro@gmail.com>",
       to: customerEmail,
       subject: "🎉 Welcome to SpellRightPro Premium",
-      html: `
-        <h2>Welcome ${customerName || "to SpellRightPro"}!</h2>
-        <p>Your <strong>${plan}</strong> plan is now active.</p>
-        <p>Start learning at <a href="https://spellrightpro.org">SpellRightPro</a></p>
-      `
+      html: `<h2>Welcome ${customerName || ""}</h2><p>Your ${plan} plan is active.</p>`
     });
 
     return {
