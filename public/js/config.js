@@ -1,9 +1,9 @@
-// js/config.js - COMPLETE FIXED VERSION WITH ANALYTICS
+// js/config.js - FIXED VERSION (Firebase v8 compatible)
 // ------------------------------
 // Frontend runtime configuration
 // ------------------------------
 
-// Firebase Configuration
+// Firebase Configuration (v8 compatible)
 window.firebaseConfig = {
   apiKey: "AIzaSyCZ-rAPnRgVjSRFOFvbiQlowE6A3RVvwWo",
   authDomain: "spellrightpro-firebase.firebaseapp.com",
@@ -18,7 +18,14 @@ window.firebaseConfig = {
 window.firebaseAnalytics = null;
 window.firebaseInitialized = false;
 
-// Initialize Firebase safely with Analytics
+// Tier manager (required by firebase-utils)
+window.tierManager = window.tierManager || {
+  currentTier: 'free',
+  getCurrentTier: function() { return this.currentTier; },
+  setTier: function(tier) { this.currentTier = tier; }
+};
+
+// Initialize Firebase safely with Analytics (v8 syntax)
 window.initFirebase = function() {
   // Prevent multiple initializations
   if (window.firebaseInitialized) {
@@ -41,12 +48,12 @@ window.initFirebase = function() {
       console.log('✅ Using existing Firebase app');
     }
 
-    // Initialize Analytics only with user consent
+    // Initialize Analytics only with user consent (v8 syntax)
     if (localStorage.getItem('cookieConsent') === 'true') {
       try {
-        if (firebase.analytics) {
-          window.firebaseAnalytics = firebase.analytics(app);
-          console.log('✅ Firebase Analytics initialized');
+        if (typeof firebase.analytics !== 'undefined') {
+          window.firebaseAnalytics = firebase.analytics(); // V8: no app parameter
+          console.log('✅ Firebase Analytics initialized (v8)');
           
           // Set user properties if user is logged in
           if (firebase.auth().currentUser) {
@@ -83,15 +90,12 @@ window.trackEvent = function(eventName, eventParams = {}) {
       window.firebaseAnalytics.logEvent(eventName, eventParams);
       console.log(`📊 Analytics Event: ${eventName}`, eventParams);
       return true;
-    } else if (typeof firebase !== 'undefined' && firebase.analytics) {
+    } else if (typeof firebase !== 'undefined' && typeof firebase.analytics !== 'undefined') {
       // Fallback: initialize analytics if not already done
-      const app = firebase.apps[0];
-      if (app) {
-        window.firebaseAnalytics = firebase.analytics(app);
-        window.firebaseAnalytics.logEvent(eventName, eventParams);
-        console.log(`📊 Analytics Event (late init): ${eventName}`, eventParams);
-        return true;
-      }
+      window.firebaseAnalytics = firebase.analytics();
+      window.firebaseAnalytics.logEvent(eventName, eventParams);
+      console.log(`📊 Analytics Event (late init): ${eventName}`, eventParams);
+      return true;
     }
     return false;
   } catch (error) {
@@ -185,7 +189,7 @@ window.trackTrainingEvent = function(action, mode, details = {}) {
 };
 
 // =============================================================================
-// END OF ANALYTICS HELPER FUNCTIONS
+// APP CONFIGURATION
 // =============================================================================
 
 // App Configuration
@@ -202,17 +206,17 @@ window.stripeConfig = {
   publicKey: "pk_live_51RuKs1El99zwdEZr9wjVF3EhADOk4c9x8JjvjPLH8Y16cCPwykZRFVtC1Fr0hSJesStbqcvfvvNOy4NHRa0GPvg004IIcPfC8"
 };
 
-// In config.js, update the adsenseConfig:
+// Adsense Configuration
 window.adsenseConfig = {
-  enabled: true, // CHANGED FROM false TO true
+  enabled: true,
   client: "ca-pub-7632930282249669",
   // Only show ads to free users
   showAds: function() {
-    return window.tierManager?.currentTier === 'free';
+    return window.tierManager?.getCurrentTier() === 'free';
   }
 };
 
-// Add ad loading function
+// Safe AdSense loading
 window.loadAds = function() {
   if (window.adsenseConfig.enabled && window.adsenseConfig.showAds()) {
     console.log('Loading ads for free user...');
@@ -226,14 +230,19 @@ window.loadAds = function() {
       document.head.appendChild(script);
     }
     
-    // Initialize ads
-    (adsbygoogle = window.adsbygoogle || []).push({});
-    
-    // Track ad view
-    window.trackEvent('ad_view', {
-      page: window.location.pathname,
-      tier: 'free'
-    });
+    // Initialize ads with safety check
+    if (typeof adsbygoogle !== 'undefined') {
+      (adsbygoogle = window.adsbygoogle || []).push({});
+      
+      // Track ad view
+      window.trackEvent('ad_view', {
+        page: window.location.pathname,
+        tier: 'free'
+      });
+    } else {
+      // Retry if AdSense not loaded yet
+      setTimeout(window.loadAds, 1000);
+    }
   }
 };
 
@@ -264,8 +273,11 @@ document.addEventListener('DOMContentLoaded', function() {
           }, 100);
         });
       }
+      
+      // Load ads after Firebase is ready
+      setTimeout(window.loadAds, 2000);
     }
-  }, 500);
+  }, 1000);
 });
 
 // Export for module systems
