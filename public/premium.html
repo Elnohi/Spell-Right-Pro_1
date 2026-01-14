@@ -641,7 +641,7 @@
       <h2 style="text-align: center; font-size: 2.5em; margin-bottom: 40px;">Frequently Asked Questions</h2>
       
       <div class="faq-item">
-        <div class="faq-question" onclick="toggleFAQ(this)">
+        <div class="faq-question">
           Can I cancel my subscription anytime?
           <i class="fa fa-chevron-down"></i>
         </div>
@@ -651,7 +651,7 @@
       </div>
       
       <div class="faq-item">
-        <div class="faq-question" onclick="toggleFAQ(this)">
+        <div class="faq-question">
           Is there a free trial?
           <i class="fa fa-chevron-down"></i>
         </div>
@@ -661,7 +661,7 @@
       </div>
       
       <div class="faq-item">
-        <div class="faq-question" onclick="toggleFAQ(this)">
+        <div class="faq-question">
           Can I switch between plans?
           <i class="fa fa-chevron-down"></i>
         </div>
@@ -671,7 +671,7 @@
       </div>
       
       <div class="faq-item">
-        <div class="faq-question" onclick="toggleFAQ(this)">
+        <div class="faq-question">
           Do you offer educational discounts?
           <i class="fa fa-chevron-down"></i>
         </div>
@@ -681,7 +681,7 @@
       </div>
       
       <div class="faq-item">
-        <div class="faq-question" onclick="toggleFAQ(this)">
+        <div class="faq-question">
           What payment methods do you accept?
           <i class="fa fa-chevron-down"></i>
         </div>
@@ -1004,14 +1004,23 @@ document.addEventListener('DOMContentLoaded', function() {
     
     if (!answer || !icon) return;
     
+    const isOpen = answer.classList.contains('open');
     answer.classList.toggle('open');
     
-    if (icon.classList.contains('fa-chevron-down')) {
-      icon.classList.remove('fa-chevron-down');
-      icon.classList.add('fa-chevron-up');
-    } else {
+    if (isOpen) {
       icon.classList.remove('fa-chevron-up');
       icon.classList.add('fa-chevron-down');
+    } else {
+      icon.classList.remove('fa-chevron-down');
+      icon.classList.add('fa-chevron-up');
+    }
+    
+    // 跟踪FAQ交互
+    if (typeof gtag !== 'undefined' && !isOpen) {
+      const question = element.textContent.replace('▼', '').replace('▲', '').trim();
+      gtag('event', 'faq_view', {
+        question: question.substring(0, 100)
+      });
     }
   }
 
