@@ -4,6 +4,7 @@ exports.handler = async () => {
     body: JSON.stringify({
       status: "healthy",
       service: "SpellRightPro Premium API",
+      version: "1.0.0",
       timestamp: new Date().toISOString()
     })
   };
