@@ -241,6 +241,31 @@
       margin-bottom: 10px;
     }
     
+    .mode-specific-features {
+      max-width: 800px;
+      margin: 40px auto;
+      background: rgba(255,255,255,0.05);
+      padding: 30px;
+      border-radius: 15px;
+    }
+    
+    .mode-features-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 20px;
+      margin-top: 20px;
+    }
+    
+    .mode-feature-item {
+      text-align: center;
+      padding: 15px;
+    }
+    
+    .mode-feature-item i {
+      font-size: 2em;
+      margin-bottom: 10px;
+    }
+    
     @media (max-width: 768px) {
       .plans-grid {
         grid-template-columns: 1fr;
@@ -270,11 +295,11 @@
     </nav>
 
     <!-- Hero Section -->
-    <section class="hero">
-      <h1>Master Spelling with Premium</h1>
-      <p style="font-size: 1.2em; max-width: 600px; margin: 0 auto 30px;">
-        Join thousands of learners who transformed their spelling skills
-      </p>
+<section class="hero">
+  <h1 id="modeTitle">Master Spelling with Premium</h1>
+  <p id="modeDescription" style="font-size: 1.2em; max-width: 600px; margin: 0 auto 30px;">
+    Join thousands of learners who transformed their spelling skills
+  </p>
       <div style="display: flex; gap: 20px; justify-content: center; flex-wrap: wrap;">
         <div style="text-align: center;">
           <div style="font-size: 2em; font-weight: bold;">10,000+</div>
@@ -287,6 +312,16 @@
         <div style="text-align: center;">
           <div style="font-size: 2em; font-weight: bold;">98%</div>
           <div>Success Rate</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Mode-Specific Features -->
+    <section id="modeFeaturesSection" style="display: none;">
+      <div class="mode-specific-features">
+        <h3 style="text-align: center; margin-bottom: 20px;" id="modeFeaturesTitle">Mode Features</h3>
+        <div class="mode-features-grid" id="modeFeaturesGrid">
+          <!-- Features will be inserted here -->
         </div>
       </div>
     </section>
@@ -310,7 +345,7 @@
             $4.99<span>/month</span>
           </div>
           
-          <ul class="plan-features">
+          <ul class="plan-features" id="schoolPlanFeatures">
             <li><i class="fa fa-check"></i> Unlimited school words</li>
             <li><i class="fa fa-check"></i> Save 50 custom lists</li>
             <li><i class="fa fa-check"></i> Basic progress tracking</li>
@@ -700,6 +735,183 @@
   </footer>
 
   <script>
+    // ==================== MODE-SPECIFIC CONTENT ====================
+    const MODE_CONTENT = {
+      school: {
+        hero: {
+          title: "School Premium: Ace Your Spelling Tests",
+          description: "Perfect for students preparing for exams and school spelling bees",
+          gradient: "linear-gradient(135deg, #4CAF50 0%, #2196F3 100%)",
+          icon: "fa-graduation-cap"
+        },
+        features: [
+          { icon: "fa-graduation-cap", title: "Grade-Level Words", desc: "Access to spelling words by grade level" },
+          { icon: "fa-chalkboard-teacher", title: "Teacher Resources", desc: "Printable worksheets and reports" },
+          { icon: "fa-trophy", title: "Spelling Bee Prep", desc: "Specialized training for spelling competitions" },
+          { icon: "fa-book-open", title: "Curriculum Alignment", desc: "Aligned with school syllabi" },
+          { icon: "fa-chart-line", title: "Progress Reports", desc: "Detailed progress tracking for parents" },
+          { icon: "fa-users", title: "Classroom Mode", desc: "Manage multiple student accounts" }
+        ],
+        testimonials: [
+          {
+            text: "My students' spelling scores improved by 45% in one semester!",
+            author: "Mrs. Johnson, 5th Grade Teacher",
+            rating: 5
+          }
+        ],
+        recommendedPlan: "school"
+      },
+      oet: {
+        hero: {
+          title: "OET Medical English Premium",
+          description: "Master medical terminology for OET exam success",
+          gradient: "linear-gradient(135deg, #FF5252 0%, #FF4081 100%)",
+          icon: "fa-stethoscope"
+        },
+        features: [
+          { icon: "fa-stethoscope", title: "OET-Specific Vocabulary", desc: "Medical terminology for healthcare professionals" },
+          { icon: "fa-user-md", title: "Doctor-Patient Dialogues", desc: "Practice real medical conversations" },
+          { icon: "fa-file-medical", title: "Medical Report Writing", desc: "Learn proper medical documentation" },
+          { icon: "fa-hospital", title: "Healthcare Scenarios", desc: "Simulate hospital and clinic situations" },
+          { icon: "fa-heartbeat", title: "Specialized Vocabulary", desc: "Medical terms by specialty" },
+          { icon: "fa-clipboard-check", title: "OET Exam Prep", desc: "Practice tests and mock exams" }
+        ],
+        testimonials: [
+          {
+            text: "Passed my OET on the first try! The medical terminology practice was invaluable.",
+            author: "Dr. Ahmed, Medical Professional",
+            rating: 5
+          }
+        ],
+        recommendedPlan: "complete"
+      },
+      ielts: {
+        hero: {
+          title: "IELTS Academic Premium",
+          description: "Advanced vocabulary and spelling for IELTS success",
+          gradient: "linear-gradient(135deg, #2196F3 0%, #4CAF50 100%)",
+          icon: "fa-globe-americas"
+        },
+        features: [
+          { icon: "fa-globe-americas", title: "Academic Vocabulary", desc: "Advanced words for academic writing" },
+          { icon: "fa-microphone", title: "Speaking Practice", desc: "Pronunciation and fluency training" },
+          { icon: "fa-pen-alt", title: "Writing Assistance", desc: "IELTS essay structure and vocabulary" },
+          { icon: "fa-headphones", title: "Listening Practice", desc: "Accent recognition and comprehension" },
+          { icon: "fa-chart-bar", title: "Score Prediction", desc: "Track progress toward target band" },
+          { icon: "fa-clock", title: "Time Management", desc: "Practice under exam conditions" }
+        ],
+        testimonials: [
+          {
+            text: "Achieved Band 8.5! The vocabulary builder was crucial for my writing score.",
+            author: "Maria L., IELTS Test Taker",
+            rating: 5
+          }
+        ],
+        recommendedPlan: "complete"
+      },
+      custom: {
+        hero: {
+          title: "Custom Spelling Lists Premium",
+          description: "Create unlimited custom word lists for your specific needs",
+          gradient: "linear-gradient(135deg, #FF9800 0%, #FF5722 100%)",
+          icon: "fa-edit"
+        },
+        features: [
+          { icon: "fa-edit", title: "Unlimited Custom Lists", desc: "Create as many word lists as you need" },
+          { icon: "fa-upload", title: "Import/Export", desc: "Import words from CSV or text files" },
+          { icon: "fa-share-alt", title: "Share Lists", desc: "Share your lists with other users" },
+          { icon: "fa-search", title: "Word Suggestions", desc: "Get intelligent word suggestions" },
+          { icon: "fa-brain", title: "Spaced Repetition", desc: "Advanced memory optimization" },
+          { icon: "fa-sliders-h", title: "Custom Settings", desc: "Fully customizable learning parameters" }
+        ],
+        testimonials: [
+          {
+            text: "Perfect for learning technical terms for my engineering certification!",
+            author: "Robert T., Engineer",
+            rating: 5
+          }
+        ],
+        recommendedPlan: "complete"
+      }
+    };
+
+    function loadModeContent(mode) {
+      const content = MODE_CONTENT[mode];
+      if (!content) return false;
+      
+      // Update Hero section
+      const hero = document.querySelector('.hero');
+      const modeTitle = document.getElementById('modeTitle');
+      const modeDescription = document.getElementById('modeDescription');
+      
+      if (hero && modeTitle && modeDescription) {
+        hero.style.background = content.hero.gradient;
+        modeTitle.textContent = content.hero.title;
+        modeDescription.textContent = content.hero.description;
+      }
+      
+      // Update mode-specific features section
+      const featuresSection = document.getElementById('modeFeaturesSection');
+      const featuresTitle = document.getElementById('modeFeaturesTitle');
+      const featuresGrid = document.getElementById('modeFeaturesGrid');
+      
+      if (featuresSection && featuresTitle && featuresGrid) {
+        featuresSection.style.display = 'block';
+        featuresTitle.textContent = mode.charAt(0).toUpperCase() + mode.slice(1) + ' Premium Features';
+        
+        // Clear existing features
+        featuresGrid.innerHTML = '';
+        
+        // Add new features
+        content.features.forEach(feature => {
+          const featureItem = document.createElement('div');
+          featureItem.className = 'mode-feature-item';
+          featureItem.innerHTML = `
+            <i class="fa ${feature.icon}" style="color: ${content.hero.gradient.includes('#4CAF50') ? '#4CAF50' : content.hero.gradient.includes('#FF5252') ? '#FF5252' : content.hero.gradient.includes('#2196F3') ? '#2196F3' : '#FF9800'}"></i>
+            <h4>${feature.title}</h4>
+            <p>${feature.desc}</p>
+          `;
+          featuresGrid.appendChild(featureItem);
+        });
+        
+        // Smooth scroll to features section
+        setTimeout(() => {
+          featuresSection.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }, 300);
+      }
+      
+      // Update recommended plan
+      const recommendedPlan = content.recommendedPlan;
+      document.querySelectorAll('.plan-card').forEach(card => {
+        card.classList.remove('popular');
+        const planButton = card.querySelector('.btn-choose');
+        if (planButton && planButton.dataset.plan === recommendedPlan) {
+          card.classList.add('popular');
+        }
+      });
+      
+      // Update School Premium features if mode is school
+      if (mode === 'school') {
+        const schoolFeatures = document.getElementById('schoolPlanFeatures');
+        if (schoolFeatures) {
+          schoolFeatures.innerHTML = content.features.map(feature => 
+            `<li><i class="fa fa-check"></i> ${feature.title}</li>`
+          ).slice(0, 6).join('');
+        }
+      }
+      
+      // Track mode view
+      if (typeof gtag !== 'undefined') {
+        gtag('event', 'mode_specific_premium_view', {
+          mode: mode,
+          mode_name: mode
+        });
+      }
+      
+      return true;
+    }
+
+    // ==================== MAIN JAVASCRIPT ====================
     // Smooth scroll to pricing
     document.querySelectorAll('a[href^="#"]').forEach(anchor => {
       anchor.addEventListener('click', function (e) {
@@ -778,152 +990,137 @@
       }
     }
 
-
-document.getElementById('checkoutForm').addEventListener('submit', async function(e) {
-    e.preventDefault();
-    
-    // Get email from input field (you need to add this to your form)
-    const emailInput = document.querySelector('input[type="email"]') || 
-                      document.getElementById('emailInput') ||
-                      this.querySelector('input[type="email"]');
-    
-    const email = emailInput ? emailInput.value : '';
-    const planElement = document.getElementById('selectedPlan');
-    const planText = planElement ? planElement.textContent : 'Complete Premium';
-    
-    // Extract plan and price
-    let planName = 'Complete Premium';
-    let price = 8.99;
-    
-    if (planText.includes('School Premium')) {
+    // Checkout form submission
+    document.getElementById('checkoutForm').addEventListener('submit', async function(e) {
+      e.preventDefault();
+      
+      const emailInput = document.querySelector('input[type="email"]');
+      const email = emailInput ? emailInput.value : '';
+      const planElement = document.getElementById('selectedPlan');
+      const planText = planElement ? planElement.textContent : 'Complete Premium';
+      
+      // Extract plan and price
+      let planName = 'Complete Premium';
+      let price = 8.99;
+      
+      if (planText.includes('School Premium')) {
         planName = 'School Premium';
         price = 4.99;
-    } else if (planText.includes('Complete Premium')) {
+      } else if (planText.includes('Complete Premium')) {
         planName = 'Complete Premium';
         price = 8.99;
-    } else if (planText.includes('Family Plan')) {
+      } else if (planText.includes('Family Plan')) {
         planName = 'Family Plan';
         price = 14.99;
-    }
-    
-    // Validate email
-    if (!email || !email.includes('@')) {
+      }
+      
+      // Validate email
+      if (!email || !email.includes('@')) {
         alert('Please enter a valid email address');
         return;
-    }
-    
-    // Show loading
-    const submitBtn = this.querySelector('button[type="submit"]');
-    const originalText = submitBtn.innerHTML;
-    submitBtn.innerHTML = '<i class="fa fa-spinner fa-spin"></i> Processing...';
-    submitBtn.disabled = true;
-    
-    try {
+      }
+      
+      // Show loading
+      const submitBtn = this.querySelector('button[type="submit"]');
+      const originalText = submitBtn.innerHTML;
+      submitBtn.innerHTML = '<i class="fa fa-spinner fa-spin"></i> Processing...';
+      submitBtn.disabled = true;
+      
+      try {
         console.log('📧 Processing payment for:', email, 'Plan:', planName, 'Price:', price);
         
-        // 🚨 FIXED: Changed from localhost:3001 to /api/send-confirmation
         const response = await fetch('/api/send-confirmation', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                email: email,
-                plan: planName,
-                amount: price
-            })
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            email: email,
+            plan: planName,
+            amount: price
+          })
         });
         
         if (!response.ok) {
-            throw new Error(`Server responded with ${response.status}`);
+          throw new Error(`Server responded with ${response.status}`);
         }
         
         const result = await response.json();
         
         if (result.success) {
-            // Success message
-            alert(`✅ Thank you! Confirmation email sent to ${email}\n\nCheck your inbox (and spam folder) for details.`);
-            
-            // Track in Google Analytics
-            if (typeof gtag !== 'undefined') {
-                gtag('event', 'purchase', {
-                    transaction_id: 'TXN_' + Date.now(),
-                    value: price,
-                    currency: 'USD',
-                    items: [{
-                        item_id: planName.toLowerCase().replace(' ', '_'),
-                        item_name: planName,
-                        price: price,
-                        quantity: 1
-                    }]
-                });
-            }
-            
-            // Store premium status
-            localStorage.setItem('premiumUser', JSON.stringify({
-                plan: planName,
-                email: email,
-                activatedAt: new Date().toISOString(),
-                active: true
-            }));
-            
-            // Redirect to thank you page
-            setTimeout(() => {
-                window.location.href = 'thank-you.html?plan=' + 
-                    encodeURIComponent(planName) + '&email=' + 
-                    encodeURIComponent(email);
-            }, 2000);
-            
+          // Success message
+          alert(`✅ Thank you! Confirmation email sent to ${email}\n\nCheck your inbox (and spam folder) for details.`);
+          
+          // Track in Google Analytics
+          if (typeof gtag !== 'undefined') {
+            gtag('event', 'purchase', {
+              transaction_id: 'TXN_' + Date.now(),
+              value: price,
+              currency: 'USD',
+              items: [{
+                item_id: planName.toLowerCase().replace(' ', '_'),
+                item_name: planName,
+                price: price,
+                quantity: 1
+              }]
+            });
+          }
+          
+          // Store premium status
+          localStorage.setItem('premiumUser', JSON.stringify({
+            plan: planName,
+            email: email,
+            activatedAt: new Date().toISOString(),
+            active: true
+          }));
+          
+          // Redirect to thank you page
+          setTimeout(() => {
+            window.location.href = 'thank-you.html?plan=' + 
+              encodeURIComponent(planName) + '&email=' + 
+              encodeURIComponent(email);
+          }, 2000);
+          
         } else {
-            alert('✅ Purchase complete!\n\nHowever, we couldn\'t send the confirmation email. Please contact support@spellrightpro.com');
-            
-            // Still redirect
-            setTimeout(() => {
-                window.location.href = 'thank-you.html?plan=' + 
-                    encodeURIComponent(planName);
-            }, 2000);
+          alert('✅ Purchase complete!\n\nHowever, we couldn\'t send the confirmation email. Please contact support@spellrightpro.com');
+          
+          // Still redirect
+          setTimeout(() => {
+            window.location.href = 'thank-you.html?plan=' + 
+              encodeURIComponent(planName);
+          }, 2000);
         }
         
-    } catch (error) {
+      } catch (error) {
         console.error('Payment error:', error);
         alert('✅ Purchase recorded!\n\nEmail service is temporarily unavailable. Your premium access is active.');
         
         setTimeout(() => {
-            window.location.href = 'thank-you.html?plan=' + 
-                encodeURIComponent(planName);
+          window.location.href = 'thank-you.html?plan=' + 
+            encodeURIComponent(planName);
         }, 2000);
         
-    } finally {
+      } finally {
         // Reset button
         submitBtn.innerHTML = originalText;
         submitBtn.disabled = false;
-    }
-});
+      }
+    });
+
+    // Performance monitoring and initialization
+    window.addEventListener('load', function() {
+      // Load mode content from URL parameter
+      const urlParams = new URLSearchParams(window.location.search);
+      const mode = urlParams.get('mode');
       
-      // Track in Firebase
-      if (typeof window.initFirebase === 'function') {
-        window.initFirebase();
-        if (typeof firebase !== 'undefined' && firebase.analytics) {
-          firebase.analytics().logEvent('purchase', {
-            value: price,
-            currency: 'USD',
-            items: planName
-          });
+      if (mode) {
+        const success = loadModeContent(mode);
+        if (!success) {
+          console.log(`Mode "${mode}" not found. Using default content.`);
         }
       }
       
-      // Show success message
-      alert(`Thank you for choosing ${planName}! Your premium subscription is being activated. You will receive a confirmation email shortly.`);
-      
-      // In production, this would redirect to a thank you page
-      // For now, simulate redirection
-      setTimeout(() => {
-        window.location.href = '/thank-you.html?plan=' + encodeURIComponent(planName);
-      }, 2000);
-    });
-
-    // Performance monitoring
-    window.addEventListener('load', function() {
+      // Performance tracking
       if (typeof gtag !== 'undefined') {
         const perfData = window.performance.timing;
         const loadTime = perfData.loadEventEnd - perfData.navigationStart;
@@ -940,99 +1137,82 @@ document.getElementById('checkoutForm').addEventListener('submit', async functio
       if (typeof gtag !== 'undefined') {
         gtag('event', 'page_view', {
           page_title: 'Premium Plans',
-          page_path: window.location.pathname
+          page_path: window.location.pathname,
+          mode: mode || 'general'
         });
       }
     });
   </script>
-  <!-- Add this RIGHT BEFORE </body> in ALL HTML files -->
-
-<script>
-// ==================== SERVICE WORKER REGISTRATION ====================
-if ('serviceWorker' in navigator) {
-  window.addEventListener('load', function() {
-    navigator.serviceWorker.register('sw.js')
-      .then(function(registration) {
-        console.log('✅ ServiceWorker registration successful with scope:', registration.scope);
-        
-        // Check for updates
-        registration.addEventListener('updatefound', function() {
-          const newWorker = registration.installing;
-          console.log('🔄 ServiceWorker update found!');
-          
-          newWorker.addEventListener('statechange', function() {
-            if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-              console.log('🆕 New content available. Refresh to update.');
-              // Optional: Show update notification to user
-              // showUpdateNotification();
-            }
-          });
-        });
-      })
-      .catch(function(error) {
-        console.log('❌ ServiceWorker registration failed:', error);
-      });
-  });
-}
-
-// ==================== ONLINE/OFFLINE DETECTION ====================
-window.addEventListener('online', function() {
-  console.log('🌐 You are online');
-  document.body.classList.remove('offline');
-  // Optional: Show online notification
-  // showToast('You are back online', 'success');
-});
-
-window.addEventListener('offline', function() {
-  console.log('📴 You are offline');
-  document.body.classList.add('offline');
-  // Optional: Show offline warning
-  // showToast('You are offline. Some features may be unavailable.', 'warning');
-});
-
-// ==================== APP INSTALL PROMPT ====================
-let deferredPrompt;
-window.addEventListener('beforeinstallprompt', function(e) {
-  // Prevent Chrome 67 and earlier from automatically showing the prompt
-  e.preventDefault();
-  deferredPrompt = e;
-  console.log('📱 PWA install prompt available');
   
-  // Optional: Show install button
-  // showInstallPrompt();
-});
-
-// ==================== ERROR TRACKING ====================
-window.addEventListener('error', function(e) {
-  console.error('🚨 JavaScript Error:', e.message, 'at', e.filename, ':', e.lineno);
-  // Optional: Send to analytics
-  if (typeof gtag !== 'undefined') {
-    gtag('event', 'exception', {
-      description: e.message,
-      fatal: false
-    });
-  }
-});
-
-// ==================== PERFORMANCE MONITORING ====================
-if ('performance' in window) {
-  window.addEventListener('load', function() {
-    setTimeout(function() {
-      const perfData = window.performance.getEntriesByType('navigation')[0];
-      if (perfData) {
-        const loadTime = perfData.loadEventEnd - perfData.startTime;
-        console.log('⏱️ Page load time:', Math.round(loadTime), 'ms');
-        
-        if (loadTime > 3000 && typeof gtag !== 'undefined') {
-          gtag('event', 'slow_load', {
-            load_time: loadTime,
-            page_path: window.location.pathname
+  <!-- Service Worker and PWA scripts -->
+  <script>
+    // ==================== SERVICE WORKER REGISTRATION ====================
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', function() {
+        navigator.serviceWorker.register('sw.js')
+          .then(function(registration) {
+            console.log('✅ ServiceWorker registration successful with scope:', registration.scope);
+            
+            // Check for updates
+            registration.addEventListener('updatefound', function() {
+              const newWorker = registration.installing;
+              console.log('🔄 ServiceWorker update found!');
+              
+              newWorker.addEventListener('statechange', function() {
+                if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                  console.log('🆕 New content available. Refresh to update.');
+                }
+              });
+            });
+          })
+          .catch(function(error) {
+            console.log('❌ ServiceWorker registration failed:', error);
           });
-        }
+      });
+    }
+
+    // ==================== ONLINE/OFFLINE DETECTION ====================
+    window.addEventListener('online', function() {
+      console.log('🌐 You are online');
+      document.body.classList.remove('offline');
+    });
+
+    window.addEventListener('offline', function() {
+      console.log('📴 You are offline');
+      document.body.classList.add('offline');
+    });
+
+    // ==================== APP INSTALL PROMPT ====================
+    let deferredPrompt;
+    window.addEventListener('beforeinstallprompt', function(e) {
+      e.preventDefault();
+      deferredPrompt = e;
+      console.log('📱 PWA install prompt available');
+    });
+
+    // ==================== ERROR TRACKING ====================
+    window.addEventListener('error', function(e) {
+      console.error('🚨 JavaScript Error:', e.message, 'at', e.filename, ':', e.lineno);
+      if (typeof gtag !== 'undefined') {
+        gtag('event', 'exception', {
+          description: e.message,
+          fatal: false
+        });
       }
-    }, 0);
-  });
-}
-</script>
+    });
+
+    // ==================== PERFORMANCE MONITORING ====================
+    if ('performance' in window) {
+      window.addEventListener('load', function() {
+        setTimeout(function() {
+          const perfData = window.performance.getEntriesByType('navigation')[0];
+          if (perfData) {
+            const loadTime = perfData.loadEventEnd - perfData.startTime;
+            console.log('⏱️ Page load time:', Math.round(loadTime), 'ms');
+          }
+        }, 0);
+      });
+    }
+  </script>
 </body>
 </html>
