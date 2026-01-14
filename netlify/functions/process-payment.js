@@ -1,33 +1,23 @@
 exports.handler = async (event) => {
   try {
-    const { plan, customerEmail, customerName } = JSON.parse(event.body || "{}");
+    const { plan, customerEmail } = JSON.parse(event.body || "{}");
 
     if (!plan || !customerEmail) {
-      return {
-        statusCode: 400,
-        body: JSON.stringify({ error: "Missing plan or email" })
-      };
+      return { statusCode: 400, body: "Missing data" };
     }
-
-    const transactionId = `SRP-${Date.now()}`;
 
     return {
       statusCode: 200,
       body: JSON.stringify({
         success: true,
-        transaction: {
-          id: transactionId,
-          plan,
-          customerEmail,
-          timestamp: new Date().toISOString()
-        }
+        transactionId: `SRP-${Date.now()}`
       })
     };
 
   } catch (err) {
     return {
       statusCode: 500,
-      body: JSON.stringify({ error: err.message })
+      body: err.message
     };
   }
 };
