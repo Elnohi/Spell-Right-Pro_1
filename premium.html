@@ -1,13 +1,55 @@
 <!DOCTYPE html>
 <html lang="en">
+<!-- Add to the head section of index.html and all pages -->
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>SpellRightPro Premium Plans</title>
-  <link rel="stylesheet" href="/css/styles.css">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
-
-    <!-- FIREBASE SDKs -->
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  
+  <!-- Primary Meta Tags -->
+  <title>SpellRightPro — AI-Powered Spelling Trainer with Voice Recognition</title>
+  <meta name="title" content="SpellRightPro — AI-Powered Spelling Trainer with Voice Recognition">
+  <meta name="description" content="Master spelling with AI-powered voice recognition. Practice OET, School, and Spelling Bee words. Get real-time feedback and track your progress.">
+  <meta name="keywords" content="spelling practice, OET preparation, spelling bee, voice recognition, spelling trainer, learn spelling, English spelling">
+  <meta name="author" content="SpellRightPro">
+  <meta name="robots" content="index, follow">
+  
+  <!-- Open Graph / Facebook -->
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://spellrightpro.org/">
+  <meta property="og:title" content="SpellRightPro — AI-Powered Spelling Trainer">
+  <meta property="og:description" content="Master spelling with AI-powered voice recognition. Practice OET, School, and Spelling Bee words.">
+  <meta property="og:image" content="https://spellrightpro.org/assets/og-image.png">
+  
+  <!-- Twitter -->
+  <meta property="twitter:card" content="summary_large_image">
+  <meta property="twitter:url" content="https://spellrightpro.org/">
+  <meta property="twitter:title" content="SpellRightPro — AI-Powered Spelling Trainer">
+  <meta property="twitter:description" content="Master spelling with AI-powered voice recognition. Practice OET, School, and Spelling Bee words.">
+  <meta property="twitter:image" content="https://spellrightpro.org/assets/og-image.png">
+  
+  <!-- Canonical URL -->
+  <link rel="canonical" href="https://spellrightpro.org/">
+  
+  <!-- Favicon -->
+  <link rel="icon" type="image/png" href="/assets/favicon.png">
+  <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
+  
+  <!-- Preconnect to external resources -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://cdnjs.cloudflare.com">
+  <link rel="preconnect" href="https://www.gstatic.com">
+  
+  <!-- Preload critical assets -->
+  <link rel="preload" href="/css/styles.css" as="style">
+  <link rel="preload" href="/assets/logo.png" as="image">
+  <link rel="preload" href="/js/firebase-config.js" as="script">
+  
+  <!-- Styles -->
+  <link rel="stylesheet" href="/css/styles.css"/>
+  <link rel="stylesheet" href="/css/premium.css"/>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"/>
+  
+  <!-- Firebase SDKs -->
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
@@ -20,241 +62,7 @@
     function gtag(){dataLayer.push(arguments);}
     gtag('js', new Date());
     gtag('config', 'G-H09MF13297');
-    
-    // Function to track premium clicks
-    function trackPremiumClick(source, plan) {
-      gtag('event', 'premium_click', {
-        event_category: 'premium_conversion',
-        event_label: source,
-        value: plan === 'complete' ? 8.99 : plan === 'school' ? 4.99 : 14.99
-      });
-    }
-    
-    // Function to track plan view
-    function trackPlanView(plan) {
-      gtag('event', 'view_item', {
-        items: [{
-          item_id: plan,
-          item_name: 'SpellRightPro ' + plan,
-          item_category: 'premium_plans'
-        }]
-      });
-    }
   </script>
-  <style>
-    :root {
-      --primary: #7b2ff7;
-      --secondary: #f72585;
-      --accent: #ffd166;
-      --dark-bg: #0f0f23;
-      --card-bg: rgba(255, 255, 255, 0.05);
-    }
-    
-    body {
-      background: var(--dark-bg);
-      color: white;
-      font-family: 'Segoe UI', system-ui, sans-serif;
-      line-height: 1.6;
-    }
-    
-    .container {
-      max-width: 1200px;
-      margin: 0 auto;
-      padding: 20px;
-    }
-    
-    .hero {
-      text-align: center;
-      padding: 60px 20px;
-      background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
-      border-radius: 20px;
-      margin-bottom: 40px;
-    }
-    
-    .hero h1 {
-      font-size: 3.5em;
-      margin-bottom: 20px;
-    }
-    
-    .plans-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-      gap: 30px;
-      margin: 40px 0;
-    }
-    
-    .plan-card {
-      background: var(--card-bg);
-      border-radius: 20px;
-      padding: 40px 30px;
-      border: 2px solid rgba(255, 255, 255, 0.1);
-      transition: all 0.3s ease;
-      position: relative;
-      overflow: hidden;
-    }
-    
-    .plan-card:hover {
-      transform: translateY(-10px);
-      border-color: var(--primary);
-      box-shadow: 0 20px 40px rgba(123, 47, 247, 0.2);
-    }
-    
-    .plan-card.popular {
-      border-color: var(--accent);
-      transform: scale(1.05);
-    }
-    
-    .plan-card.popular::before {
-      content: 'MOST POPULAR';
-      position: absolute;
-      top: 20px;
-      right: -40px;
-      background: var(--accent);
-      color: #333;
-      padding: 8px 40px;
-      transform: rotate(45deg);
-      font-weight: bold;
-      font-size: 0.8em;
-    }
-    
-    .plan-header {
-      text-align: center;
-      margin-bottom: 30px;
-    }
-    
-    .plan-price {
-      font-size: 3.5em;
-      font-weight: bold;
-      margin: 20px 0;
-    }
-    
-    .plan-price span {
-      font-size: 0.4em;
-      opacity: 0.8;
-    }
-    
-    .plan-features {
-      list-style: none;
-      padding: 0;
-      margin: 30px 0;
-    }
-    
-    .plan-features li {
-      padding: 12px 0;
-      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
-    
-    .plan-features li i {
-      color: var(--primary);
-    }
-    
-    .btn-choose {
-      display: block;
-      width: 100%;
-      padding: 18px;
-      background: var(--primary);
-      color: white;
-      border: none;
-      border-radius: 12px;
-      font-size: 1.1em;
-      font-weight: bold;
-      cursor: pointer;
-      transition: all 0.3s;
-      text-align: center;
-      text-decoration: none;
-    }
-    
-    .btn-choose:hover {
-      background: var(--secondary);
-      transform: translateY(-3px);
-    }
-    
-    .testimonials {
-      margin: 80px 0;
-    }
-    
-    .testimonial-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-      gap: 30px;
-      margin-top: 40px;
-    }
-    
-    .testimonial-card {
-      background: var(--card-bg);
-      padding: 30px;
-      border-radius: 15px;
-      border-left: 4px solid var(--primary);
-    }
-    
-    .faq-section {
-      margin: 80px 0;
-    }
-    
-    .faq-item {
-      background: var(--card-bg);
-      margin: 15px 0;
-      border-radius: 10px;
-      overflow: hidden;
-    }
-    
-    .faq-question {
-      padding: 20px;
-      cursor: pointer;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      font-weight: bold;
-    }
-    
-    .faq-answer {
-      padding: 0 20px;
-      max-height: 0;
-      overflow: hidden;
-      transition: max-height 0.3s ease;
-    }
-    
-    .faq-answer.open {
-      padding: 0 20px 20px;
-      max-height: 500px;
-    }
-    
-    .trust-badges {
-      display: flex;
-      justify-content: center;
-      gap: 40px;
-      margin: 40px 0;
-      flex-wrap: wrap;
-    }
-    
-    .trust-badge {
-      text-align: center;
-      padding: 20px;
-    }
-    
-    .trust-badge i {
-      font-size: 2.5em;
-      color: var(--primary);
-      margin-bottom: 10px;
-    }
-    
-    @media (max-width: 768px) {
-      .plans-grid {
-        grid-template-columns: 1fr;
-      }
-      
-      .plan-card.popular {
-        transform: none;
-      }
-      
-      .hero h1 {
-        font-size: 2.5em;
-      }
-    }
-  </style>
 </head>
 <body>
   <div class="container">
