@@ -1,0 +1,44 @@
+# robots.txt for SpellRightPro
+User-agent: *
+Allow: /
+Disallow: /admin/
+Disallow: /private/
+Disallow: /assets/
+Disallow: /css/
+Disallow: /js/
+Disallow: /thank-you.html
+Disallow: /contact-success.html
+Disallow: /cancel.html
+Disallow: /offline.html
+
+# Allow search engines to crawl content
+Allow: /freemium-bee.html
+Allow: /freemium-oet.html
+Allow: /freemium-school.html
+Allow: /premium.html
+Allow: /pricing.html
+Allow: /pro.html
+Allow: /terms.html
+Allow: /privacy.html
+Allow: /refund-policy.html
+Allow: /security.html
+Allow: /contact.html
+
+# Sitemap location
+Sitemap: https://spellrightpro.org/sitemap.xml
+
+# Crawl delay to be respectful
+Crawl-delay: 1
+
+# Specify which bots can crawl
+User-agent: Googlebot
+Allow: /
+Crawl-delay: 0.5
+
+User-agent: Bingbot
+Allow: /
+Crawl-delay: 1
+
+User-agent: DuckDuckBot
+Allow: /
+Crawl-delay: 2
