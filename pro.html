@@ -1,153 +1,68 @@
 <!DOCTYPE html>
 <html lang="en">
+<!-- Add to the head section of index.html and all pages -->
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>SpellRightPro PRO – Smart Spelling Training</title>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
   
-  <link rel="stylesheet" href="/css/styles.css" />
-  <link rel="stylesheet" href="/css/premium.css" />
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" />
+  <!-- Primary Meta Tags -->
+  <title>SpellRightPro — AI-Powered Spelling Trainer with Voice Recognition</title>
+  <meta name="title" content="SpellRightPro — AI-Powered Spelling Trainer with Voice Recognition">
+  <meta name="description" content="Master spelling with AI-powered voice recognition. Practice OET, School, and Spelling Bee words. Get real-time feedback and track your progress.">
+  <meta name="keywords" content="spelling practice, OET preparation, spelling bee, voice recognition, spelling trainer, learn spelling, English spelling">
+  <meta name="author" content="SpellRightPro">
+  <meta name="robots" content="index, follow">
   
-  <style>
-    .pro-hero {
-      background: linear-gradient(135deg, #7b2ff7 0%, #f107a3 100%);
-      color: white;
-      padding: 80px 20px;
-      text-align: center;
-      border-radius: 0 0 40px 40px;
-      margin-bottom: 40px;
-    }
-    
-    .pro-hero h1 {
-      font-size: 3rem;
-      margin-bottom: 20px;
-    }
-    
-    .pro-hero p {
-      font-size: 1.2rem;
-      max-width: 600px;
-      margin: 0 auto 30px;
-      opacity: 0.9;
-    }
-    
-    .pillars-section {
-      max-width: 1200px;
-      margin: 0 auto;
-      padding: 0 20px;
-    }
-    
-    .pillar-card {
-      background: white;
-      border-radius: 20px;
-      padding: 40px;
-      margin-bottom: 30px;
-      box-shadow: 0 15px 30px rgba(0,0,0,0.1);
-      display: flex;
-      align-items: center;
-      gap: 40px;
-    }
-    
-    .pillar-icon {
-      background: linear-gradient(135deg, #7b2ff7, #f107a3);
-      width: 100px;
-      height: 100px;
-      border-radius: 20px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      color: white;
-      font-size: 3rem;
-      flex-shrink: 0;
-    }
-    
-    .pillar-content h3 {
-      font-size: 1.8rem;
-      color: #7b2ff7;
-      margin-bottom: 15px;
-    }
-    
-    .feature-demo {
-      background: #f8f9fa;
-      border-radius: 15px;
-      padding: 30px;
-      margin-top: 30px;
-      text-align: center;
-    }
-    
-    .demo-gif {
-      max-width: 100%;
-      border-radius: 10px;
-      box-shadow: 0 10px 20px rgba(0,0,0,0.1);
-      margin: 20px 0;
-    }
-    
-    .persona-section {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-      gap: 30px;
-      margin: 50px 0;
-    }
-    
-    .persona-card {
-      background: white;
-      border-radius: 15px;
-      padding: 30px;
-      box-shadow: 0 10px 20px rgba(0,0,0,0.1);
-      border-top: 5px solid #7b2ff7;
-    }
-    
-    .persona-card h4 {
-      color: #7b2ff7;
-      margin-bottom: 15px;
-    }
-    
-    .comparison-table {
-      background: white;
-      border-radius: 20px;
-      padding: 40px;
-      margin: 50px 0;
-      box-shadow: 0 15px 30px rgba(0,0,0,0.1);
-    }
-    
-    .testimonial {
-      background: #f8f9fa;
-      border-radius: 15px;
-      padding: 30px;
-      margin: 30px 0;
-      border-left: 5px solid #7b2ff7;
-    }
-    
-    .cta-section {
-      text-align: center;
-      padding: 60px 20px;
-      background: linear-gradient(135deg, #7b2ff7 0%, #f107a3 100%);
-      color: white;
-      border-radius: 40px;
-      margin: 50px 0;
-    }
-    
-    .cta-button {
-      background: white;
-      color: #7b2ff7;
-      border: none;
-      padding: 18px 40px;
-      border-radius: 15px;
-      font-size: 1.2rem;
-      font-weight: bold;
-      cursor: pointer;
-      transition: transform 0.3s ease, box-shadow 0.3s ease;
-      display: inline-flex;
-      align-items: center;
-      gap: 10px;
-      margin-top: 20px;
-    }
-    
-    .cta-button:hover {
-      transform: translateY(-5px);
-      box-shadow: 0 20px 30px rgba(0,0,0,0.2);
-    }
-  </style>
+  <!-- Open Graph / Facebook -->
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://spellrightpro.org/">
+  <meta property="og:title" content="SpellRightPro — AI-Powered Spelling Trainer">
+  <meta property="og:description" content="Master spelling with AI-powered voice recognition. Practice OET, School, and Spelling Bee words.">
+  <meta property="og:image" content="https://spellrightpro.org/assets/og-image.png">
+  
+  <!-- Twitter -->
+  <meta property="twitter:card" content="summary_large_image">
+  <meta property="twitter:url" content="https://spellrightpro.org/">
+  <meta property="twitter:title" content="SpellRightPro — AI-Powered Spelling Trainer">
+  <meta property="twitter:description" content="Master spelling with AI-powered voice recognition. Practice OET, School, and Spelling Bee words.">
+  <meta property="twitter:image" content="https://spellrightpro.org/assets/og-image.png">
+  
+  <!-- Canonical URL -->
+  <link rel="canonical" href="https://spellrightpro.org/">
+  
+  <!-- Favicon -->
+  <link rel="icon" type="image/png" href="/assets/favicon.png">
+  <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
+  
+  <!-- Preconnect to external resources -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://cdnjs.cloudflare.com">
+  <link rel="preconnect" href="https://www.gstatic.com">
+  
+  <!-- Preload critical assets -->
+  <link rel="preload" href="/css/styles.css" as="style">
+  <link rel="preload" href="/assets/logo.png" as="image">
+  <link rel="preload" href="/js/firebase-config.js" as="script">
+  
+  <!-- Styles -->
+  <link rel="stylesheet" href="/css/styles.css"/>
+  <link rel="stylesheet" href="/css/premium.css"/>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"/>
+  
+  <!-- Firebase SDKs -->
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-analytics.js"></script>
+  
+  <!-- Google Analytics -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-H09MF13297"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-H09MF13297');
+  </script>
 </head>
 <body>
   <!-- Navigation -->
