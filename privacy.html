@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Privacy Policy — SpellRightPro</title>
+  <link rel="icon" href="/assets/logo.png">
+  <link rel="stylesheet" href="/css/styles.css">
+  <style>
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; line-height: 1.6; }
+    .container { max-width: 860px; margin: 32px auto; padding: 0 16px; }
+    h1, h2 { line-height: 1.25; }
+    .muted { color: #666; }
+    nav a { color: #0b5ed7; text-decoration: none; }
+    nav a:hover { text-decoration: underline; }
+    .card { background: #fff; border: 1px solid #e7e7e7; border-radius: 12px; padding: 20px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <nav style="margin-bottom: 16px;"><a href="/">← Back to Home</a></nav>
+    <div class="card">
+      <h1>Privacy Policy</h1>
+      <p class="muted">Last updated: 25 Aug 2025</p>
+
+      <p>SpellRightPro (“we”, “us”, or “our”) respects your privacy. This policy explains what we collect, why, and how we handle it.</p>
+
+      <h2>Information we collect</h2>
+      <ul>
+        <li><strong>Account info:</strong> Email address and authentication data via Firebase.</li>
+        <li><strong>Usage data:</strong> Basic analytics (e.g., pages visited, device info) to improve the product.</li>
+        <li><strong>Payment data:</strong> Managed by Stripe. We do not store full card details on our servers.</li>
+        <li><strong>Content you provide:</strong> Word lists you upload or type for practice.</li>
+      </ul>
+
+      <h2>How we use data</h2>
+      <ul>
+        <li>Provide and improve SpellRightPro features.</li>
+        <li>Authenticate users and manage subscriptions.</li>
+        <li>Detect abuse and keep the service secure.</li>
+        <li>Communicate service updates and support responses.</li>
+      </ul>
+
+      <h2>Data processors</h2>
+      <p>We use reputable third-party processors, including:</p>
+      <ul>
+        <li>Google Firebase (authentication, database, analytics)</li>
+        <li>Stripe (payments & subscriptions)</li>
+        <li>Netlify (hosting)</li>
+        <li>Google AdSense (ads on freemium pages only)</li>
+      </ul>
+
+      <h2>Retention</h2>
+      <p>We retain account and subscription records for as long as your account is active and as required by law. You may request deletion of your account data (subject to legal/contractual limits).</p>
+
+      <h2>Security</h2>
+      <p>We take reasonable technical and organizational measures to protect your information. No method of transmission or storage is 100% secure.</p>
+
+      <h2>Your choices</h2>
+      <ul>
+        <li>Access/update your account information in the app.</li>
+        <li>Request deletion of your account and data.</li>
+        <li>Opt out of non-essential communications.</li>
+      </ul>
+
+      <h2>Children’s privacy</h2>
+      <p>SpellRightPro is not directed to children under 13. If you believe a child provided us personal data, contact us and we will take appropriate action.</p>
+
+      <h2>Changes to this policy</h2>
+      <p>We may update this policy. We’ll post the new version here and update the “Last updated” date.</p>
+
+      <h2>Contact</h2>
+      <p>Questions or requests? Visit <a href="/contact.html">Contact Support</a>.</p>
+    </div>
+    <p style="margin-top: 24px;" class="muted">© 2025 SpellRightPro</p>
+  </div>
+
+  <!-- Cookie Consent Banner -->
+<div id="cookieConsentBanner" style="display: none; position: fixed; bottom: 0; left: 0; right: 0; background: #333; color: white; padding: 15px; text-align: center; z-index: 1000;">
+    <p>We use cookies to provide our services and for analytics and ads. 
+       <a href="/privacy.html" style="color: #7b2ff7;">Learn more</a>
+    </p>
+    <button onclick="acceptCookies()" style="background: #7b2ff7; color: white; border: none; padding: 8px 15px; margin: 0 5px; border-radius: 5px; cursor: pointer;">
+        Accept
+    </button>
+    <button onclick="declineCookies()" style="background: #666; color: white; border: none; padding: 8px 15px; margin: 0 5px; border-radius: 5px; cursor: pointer;">
+        Decline
+    </button>
+</div>
+
+<script>
+// Cookie consent functions
+function showCookieBanner() {
+    if (!localStorage.getItem('cookieConsent')) {
+        document.getElementById('cookieConsentBanner').style.display = 'block';
+    }
+}
+
+function acceptCookies() {
+    localStorage.setItem('cookieConsent', 'true');
+    document.getElementById('cookieConsentBanner').style.display = 'none';
+    // Reload to enable analytics and ads
+    location.reload();
+}
+
+function declineCookies() {
+    localStorage.setItem('cookieConsent', 'false');
+    document.getElementById('cookieConsentBanner').style.display = 'none';
+}
+
+// Show banner on page load
+document.addEventListener('DOMContentLoaded', showCookieBanner);
+</script>
+
+  <footer style="text-align: center; margin-top: 40px; padding: 20px; color: #666; border-top: 1px solid rgba(255,255,255,0.1);">
+  <div style="display: flex; justify-content: center; gap: 30px; margin-bottom: 20px; flex-wrap: wrap;">
+    <div style="text-align: center;">
+      <i class="fa fa-lock" style="color: #7b2ff7; font-size: 1.5em;"></i>
+      <div style="font-size: 0.8em;">SSL Secure</div>
+    </div>
+    <div style="text-align: center;">
+      <i class="fa fa-shield-alt" style="color: #7b2ff7; font-size: 1.5em;"></i>
+      <div style="font-size: 0.8em;">14-Day Refund</div>
+    </div>
+    <div style="text-align: center;">
+      <i class="fa fa-user-shield" style="color: #7b2ff7; font-size: 1.5em;"></i>
+      <div style="font-size: 0.8em;">GDPR Compliant</div>
+    </div>
+  </div>
+  
+  <p>
+    <a href="/privacy.html" style="color: #7b2ff7; text-decoration: none;">Privacy Policy</a> 
+    • 
+    <a href="/terms.html" style="color: #7b2ff7; text-decoration: none;">Terms of Service</a>
+    • 
+    <a href="/refund-policy.html" style="color: #7b2ff7; text-decoration: none;">Refund Policy</a>
+    • 
+    <a href="/security.html" style="color: #7b2ff7; text-decoration: none;">Security</a>
+    • 
+    <a href="/contact.html" style="color: #7b2ff7; text-decoration: none;">Contact</a>
+  </p>
+  <p style="margin-top: 10px; font-size: 0.9em;">&copy; 2026 SpellRightPro. All rights reserved.</p>
+</footer>
+</body>
+</html>
