@@ -1,0 +1,43 @@
+# _redirects - Netlify redirects file
+
+# Home
+/                /index.html         200
+
+# Premium pages
+/premium         /premium.html       200
+/pricing         /pricing.html       200
+/pro             /pro.html           200
+
+# Training modes
+/bee             /freemium-bee.html  200
+/oet             /freemium-oet.html  200
+/school          /freemium-school.html 200
+
+# Legal pages
+/terms           /terms.html         200
+/privacy         /privacy.html       200
+/refund          /refund-policy.html 200
+/security        /security.html      200
+
+# Support pages
+/contact         /contact.html       200
+/support         /contact.html       200
+/help            /contact.html       200
+
+# Thank you and success
+/thank-you       /thank-you.html     200
+/success         /thank-you.html     200
+/cancel          /cancel.html        200
+
+# Offline
+/offline         /offline.html       200
+
+# API routes (for functions)
+/api/*           /.netlify/functions/api/:splat  200
+
+# Sitemap
+/sitemap.xml     /sitemap.xml        200
+/robots.txt      /robots.txt         200
+
+# Catch all - SPA fallback
+/*               /index.html         200
