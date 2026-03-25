@@ -1,44 +1,68 @@
 <!DOCTYPE html>
 <html lang="en">
+<!-- Add to the head section of index.html and all pages -->
 <head>
-  <meta charset="UTF-8" />
-  <title>Payment canceled – SpellRightPro</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <link rel="icon" href="assets/logo.png" />
-  <link rel="stylesheet" href="css/styles.css" />
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  
+  <!-- Primary Meta Tags -->
+  <title>SpellRightPro — AI-Powered Spelling Trainer with Voice Recognition</title>
+  <meta name="title" content="SpellRightPro — AI-Powered Spelling Trainer with Voice Recognition">
+  <meta name="description" content="Master spelling with AI-powered voice recognition. Practice OET, School, and Spelling Bee words. Get real-time feedback and track your progress.">
+  <meta name="keywords" content="spelling practice, OET preparation, spelling bee, voice recognition, spelling trainer, learn spelling, English spelling">
+  <meta name="author" content="SpellRightPro">
+  <meta name="robots" content="index, follow">
+  
+  <!-- Open Graph / Facebook -->
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://spellrightpro.org/">
+  <meta property="og:title" content="SpellRightPro — AI-Powered Spelling Trainer">
+  <meta property="og:description" content="Master spelling with AI-powered voice recognition. Practice OET, School, and Spelling Bee words.">
+  <meta property="og:image" content="https://spellrightpro.org/assets/og-image.png">
+  
+  <!-- Twitter -->
+  <meta property="twitter:card" content="summary_large_image">
+  <meta property="twitter:url" content="https://spellrightpro.org/">
+  <meta property="twitter:title" content="SpellRightPro — AI-Powered Spelling Trainer">
+  <meta property="twitter:description" content="Master spelling with AI-powered voice recognition. Practice OET, School, and Spelling Bee words.">
+  <meta property="twitter:image" content="https://spellrightpro.org/assets/og-image.png">
+  
+  <!-- Canonical URL -->
+  <link rel="canonical" href="https://spellrightpro.org/">
+  
+  <!-- Favicon -->
+  <link rel="icon" type="image/png" href="/assets/favicon.png">
+  <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
+  
+  <!-- Preconnect to external resources -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <link rel="preconnect" href="https://cdnjs.cloudflare.com">
+  <link rel="preconnect" href="https://www.gstatic.com">
+  
+  <!-- Preload critical assets -->
+  <link rel="preload" href="/css/styles.css" as="style">
+  <link rel="preload" href="/assets/logo.png" as="image">
+  <link rel="preload" href="/js/firebase-config.js" as="script">
+  
+  <!-- Styles -->
+  <link rel="stylesheet" href="/css/styles.css"/>
+  <link rel="stylesheet" href="/css/premium.css"/>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"/>
-
-  <style>
-    :root{
-      --blue:#4361ee; --blue-2:#3f37c9; --ink:#1f2937; --muted:#6b7280;
-      --card:#ffffff; --ring:rgba(67,97,238,.15); --bg:#f6f8ff;
-    }
-    body{
-      font-family:"Inter",system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantarell,sans-serif;
-      margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;
-      background:linear-gradient(180deg,#ffffff,var(--bg) 120%);
-      color:var(--ink);
-    }
-    .box{
-      width:min(560px,92vw);background:var(--card);border:1px solid #e6e9ff;border-radius:20px;
-      padding:28px;text-align:center;box-shadow:0 14px 28px rgba(67,97,238,.08);
-    }
-    h1{margin:0 0 10px;font-size:1.6rem}
-    p{color:var(--muted);margin:0 0 18px}
-    .actions{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
-    .btn{
-      border:none;border-radius:14px;padding:12px 16px;font-weight:800;cursor:pointer;
-      background:linear-gradient(135deg,var(--blue),var(--blue-2));color:#fff;box-shadow:0 10px 18px var(--ring);
-      transition:.2s
-    }
-    .btn:hover{transform:translateY(-1px)}
-    .btn.outline{
-      background:#fff;color:var(--blue);border:2px solid var(--blue);box-shadow:none
-    }
-  </style>
+  
+  <!-- Firebase SDKs -->
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-analytics.js"></script>
+  
+  <!-- Google Analytics -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-H09MF13297"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-H09MF13297');
+  </script>
 </head>
 <body>
   <main class="box">
