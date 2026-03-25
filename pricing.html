@@ -1,192 +1,68 @@
 <!DOCTYPE html>
 <html lang="en">
+<!-- Add to the head section of index.html and all pages -->
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>SpellRightPro – Pricing</title>
-
-  <!-- Styles -->
-  <link rel="stylesheet" href="/css/styles.css" />
-  <link rel="icon" href="/assets/logo.png" />
-  <link rel="stylesheet"
-        href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" />
-
-  <!-- Analytics -->
-  <script async src="https://www.googletagmanager.com/gtag/js?id=G-H09MF13297"></script>
-  <script src="/js/analytics.js"></script>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
   
-  <style>
-    .pricing-card {
-      background: white;
-      border-radius: 12px;
-      padding: 30px;
-      margin: 20px 0;
-      box-shadow: 0 8px 16px rgba(0,0,0,0.1);
-      border: 1px solid #e7e7e7;
-      transition: transform 0.3s ease, box-shadow 0.3s ease;
-    }
-    
-    .pricing-card:hover {
-      transform: translateY(-5px);
-      box-shadow: 0 12px 24px rgba(0,0,0,0.15);
-    }
-    
-    .pricing-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-      gap: 25px;
-      margin: 30px 0;
-    }
-    
-    .pricing-feature {
-      display: flex;
-      align-items: center;
-      margin: 8px 0;
-    }
-    
-    .pricing-feature i {
-      width: 20px;
-      margin-right: 10px;
-    }
-    
-    .feature-included {
-      color: #28a745;
-    }
-    
-    .feature-excluded {
-      color: #dc3545;
-    }
-    
-    .price-amount {
-      font-size: 2.5em;
-      font-weight: bold;
-      color: #7b2ff7;
-      margin: 15px 0;
-    }
-    
-    .price-period {
-      color: #666;
-      font-size: 1em;
-    }
-    
-    .promo-badge {
-      background: linear-gradient(135deg, #ff6b6b, #ffa726);
-      color: white;
-      padding: 5px 12px;
-      border-radius: 20px;
-      font-size: 0.8em;
-      font-weight: bold;
-      display: inline-block;
-      margin-left: 10px;
-    }
-    
-    .recommended-card {
-      border: 2px solid #7b2ff7;
-      position: relative;
-      transform: scale(1.02);
-    }
-    
-    .recommended-badge {
-      position: absolute;
-      top: -10px;
-      left: 50%;
-      transform: translateX(-50%);
-      background: #7b2ff7;
-      color: white;
-      padding: 5px 15px;
-      border-radius: 15px;
-      font-size: 0.8em;
-      font-weight: bold;
-    }
-
-    .plan-toggle {
-      display: flex;
-      justify-content: center;
-      margin: 20px 0 30px 0;
-      background: #f8f9fa;
-      padding: 10px;
-      border-radius: 50px;
-      max-width: 300px;
-      margin-left: auto;
-      margin-right: auto;
-    }
-
-    .plan-toggle button {
-      padding: 10px 20px;
-      border: none;
-      background: none;
-      border-radius: 25px;
-      cursor: pointer;
-      font-weight: 600;
-      transition: all 0.3s ease;
-      flex: 1;
-    }
-
-    .plan-toggle button.active {
-      background: #7b2ff7;
-      color: white;
-    }
-
-    .monthly-plans, .annual-plans {
-      display: none;
-    }
-
-    .monthly-plans.active, .annual-plans.active {
-      display: block;
-    }
-
-    .savings-badge {
-      background: #28a745;
-      color: white;
-      padding: 4px 8px;
-      border-radius: 12px;
-      font-size: 0.7em;
-      font-weight: bold;
-      margin-left: 8px;
-    }
-
-    .logo {
-      height: 40px;
-      width: auto;
-    }
-
-    .brand {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
-
-    .brand span {
-      font-size: 1.5rem;
-      font-weight: bold;
-      color: #7b2ff7;
-    }
-
-    .payment-options {
-      margin-top: 20px;
-      padding: 15px;
-      background: #f8f9fa;
-      border-radius: 8px;
-      text-align: center;
-    }
-
-    .payment-options h4 {
-      margin-bottom: 10px;
-      color: #333;
-    }
-
-    .payment-icons {
-      display: flex;
-      justify-content: center;
-      gap: 15px;
-      margin-top: 10px;
-    }
-
-    .payment-icons i {
-      font-size: 2rem;
-      color: #666;
-    }
-  </style>
+  <!-- Primary Meta Tags -->
+  <title>SpellRightPro — AI-Powered Spelling Trainer with Voice Recognition</title>
+  <meta name="title" content="SpellRightPro — AI-Powered Spelling Trainer with Voice Recognition">
+  <meta name="description" content="Master spelling with AI-powered voice recognition. Practice OET, School, and Spelling Bee words. Get real-time feedback and track your progress.">
+  <meta name="keywords" content="spelling practice, OET preparation, spelling bee, voice recognition, spelling trainer, learn spelling, English spelling">
+  <meta name="author" content="SpellRightPro">
+  <meta name="robots" content="index, follow">
+  
+  <!-- Open Graph / Facebook -->
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://spellrightpro.org/">
+  <meta property="og:title" content="SpellRightPro — AI-Powered Spelling Trainer">
+  <meta property="og:description" content="Master spelling with AI-powered voice recognition. Practice OET, School, and Spelling Bee words.">
+  <meta property="og:image" content="https://spellrightpro.org/assets/og-image.png">
+  
+  <!-- Twitter -->
+  <meta property="twitter:card" content="summary_large_image">
+  <meta property="twitter:url" content="https://spellrightpro.org/">
+  <meta property="twitter:title" content="SpellRightPro — AI-Powered Spelling Trainer">
+  <meta property="twitter:description" content="Master spelling with AI-powered voice recognition. Practice OET, School, and Spelling Bee words.">
+  <meta property="twitter:image" content="https://spellrightpro.org/assets/og-image.png">
+  
+  <!-- Canonical URL -->
+  <link rel="canonical" href="https://spellrightpro.org/">
+  
+  <!-- Favicon -->
+  <link rel="icon" type="image/png" href="/assets/favicon.png">
+  <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
+  
+  <!-- Preconnect to external resources -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://cdnjs.cloudflare.com">
+  <link rel="preconnect" href="https://www.gstatic.com">
+  
+  <!-- Preload critical assets -->
+  <link rel="preload" href="/css/styles.css" as="style">
+  <link rel="preload" href="/assets/logo.png" as="image">
+  <link rel="preload" href="/js/firebase-config.js" as="script">
+  
+  <!-- Styles -->
+  <link rel="stylesheet" href="/css/styles.css"/>
+  <link rel="stylesheet" href="/css/premium.css"/>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"/>
+  
+  <!-- Firebase SDKs -->
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-analytics.js"></script>
+  
+  <!-- Google Analytics -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-H09MF13297"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-H09MF13297');
+  </script>
 </head>
 
 <body>
