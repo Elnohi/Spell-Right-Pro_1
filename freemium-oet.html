@@ -1,111 +1,69 @@
 <!DOCTYPE html>
 <html lang="en">
+<!-- Add to the head section of index.html and all pages -->
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>OET Practice - SpellRightPro</title>
-  <link rel="stylesheet" href="/css/styles.css" />
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" />
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
   
-  <!-- FIREBASE SDKs -->
+  <!-- Primary Meta Tags -->
+  <title>SpellRightPro — AI-Powered Spelling Trainer with Voice Recognition</title>
+  <meta name="title" content="SpellRightPro — AI-Powered Spelling Trainer with Voice Recognition">
+  <meta name="description" content="Master spelling with AI-powered voice recognition. Practice OET, School, and Spelling Bee words. Get real-time feedback and track your progress.">
+  <meta name="keywords" content="spelling practice, OET preparation, spelling bee, voice recognition, spelling trainer, learn spelling, English spelling">
+  <meta name="author" content="SpellRightPro">
+  <meta name="robots" content="index, follow">
+  
+  <!-- Open Graph / Facebook -->
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://spellrightpro.org/">
+  <meta property="og:title" content="SpellRightPro — AI-Powered Spelling Trainer">
+  <meta property="og:description" content="Master spelling with AI-powered voice recognition. Practice OET, School, and Spelling Bee words.">
+  <meta property="og:image" content="https://spellrightpro.org/assets/og-image.png">
+  
+  <!-- Twitter -->
+  <meta property="twitter:card" content="summary_large_image">
+  <meta property="twitter:url" content="https://spellrightpro.org/">
+  <meta property="twitter:title" content="SpellRightPro — AI-Powered Spelling Trainer">
+  <meta property="twitter:description" content="Master spelling with AI-powered voice recognition. Practice OET, School, and Spelling Bee words.">
+  <meta property="twitter:image" content="https://spellrightpro.org/assets/og-image.png">
+  
+  <!-- Canonical URL -->
+  <link rel="canonical" href="https://spellrightpro.org/">
+  
+  <!-- Favicon -->
+  <link rel="icon" type="image/png" href="/assets/favicon.png">
+  <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
+  
+  <!-- Preconnect to external resources -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://cdnjs.cloudflare.com">
+  <link rel="preconnect" href="https://www.gstatic.com">
+  
+  <!-- Preload critical assets -->
+  <link rel="preload" href="/css/styles.css" as="style">
+  <link rel="preload" href="/assets/logo.png" as="image">
+  <link rel="preload" href="/js/firebase-config.js" as="script">
+  
+  <!-- Styles -->
+  <link rel="stylesheet" href="/css/styles.css"/>
+  <link rel="stylesheet" href="/css/premium.css"/>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"/>
+  
+  <!-- Firebase SDKs -->
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-analytics.js"></script>
-
-    <!-- Google Analytics -->
+  
+  <!-- Google Analytics -->
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-H09MF13297"></script>
   <script>
     window.dataLayer = window.dataLayer || [];
     function gtag(){dataLayer.push(arguments);}
     gtag('js', new Date());
     gtag('config', 'G-H09MF13297');
-    
-    // Function to track premium clicks
-    function trackPremiumClick(source, plan) {
-      gtag('event', 'premium_click', {
-        event_category: 'premium_conversion',
-        event_label: source,
-        value: plan === 'complete' ? 8.99 : plan === 'school' ? 4.99 : 14.99
-      });
-    }
-    
-    // Function to track plan view
-    function trackPlanView(plan) {
-      gtag('event', 'view_item', {
-        items: [{
-          item_id: plan,
-          item_name: 'SpellRightPro ' + plan,
-          item_category: 'premium_plans'
-        }]
-      });
-    }
   </script>
-
-  <style>
-    .button-group {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 10px;
-      justify-content: center;
-    }
-    .btn-primary, .btn-secondary, .btn-danger {
-      padding: 10px 20px;
-      border: none;
-      border-radius: 6px;
-      cursor: pointer;
-      font-weight: bold;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      transition: all 0.3s;
-    }
-    .btn-primary {
-      background: #7b2ff7;
-      color: white;
-    }
-    .btn-secondary {
-      background: rgba(255,255,255,0.1);
-      color: white;
-      border: 1px solid rgba(255,255,255,0.3);
-    }
-    .btn-danger {
-      background: #f72585;
-      color: white;
-    }
-    .btn-primary:hover, .btn-secondary:hover, .btn-danger:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 4px 12px rgba(0,0,0,0.2);
-    }
-    .hidden {
-      display: none !important;
-    }
-    .tab-btn.active {
-      background: #7b2ff7 !important;
-      color: white !important;
-    }
-    .tab-btn {
-      padding: 10px 20px;
-      border: none;
-      border-radius: 6px;
-      background: rgba(255,255,255,0.1);
-      color: white;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-    .nav-btn {
-      padding: 8px 16px;
-      background: rgba(255,255,255,0.1);
-      color: white;
-      border: 1px solid rgba(255,255,255,0.3);
-      border-radius: 6px;
-      cursor: pointer;
-    }
-  </style>
 </head>
-
 <body data-mode="oet">
   <!-- Header with Dark Mode Toggle -->
   <header>
