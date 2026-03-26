@@ -1,0 +1,78 @@
+spellrightpro/
+│
+├── 📁 assets/
+│   ├── logo.png
+│   ├── favicon.png
+│   ├── apple-touch-icon.png
+│   └── og-image.png
+│
+├── 📁 css/
+│   ├── styles.css
+│   └── premium.css
+│
+├── 📁 js/
+│   ├── firebase-config.js          [NEW - Centralized Firebase config]
+│   ├── error-tracking.js            [NEW - Error logging & monitoring]
+│   ├── config.js
+│   ├── analytics.js
+│   ├── firebase-utils.js
+│   ├── common.js
+│   ├── ads-manager.js
+│   ├── main-freemium.js
+│   ├── main-freemium-bee.js
+│   ├── main-freemium-oet.js
+│   ├── main-freemium-school.js
+│   ├── main-premium.js
+│   ├── progress-dashboard.js
+│   ├── mistake-review.js
+│   ├── adaptive-drill.js
+│   ├── audio-guards.js
+│   └── oet_word_list.js
+│
+├── 📁 data/
+│   ├── school.json
+│   ├── spelling-bee.json
+│   └── oet.json
+│
+├── 📁 netlify/
+│   └── 📁 functions/
+│       ├── api.js                   [NEW - API functions for Netlify]
+│       └── send-email.js            [NEW - Email function]
+│
+├── index.html                       [UPDATED - Enhanced head section]
+├── premium.html                     [UPDATED - Enhanced head section]
+├── pricing.html                     [UPDATED - Enhanced head section]
+├── pro.html                         [UPDATED - Enhanced head section]
+├── freemium-bee.html                [UPDATED - Enhanced head section]
+├── freemium-oet.html                [UPDATED - Enhanced head section]
+├── freemium-school.html             [UPDATED - Enhanced head section]
+├── contact.html                     [UPDATED - Enhanced head section]
+├── contact-success.html
+├── terms.html                       [UPDATED - Enhanced head section]
+├── privacy.html                     [UPDATED - Enhanced head section]
+├── refund-policy.html               [NEW - Complete refund policy]
+├── security.html
+├── thank-you.html
+├── cancel.html
+├── offline.html
+├── payment.html
+│
+├── sw.js                            [UPDATED - Enhanced service worker]
+├── manifest.json
+│
+├── netlify.toml                     [NEW - Netlify configuration]
+├── _redirects                       [NEW - Netlify redirects]
+├── _headers                         [UPDATED - Security headers]
+│
+├── robots.txt                       [UPDATED - Enhanced robots.txt]
+├── sitemap.xml                      [NEW - XML sitemap for SEO]
+│
+├── .gitignore                       [NEW - Git ignore file]
+├── .env.example                     [NEW - Environment variables template]
+│
+├── package.json                     [UPDATED - With Netlify scripts]
+├── package-lock.json
+├── server.js
+│
+├── .htaccess                        [UPDATED - Apache config]
+└── README.md                        [NEW - Project documentation]
