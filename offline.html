@@ -1,69 +1,121 @@
 <!DOCTYPE html>
 <html lang="en" data-theme="light">
-<!-- Add to the head section of index.html and all pages -->
 <head>
-  <meta charset="utf-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1"/>
-  
-  <!-- Primary Meta Tags -->
-  <title>SpellRightPro — AI-Powered Spelling Trainer with Voice Recognition</title>
-  <meta name="title" content="SpellRightPro — AI-Powered Spelling Trainer with Voice Recognition">
-  <meta name="description" content="Master spelling with AI-powered voice recognition. Practice OET, School, and Spelling Bee words. Get real-time feedback and track your progress.">
-  <meta name="keywords" content="spelling practice, OET preparation, spelling bee, voice recognition, spelling trainer, learn spelling, English spelling">
-  <meta name="author" content="SpellRightPro">
-  <meta name="robots" content="index, follow">
-  
-  <!-- Open Graph / Facebook -->
-  <meta property="og:type" content="website">
-  <meta property="og:url" content="https://spellrightpro.org/">
-  <meta property="og:title" content="SpellRightPro — AI-Powered Spelling Trainer">
-  <meta property="og:description" content="Master spelling with AI-powered voice recognition. Practice OET, School, and Spelling Bee words.">
-  <meta property="og:image" content="https://spellrightpro.org/assets/og-image.png">
-  
-  <!-- Twitter -->
-  <meta property="twitter:card" content="summary_large_image">
-  <meta property="twitter:url" content="https://spellrightpro.org/">
-  <meta property="twitter:title" content="SpellRightPro — AI-Powered Spelling Trainer">
-  <meta property="twitter:description" content="Master spelling with AI-powered voice recognition. Practice OET, School, and Spelling Bee words.">
-  <meta property="twitter:image" content="https://spellrightpro.org/assets/og-image.png">
-  
-  <!-- Canonical URL -->
-  <link rel="canonical" href="https://spellrightpro.org/">
-  
-  <!-- Favicon -->
-  <link rel="icon" type="image/png" href="/assets/favicon.png">
-  <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
-  
-  <!-- Preconnect to external resources -->
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://cdnjs.cloudflare.com">
-  <link rel="preconnect" href="https://www.gstatic.com">
-  
-  <!-- Preload critical assets -->
-  <link rel="preload" href="/css/styles.css" as="style">
-  <link rel="preload" href="/assets/logo.png" as="image">
-  <link rel="preload" href="/js/firebase-config.js" as="script">
-  
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>SpellRightPro – Offline</title>
+
   <!-- Styles -->
-  <link rel="stylesheet" href="/css/styles.css"/>
-  <link rel="stylesheet" href="/css/premium.css"/>
+  <link rel="stylesheet" href="css/styles.css" />
+  <link rel="icon" href="assets/logo.png" />
+  <link rel="manifest" href="manifest.json" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"/>
-  
-  <!-- Firebase SDKs -->
-  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-analytics.js"></script>
-  
-  <!-- Google Analytics -->
+
+  <!-- Firebase (for consistency) -->
+  <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore-compat.js"></script>
+  <script src="js/config.js" defer></script>
+
+  <!-- Analytics -->
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-H09MF13297"></script>
-  <script>
-    window.dataLayer = window.dataLayer || [];
-    function gtag(){dataLayer.push(arguments);}
-    gtag('js', new Date());
-    gtag('config', 'G-H09MF13297');
-  </script>
+  <script src="js/analytics.js" defer></script>
+
+  <!-- AdSense -->
+  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7632930282249669" crossorigin="anonymous"></script>
+
+  <style>
+    body {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      font-family: 'Segoe UI', sans-serif;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 20px;
+    }
+
+    .offline-card {
+      background: rgba(255, 255, 255, 0.12);
+      border-radius: 20px;
+      backdrop-filter: blur(20px);
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+      padding: 40px 30px;
+      max-width: 420px;
+      width: 100%;
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      animation: fadeIn 0.6s ease;
+    }
+
+    .offline-card img {
+      width: 80px;
+      height: 80px;
+      margin-bottom: 20px;
+      filter: drop-shadow(0 2px 4px rgba(0,0,0,0.2));
+    }
+
+    .offline-card h1 {
+      font-size: 1.8rem;
+      margin-bottom: 10px;
+      color: #fff;
+      font-weight: 700;
+    }
+
+    .offline-card p {
+      color: rgba(255, 255, 255, 0.9);
+      margin-bottom: 25px;
+      font-size: 1rem;
+      line-height: 1.6;
+    }
+
+    .btn-retry {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      background: linear-gradient(135deg, #4cc9f0, #4361ee);
+      color: white;
+      border: none;
+      padding: 14px 24px;
+      border-radius: 12px;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 1rem;
+      transition: all 0.3s ease;
+      width: 100%;
+      box-shadow: 0 4px 12px rgba(67, 97, 238, 0.3);
+    }
+
+    .btn-retry:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 16px rgba(67, 97, 238, 0.4);
+    }
+
+    .btn-retry i {
+      font-size: 1.2rem;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    footer {
+      margin-top: 40px;
+      font-size: 0.9rem;
+      color: rgba(255, 255, 255, 0.7);
+    }
+
+    footer a {
+      color: #fff;
+      text-decoration: underline;
+      margin: 0 6px;
+    }
+  </style>
 </head>
+
 <body>
   <div class="offline-card fade-in">
     <img src="assets/logo.png" alt="SpellRightPro Logo" />

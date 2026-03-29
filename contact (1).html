@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Contact Support - SpellRightPro</title>
+
+  <link rel="stylesheet" href="/css/styles.css"/>
+  <link rel="stylesheet" href="/css/premium.css"/>
+  <link rel="preload" href="/assets/logo.png" as="image"/>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"/>
+</head>
+<body data-page="contact">
+  <header class="navbar">
+    <a href="/index.html" class="brand">
+      <img src="/assets/logo.png" alt="SpellRightPro Logo" class="logo"/>
+      <div>
+        <span>SpellRightPro</span>
+        <span class="subtitle">Spelling Trainer</span>
+      </div>
+    </a>
+    <div class="nav-actions">
+      <button id="darkModeToggle" class="btn-icon" title="Toggle dark mode"><i class="fa fa-moon"></i></button>
+      <a class="btn-primary" href="/premium.html"><i class="fa fa-crown"></i> Premium</a>
+    </div>
+  </header>
+
+  <div class="support-container">
+    <div class="support-header">
+      <h1>Contact Support</h1>
+      <p>We usually reply within 1–2 business days.</p>
+    </div>
+
+    <form class="support-form" netlify>
+      <div class="form-group">
+        <label for="email">Email Address</label>
+        <input type="email" id="email" name="email" required placeholder="your.email@example.com">
+      </div>
+
+      <div class="form-group">
+        <label for="subject">Subject</label>
+        <input type="text" id="subject" name="subject" required placeholder="Briefly describe your issue">
+      </div>
+
+      <div class="form-group">
+        <label for="message">Message</label>
+        <textarea id="message" name="message" rows="6" required placeholder="Please provide a detailed description of your question or problem..."></textarea>
+      </div>
+
+      <button type="submit" class="send-button">
+        Send Message
+      </button>
+    </form>
+
+    <a href="/index.html" class="back-home-link">← Back to Home</a>
+  </div>
+
+  <footer style="margin:24px 0; text-align:center; font-size:.95rem;">
+    <a href="/terms.html">Terms</a> •
+    <a href="/privacy.html">Privacy</a> •
+    <a href="/refund-policy.html">Refund Policy</a> •
+    <a href="/contact.html">Contact</a>
+  </footer>
+
+  <!-- Dark mode remembering -->
+  <script>
+    (function(){
+      const toggle = document.getElementById('darkModeToggle');
+      function apply() {
+        const on = localStorage.getItem('dark') === 'true';
+        document.body.classList.toggle('dark-mode', on);
+        if (toggle) toggle.querySelector('i').className = on ? 'fa fa-sun' : 'fa fa-moon';
+      }
+      toggle?.addEventListener('click', ()=>{
+        const on = !(localStorage.getItem('dark') === 'true');
+        localStorage.setItem('dark', on);
+        apply();
+      });
+      apply();
+    })();
+  </script>
+
+  <!-- SW -->
+  <script>if('serviceWorker' in navigator){navigator.serviceWorker.register('/sw.js').catch(()=>{});}</script>
+
+  <!-- Cookie Consent Banner -->
+<div id="cookieConsentBanner" style="display: none; position: fixed; bottom: 0; left: 0; right: 0; background: #333; color: white; padding: 15px; text-align: center; z-index: 1000;">
+    <p>We use cookies to provide our services and for analytics and ads. 
+       <a href="/privacy.html" style="color: #7b2ff7;">Learn more</a>
+    </p>
+    <button onclick="acceptCookies()" style="background: #7b2ff7; color: white; border: none; padding: 8px 15px; margin: 0 5px; border-radius: 5px; cursor: pointer;">
+        Accept
+    </button>
+    <button onclick="declineCookies()" style="background: #666; color: white; border: none; padding: 8px 15px; margin: 0 5px; border-radius: 5px; cursor: pointer;">
+        Decline
+    </button>
+</div>
+
+<script>
+// Cookie consent functions
+function showCookieBanner() {
+    if (!localStorage.getItem('cookieConsent')) {
+        document.getElementById('cookieConsentBanner').style.display = 'block';
+    }
+}
+
+function acceptCookies() {
+    localStorage.setItem('cookieConsent', 'true');
+    document.getElementById('cookieConsentBanner').style.display = 'none';
+    // Reload to enable analytics and ads
+    location.reload();
+}
+
+function declineCookies() {
+    localStorage.setItem('cookieConsent', 'false');
+    document.getElementById('cookieConsentBanner').style.display = 'none';
+}
+
+// Show banner on page load
+document.addEventListener('DOMContentLoaded', showCookieBanner);
+</script>
+
+  <footer style="text-align: center; margin-top: 40px; padding: 20px; color: #666; border-top: 1px solid rgba(255,255,255,0.1);">
+  <div style="display: flex; justify-content: center; gap: 30px; margin-bottom: 20px; flex-wrap: wrap;">
+    <div style="text-align: center;">
+      <i class="fa fa-lock" style="color: #7b2ff7; font-size: 1.5em;"></i>
+      <div style="font-size: 0.8em;">SSL Secure</div>
+    </div>
+    <div style="text-align: center;">
+      <i class="fa fa-shield-alt" style="color: #7b2ff7; font-size: 1.5em;"></i>
+      <div style="font-size: 0.8em;">14-Day Refund</div>
+    </div>
+    <div style="text-align: center;">
+      <i class="fa fa-user-shield" style="color: #7b2ff7; font-size: 1.5em;"></i>
+      <div style="font-size: 0.8em;">GDPR Compliant</div>
+    </div>
+  </div>
+  
+  <p>
+    <a href="/privacy.html" style="color: #7b2ff7; text-decoration: none;">Privacy Policy</a> 
+    • 
+    <a href="/terms.html" style="color: #7b2ff7; text-decoration: none;">Terms of Service</a>
+    • 
+    <a href="/refund-policy.html" style="color: #7b2ff7; text-decoration: none;">Refund Policy</a>
+    • 
+    <a href="/security.html" style="color: #7b2ff7; text-decoration: none;">Security</a>
+    • 
+    <a href="/contact.html" style="color: #7b2ff7; text-decoration: none;">Contact</a>
+  </p>
+  <p style="margin-top: 10px; font-size: 0.9em;">&copy; 2026 SpellRightPro. All rights reserved.</p>
+</footer>
+</body>
+</html>

@@ -1,68 +1,64 @@
 <!DOCTYPE html>
 <html lang="en">
-<!-- Add to the head section of index.html and all pages -->
 <head>
-  <meta charset="utf-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Security & Trust - SpellRightPro</title>
+  <link rel="stylesheet" href="/css/styles.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
   
-  <!-- Primary Meta Tags -->
-  <title>SpellRightPro — AI-Powered Spelling Trainer with Voice Recognition</title>
-  <meta name="title" content="SpellRightPro — AI-Powered Spelling Trainer with Voice Recognition">
-  <meta name="description" content="Master spelling with AI-powered voice recognition. Practice OET, School, and Spelling Bee words. Get real-time feedback and track your progress.">
-  <meta name="keywords" content="spelling practice, OET preparation, spelling bee, voice recognition, spelling trainer, learn spelling, English spelling">
-  <meta name="author" content="SpellRightPro">
-  <meta name="robots" content="index, follow">
-  
-  <!-- Open Graph / Facebook -->
-  <meta property="og:type" content="website">
-  <meta property="og:url" content="https://spellrightpro.org/">
-  <meta property="og:title" content="SpellRightPro — AI-Powered Spelling Trainer">
-  <meta property="og:description" content="Master spelling with AI-powered voice recognition. Practice OET, School, and Spelling Bee words.">
-  <meta property="og:image" content="https://spellrightpro.org/assets/og-image.png">
-  
-  <!-- Twitter -->
-  <meta property="twitter:card" content="summary_large_image">
-  <meta property="twitter:url" content="https://spellrightpro.org/">
-  <meta property="twitter:title" content="SpellRightPro — AI-Powered Spelling Trainer">
-  <meta property="twitter:description" content="Master spelling with AI-powered voice recognition. Practice OET, School, and Spelling Bee words.">
-  <meta property="twitter:image" content="https://spellrightpro.org/assets/og-image.png">
-  
-  <!-- Canonical URL -->
-  <link rel="canonical" href="https://spellrightpro.org/">
-  
-  <!-- Favicon -->
-  <link rel="icon" type="image/png" href="/assets/favicon.png">
-  <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
-  
-  <!-- Preconnect to external resources -->
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://cdnjs.cloudflare.com">
-  <link rel="preconnect" href="https://www.gstatic.com">
-  
-  <!-- Preload critical assets -->
-  <link rel="preload" href="/css/styles.css" as="style">
-  <link rel="preload" href="/assets/logo.png" as="image">
-  <link rel="preload" href="/js/firebase-config.js" as="script">
-  
-  <!-- Styles -->
-  <link rel="stylesheet" href="/css/styles.css"/>
-  <link rel="stylesheet" href="/css/premium.css"/>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"/>
-  
-  <!-- Firebase SDKs -->
-  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-analytics.js"></script>
-  
-  <!-- Google Analytics -->
-  <script async src="https://www.googletagmanager.com/gtag/js?id=G-H09MF13297"></script>
-  <script>
-    window.dataLayer = window.dataLayer || [];
-    function gtag(){dataLayer.push(arguments);}
-    gtag('js', new Date());
-    gtag('config', 'G-H09MF13297');
-  </script>
+  <style>
+    .security-container {
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 40px 20px;
+    }
+    
+    .security-section {
+      background: rgba(255,255,255,0.05);
+      border-radius: 12px;
+      padding: 30px;
+      margin: 30px 0;
+      border-left: 4px solid #7b2ff7;
+    }
+    
+    .badge-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 20px;
+      margin: 40px 0;
+    }
+    
+    .badge {
+      text-align: center;
+      padding: 20px;
+      background: rgba(123, 47, 247, 0.1);
+      border-radius: 10px;
+    }
+    
+    .badge i {
+      font-size: 2.5em;
+      color: #7b2ff7;
+      margin-bottom: 15px;
+    }
+    
+    .compliance-list {
+      list-style: none;
+      padding: 0;
+    }
+    
+    .compliance-list li {
+      padding: 10px 0;
+      border-bottom: 1px solid rgba(255,255,255,0.1);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    
+    .compliance-list li i {
+      color: #7b2ff7;
+    }
+  </style>
 </head>
 <body data-page="security">
   <header class="navbar">
