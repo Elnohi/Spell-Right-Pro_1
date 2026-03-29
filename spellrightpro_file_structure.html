@@ -1,0 +1,104 @@
+
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: var(--font-mono, monospace); font-size: 13px; }
+.wrap { padding: 16px 0; }
+.legend { display: flex; gap: 20px; flex-wrap: wrap; margin-bottom: 16px; padding: 10px 16px; background: var(--color-background-secondary); border-radius: 8px; font-size: 12px; }
+.leg { display: flex; align-items: center; gap: 6px; }
+.dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+.tree { line-height: 1.85; }
+.row { display: flex; align-items: baseline; gap: 0; white-space: nowrap; }
+.pre { color: var(--color-text-tertiary); user-select: none; }
+.icon { width: 18px; flex-shrink: 0; }
+.name { color: var(--color-text-primary); font-weight: 500; }
+.name.dir { color: #3B8BD4; }
+.tag { display: inline-block; font-size: 10px; font-weight: 500; padding: 1px 6px; border-radius: 10px; margin-left: 8px; vertical-align: middle; line-height: 1.6; }
+.tag.fix  { background: #fef9c3; color: #854d0e; border: 1px solid #fde68a; }
+.tag.new  { background: #dcfce7; color: #166534; border: 1px solid #86efac; }
+.tag.ok   { background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1; }
+.tag.warn { background: #fff7ed; color: #9a3412; border: 1px solid #fdba74; }
+.desc { color: var(--color-text-secondary); font-size: 11px; margin-left: 8px; font-family: var(--font-sans, sans-serif); }
+.section { margin-top: 14px; margin-bottom: 2px; font-family: var(--font-sans); font-size: 11px; font-weight: 500; color: var(--color-text-tertiary); text-transform: uppercase; letter-spacing: .06em; padding-left: 4px; }
+</style>
+<div class="wrap">
+  <div class="legend">
+    <div class="leg"><div class="dot" style="background:#166534"></div><span>Fixed / delivered</span></div>
+    <div class="leg"><div class="dot" style="background:#854d0e"></div><span>Needs fix next</span></div>
+    <div class="leg"><div class="dot" style="background:#9a3412"></div><span>Action required</span></div>
+    <div class="leg"><div class="dot" style="background:#475569"></div><span>No changes needed</span></div>
+  </div>
+  <div class="tree">
+
+    <div class="section">root — deploy to Netlify root</div>
+    <div class="row"><span class="pre">├─ </span><span class="name dir">📁 /  (repo root)</span></div>
+    <div class="row"><span class="pre">│  ├─ </span><span class="name">index.html</span><span class="tag ok">ok</span><span class="desc">homepage</span></div>
+    <div class="row"><span class="pre">│  ├─ </span><span class="name">premium.html</span><span class="tag fix">fix 3 next</span><span class="desc">localhost:3001 → production API</span></div>
+    <div class="row"><span class="pre">│  ├─ </span><span class="name">pricing.html</span><span class="tag ok">ok</span></div>
+    <div class="row"><span class="pre">│  ├─ </span><span class="name">payment.html</span><span class="tag ok">ok</span></div>
+    <div class="row"><span class="pre">│  ├─ </span><span class="name">freemium-school.html</span><span class="tag fix">fix 8 next</span><span class="desc">missing config.js / common.js</span></div>
+    <div class="row"><span class="pre">│  ├─ </span><span class="name">freemium-bee.html</span><span class="tag fix">fix 8 next</span><span class="desc">missing config.js / common.js</span></div>
+    <div class="row"><span class="pre">│  ├─ </span><span class="name">freemium-oet.html</span><span class="tag fix">fix 8 next</span><span class="desc">missing config.js / common.js</span></div>
+    <div class="row"><span class="pre">│  ├─ </span><span class="name">pro.html</span><span class="tag ok">ok</span><span class="desc">not linked from nav yet</span></div>
+    <div class="row"><span class="pre">│  ├─ </span><span class="name">contact.html</span><span class="tag fix">fix later</span><span class="desc">duplicate footer</span></div>
+    <div class="row"><span class="pre">│  ├─ </span><span class="name">contact-success.html</span><span class="tag ok">ok</span></div>
+    <div class="row"><span class="pre">│  ├─ </span><span class="name">cancel.html</span><span class="tag ok">ok</span></div>
+    <div class="row"><span class="pre">│  ├─ </span><span class="name">thank-you.html</span><span class="tag ok">ok</span></div>
+    <div class="row"><span class="pre">│  ├─ </span><span class="name">offline.html</span><span class="tag ok">ok</span></div>
+    <div class="row"><span class="pre">│  ├─ </span><span class="name">privacy.html</span><span class="tag ok">ok</span></div>
+    <div class="row"><span class="pre">│  ├─ </span><span class="name">terms.html</span><span class="tag ok">ok</span></div>
+    <div class="row"><span class="pre">│  ├─ </span><span class="name">security.html</span><span class="tag ok">ok</span></div>
+    <div class="row"><span class="pre">│  ├─ </span><span class="name">refund-policy.html</span><span class="tag new">✓ fixed</span><span class="desc">replace empty placeholder</span></div>
+    <div class="row"><span class="pre">│  ├─ </span><span class="name">footer.html</span><span class="tag ok">ok</span><span class="desc">fragment only, not a page</span></div>
+    <div class="row"><span class="pre">│  ├─ </span><span class="name">_redirects</span><span class="tag fix">fix 5 next</span><span class="desc">add /data/* rule + /freemium-school</span></div>
+    <div class="row"><span class="pre">│  ├─ </span><span class="name">_headers</span><span class="tag ok">ok</span></div>
+    <div class="row"><span class="pre">│  ├─ </span><span class="name">robots.txt</span><span class="tag ok">ok</span></div>
+    <div class="row"><span class="pre">│  ├─ </span><span class="name">ads.txt</span><span class="tag ok">ok</span></div>
+    <div class="row"><span class="pre">│  └─ </span><span class="name">manifest.json</span><span class="tag ok">ok</span></div>
+
+    <div class="section">css/</div>
+    <div class="row"><span class="pre">├─ </span><span class="name dir">📁 css/</span></div>
+    <div class="row"><span class="pre">│  ├─ </span><span class="name">styles.css</span><span class="tag ok">ok</span><span class="desc">← styles__2_.css</span></div>
+    <div class="row"><span class="pre">│  └─ </span><span class="name">premium.css</span><span class="tag ok">ok</span><span class="desc">← premium__1_.css</span></div>
+
+    <div class="section">js/</div>
+    <div class="row"><span class="pre">├─ </span><span class="name dir">📁 js/</span></div>
+    <div class="row"><span class="pre">│  ├─ </span><span class="name">config.js</span><span class="tag ok">ok</span><span class="desc">Firebase + Stripe + analytics init</span></div>
+    <div class="row"><span class="pre">│  ├─ </span><span class="name">common.js</span><span class="tag ok">ok</span><span class="desc">tierManager — loaded by index + premium only</span></div>
+    <div class="row"><span class="pre">│  ├─ </span><span class="name">firebase-utils.js</span><span class="tag ok">ok</span></div>
+    <div class="row"><span class="pre">│  ├─ </span><span class="name">analytics.js</span><span class="tag ok">ok</span></div>
+    <div class="row"><span class="pre">│  ├─ </span><span class="name">ads-manager.js</span><span class="tag fix">fix 4 next</span><span class="desc">ads fire before cookie consent</span></div>
+    <div class="row"><span class="pre">│  ├─ </span><span class="name">audio-guards.js</span><span class="tag ok">ok</span></div>
+    <div class="row"><span class="pre">│  ├─ </span><span class="name">adaptive-drill.js</span><span class="tag ok">ok</span></div>
+    <div class="row"><span class="pre">│  ├─ </span><span class="name">mistake-review.js</span><span class="tag ok">ok</span></div>
+    <div class="row"><span class="pre">│  ├─ </span><span class="name">progress-dashboard.js</span><span class="tag fix">fix later</span><span class="desc">undefined correctWords variable</span></div>
+    <div class="row"><span class="pre">│  ├─ </span><span class="name">main-freemium.js</span><span class="tag ok">ok</span></div>
+    <div class="row"><span class="pre">│  ├─ </span><span class="name">main-freemium-school.js</span><span class="tag ok">ok</span></div>
+    <div class="row"><span class="pre">│  ├─ </span><span class="name">main-freemium-bee.js</span><span class="tag ok">ok</span></div>
+    <div class="row"><span class="pre">│  ├─ </span><span class="name">main-freemium-oet.js</span><span class="tag ok">ok</span></div>
+    <div class="row"><span class="pre">│  ├─ </span><span class="name">main-premium.js</span><span class="tag ok">ok</span></div>
+    <div class="row"><span class="pre">│  └─ </span><span class="name">oet_word_list.js</span><span class="tag ok">ok</span><span class="desc">loaded dynamically by main-freemium-oet.js</span></div>
+
+    <div class="section">data/ — word lists fetched by JS</div>
+    <div class="row"><span class="pre">├─ </span><span class="name dir">📁 data/</span></div>
+    <div class="row"><span class="pre">│  └─ </span><span class="name dir">📁 word-lists/</span></div>
+    <div class="row"><span class="pre">│     ├─ </span><span class="name">school.json</span><span class="tag warn">path issue</span><span class="desc">_redirects wildcard breaks /data/ fetch</span></div>
+    <div class="row"><span class="pre">│     ├─ </span><span class="name">spelling-bee.json</span><span class="tag warn">path issue</span><span class="desc">same — fix _redirects first</span></div>
+    <div class="row"><span class="pre">│     └─ </span><span class="name">oet.json</span><span class="tag ok">ok</span><span class="desc">oet loaded via oet_word_list.js instead</span></div>
+
+    <div class="section">assets/</div>
+    <div class="row"><span class="pre">├─ </span><span class="name dir">📁 assets/</span></div>
+    <div class="row"><span class="pre">│  └─ </span><span class="name">logo.png</span><span class="tag ok">ok</span></div>
+
+    <div class="section">sw.js — service worker (root level)</div>
+    <div class="row"><span class="pre">├─ </span><span class="name">sw.js</span><span class="tag ok">ok</span><span class="desc">← sw__1_.js — must be at root</span></div>
+
+    <div class="section">backend/ — Node server, NOT deployed to Netlify</div>
+    <div class="row"><span class="pre">└─ </span><span class="name dir">📁 backend/  (separate repo or subdirectory)</span></div>
+    <div class="row"><span class="pre">   ├─ </span><span class="name">server.js</span><span class="tag new">✓ fixed</span><span class="desc">deploy to Google Cloud Run</span></div>
+    <div class="row"><span class="pre">   ├─ </span><span class="name">package.json</span><span class="tag ok">ok</span></div>
+    <div class="row"><span class="pre">   ├─ </span><span class="name">package-lock.json</span><span class="tag ok">ok</span></div>
+    <div class="row"><span class="pre">   ├─ </span><span class="name">.env</span><span class="tag warn">never commit</span><span class="desc">add to .gitignore</span></div>
+    <div class="row"><span class="pre">   └─ </span><span class="name">.env.example</span><span class="tag new">✓ new</span><span class="desc">commit this — template only</span></div>
+
+  </div>
+</div>
