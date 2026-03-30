@@ -1,0 +1,35 @@
+# SpellRightPro — Netlify _headers
+# Applied after _redirects resolve. Earlier rules take precedence for the same path.
+
+# ── HTML pages — never cache (always fresh) ──────────────────────────────────
+/*.html
+  Cache-Control: no-store, max-age=0
+
+# ── Service worker — must never be cached ────────────────────────────────────
+# A stale SW causes users to be stuck on old app versions.
+/sw.js
+  Cache-Control: no-store, max-age=0
+
+# ── JS and CSS — short cache with revalidation ───────────────────────────────
+# 1-hour cache, browser revalidates on next visit.
+/js/*
+  Cache-Control: public, max-age=3600, must-revalidate
+
+/css/*
+  Cache-Control: public, max-age=3600, must-revalidate
+
+# ── Word list data files — short cache, revalidate ───────────────────────────
+# Same policy as JS/CSS. Word lists change occasionally so we don't want
+# users stuck with stale lists, but a 1-hour cache avoids hammering the CDN.
+/data/*
+  Cache-Control: public, max-age=3600, must-revalidate
+
+# ── Static assets — long cache (content-addressed) ───────────────────────────
+# Logo and images rarely change. 1-week cache is safe.
+# If you update logo.png, rename the file to bust the cache.
+/assets/*
+  Cache-Control: public, max-age=604800, immutable
+
+# ── manifest.json — short cache ──────────────────────────────────────────────
+/manifest.json
+  Cache-Control: public, max-age=3600, must-revalidate
