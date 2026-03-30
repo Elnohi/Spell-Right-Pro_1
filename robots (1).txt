@@ -1,0 +1,8 @@
+User-agent: *
+Allow: /
+Disallow: /admin/
+Disallow: /private/
+Disallow: /thank-you.html
+Disallow: /cancel.html
+Disallow: /contact-success.html
+Sitemap: https://spellrightpro.org/sitemap.xml
