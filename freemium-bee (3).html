@@ -1,0 +1,894 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Spelling Bee - SpellRightPro</title>
+  <link rel="stylesheet" href="/css/styles.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" />
+
+  <!-- FIREBASE SDKs -->
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-analytics.js"></script>
+
+  <!-- Shared config -->
+  <script src="/js/config.js"></script>
+  <script src="/js/common.js"></script>
+  <script src="/js/ads-manager.js" defer></script>
+
+  <!-- Google Analytics -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-H09MF13297"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-H09MF13297');
+  </script>
+
+  <style>
+    /* Mic pulse animation */
+    @keyframes micPulse {
+      0%,100% { box-shadow: 0 0 0 0 rgba(123,47,247,0.5); }
+      50%      { box-shadow: 0 0 0 14px rgba(123,47,247,0); }
+    }
+    #micIndicator {
+      display: none;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      margin: 16px 0;
+      padding: 12px 20px;
+      border-radius: 50px;
+      background: rgba(123,47,247,0.12);
+      border: 2px solid rgba(123,47,247,0.4);
+      font-size: 1rem;
+      font-weight: 600;
+    }
+    #micIndicator.active { display: flex; }
+    #micIndicator i {
+      font-size: 1.4rem;
+      color: #7b2ff7;
+      animation: micPulse 1s ease-in-out infinite;
+    }
+    /* Countdown bar */
+    #countdownBar {
+      display: none;
+      height: 6px;
+      background: rgba(123,47,247,0.15);
+      border-radius: 3px;
+      margin: 6px 0 14px;
+      overflow: hidden;
+    }
+    #countdownBar.active { display: block; }
+    #countdownFill {
+      height: 100%;
+      width: 100%;
+      background: linear-gradient(90deg, #7b2ff7, #f72585);
+      border-radius: 3px;
+      transition: width linear;
+    }
+  </style>
+</head>
+
+<body data-mode="bee">
+  <header>
+    <div class="brand">
+      <img src="/assets/logo.png" alt="SpellRightPro Logo" />
+      <div>
+        <h1>SpellRightPro</h1>
+        <small>Spelling Bee</small>
+      </div>
+    </div>
+    <div class="nav-right">
+      <button class="nav-btn" onclick="window.location.href='/'">
+        <i class="fa fa-home"></i> Home
+      </button>
+      <button class="nav-btn" id="toggleDark">
+        <i class="fa fa-moon"></i> Dark Mode
+      </button>
+      <button class="btn-premium" onclick="window.location.href='/premium.html'">
+        <i class="fa fa-crown"></i> Go Premium
+      </button>
+    </div>
+  </header>
+
+  <main class="main-card">
+    <h2>Spelling Bee (Freemium)</h2>
+    <p>Listen to each word, then spell it aloud letter-by-letter into your microphone.</p>
+
+    <!-- Custom List Input -->
+    <div style="margin: 20px 0;">
+      <textarea
+        id="customWords"
+        placeholder="Paste custom word list (optional, one per line)..."
+        style="width:100%;min-height:80px;padding:10px;border-radius:8px;border:1px solid #ccc;box-sizing:border-box;"
+      ></textarea>
+      <div style="margin-top:10px;">
+        <input type="file" id="fileInput" accept=".txt,.json" style="display:none;" />
+        <button onclick="document.getElementById('fileInput').click()" class="nav-btn">
+          <i class="fa fa-upload"></i> Choose File
+        </button>
+        <span id="fileName" style="margin-left:10px;">No file chosen</span>
+        <button id="useCustomList" class="nav-btn" style="margin-left:10px;">
+          <i class="fa fa-check"></i> Use Custom
+        </button>
+      </div>
+    </div>
+
+    <!-- Ad Container -->
+    <div id="ad-container" style="margin:25px 0;text-align:center;min-height:90px;display:none;"></div>
+
+    <!-- Progress and Feedback -->
+    <div id="progress" data-role="progress" style="font-weight:700;margin:15px 0;"></div>
+    <div id="feedback" data-role="feedback" style="min-height:26px;margin:10px 0;font-size:1.05rem;"></div>
+
+    <!-- Mic Indicator -->
+    <div id="micIndicator">
+      <i class="fa fa-microphone"></i>
+      <span id="micLabel">Listening — spell the word aloud now…</span>
+    </div>
+    <div id="countdownBar"><div id="countdownFill"></div></div>
+
+    <!-- Control Buttons -->
+    <div class="button-group" style="margin:20px 0;">
+      <button id="btnStart" class="btn-primary">
+        <i class="fa fa-play"></i> Start
+      </button>
+      <button id="btnSayAgain" class="btn-secondary">
+        <i class="fa fa-volume-up"></i> Say Again
+      </button>
+      <button id="btnFlag" class="btn-secondary">
+        <i class="fa fa-flag"></i> Flag
+      </button>
+      <button id="btnEnd" class="btn-danger">
+        <i class="fa fa-stop"></i> End
+      </button>
+    </div>
+
+    <!-- Summary Area -->
+    <div class="summary-area hidden" style="margin-top:20px;padding:15px;background:rgba(0,0,0,0.05);border-radius:8px;"></div>
+  </main>
+
+  <!-- Cookie Consent Banner -->
+  <div id="cookieConsentBanner" style="display:none;position:fixed;bottom:0;left:0;right:0;background:#333;color:white;padding:15px;text-align:center;z-index:1000;">
+    <p>We use cookies to provide our services and for analytics and ads.
+       <a href="/privacy.html" style="color:#7b2ff7;">Learn more</a>
+    </p>
+    <button onclick="acceptCookies()" style="background:#7b2ff7;color:white;border:none;padding:8px 15px;margin:0 5px;border-radius:5px;cursor:pointer;">Accept</button>
+    <button onclick="declineCookies()" style="background:#666;color:white;border:none;padding:8px 15px;margin:0 5px;border-radius:5px;cursor:pointer;">Decline</button>
+  </div>
+
+  <script>
+  // ── Firebase config ──────────────────────────────────────────────────────────
+  const firebaseConfig = {
+    apiKey: "AIzaSyCZ-rAPnRgVjSRFOFvbiQlowE6A3RVvwWo",
+    authDomain: "spellrightpro-firebase.firebaseapp.com",
+    projectId: "spellrightpro-firebase",
+    storageBucket: "spellrightpro-firebase.firebasestorage.app",
+    messagingSenderId: "798456641137",
+    appId: "1:798456641137:web:5c6d79db5bf49d04928dd0",
+    measurementId: "G-H09MF13297"
+  };
+  window.initFirebase = function() {
+    if (!firebase.apps.length) {
+      firebase.initializeApp(firebaseConfig);
+      if (localStorage.getItem('cookieConsent') === 'true') firebase.analytics();
+    }
+    return firebase;
+  };
+
+  // ── Cookie consent ───────────────────────────────────────────────────────────
+  function showCookieBanner() {
+    if (localStorage.getItem('cookieConsent') === null)
+      document.getElementById('cookieConsentBanner').style.display = 'block';
+    else if (localStorage.getItem('cookieConsent') === 'true')
+      initializeAnalytics();
+  }
+  function acceptCookies() {
+    localStorage.setItem('cookieConsent', 'true');
+    document.getElementById('cookieConsentBanner').style.display = 'none';
+    initializeAnalytics();
+    document.dispatchEvent(new Event('cookieConsentGranted'));
+  }
+  function declineCookies() {
+    localStorage.setItem('cookieConsent', 'false');
+    document.getElementById('cookieConsentBanner').style.display = 'none';
+  }
+  function initializeAnalytics() {
+    if (typeof window.initFirebase === 'function') setTimeout(window.initFirebase, 500);
+  }
+
+  // ── Tier manager ─────────────────────────────────────────────────────────────
+  window.tierManager = {
+    init() { this.applyFreemiumLimitations(); this.initializeAds(); },
+    applyFreemiumLimitations() {
+      const box = document.getElementById('customWords');
+      if (!box) return;
+      box.addEventListener('input', function() {
+        const words = this.value.split(/[\n,]+/).filter(w => w.trim());
+        if (words.length > 40) {
+          this.value = words.slice(0, 40).join('\n');
+          document.getElementById('feedback').textContent = 'Freemium limit: using first 40 words';
+        }
+      });
+    },
+    initializeAds() {
+      const c = document.getElementById('ad-container');
+      if (!c) return;
+      setTimeout(() => {
+        c.style.display = 'block';
+        c.innerHTML = `<div style="background:rgba(0,0,0,0.05);padding:10px;border-radius:8px;">
+          <p style="color:#666;font-size:0.9em;margin:0;">🐝 <strong>Bee Premium</strong> — Compete like a champion!</p>
+          <button onclick="window.location.href='/premium.html'"
+            style="background:#7b2ff7;color:white;border:none;padding:5px 15px;border-radius:4px;font-size:0.8em;margin-top:5px;cursor:pointer;">
+            Join Competition
+          </button></div>`;
+      }, 2500);
+    }
+  };
+
+  // ── Main Spelling Bee application ─────────────────────────────────────────────
+  (function() {
+
+    const els = {
+      start:     document.getElementById('btnStart'),
+      say:       document.getElementById('btnSayAgain'),
+      flag:      document.getElementById('btnFlag'),
+      end:       document.getElementById('btnEnd'),
+      progress:  document.getElementById('progress'),
+      feedback:  document.getElementById('feedback'),
+      summary:   document.querySelector('.summary-area'),
+      customBox: document.getElementById('customWords'),
+      useCustom: document.getElementById('useCustomList'),
+      micBar:    document.getElementById('micIndicator'),
+      micLabel:  document.getElementById('micLabel'),
+      cdBar:     document.getElementById('countdownBar'),
+      cdFill:    document.getElementById('countdownFill')
+    };
+
+    // ── Competition word list (British spelling) ────────────────────────────
+    const BEE_WORDS = [
+      'accommodate','acquiesce','amateur','apparatus','asthma','barbecue',
+      'bouquet','camouflage','conscience','dilemma','ecstasy','embarrass',
+      'exhilarate','flamboyant','gauge','harass','idiosyncrasy','jewellery',
+      'liaison','manoeuvre','noticeable','occasion','pneumonia','queue',
+      'raspberry','rhythm','schedule','sergeant','subtle','thorough',
+      'tongue','vacuum','weird','yacht','analysis','bureau',
+      'Caribbean','dachshund','fuchsia','giraffe','hypocrisy','jeopardy',
+      'kaleidoscope','mnemonic','nausea','pharaoh','quinoa',
+      'rendezvous','silhouette','tarantula','ukulele','whimsical',
+      'xylophone','zeitgeist','aardvark','bouillon','chauffeur',
+      'dilettante','epitome','guacamole','ingenious','jaundice',
+      'labyrinth','mayonnaise','paparazzi','quixotic','restaurateur',
+      'sapphire','toboggan','ubiquitous','ventriloquist','wisteria',
+      'xenophobia','ambiguity','cappuccino','entrepreneur','facsimile',
+      'hegemony','infinitesimal','malfeasance','nonplussed','onomatopoeia',
+      'perseverance','quandary','reconnaissance','tautology','ubiquity',
+      'yesteryear','zeugma','hierarchy','miscellaneous','conscientious',
+      'bureaucracy','obituary','surveillance','chrysanthemum','psychiatrist'
+    ];
+
+    // ── Phonetic letter-name lookup ─────────────────────────────────────────
+    // Maps what the browser transcribes when a user spells letter-by-letter
+    // e.g. "see ay tee" → "c", "a", "t"
+    const PHONETIC = {
+      'ay':'a','bee':'b','see':'c','cee':'c','dee':'d','ee':'e',
+      'ef':'f','eff':'f','gee':'g','aitch':'h','haitch':'h','eye':'i',
+      'jay':'j','kay':'k','el':'l','ell':'l','em':'m','en':'n',
+      'oh':'o','oe':'o','pee':'p','cue':'q','que':'q','ar':'r',
+      'arr':'r','ess':'s','tee':'t','you':'u','yew':'u','vee':'v',
+      'double you':'w','doubleyou':'w','double u':'w',
+      'ex':'x','why':'y','wye':'y','zed':'z','zee':'z',
+      'sea':'c','be':'b','we':'w','tea':'t','are':'r','use':'u'
+    };
+
+    // ── State ───────────────────────────────────────────────────────────────
+    const state = {
+      words:        [],
+      currentIndex: 0,
+      correct:      [],
+      incorrect:    [],
+      flags:        new Set(),
+      isActive:     false,
+      isWaiting:    false,
+      score:        0,
+      streak:       0,
+      maxStreak:    0,
+      wordToken:    0       // increments each word; stale recognition results discarded
+    };
+
+    let activeRecognition  = null;
+    let recognitionTimeout = null;
+    const MIC_TIMEOUT_MS   = 12000;  // 12 s to spell the word
+
+    // ── UI helpers ──────────────────────────────────────────────────────────
+    function setFeedback(msg, isError = false) {
+      if (els.feedback) {
+        els.feedback.textContent = msg;
+        els.feedback.style.color = isError ? '#f72585' : '';
+      }
+    }
+    function setProgress() {
+      if (els.progress)
+        els.progress.textContent =
+          `Word ${state.currentIndex + 1} of ${state.words.length}` +
+          `  |  Score: ${state.score}  |  Streak: ${state.streak}`;
+    }
+    function showMic(visible, label) {
+      if (!els.micBar) return;
+      els.micBar.classList.toggle('active', visible);
+      if (label && els.micLabel) els.micLabel.textContent = label;
+    }
+    function startCountdown(ms) {
+      if (!els.cdBar || !els.cdFill) return;
+      els.cdFill.style.transition = 'none';
+      els.cdFill.style.width = '100%';
+      els.cdBar.classList.add('active');
+      requestAnimationFrame(() => requestAnimationFrame(() => {
+        els.cdFill.style.transition = `width ${ms}ms linear`;
+        els.cdFill.style.width = '0%';
+      }));
+    }
+    function stopCountdown() {
+      if (!els.cdBar) return;
+      els.cdBar.classList.remove('active');
+      if (els.cdFill) { els.cdFill.style.transition = 'none'; els.cdFill.style.width = '100%'; }
+    }
+    function abortRecognition() {
+      if (recognitionTimeout) { clearTimeout(recognitionTimeout); recognitionTimeout = null; }
+      if (activeRecognition) {
+        try { activeRecognition.abort(); } catch(_) {}
+        activeRecognition = null;
+      }
+      showMic(false);
+      stopCountdown();
+    }
+
+    // ── BUG 5 FIX: robust transcript → spelling converter ───────────────────
+    // Handles: "c a t", "see ay tee", "cat", "C-A-T"
+    function transcriptToSpelling(transcript) {
+      const t = transcript.toLowerCase().trim();
+
+      // Single token with no spaces → assume whole word spoken
+      if (!/[\s\-,]/.test(t)) return t;
+
+      // Split on spaces/dashes/commas
+      const tokens = t.split(/[\s\-,\.]+/).filter(Boolean);
+
+      // Case 1: all tokens are single letters ("c a t" → "cat")
+      if (tokens.every(tok => tok.length === 1)) {
+        return tokens.join('');
+      }
+
+      // Case 2: phonetic letter names ("see ay tee" → "cat")
+      // First check multi-word phonetics (e.g. "double you")
+      // Rebuild raw string and try to map greedily
+      const mapped = [];
+      let i = 0;
+      while (i < tokens.length) {
+        // try two-token phrase first
+        const two = tokens.slice(i, i + 2).join(' ');
+        if (PHONETIC[two]) { mapped.push(PHONETIC[two]); i += 2; continue; }
+        // try single token
+        const one = tokens[i];
+        if (PHONETIC[one]) { mapped.push(PHONETIC[one]); i++; continue; }
+        // unmappable token — fall back to whole-word comparison
+        return t;
+      }
+      // If every token mapped to exactly one letter, return the spelling
+      if (mapped.every(ch => ch.length === 1)) return mapped.join('');
+
+      return t;  // fallback
+    }
+
+    // ── BUG 1 FIX: voice loading guard ──────────────────────────────────────
+    function getVoices() {
+      return new Promise(resolve => {
+        const v = speechSynthesis.getVoices();
+        if (v.length > 0) return resolve(v);
+        speechSynthesis.onvoiceschanged = () => resolve(speechSynthesis.getVoices());
+        setTimeout(() => resolve(speechSynthesis.getVoices()), 1200);
+      });
+    }
+
+    // ── TTS: speak word then open mic ────────────────────────────────────────
+    // BUG 1: voices loaded asynchronously
+    // BUG 2: 900ms pause between TTS end and mic start
+    async function speakWord(word) {
+      if (!window.speechSynthesis) {
+        setFeedback('Speech synthesis not supported in this browser.', true);
+        return;
+      }
+
+      abortRecognition();
+      state.isWaiting = true;   // block any stale recognition results
+
+      // Cancel previous utterance without relying on its onend event
+      speechSynthesis.cancel();
+      await new Promise(r => setTimeout(r, 150));
+
+      const voices = await getVoices();
+      const utter  = new SpeechSynthesisUtterance(word);
+      utter.rate   = 0.78;
+      utter.pitch  = 1;
+      utter.volume = 1;
+      utter.lang   = 'en-GB';
+
+      utter.voice =
+        voices.find(v => v.lang === 'en-GB' && /female|hazel|susan|kate|zira/i.test(v.name)) ||
+        voices.find(v => v.lang === 'en-GB') ||
+        voices.find(v => v.lang.startsWith('en')) ||
+        voices[0] || null;
+
+      setFeedback('🔊 Listen carefully…');
+
+      utter.onend = () => {
+        // BUG 2 FIX: 900ms gap so TTS audio tail clears the microphone
+        setTimeout(() => {
+          if (!state.isActive) return;
+          state.isWaiting = false;
+          openMic(word, state.wordToken);
+        }, 900);
+      };
+
+      utter.onerror = e => {
+        console.warn('TTS error:', e.error);
+        setFeedback('Could not speak word — check browser audio permissions.', true);
+      };
+
+      speechSynthesis.speak(utter);
+    }
+
+    // ── Open microphone for one spelling attempt ──────────────────────────────
+    // BUG 3 FIX: timeout handle stored, cleared when result arrives
+    // BUG 4 FIX: capturedToken checked — stale results discarded
+    // BUG 7 FIX: no prompt() fallback — clear user message instead
+    function openMic(expectedWord, capturedToken) {
+      const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+
+      if (!SR) {
+        setFeedback('⚠️ Voice recognition not supported in this browser. Please use Chrome or Edge.', true);
+        setTimeout(() => skipWord(), 3000);
+        return;
+      }
+
+      const rec = new SR();
+      activeRecognition = rec;
+
+      rec.lang           = 'en-US';
+      rec.continuous     = false;
+      rec.interimResults = false;
+      rec.maxAlternatives = 3;   // more alternatives improves letter-name detection
+
+      rec.onstart = () => {
+        showMic(true, '🎤 Listening — spell the word aloud, letter by letter…');
+        startCountdown(MIC_TIMEOUT_MS);
+      };
+
+      rec.onresult = event => {
+        // BUG 3 FIX: cancel timeout the moment a result arrives
+        if (recognitionTimeout) { clearTimeout(recognitionTimeout); recognitionTimeout = null; }
+        // BUG 4 FIX: discard stale result from previous word
+        if (capturedToken !== state.wordToken) return;
+
+        abortRecognition();
+
+        // Try all alternatives; pick the one that maps most cleanly
+        const alts = Array.from({ length: event.results[0].length },
+                                 (_, i) => event.results[0][i].transcript.trim());
+        console.log('Recognition alternatives:', alts);
+
+        // Prefer the alternative whose mapping is a known-length sequence
+        const best = alts.reduce((chosen, alt) => {
+          const mapped = transcriptToSpelling(alt);
+          const prev   = transcriptToSpelling(chosen);
+          // prefer letter-only strings (no spaces) as they've been resolved
+          return (!/\s/.test(mapped) && /\s/.test(prev)) ? alt : chosen;
+        }, alts[0]);
+
+        checkSpelling(expectedWord, best, capturedToken);
+      };
+
+      rec.onerror = event => {
+        if (recognitionTimeout) { clearTimeout(recognitionTimeout); recognitionTimeout = null; }
+        if (capturedToken !== state.wordToken) return;
+        abortRecognition();
+        console.warn('Recognition error:', event.error);
+
+        if (event.error === 'no-speech') {
+          setFeedback("⏱️ No speech detected — moving on…", true);
+        } else if (event.error === 'not-allowed' || event.error === 'permission-denied') {
+          setFeedback('🚫 Microphone access denied. Please allow mic access and reload.', true);
+        } else {
+          setFeedback('⚠️ Mic error — skipping this word.', true);
+        }
+        setTimeout(() => skipWord(), 2000);
+      };
+
+      rec.onend = () => {
+        // onend can fire before onresult on some browsers
+        if (capturedToken !== state.wordToken) return;
+        if (!recognitionTimeout) return;   // result already handled
+        // Reached here with no result → treat as timeout
+        abortRecognition();
+        setFeedback("⏱️ No answer received — moving on…", true);
+        setTimeout(() => skipWord(), 1500);
+      };
+
+      rec.start();
+
+      // BUG 3 FIX: cancellable timeout
+      recognitionTimeout = setTimeout(() => {
+        recognitionTimeout = null;
+        if (capturedToken !== state.wordToken) return;
+        abortRecognition();
+        setFeedback("⏱️ Time's up! Moving to next word…", true);
+        setTimeout(() => skipWord(), 1500);
+      }, MIC_TIMEOUT_MS);
+    }
+
+    // ── Evaluate spelling ────────────────────────────────────────────────────
+    function checkSpelling(expectedWord, transcript, capturedToken) {
+      if (capturedToken !== state.wordToken) return;
+      if (state.isWaiting) return;
+      state.isWaiting = true;
+
+      const expected = expectedWord.toLowerCase().trim();
+      const heard    = transcriptToSpelling(transcript);   // BUG 5 FIX
+
+      console.log(`Expected:"${expected}" | Raw:"${transcript}" | Mapped:"${heard}"`);
+
+      if (heard === expected) {
+        state.correct.push(expectedWord);
+        state.score  += 10;
+        state.streak += 1;
+        if (state.streak > state.maxStreak) state.maxStreak = state.streak;
+
+        let msg = `✅ Correct! +10 points`;
+        if (state.streak >= 5)      { state.score += 10; msg = `🏆 ${state.streak} in a row! +20 points!`; }
+        else if (state.streak >= 3) { state.score += 5;  msg = `🔥 ${state.streak} in a row! +15 points!`; }
+        setFeedback(msg);
+
+      } else {
+        state.incorrect.push({ word: expectedWord, spoken: transcript, heard });
+        state.streak = 0;
+        // Show correct spelling ONLY on incorrect answer — per spec
+        setFeedback(`❌ Not quite. You spelled: "${heard}" — correct spelling: ${expectedWord}`);
+      }
+
+      advanceToNext();
+    }
+
+    // ── Skip word (timeout / mic error) ──────────────────────────────────────
+    // BUG 9 FIX: isWaiting reset inside advanceToNext before next word
+    function skipWord() {
+      if (!state.isActive) return;
+      if (state.currentIndex < state.words.length) {
+        state.incorrect.push({
+          word:   state.words[state.currentIndex],
+          spoken: '(no answer)',
+          heard:  ''
+        });
+      }
+      state.streak = 0;
+      advanceToNext();
+    }
+
+    // ── Single place that increments index and triggers next word ─────────────
+    function advanceToNext() {
+      state.currentIndex++;
+      state.wordToken++;   // invalidate any in-flight recognition for previous word
+
+      if (state.currentIndex < state.words.length) {
+        setProgress();
+        setTimeout(() => {
+          state.isWaiting = false;   // BUG 9 FIX: reset BEFORE speaking next word
+          speakWord(state.words[state.currentIndex]);
+        }, 2200);   // 2.2 s pause so user can read feedback
+      } else {
+        setTimeout(endSession, 2000);
+      }
+
+      saveProgress();
+    }
+
+    // ── Say Again ────────────────────────────────────────────────────────────
+    function speakCurrentWord() {
+      if (!state.isActive || state.currentIndex >= state.words.length) return;
+      abortRecognition();
+      state.isWaiting = false;
+      speakWord(state.words[state.currentIndex]);
+    }
+
+    // ── Start session ────────────────────────────────────────────────────────
+    function startSession() {
+      const customText = els.customBox?.value.trim() || '';
+
+      if (customText) {
+        const words = customText.split(/[\n,]+/).map(w => w.trim()).filter(Boolean);
+        state.words = words.slice(0, 40);
+        setFeedback(words.length > 40
+          ? `Freemium limit: using first 40 of ${words.length} words`
+          : `Custom list: ${state.words.length} words loaded`);
+      } else {
+        const shuffled = [...BEE_WORDS].sort(() => Math.random() - 0.5);
+        state.words = shuffled.slice(0, 25);
+        setFeedback(`Competition mode: ${state.words.length} words ready`);
+      }
+
+      if (!state.words.length) { setFeedback('No words available.', true); return; }
+
+      state.currentIndex = 0;
+      state.correct      = [];
+      state.incorrect    = [];
+      state.flags        = new Set();
+      state.isActive     = true;
+      state.isWaiting    = false;
+      state.score        = 0;
+      state.streak       = 0;
+      state.maxStreak    = 0;
+      state.wordToken    = 0;
+
+      if (els.summary) { els.summary.style.display = 'none'; els.summary.classList.add('hidden'); }
+
+      setProgress();
+      setTimeout(() => speakWord(state.words[0]), 1200);
+      saveProgress();
+    }
+
+    // ── End session ──────────────────────────────────────────────────────────
+    function endSession() {
+      state.isActive = false;
+      state.wordToken++;
+      abortRecognition();
+      speechSynthesis.cancel();
+
+      const total   = state.words.length;
+      const correct = state.correct.length;
+
+      let grade = 'Beginner 🐣';
+      if      (state.score >= 200) grade = 'Champion 🏆';
+      else if (state.score >= 150) grade = 'Expert ⭐';
+      else if (state.score >= 100) grade = 'Advanced 🚀';
+      else if (state.score >= 50)  grade = 'Intermediate 📚';
+
+      let html = `
+        <div style="background:rgba(0,0,0,0.1);padding:20px;border-radius:10px;">
+          <h3 style="margin-top:0;color:#7b2ff7;">Spelling Bee Complete!</h3>
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:15px;margin:20px 0;">
+            <div style="background:rgba(123,47,247,0.1);padding:15px;border-radius:8px;text-align:center;">
+              <div style="font-size:2em;font-weight:bold;color:#7b2ff7;">${state.score}</div>
+              <div style="font-size:0.9em;color:#666;">Total Score</div>
+            </div>
+            <div style="background:rgba(76,175,80,0.1);padding:15px;border-radius:8px;text-align:center;">
+              <div style="font-size:2em;font-weight:bold;color:#4CAF50;">${correct}/${total}</div>
+              <div style="font-size:0.9em;color:#666;">Correct Words</div>
+            </div>
+            <div style="background:rgba(255,209,102,0.1);padding:15px;border-radius:8px;text-align:center;">
+              <div style="font-size:2em;font-weight:bold;color:#ffd166;">${state.maxStreak}</div>
+              <div style="font-size:0.9em;color:#666;">Best Streak</div>
+            </div>
+            <div style="background:rgba(247,37,133,0.1);padding:15px;border-radius:8px;text-align:center;">
+              <div style="font-size:1.1em;font-weight:bold;color:#f72585;">${grade}</div>
+              <div style="font-size:0.9em;color:#666;">Your Grade</div>
+            </div>
+          </div>`;
+
+      if (state.incorrect.length > 0) {
+        html += `
+          <div style="margin:20px 0;">
+            <h4 style="color:#f72585;">Words to Master (${state.incorrect.length})</h4>
+            <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:10px;">`;
+        state.incorrect.forEach(item => {
+          html += `<div style="background:rgba(247,37,133,0.1);padding:10px;border-radius:5px;">
+            <strong style="color:#f72585;">${item.word}</strong><br>
+            <small style="color:#666;">You spelled: "${item.heard || item.spoken}"</small>
+          </div>`;
+        });
+        html += `</div></div>`;
+      }
+
+      html += `
+          <div style="margin:20px 0;padding:15px;background:rgba(123,47,247,0.1);border-radius:8px;">
+            <div style="display:flex;gap:10px;flex-wrap:wrap;">`;
+      if (state.incorrect.length > 0)
+        html += `<button onclick="practiceIncorrect()" class="btn-secondary" style="background:#f72585;color:white;">
+                   <i class="fa fa-redo"></i> Practice Missed (${state.incorrect.length})
+                 </button>`;
+      html += `  <button onclick="restartSession()" class="btn-primary">
+                   <i class="fa fa-play-circle"></i> New Competition
+                 </button>
+               </div>
+             </div>
+          <div style="margin-top:20px;padding:15px;background:linear-gradient(135deg,#7b2ff7,#f72585);border-radius:10px;color:white;">
+            <h4 style="margin:0 0 10px;">🐝 Become a Spelling Bee Champion!</h4>
+            <p style="margin:0 0 15px;font-size:0.9em;">Unlimited competition words, leaderboard access, advanced levels and no ads.</p>
+            <button onclick="window.location.href='/premium.html'"
+              style="background:white;color:#7b2ff7;border:none;padding:8px 20px;border-radius:5px;font-weight:bold;cursor:pointer;">
+              <i class="fa fa-crown"></i> Get Bee Premium
+            </button>
+          </div>
+        </div>`;
+
+      if (els.summary) {
+        els.summary.innerHTML = html;
+        els.summary.style.display = 'block';
+        els.summary.classList.remove('hidden');
+      }
+      setFeedback(`Competition complete! Score: ${state.score} points`);
+      localStorage.removeItem('bee_progress');
+    }
+
+    // ── Save / load progress ─────────────────────────────────────────────────
+    function saveProgress() {
+      localStorage.setItem('bee_progress', JSON.stringify({
+        words: state.words, currentIndex: state.currentIndex,
+        correct: state.correct, incorrect: state.incorrect,
+        flags: Array.from(state.flags), score: state.score,
+        streak: state.streak, maxStreak: state.maxStreak,
+        timestamp: Date.now()
+      }));
+    }
+
+    function loadProgress() {
+      try {
+        const saved = localStorage.getItem('bee_progress');
+        if (!saved) return false;
+        const p = JSON.parse(saved);
+        if ((Date.now() - p.timestamp) / 3600000 > 24) {
+          localStorage.removeItem('bee_progress'); return false;
+        }
+        if (!p.words || p.currentIndex >= p.words.length) return false;
+
+        if (!confirm(`Resume Spelling Bee from word ${p.currentIndex + 1} of ${p.words.length}?`))
+          return false;
+
+        Object.assign(state, {
+          words: p.words, currentIndex: p.currentIndex,
+          correct: p.correct || [], incorrect: p.incorrect || [],
+          flags: new Set(p.flags || []), score: p.score || 0,
+          streak: p.streak || 0, maxStreak: p.maxStreak || 0,
+          isActive: true, isWaiting: false, wordToken: 0
+        });
+        setProgress();
+        setFeedback(`Resumed from word ${state.currentIndex + 1}`);
+        setTimeout(() => speakWord(state.words[state.currentIndex]), 1000);
+        return true;
+      } catch(e) { console.error('Load progress error:', e); return false; }
+    }
+
+    // ── Practice missed words ─────────────────────────────────────────────────
+    function practiceIncorrect() {
+      const missed = [...new Set(state.incorrect.map(i => i.word))];
+      if (!missed.length) { setFeedback('No missed words to practise.', true); return; }
+      Object.assign(state, {
+        words: missed, currentIndex: 0, correct: [], incorrect: [],
+        flags: new Set(), isActive: true, isWaiting: false,
+        score: 0, streak: 0, maxStreak: 0, wordToken: 0
+      });
+      if (els.summary) { els.summary.style.display = 'none'; els.summary.classList.add('hidden'); }
+      setProgress();
+      setFeedback(`Practising ${missed.length} missed words`);
+      setTimeout(() => speakWord(state.words[0]), 1000);
+    }
+
+    // ── Restart ───────────────────────────────────────────────────────────────
+    function restartSession() {
+      abortRecognition();
+      if (els.summary) { els.summary.style.display = 'none'; els.summary.classList.add('hidden'); }
+      if (els.progress) els.progress.textContent = '';
+      setFeedback('Ready for a new competition!');
+      localStorage.removeItem('bee_progress');
+    }
+
+    // ── Flag ──────────────────────────────────────────────────────────────────
+    function toggleFlag() {
+      if (!state.isActive || state.currentIndex >= state.words.length) {
+        setFeedback('No active word to flag.', true); return;
+      }
+      const word = state.words[state.currentIndex];
+      state.flags.has(word) ? state.flags.delete(word) : state.flags.add(word);
+      setFeedback(state.flags.has(word)
+        ? `Word ${state.currentIndex + 1} flagged for review`
+        : `Flag removed from word ${state.currentIndex + 1}`);
+      saveProgress();
+    }
+
+    // ── Event listeners ───────────────────────────────────────────────────────
+    // BUG 6 FIX: single fileInput listener (old duplicate bottom script removed)
+    function setupListeners() {
+      els.start?.addEventListener('click', startSession);
+      els.say?.addEventListener('click', speakCurrentWord);
+      els.flag?.addEventListener('click', toggleFlag);
+      els.end?.addEventListener('click', () => { if (state.isActive) endSession(); });
+
+      els.useCustom?.addEventListener('click', () => {
+        const text = els.customBox?.value.trim() || '';
+        if (!text) { setFeedback('Enter words in the custom box first.', true); return; }
+        const words = text.split(/[\n,]+/).map(w => w.trim()).filter(Boolean);
+        state.words = words.slice(0, 40);
+        setFeedback(`Custom list ready: ${state.words.length} words — click Start`);
+      });
+
+      document.getElementById('fileInput')?.addEventListener('change', e => {
+        const file = e.target.files[0];
+        if (!file) return;
+        document.getElementById('fileName').textContent = file.name;
+        const reader = new FileReader();
+        reader.onload = ev => {
+          if (els.customBox) { els.customBox.value = ev.target.result; setFeedback(`Loaded: ${file.name}`); }
+        };
+        reader.readAsText(file);
+      });
+    }
+
+    // ── Dark mode ─────────────────────────────────────────────────────────────
+    function initDarkMode() {
+      const toggle = document.getElementById('toggleDark');
+      if (!toggle) return;
+      const apply = () => {
+        const on = localStorage.getItem('dark') === 'true';
+        document.body.classList.toggle('dark-mode', on);
+        const icon = toggle.querySelector('i');
+        if (icon) icon.className = on ? 'fa fa-sun' : 'fa fa-moon';
+      };
+      toggle.addEventListener('click', () => {
+        localStorage.setItem('dark', !(localStorage.getItem('dark') === 'true'));
+        apply();
+      });
+      apply();
+    }
+
+    // ── Boot ──────────────────────────────────────────────────────────────────
+    function initialize() {
+      setupListeners();
+      initDarkMode();
+      loadProgress();
+      window.practiceIncorrect = practiceIncorrect;
+      window.restartSession    = restartSession;
+      if (window.tierManager) window.tierManager.init();
+      setTimeout(showCookieBanner, 1500);
+      setFeedback('Ready! Click "Start" to begin the Spelling Bee competition.');
+    }
+
+    if (document.readyState === 'loading')
+      document.addEventListener('DOMContentLoaded', initialize);
+    else
+      initialize();
+
+  })();
+  </script>
+
+  <script>
+  window.addEventListener('load', function() {
+    const t = window.performance && window.performance.timing;
+    if (!t) return;
+    const ms = t.loadEventEnd - t.navigationStart;
+    if (ms > 3000 && typeof gtag !== 'undefined')
+      gtag('event', 'slow_load_time', { load_time: ms, page_path: window.location.pathname });
+  });
+  window.addEventListener('error', function(e) {
+    if (typeof gtag !== 'undefined' && e.error)
+      gtag('event', 'exception', { description: e.error.message, fatal: false });
+  });
+  </script>
+
+  <footer style="text-align:center;margin-top:40px;padding:20px;color:#666;border-top:1px solid rgba(255,255,255,0.1);">
+    <div style="display:flex;justify-content:center;gap:30px;margin-bottom:20px;flex-wrap:wrap;">
+      <div style="text-align:center;"><i class="fa fa-lock" style="color:#7b2ff7;font-size:1.5em;"></i><div style="font-size:0.8em;">SSL Secure</div></div>
+      <div style="text-align:center;"><i class="fa fa-shield-alt" style="color:#7b2ff7;font-size:1.5em;"></i><div style="font-size:0.8em;">14-Day Refund</div></div>
+      <div style="text-align:center;"><i class="fa fa-user-shield" style="color:#7b2ff7;font-size:1.5em;"></i><div style="font-size:0.8em;">GDPR Compliant</div></div>
+    </div>
+    <p>
+      <a href="/privacy.html" style="color:#7b2ff7;text-decoration:none;">Privacy Policy</a> &nbsp;•&nbsp;
+      <a href="/terms.html" style="color:#7b2ff7;text-decoration:none;">Terms of Service</a> &nbsp;•&nbsp;
+      <a href="/refund-policy.html" style="color:#7b2ff7;text-decoration:none;">Refund Policy</a> &nbsp;•&nbsp;
+      <a href="/security.html" style="color:#7b2ff7;text-decoration:none;">Security</a> &nbsp;•&nbsp;
+      <a href="/contact.html" style="color:#7b2ff7;text-decoration:none;">Contact</a>
+    </p>
+    <p style="margin-top:10px;font-size:0.9em;">&copy; 2026 SpellRightPro. All rights reserved.</p>
+  </footer>
+</body>
+</html>
