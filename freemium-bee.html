@@ -2,1037 +2,757 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Spelling Bee - SpellRightPro</title>
-  <link rel="stylesheet" href="/css/styles.css" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>SpellRightPro - Verbal Spelling Bee</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      transition: background-color 0.2s ease, color 0.2s ease;
+    }
+
+    body {
+      font-family: 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+      background: #f4f7fc;
+      margin: 0;
+      padding: 0;
+      color: #1e2a3e;
+    }
+
+    body.dark-mode {
+      background: #121826;
+      color: #eef2ff;
+    }
+
+    header {
+      background: linear-gradient(135deg, #2b2d42, #1e1f2c);
+      color: white;
+      padding: 1rem 2rem;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      align-items: center;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .brand img {
+      width: 48px;
+      height: 48px;
+      background: #f9c74f;
+      border-radius: 50%;
+      object-fit: cover;
+    }
+
+    .brand h1 {
+      margin: 0;
+      font-size: 1.6rem;
+    }
+
+    .nav-right {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .nav-btn, .btn-primary, .btn-secondary, .btn-danger {
+      background: rgba(255,255,255,0.12);
+      border: none;
+      padding: 8px 16px;
+      border-radius: 40px;
+      font-weight: 600;
+      cursor: pointer;
+      color: white;
+      backdrop-filter: blur(4px);
+      transition: 0.2s;
+    }
+
+    .nav-btn:hover, .btn-primary:hover, .btn-secondary:hover {
+      background: #7b2ff7;
+      transform: scale(1.02);
+    }
+
+    .btn-premium {
+      background: #f9c74f;
+      color: #1e2a3e;
+      border: none;
+      padding: 8px 20px;
+      border-radius: 40px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    .btn-primary {
+      background: #4c9aff;
+      color: white;
+    }
+
+    .btn-danger {
+      background: #e63946;
+    }
+
+    .main-card {
+      max-width: 1000px;
+      margin: 2rem auto;
+      background: rgba(255,255,255,0.9);
+      border-radius: 32px;
+      padding: 2rem;
+      box-shadow: 0 12px 28px rgba(0,0,0,0.08);
+    }
+
+    body.dark-mode .main-card {
+      background: #1f2937;
+      color: #eef2ff;
+    }
+
+    textarea, input, button {
+      font-family: inherit;
+    }
+
+    .button-group {
+      display: flex;
+      gap: 15px;
+      flex-wrap: wrap;
+      margin: 25px 0;
+    }
+
+    .summary-area {
+      background: rgba(0,0,0,0.04);
+      border-radius: 24px;
+      padding: 20px;
+    }
+
+    body.dark-mode .summary-area {
+      background: #111827;
+    }
+
+    .hidden {
+      display: none;
+    }
+
+    #feedback {
+      background: #1e2a3e20;
+      padding: 12px;
+      border-radius: 48px;
+      font-weight: 500;
+      text-align: center;
+      font-size: 1rem;
+    }
+
+    body.dark-mode #feedback {
+      background: #2d3a4e;
+    }
+
+    .listening-indicator {
+      display: inline-block;
+      animation: pulse 0.8s infinite;
+      background: #f9c74f;
+      border-radius: 50px;
+      padding: 4px 12px;
+      font-size: 0.8rem;
+      font-weight: bold;
+    }
+
+    @keyframes pulse {
+      0% { opacity: 0.6; transform: scale(1);}
+      100% { opacity: 1; transform: scale(1.05);}
+    }
+
+    footer {
+      text-align: center;
+      padding: 30px 20px;
+      font-size: 0.85rem;
+      color: #6c757d;
+    }
+  </style>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" />
-
-  <!-- FIREBASE SDKs -->
-  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-analytics.js"></script>
-
-  <!-- Shared config: Firebase init, trackEvent, appConfig, tierManager -->
-  <script src="/js/config.js"></script>
-  <script src="/js/common.js"></script>
-  <!-- Ads: only injected after cookie consent (GDPR-safe) -->
-  <script src="/js/ads-manager.js" defer></script>
-
-    <!-- Google Analytics -->
-  <script async src="https://www.googletagmanager.com/gtag/js?id=G-H09MF13297"></script>
-  <script>
-    window.dataLayer = window.dataLayer || [];
-    function gtag(){dataLayer.push(arguments);}
-    gtag('js', new Date());
-    gtag('config', 'G-H09MF13297');
-    
-    // Function to track premium clicks
-    function trackPremiumClick(source, plan) {
-      gtag('event', 'premium_click', {
-        event_category: 'premium_conversion',
-        event_label: source,
-        value: plan === 'complete' ? 8.99 : plan === 'school' ? 4.99 : 14.99
-      });
-    }
-    
-    // Function to track plan view
-    function trackPlanView(plan) {
-      gtag('event', 'view_item', {
-        items: [{
-          item_id: plan,
-          item_name: 'SpellRightPro ' + plan,
-          item_category: 'premium_plans'
-        }]
-      });
-    }
-  </script>
 </head>
-
 <body data-mode="bee">
-  <!-- Header with Dark Mode Toggle -->
   <header>
     <div class="brand">
-      <img src="/assets/logo.png" alt="SpellRightPro Logo" />
+      <img src="/assets/logo.png" alt="SpellRightPro Logo" onerror="this.src='https://placehold.co/48x48?text=SP'"/>
       <div>
         <h1>SpellRightPro</h1>
-        <small>Spelling Bee</small>
+        <small>Verbal Spelling Bee · Spell Out Loud</small>
       </div>
     </div>
-    
     <div class="nav-right">
-      <button class="nav-btn" onclick="window.location.href='/'">
-        <i class="fa fa-home"></i> Home
-      </button>
-      <button class="nav-btn" id="toggleDark">
-        <i class="fa fa-moon"></i> Dark Mode
-      </button>
-      <button class="btn-premium" onclick="window.location.href='/premium.html'">
-        <i class="fa fa-crown"></i> Go Premium
-      </button>
+      <button class="nav-btn" onclick="window.location.href='/'"><i class="fa fa-home"></i> Home</button>
+      <button class="nav-btn" id="toggleDark"><i class="fa fa-moon"></i> Dark Mode</button>
+      <button class="btn-premium" onclick="alert('Premium unlocks unlimited words & removes ads')"><i class="fa fa-crown"></i> Go Premium</button>
     </div>
   </header>
 
-  <!-- Main Content -->
   <main class="main-card">
-    <h2>Spelling Bee (Freemium)</h2>
-    <p>Listen carefully and spell aloud. Your pronunciation will be checked automatically.</p>
+    <h2>🐝 Verbal Spelling Bee</h2>
+    <p><i class="fa fa-microphone"></i> Listen to the word, then <strong>spell it out loud letter by letter</strong> (e.g., "C-A-T"). The system listens to your verbal spelling and checks it automatically.</p>
 
-    <!-- Custom List Input -->
     <div style="margin: 20px 0;">
-      <textarea 
-        id="customWords" 
-        placeholder="Paste custom list (optional)..."
-        style="width: 100%; min-height: 80px; padding: 10px; border-radius: 8px; border: 1px solid #ccc;"
-      ></textarea>
-      
+      <textarea id="customWords" placeholder="Paste custom word list (one per line or comma separated)...&#10;Example:&#10;necessary, embarrass, accommodate, privilege" rows="3" style="width:100%; border-radius:16px; padding:12px; border:1px solid #ccc;"></textarea>
       <div style="margin-top: 10px;">
-        <input type="file" id="fileInput" accept=".txt,.json" style="display: none;" />
-        <button onclick="document.getElementById('fileInput').click()" class="nav-btn">
-          <i class="fa fa-upload"></i> Choose File
-        </button>
+        <input type="file" id="fileInput" accept=".txt,.json" style="display:none;" />
+        <button onclick="document.getElementById('fileInput').click()" class="nav-btn"><i class="fa fa-upload"></i> Choose File</button>
         <span id="fileName" style="margin-left: 10px;">No file chosen</span>
-        <button id="useCustomList" class="nav-btn" style="margin-left: 10px;">
-          <i class="fa fa-check"></i> Use Custom
-        </button>
+        <button id="useCustomList" class="nav-btn"><i class="fa fa-check"></i> Use Custom</button>
       </div>
     </div>
 
-    <!-- Ad Container -->
-    <div id="ad-container" style="margin: 25px 0; text-align: center; min-height: 90px; display: none;">
-      <p style="color: #666; font-size: 0.9em;">Ad placeholder - will show ads after AdSense approval</p>
+    <div id="ad-container" style="margin: 15px 0; text-align: center; min-height: 70px; background:#f0f0f0; border-radius: 20px; padding:8px;">
+      <small>⭐ <strong>Premium</strong> — unlimited words, no ads, advanced stats</small>
     </div>
 
-    <!-- Progress and Feedback -->
-    <div id="progress" data-role="progress" style="font-weight: 700; margin: 15px 0;"></div>
-    <div id="feedback" data-role="feedback" style="min-height: 22px; margin: 10px 0;"></div>
+    <div id="progress" style="font-weight:bold; font-size:1.2rem; margin:10px 0; text-align:center;"></div>
+    <div id="feedback" style="padding:12px; border-radius:60px; margin:10px 0;"></div>
 
-    <!-- Control Buttons -->
-    <div class="button-group" style="margin: 20px 0;">
-      <button id="btnStart" class="btn-primary">
-        <i class="fa fa-play"></i> Start
-      </button>
-      <button id="btnSayAgain" class="btn-secondary">
-        <i class="fa fa-volume-up"></i> Say Again
-      </button>
-      <button id="btnFlag" class="btn-secondary">
-        <i class="fa fa-flag"></i> Flag
-      </button>
-      <button id="btnEnd" class="btn-danger">
-        <i class="fa fa-stop"></i> End
-      </button>
+    <div class="button-group">
+      <button id="btnStart" class="btn-primary"><i class="fa fa-play"></i> Start Competition</button>
+      <button id="btnSayAgain" class="btn-secondary"><i class="fa fa-volume-up"></i> Repeat Word</button>
+      <button id="btnFlag" class="btn-secondary"><i class="fa fa-flag"></i> Flag Word</button>
+      <button id="btnEnd" class="btn-danger"><i class="fa fa-stop"></i> End Session</button>
     </div>
 
-    <!-- Summary Area -->
-    <div class="summary-area hidden" style="margin-top: 20px; padding: 15px; background: rgba(0,0,0,0.05); border-radius: 8px;"></div>
+    <div class="summary-area hidden" id="summaryArea"></div>
   </main>
 
-  <!-- COOKIE CONSENT BANNER -->
-  <div id="cookieConsentBanner" style="display: none; position: fixed; bottom: 0; left: 0; right: 0; background: #333; color: white; padding: 15px; text-align: center; z-index: 1000;">
-    <p>We use cookies to provide our services and for analytics and ads. 
-       <a href="/privacy.html" style="color: #7b2ff7;">Learn more</a>
-    </p>
-    <button onclick="acceptCookies()" style="background: #7b2ff7; color: white; border: none; padding: 8px 15px; margin: 0 5px; border-radius: 5px; cursor: pointer;">
-      Accept
-    </button>
-    <button onclick="declineCookies()" style="background: #666; color: white; border: none; padding: 8px 15px; margin: 0 5px; border-radius: 5px; cursor: pointer;">
-      Decline
-    </button>
+  <div id="cookieConsentBanner" style="display:none; position:fixed; bottom:0; left:0; right:0; background:#222; color:white; padding:15px; text-align:center; z-index:999;">
+    <p>We use cookies for analytics. <a href="#" style="color:#7b2ff7;">Learn more</a></p>
+    <button onclick="acceptCookies()" style="background:#7b2ff7; color:white; border:none; padding:8px 15px; margin:5px; border-radius:8px;">Accept</button>
+    <button onclick="declineCookies()" style="background:#666; border:none; padding:8px 15px; border-radius:8px;">Decline</button>
   </div>
 
-  <!-- ALL JAVASCRIPT EMBEDDED -->
   <script>
-  // ==================== FIREBASE CONFIG ====================
-const firebaseConfig = {
-  apiKey: "AIzaSyCZ-rAPnRgVjSRFOFvbiQlowE6A3RVvwWo",
-  authDomain: "spellrightpro-firebase.firebaseapp.com",
-  projectId: "spellrightpro-firebase",
-  storageBucket: "spellrightpro-firebase.firebasestorage.app",
-  messagingSenderId: "798456641137",
-  appId: "1:798456641137:web:5c6d79db5bf49d04928dd0",
-  measurementId: "G-H09MF13297"
-};
-
-  // Initialize Firebase
-  window.initFirebase = function() {
-    if (!firebase.apps.length) {
-      firebase.initializeApp(firebaseConfig);
-      
-      const consent = localStorage.getItem('cookieConsent');
-      if (consent === 'true') {
-        firebase.analytics();
-        console.log('📊 Firebase Analytics initialized');
-      }
-    }
-    return firebase;
-  };
-
-  // ==================== COOKIE CONSENT ====================
-  function showCookieBanner() {
-    const consent = localStorage.getItem('cookieConsent');
-    if (consent === null) {
-      document.getElementById('cookieConsentBanner').style.display = 'block';
-    } else if (consent === 'true') {
-      initializeAnalytics();
-    }
-  }
-
-  function acceptCookies() {
-    localStorage.setItem('cookieConsent', 'true');
-    document.getElementById('cookieConsentBanner').style.display = 'none';
-    initializeAnalytics();
-    // Signal ads-manager.js — AdSense only loads after this point (GDPR-safe)
-    document.dispatchEvent(new Event('cookieConsentGranted'));
-    console.log('✅ Cookies accepted - Analytics and ads enabled');
-  }
-
-  function declineCookies() {
-    localStorage.setItem('cookieConsent', 'false');
-    document.getElementById('cookieConsentBanner').style.display = 'none';
-    console.log('🔕 Cookies declined - Analytics disabled');
-  }
-
-  function initializeAnalytics() {
-    if (typeof window.initFirebase === 'function') {
-      setTimeout(() => {
-        window.initFirebase();
-      }, 500);
-    }
-  }
-
-  // ==================== TIER MANAGER ====================
-  window.tierManager = {
-    init: function() {
-      console.log('🎯 Tier Manager Initialized for Spelling Bee');
-      this.applyFreemiumLimitations();
-      this.togglePremiumFeatures();
-      this.initializeAds();
-    },
+    // ==================== VERBAL SPELLING BEE ====================
+    // Users speak the spelling LETTER BY LETTER: "C-A-T" or "see ay tee"
+    // The system captures their spoken response and evaluates if it matches the correct word.
+    // The word is NEVER shown on screen unless they get it wrong (then shows correct spelling).
     
-    applyFreemiumLimitations: function() {
-      const maxCustomWords = 40; // Bee freemium limit
-      const maxSessionWords = 25; // Shorter sessions for bee
-      
-      console.log(`🎯 Bee Freemium: Max ${maxCustomWords} custom words, ${maxSessionWords} words per session`);
-      
-      this.limitCustomWords(maxCustomWords);
-    },
-    
-    limitCustomWords: function(maxWords) {
-      const customBox = document.getElementById('customWords');
-      if (customBox) {
-        customBox.addEventListener('input', function() {
-          const words = this.value.split(/[\n,]+/).filter(w => w.trim());
-          if (words.length > maxWords) {
-            const limitedWords = words.slice(0, maxWords);
-            this.value = limitedWords.join('\n');
-            document.getElementById('feedback').textContent = 
-              `Bee Freemium limit: Using first ${maxWords} words only`;
-            document.getElementById('feedback').style.color = '#f72585';
-          }
-        });
-      }
-    },
-    
-    togglePremiumFeatures: function() {
-      const premiumFeatures = document.querySelectorAll('.premium-only');
-      premiumFeatures.forEach(feature => {
-        feature.style.display = 'none';
-      });
-      
-      this.addUpgradePrompts();
-    },
-    
-    addUpgradePrompts: function() {
-      const summaryArea = document.querySelector('.summary-area');
-      if (summaryArea) {
-        const upgradeHTML = `
-          <div style="margin-top: 20px; padding: 15px; background: linear-gradient(135deg, #7b2ff7, #f72585); border-radius: 10px; color: white;">
-            <h4 style="margin: 0 0 10px 0;">🐝 Become a Spelling Bee Champion!</h4>
-            <p style="margin: 0 0 15px 0; font-size: 0.9em;">
-              Upgrade to Bee Premium for:<br>
-              • Unlimited competition words<br>
-              • Voice recognition feedback<br>
-              • Leaderboard access<br>
-              • Advanced difficulty levels<br>
-              • No ads during competitions
-            </p>
-            <button onclick="window.location.href='/premium.html'" 
-              style="background: white; color: #7b2ff7; border: none; padding: 8px 20px; border-radius: 5px; font-weight: bold; cursor: pointer;">
-              <i class="fa fa-crown"></i> Get Bee Premium
-            </button>
-          </div>
-        `;
-        
-        window.beePremiumUpgradeHTML = upgradeHTML;
-      }
-    },
-    
-    initializeAds: function() {
-      const adContainer = document.getElementById('ad-container');
-      if (adContainer) {
-        setTimeout(() => {
-          adContainer.style.display = 'block';
-          adContainer.innerHTML = `
-            <div style="background: rgba(0,0,0,0.05); padding: 10px; border-radius: 8px;">
-              <p style="color: #666; font-size: 0.9em; margin: 0;">
-                🐝 <strong>Bee Premium</strong> - Compete like a champion!
-              </p>
-              <button onclick="window.location.href='/premium.html'" 
-                style="background: #7b2ff7; color: white; border: none; padding: 5px 15px; border-radius: 4px; font-size: 0.8em; margin-top: 5px; cursor: pointer;">
-                Join Competition
-              </button>
-            </div>
-          `;
-        }, 2500);
-      }
-    }
-  };
+    const DEFAULT_BEE_WORDS = [
+      'accommodate', 'acquiesce', 'amateur', 'asthma', 'bouquet', 'camouflage',
+      'conscience', 'dilemma', 'embarrass', 'exhilarate', 'flamboyant', 'gauge',
+      'harass', 'idiosyncrasy', 'jewelry', 'liaison', 'maneuver', 'noticeable',
+      'occasion', 'pneumonia', 'queue', 'rhythm', 'schedule', 'sergeant',
+      'subtle', 'thorough', 'tongue', 'vacuum', 'weird', 'yacht', 'zucchini',
+      'xylophone', 'mnemonic', 'silhouette', 'rendezvous', 'entrepreneur'
+    ];
 
-  // ==================== SPELLING BEE MAIN APPLICATION ====================
-  (function() {
-    console.log('Starting Spelling Bee Competition...');
-    
-    // UI Elements
     const elements = {
       start: document.getElementById('btnStart'),
-      say: document.getElementById('btnSayAgain'),
+      sayAgain: document.getElementById('btnSayAgain'),
       flag: document.getElementById('btnFlag'),
       end: document.getElementById('btnEnd'),
       progress: document.getElementById('progress'),
       feedback: document.getElementById('feedback'),
-      summaryArea: document.querySelector('.summary-area'),
+      summaryArea: document.getElementById('summaryArea'),
       customBox: document.getElementById('customWords'),
       useCustom: document.getElementById('useCustomList')
     };
-    
-    // Spelling Bee competition words
-    const BEE_WORDS = [
-      'accommodate', 'acquiesce', 'amateur', 'apparatus', 'asthma', 'barbecue',
-      'bouquet', 'camouflage', 'conscience', 'dilemma', 'ecstasy', 'embarrass',
-      'exhilarate', 'flamboyant', 'gauge', 'harass', 'idiosyncrasy', 'jewelry',
-      'liaison', 'maneuver', 'noticeable', 'occasion', 'pneumonia', 'queue',
-      'raspberry', 'rhythm', 'schedule', 'sergeant', 'subtle', 'thorough',
-      'tongue', 'vacuum', 'weird', 'yacht', 'zucchini', 'analysis', 'bureau',
-      'caribbean', 'dachshund', 'fuchsia', 'giraffe', 'hypocrisy', 'jeopardy',
-      'kaleidoscope', 'liaison', 'mnemonic', 'nausea', 'pharaoh', 'quinoa',
-      'rendezvous', 'silhouette', 'tarantula', 'ukulele', 'vichyssoise', 'whimsical',
-      'xylophone', 'yogurt', 'zeitgeist', 'aardvark', 'bouillon', 'chauffeur',
-      'dilettante', 'epitome', 'fiancé', 'guacamole', 'hors d\'oeuvre', 'ingenious',
-      'jaundice', 'knickknack', 'labyrinth', 'mayonnaise', 'naïve', 'obbligato',
-      'paparazzi', 'quixotic', 'restaurateur', 'sapphire', 'toboggan', 'ubiquitous',
-      'ventriloquist', 'wisteria', 'xenophobia', 'yosemite', 'zaftig', 'ambiguity',
-      'braggadocio', 'cappuccino', 'debutante', 'entrepreneur', 'facsimile',
-      'glockenspiel', 'hegemony', 'infinitesimal', 'jugular', 'kitsch', 'lascivious',
-      'malfeasance', 'nonplussed', 'onomatopoeia', 'perseverance', 'quandary',
-      'reconnaissance', 'savoir faire', 'tautology', 'ubiquity', 'vaudeville',
-      'weltschmerz', 'xanthophyll', 'yesteryear', 'zeugma'
-    ];
-    
-    // App State
-    const state = {
+
+    let state = {
       words: [],
       currentIndex: 0,
-      correct: [],
-      incorrect: [],
-      flags: new Set(),
-      isActive: false,
-      isWaiting: false,   // true while transitioning between words
-      history: [],
+      correctList: [],
+      incorrectList: [],
+      flaggedWords: new Set(),
       score: 0,
       streak: 0,
-      maxStreak: 0
+      maxStreak: 0,
+      isActive: false,
+      waitingForAnswer: false,
+      sessionEnded: false,
+      recognitionInstance: null,
+      recognitionTimeout: null,
+      currentHiddenWord: ''
     };
-    
-    // Update progress display
-    function updateProgress() {
-      if (elements.progress) {
-        elements.progress.textContent = `Word ${state.currentIndex + 1} of ${state.words.length} | Score: ${state.score} | Streak: ${state.streak}`;
-      }
-    }
-    
-    // Update feedback
-    function updateFeedback(message, isError = false) {
-      if (elements.feedback) {
-        elements.feedback.textContent = message;
-        elements.feedback.style.color = isError ? '#f72585' : '#ffffff';
-      }
-      console.log(message);
-    }
-    
-    // Speak word
-    function speakWord(word) {
-      if (!window.speechSynthesis) {
-        updateFeedback('Speech synthesis not supported', true);
+
+    function updateProgressUI() {
+      if (!elements.progress) return;
+      if (!state.isActive || state.words.length === 0) {
+        elements.progress.innerHTML = `🐝 Ready | Score: ${state.score} | 🔥 Streak: ${state.streak}`;
         return;
+      }
+      elements.progress.innerHTML = `📖 Word ${state.currentIndex + 1} of ${state.words.length} &nbsp;| 🏆 Score: ${state.score} &nbsp;| 🔥 Streak: ${state.streak}`;
+    }
+
+    function setFeedback(msg, isError = false, isSuccess = false) {
+      if (elements.feedback) {
+        elements.feedback.innerHTML = msg;
+        if (isError) {
+          elements.feedback.style.color = '#f97316';
+          elements.feedback.style.background = 'rgba(249,115,22,0.15)';
+        } else if (isSuccess) {
+          elements.feedback.style.color = '#2dd4bf';
+          elements.feedback.style.background = 'rgba(45,212,191,0.15)';
+        } else {
+          elements.feedback.style.color = '#7b2ff7';
+          elements.feedback.style.background = 'rgba(123,47,247,0.1)';
+        }
+      }
+      console.log(`[FEEDBACK] ${msg}`);
+    }
+
+    function cancelSpeechAndRecognition() {
+      if (window.speechSynthesis) window.speechSynthesis.cancel();
+      if (state.recognitionInstance) {
+        try { state.recognitionInstance.abort(); state.recognitionInstance.stop(); } catch(e) {}
+        state.recognitionInstance = null;
+      }
+      if (state.recognitionTimeout) {
+        clearTimeout(state.recognitionTimeout);
+        state.recognitionTimeout = null;
+      }
+    }
+
+    // Speak the word clearly (audio only, no visual)
+    function speakWordOnly(word) {
+      return new Promise((resolve) => {
+        if (!window.speechSynthesis) { resolve(false); return; }
+        const utterance = new SpeechRecognitionUtterance || SpeechSynthesisUtterance;
+        const utt = new SpeechSynthesisUtterance(word);
+        utt.rate = 0.7;
+        utt.pitch = 1.0;
+        utt.lang = 'en-US';
+        utt.volume = 1;
+        utt.onend = () => resolve(true);
+        utt.onerror = () => resolve(false);
+        window.speechSynthesis.speak(utt);
+      });
+    }
+
+    // Convert spoken letter sequence into a word string
+    // Handles: "C A T", "see ay tee", "C-A-T", "cat" (if they say full word)
+    function parseSpokenLettersToWord(spokenText) {
+      let cleaned = spokenText.toLowerCase().trim();
+      // Remove common filler words
+      cleaned = cleaned.replace(/[^a-z\- ]/g, '');
+      
+      // Case 1: hyphenated letters "c-a-t"
+      if (cleaned.includes('-')) {
+        const letters = cleaned.split('-').filter(l => l.length === 1);
+        if (letters.length > 0) return letters.join('');
       }
       
-      try {
-        speechSynthesis.cancel();
-        
-        const utterance = new SpeechSynthesisUtterance(word);
-        utterance.rate = 0.8; // Slower for spelling bee
-        utterance.pitch = 1;
-        utterance.volume = 1;
-        utterance.lang = 'en-US';
-        
-        // Use a clear, distinct voice
-        const voices = speechSynthesis.getVoices();
-        if (voices.length > 0) {
-          // Prefer female voices for clarity
-          let voice = voices.find(v => v.name.includes('Female') && v.lang.includes('en')) ||
-                     voices.find(v => v.lang.includes('en')) || 
-                     voices[0];
-          utterance.voice = voice;
-        }
-        
-        utterance.onend = () => {
-          console.log('Finished speaking bee word:', word);
-          // After speaking, start voice recognition
-          startVoiceRecognition(word);
-        };
-        
-        utterance.onerror = (e) => {
-          console.error('Speech error:', e);
-          updateFeedback('Error speaking word', true);
-        };
-        
-        speechSynthesis.speak(utterance);
-        updateFeedback("🐝 Listen carefully — spell the word you hear.");
-        
-      } catch (error) {
-        console.error('Speech error:', error);
-        updateFeedback('Could not speak word', true);
+      // Case 2: spaces between letters "c a t"
+      const parts = cleaned.split(/\s+/);
+      if (parts.length >= 2 && parts.every(p => p.length === 1 && /[a-z]/.test(p))) {
+        return parts.join('');
       }
+      
+      // Case 3: phonetic letter names mapping (common)
+      const phoneticMap = {
+        'ay': 'a', 'bee': 'b', 'see': 'c', 'dee': 'd', 'ee': 'e', 'eff': 'f',
+        'gee': 'g', 'aitch': 'h', 'eye': 'i', 'jay': 'j', 'kay': 'k', 'el': 'l',
+        'em': 'm', 'en': 'n', 'oh': 'o', 'pee': 'p', 'cue': 'q', 'are': 'r',
+        'ess': 's', 'tee': 't', 'you': 'u', 'vee': 'v', 'double-u': 'w',
+        'ex': 'x', 'why': 'y', 'zee': 'z', 'zed': 'z'
+      };
+      
+      let possibleWord = '';
+      const words = cleaned.split(/\s+/);
+      for (let w of words) {
+        if (phoneticMap[w]) possibleWord += phoneticMap[w];
+        else if (w.length === 1 && /[a-z]/.test(w)) possibleWord += w;
+        else if (w.length > 1 && !phoneticMap[w]) {
+          // Maybe they said the whole word? Check if it's a real word
+          possibleWord = w;
+          break;
+        }
+      }
+      if (possibleWord.length > 0) return possibleWord;
+      
+      // Fallback: return cleaned (might be full word)
+      return cleaned;
     }
-    
-    // Start voice recognition
-    function startVoiceRecognition(expectedWord) {
-      if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
-        updateFeedback('Voice recognition not supported in your browser', true);
-        // Fallback to manual input
-        setTimeout(() => {
-          const userSpelling = prompt(`Please spell: ${expectedWord}`);
-          if (userSpelling) {
-            checkSpelling(expectedWord, userSpelling.trim());
-          } else {
-            skipWord();
-          }
-        }, 500);
-        return;
+
+    // Evaluate spoken spelling against correct word
+    function evaluateVerbalSpelling(expectedWord, spokenText) {
+      const parsedSpelling = parseSpokenLettersToWord(spokenText);
+      const normalizedExpected = expectedWord.toLowerCase();
+      const isCorrect = (parsedSpelling === normalizedExpected);
+      
+      console.log(`Spoken: "${spokenText}" -> Parsed: "${parsedSpelling}" | Expected: "${normalizedExpected}" | Correct: ${isCorrect}`);
+      
+      if (isCorrect) {
+        let points = 10;
+        state.streak++;
+        if (state.streak >= 3) points += 5;
+        if (state.streak >= 5) points += 10;
+        state.score += points;
+        if (state.streak > state.maxStreak) state.maxStreak = state.streak;
+        state.correctList.push(expectedWord);
+        setFeedback(`✅ Correct spelling! +${points} points | Streak: ${state.streak}`, false, true);
+      } else {
+        state.incorrectList.push({ word: expectedWord, userSpelling: spokenText, parsed: parsedSpelling });
+        state.streak = 0;
+        setFeedback(`❌ Incorrect. You spelled: "${spokenText}". Correct spelling: "${expectedWord}".`, true);
+      }
+      
+      state.currentIndex++;
+      state.waitingForAnswer = false;
+      saveProgress();
+      updateProgressUI();
+      
+      setTimeout(() => {
+        if (state.isActive && !state.sessionEnded && state.currentIndex < state.words.length) {
+          speakAndListenForNextWord();
+        } else if (state.currentIndex >= state.words.length) {
+          endSession();
+        }
+      }, 1500);
+    }
+
+    // Start listening for verbal spelling
+    function startListeningForSpelling() {
+      if (!state.isActive || state.sessionEnded) return;
+      if (state.currentIndex >= state.words.length) return;
+      
+      const expectedWord = state.words[state.currentIndex];
+      state.currentHiddenWord = expectedWord;
+      
+      if (state.recognitionInstance) {
+        try { state.recognitionInstance.abort(); } catch(e) {}
+        state.recognitionInstance = null;
       }
       
       const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-      const recognition = new SpeechRecognition();
-      
-      recognition.lang = 'en-US';
-      recognition.interimResults = false;
-      recognition.maxAlternatives = 1;
-      
-      recognition.onstart = function() {
-        updateFeedback('🎤 Listening... Spell the word now');
-      };
-      
-      recognition.onresult = function(event) {
-        const spokenWord = event.results[0][0].transcript.trim().toLowerCase();
-        console.log('Recognized:', spokenWord);
-        checkSpelling(expectedWord, spokenWord);
-      };
-      
-      recognition.onerror = function(event) {
-        console.error('Speech recognition error:', event.error);
-        updateFeedback('Voice recognition failed. Please try typing.', true);
-        
-        // Fallback to manual input
-        setTimeout(() => {
-          const userSpelling = prompt(`Please spell: ${expectedWord}`);
-          if (userSpelling) {
-            checkSpelling(expectedWord, userSpelling.trim().toLowerCase());
-          } else {
-            skipWord();
-          }
-        }, 500);
-      };
-      
-      recognition.onend = function() {
-        console.log('Speech recognition ended');
-      };
-      
-      // Start recognition with delay
-      setTimeout(() => {
-        recognition.start();
-      }, 1000);
-      
-      // Timeout after 10 seconds
-      setTimeout(() => {
-        try {
-          recognition.stop();
-          updateFeedback('Time\'s up! Moving to next word.', true);
-          skipWord();
-        } catch (e) {
-          console.log('Recognition already stopped');
-        }
-      }, 10000);
-    }
-    
-    // Check spelling
-    function checkSpelling(expectedWord, spokenWord) {
-      // Guard against being called twice for the same word (voice recognition can fire multiple times)
-      if (state.isWaiting) return;
-      state.isWaiting = true;
-      const normalizedExpected = expectedWord.toLowerCase().trim();
-      const normalizedSpoken = spokenWord.toLowerCase().trim();
-      
-      // For spelling bee, we allow letter-by-letter spelling
-      const lettersExpected = normalizedExpected.split('').join(' ').toLowerCase();
-      const lettersSpoken = normalizedSpoken.split('').join(' ').toLowerCase();
-      
-      // Check if they spelled letter by letter or said the whole word
-      if (normalizedSpoken === normalizedExpected || lettersSpoken === lettersExpected) {
-        state.correct.push(expectedWord);
-        state.score += 10;
-        state.streak++;
-        if (state.streak > state.maxStreak) state.maxStreak = state.streak;
-        
-        updateFeedback(`✅ Correct! +10 points | Streak: ${state.streak}`);
-        
-        // Bonus for streak
-        if (state.streak >= 3) {
-          state.score += 5;
-          updateFeedback(`🔥 ${state.streak} in a row! Bonus +5 points!`);
-        }
-        
-        // Special bonus for 5+ streak
-        if (state.streak >= 5) {
-          state.score += 10;
-          updateFeedback(`🏆 Amazing! ${state.streak} streak! Bonus +10 points!`);
-        }
-      } else {
-        state.incorrect.push({ 
-          word: expectedWord, 
-          spoken: spokenWord,
-          correctSpelling: expectedWord
-        });
-        state.streak = 0;
-        
-        updateFeedback(`❌ Incorrect — you spelled: "${spokenWord}". Correct spelling: ${expectedWord} | Streak broken`);
-      }
-      
-      state.currentIndex++;
-      
-      if (state.currentIndex < state.words.length) {
-        updateProgress();
-        setTimeout(() => {
-          state.isWaiting = false;  // allow next answer
-          speakCurrentWord();
-        }, 2000);
-      } else {
-        setTimeout(endSession, 1500);
-      }
-
-      saveProgress();
-    }
-
-    // Skip current word
-    function skipWord() {
-      state.incorrect.push({ 
-        word: state.words[state.currentIndex], 
-        spoken: '(skipped)',
-        correctSpelling: state.words[state.currentIndex]
-      });
-      state.streak = 0;
-      
-      state.currentIndex++;
-      
-      if (state.currentIndex < state.words.length) {
-        updateProgress();
-        setTimeout(() => {
-          speakCurrentWord();
-        }, 1000);
-      } else {
-        setTimeout(endSession, 1000);
-      }
-      
-      saveProgress();
-    }
-    
-    // Speak current word
-    function speakCurrentWord() {
-      if (!state.isActive || state.currentIndex >= state.words.length) return;
-      const word = state.words[state.currentIndex];
-      if (word) {
-        speakWord(word);
-      }
-    }
-    
-    // Start session
-    function startSession() {
-      const customText = elements.customBox ? elements.customBox.value.trim() : '';
-      
-      if (customText) {
-        const words = customText.split(/[\n,]+/).map(w => w.trim()).filter(w => w);
-        const limitedWords = words.slice(0, 40); // Bee freemium limit
-        state.words = limitedWords;
-        if (words.length > 40) {
-          updateFeedback(`Bee Freemium: Using first 40 of ${words.length} words`);
-        } else {
-          updateFeedback(`Using custom list: ${words.length} bee words`);
-        }
-      } else {
-        const shuffled = [...BEE_WORDS].sort(() => Math.random() - 0.5);
-        state.words = shuffled.slice(0, 25); // Bee freemium session limit
-        updateFeedback(`Competition mode: ${state.words.length} challenging words`);
-      }
-      
-      if (state.words.length === 0) {
-        updateFeedback('No words available', true);
+      if (!SpeechRecognition) {
+        setFeedback("Voice recognition not supported. Please use a modern browser.", true);
         return;
       }
       
-      state.currentIndex = 0;
-      state.correct = [];
-      state.incorrect = [];
-      state.flags.clear();
-      state.history = [];
-      state.isActive = true;
-      state.score = 0;
-      state.streak = 0;
-      state.maxStreak = 0;
+      const recognition = new SpeechRecognition();
+      recognition.lang = 'en-US';
+      recognition.interimResults = false;
+      recognition.maxAlternatives = 1;
+      recognition.continuous = false;
       
-      if (elements.summaryArea) {
-        elements.summaryArea.style.display = 'none';
-        elements.summaryArea.classList.add('hidden');
+      recognition.onstart = () => {
+        setFeedback("🎤 Listening... Spell the word out loud (e.g., 'C-A-T' or 'see ay tee')", false);
+        state.waitingForAnswer = true;
+      };
+      
+      recognition.onresult = (event) => {
+        const transcript = event.results[0][0].transcript.trim();
+        console.log(`User said: "${transcript}"`);
+        cancelSpeechAndRecognition();
+        evaluateVerbalSpelling(expectedWord, transcript);
+      };
+      
+      recognition.onerror = (event) => {
+        console.error("Recognition error:", event.error);
+        if (event.error === 'no-speech') {
+          setFeedback("No speech detected. Click 'Repeat Word' to try again.", true);
+          state.waitingForAnswer = false;
+          // Allow user to manually trigger repeat
+        } else {
+          setFeedback(`Voice error: ${event.error}. Try again with 'Repeat Word'.`, true);
+          state.waitingForAnswer = false;
+        }
+        state.recognitionInstance = null;
+      };
+      
+      recognition.onend = () => {
+        console.log("Recognition ended");
+        state.recognitionInstance = null;
+      };
+      
+      state.recognitionInstance = recognition;
+      recognition.start();
+      
+      // Timeout after 15 seconds
+      state.recognitionTimeout = setTimeout(() => {
+        if (state.isActive && state.waitingForAnswer && !state.sessionEnded) {
+          console.log("Timeout - no verbal spelling detected");
+          setFeedback("⏰ Time's up! Moving to next word.", true);
+          cancelSpeechAndRecognition();
+          state.incorrectList.push({ word: expectedWord, userSpelling: "(no response)" });
+          state.streak = 0;
+          state.currentIndex++;
+          updateProgressUI();
+          state.waitingForAnswer = false;
+          
+          if (state.currentIndex < state.words.length) {
+            setTimeout(() => speakAndListenForNextWord(), 1000);
+          } else {
+            endSession();
+          }
+        }
+        state.recognitionTimeout = null;
+      }, 15000);
+    }
+    
+    // Speak the current word, then start listening for verbal spelling
+    function speakAndListenForNextWord() {
+      if (!state.isActive || state.sessionEnded) return;
+      if (state.currentIndex >= state.words.length) return;
+      
+      const wordToSpeak = state.words[state.currentIndex];
+      cancelSpeechAndRecognition();
+      
+      setFeedback(`🔊 Listening...`, false);
+      
+      if (!window.speechSynthesis) {
+        setFeedback("Speech not supported", true);
+        startListeningForSpelling(); // still try listening
+        return;
       }
       
-      updateProgress();
-      updateFeedback('🐝 Spelling Bee started! Listen and spell...');
+      const utterance = new SpeechSynthesisUtterance(wordToSpeak);
+      utterance.rate = 0.7;
+      utterance.pitch = 1.0;
+      utterance.lang = 'en-US';
+      utterance.volume = 1;
       
-      setTimeout(() => {
-        speakCurrentWord();
-      }, 1000);
+      utterance.onend = () => {
+        console.log(`Spoken word (hidden): ${wordToSpeak}`);
+        // After speaking, start listening for the user's verbal spelling
+        if (state.isActive && !state.sessionEnded) {
+          startListeningForSpelling();
+        }
+      };
       
+      utterance.onerror = (err) => {
+        console.error("Speech error", err);
+        setFeedback("Could not pronounce word. Tap 'Repeat Word'", true);
+        // Still attempt to listen
+        if (state.isActive && !state.sessionEnded) startListeningForSpelling();
+      };
+      
+      window.speechSynthesis.speak(utterance);
+    }
+    
+    function repeatCurrentWord() {
+      if (!state.isActive || state.sessionEnded) {
+        setFeedback("No active session. Press Start.", true);
+        return;
+      }
+      if (state.currentIndex >= state.words.length) {
+        setFeedback("Session finished.", true);
+        return;
+      }
+      
+      cancelSpeechAndRecognition();
+      const word = state.words[state.currentIndex];
+      
+      const utterance = new SpeechSynthesisUtterance(word);
+      utterance.rate = 0.7;
+      utterance.lang = 'en-US';
+      utterance.onend = () => {
+        if (state.isActive && !state.sessionEnded && state.waitingForAnswer === false) {
+          startListeningForSpelling();
+        }
+      };
+      window.speechSynthesis.speak(utterance);
+      setFeedback(`🔁 Repeating word...`, false);
+    }
+    
+    function startSession() {
+      resetState();
+      loadWordList();
+      if (state.words.length === 0) {
+        setFeedback("No words available. Add custom list or use defaults.", true);
+        return;
+      }
+      state.isActive = true;
+      state.sessionEnded = false;
+      if (elements.summaryArea) elements.summaryArea.classList.add('hidden');
+      updateProgressUI();
+      setFeedback("🐝 Spelling Bee started! Listen to each word, then spell it out loud letter by letter.", false);
+      setTimeout(() => speakAndListenForNextWord(), 500);
       saveProgress();
     }
     
-    // End session and show summary
     function endSession() {
+      if (state.sessionEnded) return;
       state.isActive = false;
-      speechSynthesis.cancel();
+      state.sessionEnded = true;
+      cancelSpeechAndRecognition();
       
       const total = state.words.length;
-      const correctCount = state.correct.length;
-      const incorrectWords = state.incorrect;
-      const flaggedWords = Array.from(state.flags);
+      const correctCount = state.correctList.length;
+      let grade = "Beginner 🐣";
+      if (state.score >= 180) grade = "Champion 🏆";
+      else if (state.score >= 120) grade = "Expert ⭐";
+      else if (state.score >= 70) grade = "Advanced 🚀";
+      else if (state.score >= 40) grade = "Intermediate 📘";
       
-      // Calculate grade
-      let grade = 'Beginner';
-      let gradeEmoji = '🐣';
-      if (state.score >= 200) {
-        grade = 'Champion';
-        gradeEmoji = '🏆';
-      } else if (state.score >= 150) {
-        grade = 'Expert';
-        gradeEmoji = '⭐';
-      } else if (state.score >= 100) {
-        grade = 'Advanced';
-        gradeEmoji = '🚀';
-      } else if (state.score >= 50) {
-        grade = 'Intermediate';
-        gradeEmoji = '📚';
-      }
-      
-      let summaryHTML = `
-        <div style="background: rgba(0,0,0,0.1); padding: 20px; border-radius: 10px;">
-          <h3 style="margin-top: 0; color: #7b2ff7;">Spelling Bee Complete! ${gradeEmoji}</h3>
-          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin: 20px 0;">
-            <div style="background: rgba(123, 47, 247, 0.1); padding: 15px; border-radius: 8px; text-align: center;">
-              <div style="font-size: 2em; font-weight: bold; color: #7b2ff7;">${state.score}</div>
-              <div style="font-size: 0.9em; color: #666;">Total Score</div>
-            </div>
-            <div style="background: rgba(76, 175, 80, 0.1); padding: 15px; border-radius: 8px; text-align: center;">
-              <div style="font-size: 2em; font-weight: bold; color: #4CAF50;">${correctCount}/${total}</div>
-              <div style="font-size: 0.9em; color: #666;">Correct Words</div>
-            </div>
-            <div style="background: rgba(255, 209, 102, 0.1); padding: 15px; border-radius: 8px; text-align: center;">
-              <div style="font-size: 2em; font-weight: bold; color: #ffd166;">${state.maxStreak}</div>
-              <div style="font-size: 0.9em; color: #666;">Best Streak</div>
-            </div>
-            <div style="background: rgba(247, 37, 133, 0.1); padding: 15px; border-radius: 8px; text-align: center;">
-              <div style="font-size: 2em; font-weight: bold; color: #f72585;">${grade}</div>
-              <div style="font-size: 0.9em; color: #666;">Your Grade</div>
-            </div>
+      let summaryHtml = `
+        <div style="padding:1rem;">
+          <h3>✨ Spelling Bee Complete ✨</h3>
+          <div style="display:flex; gap:20px; flex-wrap:wrap; margin:20px 0;">
+            <div style="background:#7b2ff720; padding:15px; border-radius:20px; text-align:center;"><strong>${state.score}</strong><br>Score</div>
+            <div style="background:#4caf5020; padding:15px; border-radius:20px;"><strong>${correctCount}/${total}</strong><br>Correct</div>
+            <div style="background:#ffb34720; padding:15px; border-radius:20px;"><strong>${state.maxStreak}</strong><br>Best Streak</div>
+            <div style="background:#f7258520; padding:15px; border-radius:20px;"><strong>${grade}</strong><br>Grade</div>
           </div>
       `;
       
-      if (state.incorrect.length > 0) {
-        summaryHTML += `
-          <div style="margin: 20px 0;">
-            <h4 style="color: #f72585;">Words to Master (${state.incorrect.length})</h4>
-            <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 10px;">
-        `;
-        
-        state.incorrect.forEach(item => {
-          summaryHTML += `
-            <div style="background: rgba(247, 37, 133, 0.1); padding: 10px; border-radius: 5px;">
-              <strong style="color: #f72585;">${item.correctSpelling}</strong><br>
-              <small style="color: #666;">You said: "${item.spoken}"</small>
-            </div>
-          `;
+      if (state.incorrectList.length > 0) {
+        summaryHtml += `<h4>📖 Misspelled words (${state.incorrectList.length})</h4><ul style="columns:2; column-gap:20px;">`;
+        state.incorrectList.forEach(item => {
+          summaryHtml += `<li><strong>${item.word}</strong> <span style="color:#f97316;">(you said: "${item.userSpelling}")</span></li>`;
         });
-        
-        summaryHTML += `</div></div>`;
+        summaryHtml += `</ul><button id="practiceBtn" class="btn-primary" style="margin-top:15px;"><i class="fa fa-repeat"></i> Practice Misspelled</button>`;
       }
       
-      summaryHTML += `
-        <div style="margin: 20px 0; padding: 15px; background: rgba(123, 47, 247, 0.1); border-radius: 8px;">
-          <h4 style="color: #7b2ff7;">Practice More</h4>
-          <div style="display: flex; gap: 10px; flex-wrap: wrap;">
-      `;
-      
-      if (state.incorrect.length > 0) {
-        summaryHTML += `
-          <button onclick="practiceIncorrect()" class="btn-secondary" style="background: #f72585;">
-            <i class="fa fa-redo"></i> Practice Missed (${state.incorrect.length})
-          </button>
-        `;
-      }
-      
-      summaryHTML += `
-            <button onclick="restartSession()" class="btn-primary">
-              <i class="fa fa-play-circle"></i> New Competition
-            </button>
-          </div>
-        </div>
-      `;
-      
-      // Add bee premium upgrade prompt
-      summaryHTML += `
-        <div style="margin-top: 20px; padding: 15px; background: linear-gradient(135deg, #7b2ff7, #f72585); border-radius: 10px; color: white;">
-          <h4 style="margin: 0 0 10px 0;">🐝 Become a Spelling Bee Champion!</h4>
-          <p style="margin: 0 0 15px 0; font-size: 0.9em;">
-            Upgrade to Bee Premium for:<br>
-            • Unlimited competition words<br>
-            • Voice recognition feedback<br>
-            • Leaderboard access<br>
-            • Advanced difficulty levels<br>
-            • No ads during competitions
-          </p>
-          <button onclick="window.location.href='/premium.html'" 
-            style="background: white; color: #7b2ff7; border: none; padding: 8px 20px; border-radius: 5px; font-weight: bold; cursor: pointer;">
-            <i class="fa fa-crown"></i> Get Bee Premium
-          </button>
-        </div>
-      `;
-      
-      summaryHTML += `</div>`;
+      summaryHtml += `<div style="margin-top:25px;"><button id="restartBtn" class="btn-primary"><i class="fa fa-play"></i> New Competition</button></div>
+                      <div style="margin-top:20px; background:linear-gradient(135deg,#7b2ff7,#f72585); padding:15px; border-radius:20px; color:white; text-align:center;">
+                        🐝 <strong>Premium Upgrade</strong> → Unlimited words, no ads, leaderboards.
+                      </div>
+                      </div>`;
       
       if (elements.summaryArea) {
-        elements.summaryArea.innerHTML = summaryHTML;
-        elements.summaryArea.style.display = 'block';
+        elements.summaryArea.innerHTML = summaryHtml;
         elements.summaryArea.classList.remove('hidden');
+        document.getElementById('practiceBtn')?.addEventListener('click', () => practiceMisspelled());
+        document.getElementById('restartBtn')?.addEventListener('click', () => startFresh());
       }
-      
-      updateFeedback(`Competition complete! Your score: ${state.score} points`);
-      localStorage.removeItem('bee_progress');
+      updateProgressUI();
+      setFeedback(`🏁 Competition finished! Score: ${state.score} points`, false);
+      localStorage.removeItem('verbal_spelling_progress');
     }
     
-    // Save progress to localStorage
+    function practiceMisspelled() {
+      const missed = state.incorrectList.map(i => i.word);
+      if (missed.length === 0) return;
+      resetState();
+      state.words = [...new Set(missed)];
+      state.currentIndex = 0;
+      state.correctList = [];
+      state.incorrectList = [];
+      state.score = 0;
+      state.streak = 0;
+      state.maxStreak = 0;
+      state.isActive = true;
+      state.sessionEnded = false;
+      if (elements.summaryArea) elements.summaryArea.classList.add('hidden');
+      updateProgressUI();
+      setFeedback(`📚 Practicing ${state.words.length} missed words. Spell them out loud!`, false);
+      setTimeout(() => speakAndListenForNextWord(), 500);
+    }
+    
+    function startFresh() {
+      resetState();
+      loadWordList();
+      state.isActive = true;
+      state.sessionEnded = false;
+      if (elements.summaryArea) elements.summaryArea.classList.add('hidden');
+      updateProgressUI();
+      setFeedback("New competition! Spell each word out loud letter by letter.", false);
+      setTimeout(() => speakAndListenForNextWord(), 500);
+    }
+    
+    function loadWordList() {
+      const customText = elements.customBox?.value.trim() || "";
+      if (customText) {
+        let wordsArray = customText.split(/[\n,]+/).map(w => w.trim().toLowerCase()).filter(w => w && /^[a-z]+$/i.test(w));
+        if (wordsArray.length === 0) wordsArray = DEFAULT_BEE_WORDS.slice(0, 25);
+        const limit = 40;
+        state.words = wordsArray.slice(0, limit);
+        if (wordsArray.length > limit) setFeedback(`Freemium limit: using first ${limit} words`, false);
+      } else {
+        const shuffled = [...DEFAULT_BEE_WORDS].sort(() => Math.random() - 0.5);
+        state.words = shuffled.slice(0, 25);
+        setFeedback(`🐝 Competition ready: ${state.words.length} words.`, false);
+      }
+    }
+    
+    function resetState() {
+      cancelSpeechAndRecognition();
+      state.isActive = false;
+      state.sessionEnded = false;
+      state.currentIndex = 0;
+      state.correctList = [];
+      state.incorrectList = [];
+      state.flaggedWords.clear();
+      state.score = 0;
+      state.streak = 0;
+      state.maxStreak = 0;
+      state.waitingForAnswer = false;
+      if (elements.summaryArea) elements.summaryArea.classList.add('hidden');
+      updateProgressUI();
+    }
+    
     function saveProgress() {
       const progress = {
         words: state.words,
         currentIndex: state.currentIndex,
-        correct: state.correct,
-        incorrect: state.incorrect,
-        flags: Array.from(state.flags),
+        correctList: state.correctList,
+        incorrectList: state.incorrectList,
         score: state.score,
         streak: state.streak,
         maxStreak: state.maxStreak,
         timestamp: Date.now()
       };
-      localStorage.setItem('bee_progress', JSON.stringify(progress));
+      localStorage.setItem('verbal_spelling_progress', JSON.stringify(progress));
     }
     
-    // Load progress from localStorage
-    function loadProgress() {
-      try {
-        const saved = localStorage.getItem('bee_progress');
-        if (!saved) return false;
-        
-        const progress = JSON.parse(saved);
-        const hoursOld = (Date.now() - progress.timestamp) / (1000 * 60 * 60);
-        
-        if (hoursOld > 24) {
-          localStorage.removeItem('bee_progress');
-          return false;
-        }
-        
-        state.words = progress.words || [];
-        state.currentIndex = progress.currentIndex || 0;
-        state.correct = progress.correct || [];
-        state.incorrect = progress.incorrect || [];
-        state.flags = new Set(progress.flags || []);
-        state.score = progress.score || 0;
-        state.streak = progress.streak || 0;
-        state.maxStreak = progress.maxStreak || 0;
-        
-        if (state.words.length > 0 && state.currentIndex < state.words.length) {
-          const resume = confirm(`You have an incomplete Spelling Bee.\nResume from word ${state.currentIndex + 1} of ${state.words.length}?`);
-          if (resume) {
-            state.isActive = true;
-            updateProgress();
-            speakCurrentWord();
-            updateFeedback(`Resumed from word ${state.currentIndex + 1}`);
-            return true;
-          }
-        }
-      } catch (error) {
-        console.error('Error loading progress:', error);
-      }
-      return false;
-    }
-    
-    // Practice only incorrect words
-    function practiceIncorrect() {
-      const incorrectWords = state.incorrect.map(item => item.correctSpelling);
-      if (incorrectWords.length === 0) {
-        updateFeedback('No missed words to practice', true);
-        return;
-      }
-      
-      state.words = [...new Set(incorrectWords)];
-      state.currentIndex = 0;
-      state.correct = [];
-      state.incorrect = [];
-      state.flags.clear();
-      state.isActive = true;
-      state.score = 0;
-      state.streak = 0;
-      state.maxStreak = 0;
-      
-      if (elements.summaryArea) {
-        elements.summaryArea.style.display = 'none';
-        elements.summaryArea.classList.add('hidden');
-      }
-      
-      updateProgress();
-      updateFeedback(`Practicing ${state.words.length} missed bee words`);
-      
-      setTimeout(() => {
-        speakCurrentWord();
-      }, 1000);
-    }
-    
-    // Restart session
-    function restartSession() {
-      if (elements.summaryArea) {
-        elements.summaryArea.style.display = 'none';
-        elements.summaryArea.classList.add('hidden');
-      }
-      
-      updateFeedback('Ready for new competition!');
-      updateProgress();
-      
-      localStorage.removeItem('bee_progress');
-    }
-    
-    // Toggle flag for current word
-    function toggleFlag() {
+    function flagCurrentWord() {
       if (!state.isActive || state.currentIndex >= state.words.length) {
-        updateFeedback('No active word to flag', true);
+        setFeedback("No active word to flag", true);
         return;
       }
-      
       const word = state.words[state.currentIndex];
-      if (state.flags.has(word)) {
-        state.flags.delete(word);
-        updateFeedback(`🚩 Removed flag from "${word}"`);
+      if (state.flaggedWords.has(word)) {
+        state.flaggedWords.delete(word);
+        setFeedback(`🚩 Flag removed`, false);
       } else {
-        state.flags.add(word);
-        updateFeedback(`🚩 Flagged "${word}" for practice`);
+        state.flaggedWords.add(word);
+        setFeedback(`📌 Flagged for later practice`, false);
       }
-      
       saveProgress();
     }
     
-    // Set up event listeners
     function setupEventListeners() {
-      if (elements.start) elements.start.addEventListener('click', startSession);
-      if (elements.say) elements.say.addEventListener('click', speakCurrentWord);
-      if (elements.flag) elements.flag.addEventListener('click', toggleFlag);
-      if (elements.end) elements.end.addEventListener('click', endSession);
-      
-      if (elements.useCustom) {
-        elements.useCustom.addEventListener('click', () => {
-          const customText = elements.customBox ? elements.customBox.value.trim() : '';
-          if (!customText) {
-            updateFeedback('Please enter words in the custom box first', true);
-            return;
-          }
-          const words = customText.split(/[\n,]+/).map(w => w.trim()).filter(w => w);
-          state.words = words.slice(0, 40); // Bee freemium limit
-          updateFeedback(`Custom list loaded: ${Math.min(words.length, 40)} words (bee freemium limit)`);
-        });
-      }
-      
-      const fileInput = document.getElementById('fileInput');
-      if (fileInput) {
-        fileInput.addEventListener('change', (e) => {
-          const file = e.target.files[0];
-          if (file) {
-            document.getElementById('fileName').textContent = file.name;
-            const reader = new FileReader();
-            reader.onload = (e) => {
-              if (elements.customBox) {
-                elements.customBox.value = e.target.result;
-                updateFeedback(`File loaded: ${file.name}`);
-              }
-            };
-            reader.readAsText(file);
-          }
-        });
-      }
-    }
-    
-    // Initialize the app
-    function initialize() {
-      console.log('Initializing Spelling Bee...');
-      
-      setupEventListeners();
-      loadProgress();
-      
-      // Initialize dark mode toggle
-      const darkModeToggle = document.getElementById('toggleDark');
-      if (darkModeToggle) {
-        darkModeToggle.addEventListener('click', () => {
-          document.body.classList.toggle('dark-mode');
-          const icon = darkModeToggle.querySelector('i');
-          if (icon) {
-            icon.classList.toggle('fa-moon');
-            icon.classList.toggle('fa-sun');
-          }
-          localStorage.setItem('dark', document.body.classList.contains('dark-mode'));
-        });
-        
-        const savedDarkMode = localStorage.getItem('dark') === 'true';
-        if (savedDarkMode) {
-          document.body.classList.add('dark-mode');
-          const icon = darkModeToggle.querySelector('i');
-          if (icon) icon.className = 'fa fa-sun';
+      elements.start?.addEventListener('click', startSession);
+      elements.sayAgain?.addEventListener('click', repeatCurrentWord);
+      elements.flag?.addEventListener('click', flagCurrentWord);
+      elements.end?.addEventListener('click', endSession);
+      elements.useCustom?.addEventListener('click', () => {
+        if (!elements.customBox?.value.trim()) setFeedback("Paste your word list first", true);
+        else setFeedback("Custom list loaded! Press Start.", false);
+      });
+      document.getElementById('fileInput')?.addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (file) {
+          document.getElementById('fileName').innerText = file.name;
+          const reader = new FileReader();
+          reader.onload = ev => { if(elements.customBox) elements.customBox.value = ev.target.result; };
+          reader.readAsText(file);
         }
-      }
-      
-      // Expose functions globally
-      window.practiceIncorrect = practiceIncorrect;
-      window.restartSession = restartSession;
-      
-      // Initialize tier manager
-      if (window.tierManager) {
-        window.tierManager.init();
-      }
-      
-      // Show cookie banner after delay
-      setTimeout(() => {
-        showCookieBanner();
-      }, 1500);
-      
-      updateFeedback('Ready! Click "Start" to begin the Spelling Bee competition.');
-      console.log('✅ Spelling Bee initialized successfully');
+      });
     }
     
-    // Initialize when DOM is ready
-    if (document.readyState === 'loading') {
-      document.addEventListener('DOMContentLoaded', initialize);
-    } else {
-      initialize();
+    function darkModeInit() {
+      const btn = document.getElementById('toggleDark');
+      if (btn) {
+        btn.addEventListener('click', () => {
+          document.body.classList.toggle('dark-mode');
+          localStorage.setItem('darkBee', document.body.classList.contains('dark-mode'));
+        });
+        if (localStorage.getItem('darkBee') === 'true') document.body.classList.add('dark-mode');
+      }
     }
     
-  })();
+    function init() {
+      setupEventListeners();
+      darkModeInit();
+      resetState();
+      setFeedback("🎤 Ready! Click 'Start Competition' — listen, then spell the word out loud letter by letter.", false);
+      updateProgressUI();
+    }
+    
+    window.acceptCookies = () => { localStorage.setItem('cookieConsent','true'); document.getElementById('cookieConsentBanner').style.display='none'; };
+    window.declineCookies = () => { localStorage.setItem('cookieConsent','false'); document.getElementById('cookieConsentBanner').style.display='none'; };
+    setTimeout(() => { if(!localStorage.getItem('cookieConsent')) document.getElementById('cookieConsentBanner').style.display='block'; }, 1000);
+    
+    init();
   </script>
-  
-  <!-- File input handler -->
-  <script>
-    document.getElementById('fileInput').addEventListener('change', function(e) {
-      const file = e.target.files[0];
-      if (file) {
-        document.getElementById('fileName').textContent = file.name;
-      }
-    });
-  </script>
-
-  <script>
-  // Performance monitoring
-  window.addEventListener('load', function() {
-    // Measure page load time
-    const timing = window.performance.timing;
-    const loadTime = timing.loadEventEnd - timing.navigationStart;
-    
-    // Log to console
-    console.log(`Page loaded in ${loadTime}ms`);
-    
-    // Send to analytics if load time is slow
-    if (loadTime > 3000 && typeof gtag !== 'undefined') {
-      gtag('event', 'slow_load_time', {
-        load_time: loadTime,
-        page_path: window.location.pathname
-      });
-    }
-    
-    // Monitor premium feature usage
-    if (window.tierManager) {
-      console.log('Tier manager active:', window.tierManager);
-    }
-    
-    // Track page view
-    if (typeof gtag !== 'undefined') {
-      gtag('event', 'page_view', {
-        page_title: document.title,
-        page_path: window.location.pathname
-      });
-    }
-  });
-  
-  // Monitor errors
-  window.addEventListener('error', function(e) {
-    console.error('Page error:', e.error);
-    
-    // Send to error tracking service
-    if (typeof gtag !== 'undefined') {
-      gtag('event', 'exception', {
-        description: e.error.message,
-        fatal: false
-      });
-    }
-  });
-</script>
-
-<footer style="text-align: center; margin-top: 40px; padding: 20px; color: #666; border-top: 1px solid rgba(255,255,255,0.1);">
-  <div style="display: flex; justify-content: center; gap: 30px; margin-bottom: 20px; flex-wrap: wrap;">
-    <div style="text-align: center;">
-      <i class="fa fa-lock" style="color: #7b2ff7; font-size: 1.5em;"></i>
-      <div style="font-size: 0.8em;">SSL Secure</div>
-    </div>
-    <div style="text-align: center;">
-      <i class="fa fa-shield-alt" style="color: #7b2ff7; font-size: 1.5em;"></i>
-      <div style="font-size: 0.8em;">14-Day Refund</div>
-    </div>
-    <div style="text-align: center;">
-      <i class="fa fa-user-shield" style="color: #7b2ff7; font-size: 1.5em;"></i>
-      <div style="font-size: 0.8em;">GDPR Compliant</div>
-    </div>
-  </div>
-  
-  <p>
-    <a href="/privacy.html" style="color: #7b2ff7; text-decoration: none;">Privacy Policy</a> 
-    • 
-    <a href="/terms.html" style="color: #7b2ff7; text-decoration: none;">Terms of Service</a>
-    • 
-    <a href="/refund-policy.html" style="color: #7b2ff7; text-decoration: none;">Refund Policy</a>
-    • 
-    <a href="/security.html" style="color: #7b2ff7; text-decoration: none;">Security</a>
-    • 
-    <a href="/contact.html" style="color: #7b2ff7; text-decoration: none;">Contact</a>
-  </p>
-  <p style="margin-top: 10px; font-size: 0.9em;">&copy; 2026 SpellRightPro. All rights reserved.</p>
-</footer>
+  <footer style="text-align:center; margin-top:40px; padding:20px;">
+    <p>© 2026 SpellRightPro — Spell out loud, learn faster.</p>
+  </footer>
 </body>
 </html>
