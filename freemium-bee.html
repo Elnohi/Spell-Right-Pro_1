@@ -189,7 +189,7 @@
 
   <main class="main-card">
     <h2>🐝 Verbal Spelling Bee</h2>
-    <p><i class="fa fa-microphone"></i> Listen to the word, then <strong>spell it out loud letter by letter</strong> (e.g., "C-A-T"). The system listens to your verbal spelling and checks it automatically.</p>
+    <p><i class="fa fa-microphone"></i> Listen to the word, then <strong>spell it out loud letter by letter</strong> (e.g., "C-A-T" or "see ay tee"). The system listens to your verbal spelling and checks it automatically.</p>
 
     <div style="margin: 20px 0;">
       <textarea id="customWords" placeholder="Paste custom word list (one per line or comma separated)...&#10;Example:&#10;necessary, embarrass, accommodate, privilege" rows="3" style="width:100%; border-radius:16px; padding:12px; border:1px solid #ccc;"></textarea>
@@ -225,7 +225,7 @@
   </div>
 
   <script>
-    // ==================== VERBAL SPELLING BEE ====================
+    // ==================== VERBAL SPELLING BEE - COMPLETE FILE ====================
     // Users speak the spelling LETTER BY LETTER: "C-A-T" or "see ay tee"
     // The system captures their spoken response and evaluates if it matches the correct word.
     // The word is NEVER shown on screen unless they get it wrong (then shows correct spelling).
@@ -236,7 +236,8 @@
       'harass', 'idiosyncrasy', 'jewelry', 'liaison', 'maneuver', 'noticeable',
       'occasion', 'pneumonia', 'queue', 'rhythm', 'schedule', 'sergeant',
       'subtle', 'thorough', 'tongue', 'vacuum', 'weird', 'yacht', 'zucchini',
-      'xylophone', 'mnemonic', 'silhouette', 'rendezvous', 'entrepreneur'
+      'xylophone', 'mnemonic', 'silhouette', 'rendezvous', 'entrepreneur',
+      'necessary', 'privilege', 'maintenance', 'receive', 'separate'
     ];
 
     const elements = {
@@ -304,22 +305,6 @@
         clearTimeout(state.recognitionTimeout);
         state.recognitionTimeout = null;
       }
-    }
-
-    // Speak the word clearly (audio only, no visual)
-    function speakWordOnly(word) {
-      return new Promise((resolve) => {
-        if (!window.speechSynthesis) { resolve(false); return; }
-        const utterance = new SpeechRecognitionUtterance || SpeechSynthesisUtterance;
-        const utt = new SpeechSynthesisUtterance(word);
-        utt.rate = 0.7;
-        utt.pitch = 1.0;
-        utt.lang = 'en-US';
-        utt.volume = 1;
-        utt.onend = () => resolve(true);
-        utt.onerror = () => resolve(false);
-        window.speechSynthesis.speak(utt);
-      });
     }
 
     // Convert spoken letter sequence into a word string
@@ -446,7 +431,6 @@
         if (event.error === 'no-speech') {
           setFeedback("No speech detected. Click 'Repeat Word' to try again.", true);
           state.waitingForAnswer = false;
-          // Allow user to manually trigger repeat
         } else {
           setFeedback(`Voice error: ${event.error}. Try again with 'Repeat Word'.`, true);
           state.waitingForAnswer = false;
@@ -492,11 +476,11 @@
       const wordToSpeak = state.words[state.currentIndex];
       cancelSpeechAndRecognition();
       
-      setFeedback(`🔊 Listening...`, false);
+      setFeedback(`🔊 Listening for your spelling...`, false);
       
       if (!window.speechSynthesis) {
         setFeedback("Speech not supported", true);
-        startListeningForSpelling(); // still try listening
+        startListeningForSpelling();
         return;
       }
       
@@ -508,7 +492,6 @@
       
       utterance.onend = () => {
         console.log(`Spoken word (hidden): ${wordToSpeak}`);
-        // After speaking, start listening for the user's verbal spelling
         if (state.isActive && !state.sessionEnded) {
           startListeningForSpelling();
         }
@@ -517,7 +500,6 @@
       utterance.onerror = (err) => {
         console.error("Speech error", err);
         setFeedback("Could not pronounce word. Tap 'Repeat Word'", true);
-        // Still attempt to listen
         if (state.isActive && !state.sessionEnded) startListeningForSpelling();
       };
       
@@ -607,8 +589,10 @@
       if (elements.summaryArea) {
         elements.summaryArea.innerHTML = summaryHtml;
         elements.summaryArea.classList.remove('hidden');
-        document.getElementById('practiceBtn')?.addEventListener('click', () => practiceMisspelled());
-        document.getElementById('restartBtn')?.addEventListener('click', () => startFresh());
+        const practiceBtn = document.getElementById('practiceBtn');
+        const restartBtn = document.getElementById('restartBtn');
+        if (practiceBtn) practiceBtn.addEventListener('click', () => practiceMisspelled());
+        if (restartBtn) restartBtn.addEventListener('click', () => startFresh());
       }
       updateProgressUI();
       setFeedback(`🏁 Competition finished! Score: ${state.score} points`, false);
@@ -715,15 +699,18 @@
         if (!elements.customBox?.value.trim()) setFeedback("Paste your word list first", true);
         else setFeedback("Custom list loaded! Press Start.", false);
       });
-      document.getElementById('fileInput')?.addEventListener('change', (e) => {
-        const file = e.target.files[0];
-        if (file) {
-          document.getElementById('fileName').innerText = file.name;
-          const reader = new FileReader();
-          reader.onload = ev => { if(elements.customBox) elements.customBox.value = ev.target.result; };
-          reader.readAsText(file);
-        }
-      });
+      const fileInput = document.getElementById('fileInput');
+      if (fileInput) {
+        fileInput.addEventListener('change', (e) => {
+          const file = e.target.files[0];
+          if (file) {
+            document.getElementById('fileName').innerText = file.name;
+            const reader = new FileReader();
+            reader.onload = ev => { if(elements.customBox) elements.customBox.value = ev.target.result; };
+            reader.readAsText(file);
+          }
+        });
+      }
     }
     
     function darkModeInit() {
@@ -745,9 +732,19 @@
       updateProgressUI();
     }
     
-    window.acceptCookies = () => { localStorage.setItem('cookieConsent','true'); document.getElementById('cookieConsentBanner').style.display='none'; };
-    window.declineCookies = () => { localStorage.setItem('cookieConsent','false'); document.getElementById('cookieConsentBanner').style.display='none'; };
-    setTimeout(() => { if(!localStorage.getItem('cookieConsent')) document.getElementById('cookieConsentBanner').style.display='block'; }, 1000);
+    window.acceptCookies = () => { 
+      localStorage.setItem('cookieConsent','true'); 
+      document.getElementById('cookieConsentBanner').style.display='none';
+    };
+    window.declineCookies = () => { 
+      localStorage.setItem('cookieConsent','false'); 
+      document.getElementById('cookieConsentBanner').style.display='none';
+    };
+    
+    setTimeout(() => { 
+      if(!localStorage.getItem('cookieConsent')) 
+        document.getElementById('cookieConsentBanner').style.display='block'; 
+    }, 1000);
     
     init();
   </script>
