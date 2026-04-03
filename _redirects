@@ -1,35 +1,19 @@
-# SpellRightPro — Netlify _redirects
-# Rules are evaluated top-to-bottom. First match wins.
-# Netlify serves actual files on disk before consulting these rules,
-# so /js/*, /css/*, /assets/*, /sw.js never reach this file.
-#
-# Format: source  destination  status [conditions]
+/security            /security.html         200
+/pricing             /pricing.html          200
+/payment             /payment.html          200
+/cancel              /cancel.html           200
+/contact-success     /contact-success.html  200
+/pro                 /pro.html              200
+/trainer  /trainer.html  200
+/terms           /terms.html           200
+/privacy         /privacy.html         200
+/refund-policy   /refund-policy.html   200
+/contact         /contact.html         200
+/premium         /premium.html         200
+/freemium-school /freemium-school.html 200
+/freemium-oet    /freemium-oet.html    200
+/freemium-bee    /freemium-bee.html    200
+/offline         /offline.html         200
+/thank-you       /thank-you.html       200
 
-# ── Static data passthroughs ────────────────────────────────────────────────
-# Ensures word-list JSON files are served as-is and never caught by the SPA
-# wildcard below. Netlify would serve them directly anyway if they exist on
-# disk, but this makes the intent explicit and protects against edge cases.
-/data/*             /data/:splat        200
-
-# ── Clean URL aliases (no .html in the address bar) ─────────────────────────
-/freemium-school    /freemium-school.html   200
-/freemium-bee       /freemium-bee.html      200
-/freemium-oet       /freemium-oet.html      200
-/premium            /premium.html           200
-/pricing            /pricing.html           200
-/payment            /payment.html           200
-/pro                /pro.html               200
-/cancel             /cancel.html            200
-/thank-you          /thank-you.html         200
-/contact            /contact.html           200
-/contact-success    /contact-success.html   200
-/security           /security.html          200
-/privacy            /privacy.html           200
-/terms              /terms.html             200
-/refund-policy      /refund-policy.html     200
-/offline            /offline.html           200
-
-# ── SPA fallback ─────────────────────────────────────────────────────────────
-# Catches any path that doesn't match a file on disk or a rule above.
-# Returns index.html with a 200 so client-side routing works.
-/*                  /index.html             200
+/*               /index.html           200

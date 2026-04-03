@@ -1,0 +1,691 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="robots" content="noindex, nofollow" />
+  <title>SpellRightPro Premium Trainer</title>
+
+  <link rel="stylesheet" href="/css/styles.css" />
+  <link rel="stylesheet" href="/css/premium.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" />
+
+  <!-- Shared config must come first -->
+  <script src="/js/config.js"></script>
+
+  <!-- Firebase SDKs -->
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-analytics.js"></script>
+
+  <!-- Premium support modules -->
+  <script src="/js/firebase-utils.js" defer></script>
+  <script src="/js/common.js" defer></script>
+  <script src="/js/progress-dashboard.js" defer></script>
+  <script src="/js/mistake-review.js" defer></script>
+  <script src="/js/adaptive-drill.js" defer></script>
+
+  <!-- Google Analytics -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-H09MF13297"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date()); gtag('config', 'G-H09MF13297');
+  </script>
+
+  <style>
+    /* ── Trainer-specific layout on top of premium.css ── */
+    @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800&family=DM+Mono:wght@400;500&display=swap');
+
+    :root {
+      --brand: #7b2ff7; --accent: #f72585;
+      --ok: #00c57a;    --fail: #ff4560;
+      --warn: #ffb800;
+      --surface: #ffffff; --surface2: #f4f0fc;
+      --border: rgba(123,47,247,0.15);
+      --text: #1a0533;   --muted: #7b6f8a;
+      --radius: 16px;
+      --shadow: 0 8px 32px rgba(100,30,200,0.12);
+    }
+    body.dark-mode {
+      --surface: #160829; --surface2: #1f0d3a;
+      --border: rgba(255,255,255,0.10);
+      --text: #f0e8ff;    --muted: #9d8fc0;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; }
+
+    /* ── Auth Overlay ── */
+    #loginOverlay {
+      position: fixed; inset: 0;
+      background: linear-gradient(145deg,#3a0087,#8b00d4 50%,#f72585);
+      display: flex; align-items: center; justify-content: center;
+      z-index: 9999; padding: 20px;
+    }
+    .auth-card {
+      background: #fff; border-radius: 22px;
+      padding: 40px 36px; width: 100%; max-width: 420px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+    }
+    body.dark-mode .auth-card { background: #1f0d3a; color: #f0e8ff; }
+    .auth-card h2 {
+      font-family: 'DM Sans',sans-serif; font-size: 1.6rem;
+      color: var(--brand); margin: 0 0 6px; text-align: center;
+    }
+    .auth-card p { text-align:center; color:var(--muted); font-size:0.9rem; margin:0 0 24px; }
+    .auth-field {
+      width:100%; padding:11px 14px; border-radius:10px;
+      border:1.5px solid var(--border); background:var(--surface2);
+      color:var(--text); font-size:1rem; font-family:'DM Sans',sans-serif;
+      margin-bottom:12px; display:block;
+    }
+    .auth-field:focus { outline:none; border-color:var(--brand); }
+    .auth-submit {
+      width:100%; padding:13px; background:var(--brand); color:#fff;
+      border:none; border-radius:12px; font-size:1rem; font-weight:700;
+      font-family:'DM Sans',sans-serif; cursor:pointer; margin-top:4px;
+      transition:all .2s;
+    }
+    .auth-submit:hover { background:#5b1ec4; transform:translateY(-1px); }
+    .auth-link { color:var(--brand); cursor:pointer; font-weight:600; }
+    .auth-link:hover { text-decoration:underline; }
+    .auth-toggle { text-align:center; margin-top:14px; font-size:0.88rem; color:var(--muted); }
+    .auth-quick { 
+      margin-top:16px; padding:10px; text-align:center;
+      border-top:1px solid var(--border); 
+    }
+    .btn-quick {
+      background:transparent; border:1.5px dashed var(--muted);
+      color:var(--muted); border-radius:10px; padding:7px 16px;
+      font-size:0.82rem; cursor:pointer; font-family:'DM Sans',sans-serif;
+    }
+    .btn-quick:hover { border-color:var(--brand); color:var(--brand); }
+
+    /* ── Header ── */
+    header {
+      width:100%; max-width:860px;
+      background:var(--surface); border-radius:var(--radius);
+      padding:10px 18px; display:flex; justify-content:space-between;
+      align-items:center; margin-bottom:16px; box-shadow:var(--shadow);
+      border:1px solid var(--border);
+    }
+    .brand { display:flex; align-items:center; gap:10px; }
+    .brand img { height:42px; border-radius:10px; }
+    .brand h1 { font-size:1.1rem; font-weight:700; color:var(--brand); margin:0; }
+    .brand small { font-size:0.7rem; color:var(--muted); display:block; }
+    .nav-right { display:flex; gap:8px; align-items:center; }
+    .nav-btn {
+      background:var(--surface2); color:var(--brand);
+      border:1px solid var(--border); border-radius:10px;
+      padding:7px 13px; font-size:0.82rem; font-weight:600;
+      cursor:pointer; display:flex; align-items:center; gap:6px; transition:all .2s;
+      font-family:'DM Sans',sans-serif;
+    }
+    .nav-btn:hover { background:rgba(123,47,247,.12); }
+    #btnLogout { color:var(--fail); border-color:rgba(255,69,96,.25); }
+    #btnLogout:hover { background:rgba(255,69,96,.08); }
+
+    /* ── Glass card / main container ── */
+    .glass-card {
+      width:100%; max-width:860px;
+      background:var(--surface); border-radius:22px;
+      box-shadow:var(--shadow); border:1px solid var(--border);
+      padding:28px 28px 32px; overflow:hidden;
+    }
+
+    /* ── Mode selector tabs ── */
+    .mode-tabs {
+      display:flex; gap:8px; margin-bottom:24px; flex-wrap:wrap;
+    }
+    .mode-btn {
+      flex:1; min-width:130px; padding:11px 16px;
+      border-radius:12px; border:2px solid var(--border);
+      background:var(--surface2); color:var(--muted);
+      font-weight:700; font-size:0.9rem;
+      font-family:'DM Sans',sans-serif; cursor:pointer;
+      display:flex; align-items:center; justify-content:center; gap:8px;
+      transition:all .2s;
+    }
+    .mode-btn.active, .mode-btn:hover {
+      background:var(--brand); color:#fff; border-color:var(--brand);
+      box-shadow:0 4px 16px rgba(123,47,247,.3);
+    }
+
+    /* ── Trainer areas ── */
+    .trainer-area { display:none; }
+    .trainer-area.active { display:block; }
+
+    .trainer-area h3 {
+      font-size:1.25rem; font-weight:700; color:var(--brand);
+      margin:0 0 18px; display:flex; align-items:center; gap:10px;
+    }
+
+    /* Accent selector */
+    .accent-row {
+      display:flex; align-items:center; gap:10px; margin-bottom:14px; flex-wrap:wrap;
+    }
+    .accent-row label { font-size:0.82rem; font-weight:600; color:var(--muted); }
+    .accent-select {
+      padding:7px 12px; border-radius:10px;
+      border:1.5px solid var(--border); background:var(--surface2);
+      color:var(--text); font-size:0.85rem; font-family:'DM Sans',sans-serif;
+    }
+    /* OET exam mode radio */
+    .exam-row { display:flex; gap:16px; margin-bottom:14px; align-items:center; }
+    .exam-row label { font-size:0.85rem; color:var(--muted); font-weight:600; cursor:pointer; }
+
+    /* Progress bar */
+    .progress-track {
+      height:5px; background:var(--surface2); border-radius:99px;
+      margin-bottom:6px; overflow:hidden;
+    }
+    .progress-fill {
+      height:100%; background:linear-gradient(90deg,var(--brand),var(--accent));
+      border-radius:99px; width:0%; transition:width .4s ease;
+    }
+    .progress-text {
+      font-size:0.8rem; font-weight:600; color:var(--muted); margin-bottom:14px;
+    }
+
+    /* Feedback pill */
+    .feedback-pill {
+      min-height:38px; display:flex; align-items:center; justify-content:center;
+      font-size:1rem; font-weight:600; border-radius:50px;
+      padding:8px 20px; margin:0 0 18px;
+      background:var(--surface2); color:var(--muted); transition:all .25s;
+    }
+
+    /* ── Answer zone ── */
+    .answer-zone {
+      background:linear-gradient(135deg,rgba(123,47,247,.07),rgba(247,37,133,.05));
+      border:2.5px solid var(--brand); border-radius:18px;
+      padding:20px; margin-bottom:18px; position:relative;
+    }
+    .answer-zone-label {
+      position:absolute; top:-12px; left:18px;
+      background:var(--brand); color:#fff;
+      font-size:0.7rem; font-weight:800; letter-spacing:.1em;
+      text-transform:uppercase; padding:3px 12px; border-radius:99px;
+    }
+    .answer-input {
+      width:100%; background:transparent; border:none; outline:none;
+      font-size:1.6rem; font-weight:700; font-family:'DM Mono',monospace;
+      color:var(--text); text-align:center; resize:none;
+      caret-color:var(--brand); min-height:56px;
+      letter-spacing:.05em; line-height:1.4;
+    }
+    .answer-input::placeholder { color:rgba(123,47,247,.3); font-weight:400; font-size:1.1rem; letter-spacing:normal; }
+    .real-time-hint {
+      text-align:center; font-size:0.72rem; color:var(--muted); margin-top:6px;
+    }
+
+    /* ── Input group (used by real-time validation) ── */
+    .input-group { position:relative; }
+
+    /* ── Bee voice UI ── */
+    #beeVoiceStatus {
+      display:none; text-align:center; padding:20px;
+      background:rgba(123,47,247,.08); border-radius:14px;
+      margin-bottom:18px; border:2px solid rgba(123,47,247,.3);
+    }
+    #beeVoiceText { font-weight:700; font-size:1rem; color:var(--brand); margin-bottom:12px; }
+    .voice-bars {
+      display:flex; align-items:flex-end; gap:4px; justify-content:center; height:40px;
+    }
+    .voice-bar {
+      width:6px; background:var(--brand); border-radius:3px; height:8px;
+      transition:height .1s;
+    }
+    #beeRecognizedText {
+      display:none; margin-top:14px; padding:14px;
+      background:rgba(0,197,122,.1); border-radius:12px;
+      border:1.5px solid rgba(0,197,122,.3); text-align:center;
+    }
+    #beeRecognizedText p { margin:0 0 4px; font-size:0.85rem; color:var(--muted); }
+    #beeSpokenText { font-size:1.3rem; font-weight:700; color:#007a4d; }
+
+    /* ── Button grid ── */
+    .btn-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+    .btn-start {
+      grid-column:1/-1; background:linear-gradient(135deg,var(--brand),var(--accent));
+      color:#fff; border:none; border-radius:14px; padding:15px;
+      font-size:1.05rem; font-weight:800; font-family:'DM Sans',sans-serif;
+      cursor:pointer; display:flex; align-items:center; justify-content:center; gap:10px;
+      box-shadow:0 6px 24px rgba(123,47,247,.35); transition:all .2s;
+    }
+    .btn-start:hover { transform:translateY(-2px); box-shadow:0 8px 30px rgba(123,47,247,.45); }
+    .start-btn { /* alias used by main-premium.js */ }
+    .btn-submit-answer {
+      grid-column:1/-1; background:var(--brand); color:#fff;
+      border:none; border-radius:14px; padding:13px;
+      font-size:1rem; font-weight:700; font-family:'DM Sans',sans-serif;
+      cursor:pointer; display:flex; align-items:center; justify-content:center; gap:8px;
+      box-shadow:0 4px 16px rgba(123,47,247,.3); transition:all .2s;
+    }
+    .btn-submit-answer:hover { background:#5b1ec4; }
+    .btn-sec {
+      background:var(--surface2); color:var(--brand);
+      border:1.5px solid var(--border); border-radius:12px; padding:11px;
+      font-size:0.88rem; font-weight:600; font-family:'DM Sans',sans-serif;
+      cursor:pointer; display:flex; align-items:center; justify-content:center; gap:7px;
+      transition:all .2s;
+    }
+    .btn-sec:hover { background:rgba(123,47,247,.1); }
+    .btn-end {
+      grid-column:1/-1; background:rgba(255,69,96,.08); color:var(--fail);
+      border:1.5px solid rgba(255,69,96,.25); border-radius:12px; padding:11px;
+      font-size:0.88rem; font-weight:600; font-family:'DM Sans',sans-serif;
+      cursor:pointer; display:flex; align-items:center; justify-content:center; gap:7px;
+      transition:all .2s;
+    }
+    .btn-end:hover { background:rgba(255,69,96,.14); }
+
+    /* ── Summary ── */
+    .summary-panel { margin-top:24px; }
+    .summary-panel h3 { color:var(--brand); font-size:1.2rem; margin:0 0 12px; }
+    .score-grid {
+      display:grid; grid-template-columns:repeat(auto-fit,minmax(140px,1fr));
+      gap:12px; margin-bottom:18px;
+    }
+    .score-cell {
+      background:var(--surface2); border-radius:12px; padding:14px;
+      text-align:center; border:1px solid var(--border);
+    }
+    .score-cell .value { font-size:2rem; font-weight:800; color:var(--brand); }
+    .score-cell .label { font-size:0.78rem; color:var(--muted); }
+
+    /* ── Divider between sections ── */
+    .section-divider { height:1px; background:var(--border); margin:24px 0; }
+
+    /* ── Premium feature panels (injected by JS) ── */
+    .premium-feature { margin-top:24px; }
+
+    /* ── Mobile ── */
+    @media (max-width:520px) {
+      .glass-card { padding:18px 14px 24px; }
+      .answer-input { font-size:1.25rem; }
+      .btn-grid { grid-template-columns:1fr; }
+      .btn-submit-answer, .btn-start, .btn-end { grid-column:1; }
+      .mode-tabs { flex-direction:column; }
+    }
+
+    /* ── Voice bars animation ── */
+    @keyframes voicePulse {
+      from { height:6px; }
+      to   { height:36px; }
+    }
+  </style>
+</head>
+
+<body>
+
+<!-- ══════════════════════════════════════════════════════
+     AUTH OVERLAY — shown when not logged in / not premium
+══════════════════════════════════════════════════════════ -->
+<div id="loginOverlay">
+  <div class="auth-card">
+    <h2><i class="fa fa-crown" style="color:#f72585;"></i> Premium Trainer</h2>
+    <p>Sign in to access your premium spelling practice</p>
+
+    <!-- Login form -->
+    <form id="loginForm" autocomplete="on">
+      <input class="auth-field" type="email" id="loginEmail"
+             placeholder="Email address" required autocomplete="email" />
+      <input class="auth-field" type="password" id="loginPassword"
+             placeholder="Password" required autocomplete="current-password" />
+      <button class="auth-submit" type="submit">
+        <i class="fa fa-sign-in-alt"></i> Sign In
+      </button>
+    </form>
+
+    <div class="auth-toggle">
+      Don't have an account?
+      <span class="auth-link" id="showRegister">Create one</span>
+      <span id="showLogin" style="display:none;">Already have an account?
+        <span class="auth-link">Sign in</span>
+      </span>
+    </div>
+
+    <!-- Register form (hidden by default) -->
+    <form id="registerForm" style="display:none;" autocomplete="on">
+      <input class="auth-field" type="email" id="regEmail"
+             placeholder="Email address" required autocomplete="email" />
+      <input class="auth-field" type="password" id="regPassword"
+             placeholder="Password (min 6 chars)" required autocomplete="new-password" />
+      <input class="auth-field" type="password" id="regConfirmPassword"
+             placeholder="Confirm password" required autocomplete="new-password" />
+      <button class="auth-submit" type="submit">
+        <i class="fa fa-user-plus"></i> Create Account
+      </button>
+    </form>
+
+    <!-- Dev quick-access -->
+    <div class="auth-quick">
+      <button class="btn-quick" onclick="quickTest()">
+        <i class="fa fa-bolt"></i> Quick Test (dev bypass)
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════
+     HEADER
+══════════════════════════════════════════════════════════ -->
+<header>
+  <div class="brand">
+    <img src="/assets/logo.png" alt="SpellRightPro" />
+    <div>
+      <h1>SpellRightPro</h1>
+      <small>Premium Trainer</small>
+    </div>
+  </div>
+  <div class="nav-right">
+    <button class="nav-btn" onclick="window.location.href='/'">
+      <i class="fa fa-home"></i> Home
+    </button>
+    <button class="nav-btn" id="toggleDark">
+      <i class="fa fa-moon"></i>
+    </button>
+    <button class="nav-btn" id="btnLogout">
+      <i class="fa fa-sign-out-alt"></i> Sign Out
+    </button>
+  </div>
+</header>
+
+<!-- ══════════════════════════════════════════════════════
+     MAIN TRAINER — hidden until auth passes
+══════════════════════════════════════════════════════════ -->
+<main style="width:100%;max-width:860px;display:none;">
+
+  <!-- Glass card wraps everything (required by main-premium.js) -->
+  <div class="glass-card">
+
+    <!-- Mode selector -->
+    <div class="mode-tabs">
+      <button class="mode-btn" data-mode="school">
+        <i class="fa fa-graduation-cap"></i> School
+      </button>
+      <button class="mode-btn" data-mode="oet">
+        <i class="fa fa-stethoscope"></i> OET Medical
+      </button>
+      <button class="mode-btn" data-mode="bee">
+        <i class="fa fa-deaf"></i> Spelling Bee
+      </button>
+    </div>
+
+    <!-- ── SCHOOL TRAINER ─────────────────────────────────── -->
+    <div class="trainer-area" id="school-area">
+      <h3><i class="fa fa-graduation-cap"></i> School Practice</h3>
+
+      <div class="accent-row">
+        <label>Accent</label>
+        <select class="accent-select" id="schoolAccent">
+          <option value="en-GB">British</option>
+          <option value="en-US">American</option>
+          <option value="en-AU">Australian</option>
+        </select>
+      </div>
+
+      <!-- Progress -->
+      <div id="schoolProgress" class="progress-text"></div>
+      <div class="progress-track"><div class="progress-fill" id="schoolProgressFill"></div></div>
+
+      <!-- Feedback -->
+      <div id="schoolFeedback" class="feedback-pill">
+        Select a word list and click Start
+      </div>
+
+      <!-- Answer zone -->
+      <div class="answer-zone">
+        <span class="answer-zone-label">✏️ Type your spelling here</span>
+        <div class="input-group">
+          <textarea
+            id="schoolInput"
+            class="answer-input"
+            placeholder="type it…"
+            autocomplete="off" autocorrect="off"
+            autocapitalize="off" spellcheck="false"
+            rows="2"
+          ></textarea>
+        </div>
+        <p class="real-time-hint">
+          Real-time feedback active — green = correct, red = wrong
+        </p>
+      </div>
+
+      <!-- Controls -->
+      <div class="btn-grid">
+        <button class="btn-start start-btn" data-mode="school">
+          <i class="fa fa-play"></i> Start Practice
+        </button>
+        <button class="btn-submit-answer" id="schoolSubmit">
+          <i class="fa fa-check"></i> Submit
+        </button>
+        <button class="btn-sec" id="schoolSayAgain">
+          <i class="fa fa-volume-up"></i> Say Again
+        </button>
+        <button class="btn-sec" id="schoolFlag">
+          <i class="fa fa-flag"></i> Flag
+        </button>
+        <button class="btn-end" id="schoolEnd">
+          <i class="fa fa-stop"></i> End Session
+        </button>
+      </div>
+
+      <!-- Session summary -->
+      <div id="schoolSummary" class="summary-panel" style="display:none;"></div>
+    </div>
+
+    <!-- ── OET TRAINER ──────────────────────────────────────── -->
+    <div class="trainer-area" id="oet-area">
+      <h3><i class="fa fa-stethoscope"></i> OET Medical English</h3>
+
+      <div class="accent-row">
+        <label>Accent</label>
+        <select class="accent-select" id="oetAccent">
+          <option value="en-GB">British</option>
+          <option value="en-US">American</option>
+          <option value="en-AU">Australian</option>
+        </select>
+      </div>
+
+      <!-- Exam type toggle -->
+      <div class="exam-row">
+        <label>
+          <input type="radio" name="examType" value="practice" checked />
+          Practice (full list)
+        </label>
+        <label>
+          <input type="radio" name="examType" value="test" />
+          Exam simulation (24 words)
+        </label>
+      </div>
+
+      <!-- Progress -->
+      <div id="oetProgress" class="progress-text"></div>
+      <div class="progress-track"><div class="progress-fill" id="oetProgressFill"></div></div>
+
+      <!-- Feedback -->
+      <div id="oetFeedback" class="feedback-pill">
+        Select a mode and click Start
+      </div>
+
+      <!-- Answer zone -->
+      <div class="answer-zone">
+        <span class="answer-zone-label">✏️ Type your spelling here</span>
+        <div class="input-group">
+          <textarea
+            id="oetInput"
+            class="answer-input"
+            placeholder="type it…"
+            autocomplete="off" autocorrect="off"
+            autocapitalize="off" spellcheck="false"
+            rows="2"
+          ></textarea>
+        </div>
+        <p class="real-time-hint">
+          Real-time feedback active — green = correct, red = wrong
+        </p>
+      </div>
+
+      <!-- Controls -->
+      <div class="btn-grid">
+        <button class="btn-start start-btn" data-mode="oet">
+          <i class="fa fa-play"></i> Start OET Practice
+        </button>
+        <button class="btn-submit-answer" id="oetSubmit">
+          <i class="fa fa-check"></i> Submit
+        </button>
+        <button class="btn-sec" id="oetSayAgain">
+          <i class="fa fa-volume-up"></i> Say Again
+        </button>
+        <button class="btn-sec" id="oetFlag">
+          <i class="fa fa-flag"></i> Flag
+        </button>
+        <button class="btn-end" id="oetEnd">
+          <i class="fa fa-stop"></i> End Session
+        </button>
+      </div>
+
+      <!-- Session summary -->
+      <div id="oetSummary" class="summary-panel" style="display:none;"></div>
+    </div>
+
+    <!-- ── BEE TRAINER ──────────────────────────────────────── -->
+    <div class="trainer-area" id="bee-area">
+      <h3><i class="fa fa-deaf"></i> Spelling Bee — Voice Mode</h3>
+
+      <p style="color:var(--muted);font-size:0.9rem;margin:0 0 16px;">
+        Listen to the word, then spell it aloud letter-by-letter into your microphone.
+        The app marks your spelling automatically.
+      </p>
+
+      <!-- Progress -->
+      <div id="beeProgress" class="progress-text"></div>
+      <div class="progress-track"><div class="progress-fill" id="beeProgressFill"></div></div>
+
+      <!-- Feedback -->
+      <div id="beeFeedback" class="feedback-pill">
+        Click Start to begin the Spelling Bee
+      </div>
+
+      <!-- Voice recognition UI -->
+      <div id="beeVoiceStatus">
+        <div id="beeVoiceText">Listening… spell the word now</div>
+        <div class="voice-bars">
+          <div class="voice-bar"></div>
+          <div class="voice-bar"></div>
+          <div class="voice-bar"></div>
+          <div class="voice-bar"></div>
+          <div class="voice-bar"></div>
+        </div>
+      </div>
+
+      <!-- Recognized text display -->
+      <div id="beeRecognizedText">
+        <p>I heard you spell:</p>
+        <div id="beeSpokenText"></div>
+      </div>
+
+      <!-- Controls -->
+      <div class="btn-grid">
+        <button class="btn-start start-btn" data-mode="bee">
+          <i class="fa fa-play"></i> Start Spelling Bee
+        </button>
+        <button class="btn-sec" id="beeListen">
+          <i class="fa fa-microphone"></i> Speak Now
+        </button>
+        <button class="btn-sec" id="beeSayAgain">
+          <i class="fa fa-volume-up"></i> Say Again
+        </button>
+        <button class="btn-sec" id="beeFlag">
+          <i class="fa fa-flag"></i> Flag
+        </button>
+        <button class="btn-end" id="beeEnd">
+          <i class="fa fa-stop"></i> End Session
+        </button>
+      </div>
+
+      <!-- Session summary -->
+      <div id="beeSummary" class="summary-panel" style="display:none;"></div>
+    </div>
+
+    <!-- ── PLACEHOLDER when no mode selected ── -->
+    <div id="noModeMsg" style="text-align:center;padding:40px 20px;color:var(--muted);">
+      <i class="fa fa-hand-pointer" style="font-size:2.5rem;color:var(--border);display:block;margin-bottom:12px;"></i>
+      <strong>Choose a practice mode above</strong> to begin your premium session.
+    </div>
+
+  </div><!-- /.glass-card -->
+
+</main>
+
+<!-- ══════════════════════════════════════════════════════
+     SCRIPTS — order matters
+══════════════════════════════════════════════════════════ -->
+<!-- OET word list (loaded on demand by main-premium.js via script tag) -->
+<!-- <script src="/js/oet_word_list.js"></script> -->
+
+<!-- Main premium logic -->
+<script src="/js/main-premium.js"></script>
+
+<script>
+  // ── Progress bar sync helper ─────────────────────────────────────────────
+  // Called by main-premium.js after each word via nextWord()
+  (function() {
+    const modeProgressFills = {
+      school: document.getElementById('schoolProgressFill'),
+      oet:    document.getElementById('oetProgressFill'),
+      bee:    document.getElementById('beeProgressFill'),
+    };
+
+    // Patch nextWord to also update the visual fill
+    const _originalNextWord = window.nextWord;
+    // We can't patch before it's defined — use a MutationObserver to watch
+    // progress text and sync the bar whenever it changes.
+    const observer = new MutationObserver(() => {
+      const fill = modeProgressFills[window.currentMode];
+      if (!fill || !window.currentList || !window.currentList.length) return;
+      const pct = Math.min(100,
+        Math.round((window.currentIndex / window.currentList.length) * 100));
+      fill.style.width = pct + '%';
+    });
+
+    ['schoolProgress','oetProgress','beeProgress'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) observer.observe(el, { childList:true, subtree:true, characterData:true });
+    });
+  })();
+
+  // ── "No mode" placeholder hide/show ─────────────────────────────────────
+  document.querySelectorAll('.mode-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.getElementById('noModeMsg').style.display = 'none';
+    });
+  });
+
+  // ── Dark mode persistence ────────────────────────────────────────────────
+  (function() {
+    const toggle = document.getElementById('toggleDark');
+    const apply = () => {
+      const on = localStorage.getItem('dark') === 'true';
+      document.body.classList.toggle('dark-mode', on);
+      const icon = toggle?.querySelector('i');
+      if (icon) icon.className = on ? 'fa fa-sun' : 'fa fa-moon';
+    };
+    toggle?.addEventListener('click', () => {
+      localStorage.setItem('dark', !(localStorage.getItem('dark') === 'true'));
+      apply();
+    });
+    apply();
+  })();
+
+  // ── Service Worker ───────────────────────────────────────────────────────
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('/sw.js').catch(() => {});
+  }
+</script>
+
+</body>
+</html>
