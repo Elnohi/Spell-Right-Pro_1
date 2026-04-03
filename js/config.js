@@ -208,7 +208,9 @@ window.adsenseConfig = {
   client: "ca-pub-7632930282249669",
   // Only show ads to free users
   showAds: function() {
-    return window.tierManager?.currentTier === 'free';
+    // If tierManager isn't ready yet, default to showing ads (free user)
+    const tier = window.tierManager?.currentTier ?? 'free';
+    return tier !== 'premium';
   }
 };
 
@@ -226,8 +228,10 @@ window.loadAds = function() {
       document.head.appendChild(script);
     }
     
-    // Initialize ads
-    (adsbygoogle = window.adsbygoogle || []).push({});
+    // Initialize ads (guard against adsbygoogle not yet defined)
+    try {
+      (window.adsbygoogle = window.adsbygoogle || []).push({});
+    } catch(e) { console.warn('Ad push failed:', e); }
     
     // Track ad view
     window.trackEvent('ad_view', {
