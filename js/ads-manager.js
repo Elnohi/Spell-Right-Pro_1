@@ -170,8 +170,8 @@
     // from your AdSense account → Ads → By ad unit → Get code
     generateAdSlotId: function(format) {
       const slotIds = {
-        'horizontal': 'REPLACE_WITH_LEADERBOARD_SLOT_ID',   // e.g. 3344556677
-        'rectangle':  'REPLACE_WITH_RECTANGLE_SLOT_ID'      // e.g. 9988776655
+        'horizontal': '2805570461',
+        'rectangle':  '9214337192'   
       };
       return slotIds[format] || slotIds['horizontal'];
     },
