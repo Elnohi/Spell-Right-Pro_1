@@ -219,14 +219,14 @@ window.appConfig = {
 
   window.stripeConfig = {
     // Paste your pk_test_... key here (from Stripe Dashboard → Test mode → API keys)
-    testKey: 'pk_test_REPLACE_WITH_YOUR_TEST_KEY',
+    testKey: 'pk_test_51RuKs1El99zwdEZrhrRFzKg7B0Y73rtLGHkZL20V7LHwE3jCJpnTXofp09GYg2reRdirJTXsGyvqRPixdCxraFhF00ZkCTNE4Z',
 
     // Your live key — already correct, do not change
     liveKey: 'pk_live_51RuKs1El99zwdEZr9wjVF3EhADOk4c9x8JjvjPLH8Y16cCPwykZRFVtC1Fr0hSJesStbqcvfvvNOy4NHRa0GPvg004IIcPfC8',
 
     // publicKey is what the checkout page reads — chosen automatically
     publicKey: isLocal
-      ? 'pk_test_REPLACE_WITH_YOUR_TEST_KEY'
+      ? 'pk_test_51RuKs1El99zwdEZrhrRFzKg7B0Y73rtLGHkZL20V7LHwE3jCJpnTXofp09GYg2reRdirJTXsGyvqRPixdCxraFhF00ZkCTNE4Z'
       : 'pk_live_51RuKs1El99zwdEZr9wjVF3EhADOk4c9x8JjvjPLH8Y16cCPwykZRFVtC1Fr0hSJesStbqcvfvvNOy4NHRa0GPvg004IIcPfC8',
 
     isTestMode: isLocal
