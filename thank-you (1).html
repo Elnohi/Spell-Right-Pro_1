@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Welcome to SpellRightPro Premium!</title>
+  <link rel="stylesheet" href="/css/styles.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+
+    <!-- FIREBASE SDKs -->
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-analytics.js"></script>
+
+    <!-- Google Analytics -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-H09MF13297"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-H09MF13297');
+    
+    // Function to track premium clicks
+    function trackPremiumClick(source, plan) {
+      gtag('event', 'premium_click', {
+        event_category: 'premium_conversion',
+        event_label: source,
+        value: plan === 'complete' ? 8.99 : plan === 'school' ? 4.99 : 14.99
+      });
+    }
+    
+    // Function to track plan view
+    function trackPlanView(plan) {
+      gtag('event', 'view_item', {
+        items: [{
+          item_id: plan,
+          item_name: 'SpellRightPro ' + plan,
+          item_category: 'premium_plans'
+        }]
+      });
+    }
+  </script>
+  <style>
+    body {
+      background: linear-gradient(135deg, #7b2ff7 0%, #f72585 100%);
+      color: white;
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+    }
+    
+    .container {
+      max-width: 600px;
+      padding: 40px;
+      background: rgba(0, 0, 0, 0.3);
+      border-radius: 20px;
+      backdrop-filter: blur(10px);
+    }
+    
+    .success-icon {
+      font-size: 5em;
+      margin-bottom: 30px;
+      animation: bounce 1s infinite alternate;
+    }
+    
+    @keyframes bounce {
+      from { transform: translateY(0); }
+      to { transform: translateY(-20px); }
+    }
+    
+    .btn {
+      display: inline-block;
+      margin: 20px 10px;
+      padding: 15px 30px;
+      background: white;
+      color: #7b2ff7;
+      border: none;
+      border-radius: 50px;
+      font-weight: bold;
+      text-decoration: none;
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+    
+    .btn:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+    }
+    
+    .features {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 20px;
+      margin: 40px 0;
+    }
+    
+    .feature {
+      background: rgba(255,255,255,0.1);
+      padding: 20px;
+      border-radius: 10px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="success-icon">
+      <i class="fa fa-crown"></i>
+    </div>
+    
+    <h1>Welcome to Premium! 🎉</h1>
+    
+    <p style="font-size: 1.2em; margin: 20px 0;">
+      Thank you for upgrading to SpellRightPro Premium. Your account is now being activated.
+    </p>
+    
+    <div style="background: rgba(255,255,255,0.1); padding: 20px; border-radius: 10px; margin: 30px 0;">
+      <p><i class="fa fa-envelope"></i> Check your email for confirmation and receipt</p>
+      <p><i class="fa fa-rocket"></i> Your premium features are now active</p>
+      <p><i class="fa fa-shield-alt"></i> Payment processed securely</p>
+    </div>
+    
+    <div class="features">
+      <div class="feature">
+        <i class="fa fa-infinity"></i>
+        <h4>Unlimited Lists</h4>
+      </div>
+      <div class="feature">
+        <i class="fa fa-chart-line"></i>
+        <h4>Progress Tracking</h4>
+      </div>
+      <div class="feature">
+        <i class="fa fa-ad"></i>
+        <h4>Ad-Free</h4>
+      </div>
+      <div class="feature">
+        <i class="fa fa-headset"></i>
+        <h4>Premium Support</h4>
+      </div>
+    </div>
+    
+    <div style="margin: 40px 0;">
+      <a href="/index.html" class="btn">
+        <i class="fa fa-home"></i> Back to Home
+      </a>
+      <a href="/trainer" class="btn" style="background: #ffd166; color: #333;" id="startBtn">
+        <i class="fa fa-play"></i> Start Practicing
+      </a>
+    </div>
+    
+    <p style="font-size: 0.9em; opacity: 0.8;">
+      Need help? Contact <a href="/cdn-cgi/l/email-protection#55262025253a2721152625303939273c323d2125273a7b363a38" style="color: white;"><span class="__cf_email__" data-cfemail="c5b6b5a0a9a9b7aca2adb1b5b7aa85a2a8a4aca9eba6aaa8">[email&#160;protected]</span></a>
+    </p>
+  </div>
+  
+  <script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script>
+  <script src="/js/config.js"></script>
+  <script>
+  (function() {
+    const params  = new URLSearchParams(window.location.search);
+    const sessionId = params.get('session_id');
+    const planParam = params.get('plan') || 'premium';
+
+    // Update heading with plan name
+    const h1 = document.querySelector('h1');
+    if (h1) h1.textContent = 'Welcome to ' + planParam + '! 🎉';
+
+    const apiUrl = (window.appConfig && window.appConfig.apiBaseUrl)
+      ? window.appConfig.apiBaseUrl
+      : 'https://spellrightpro-api-798456641137.us-central1.run.app';
+
+    // ── Verify payment with server and activate locally ───────────────────
+    // This runs even if the webhook hasn't fired yet — gives instant access.
+    if (sessionId) {
+      fetch(apiUrl + '/api/verify-session?session_id=' + encodeURIComponent(sessionId))
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+          if (data.paid) {
+            // Store premium status in localStorage as immediate fallback
+            // trainer.html checks this before Firestore
+            const expiry = new Date();
+            expiry.setDate(expiry.getDate() + 30);
+            const premiumRecord = {
+              active:    true,
+              email:     data.email || '',
+              plan:      data.plan  || planParam,
+              expiry:    expiry.toISOString(),
+              sessionId: sessionId,
+              source:    'stripe_checkout',
+              setAt:     new Date().toISOString()
+            };
+            localStorage.setItem('srpPremium', JSON.stringify(premiumRecord));
+            console.log('✅ Premium activated in localStorage');
+
+            // Also try to activate via Firebase if user is logged in
+            if (typeof firebase !== 'undefined') {
+              firebase.auth().onAuthStateChanged(function(user) {
+                if (user && data.email) {
+                  // Write to Firestore directly from client as extra safety net
+                  const db = firebase.firestore();
+                  db.collection('premiumUsers').doc(user.uid).set({
+                    active:    true,
+                    email:     data.email,
+                    plan:      data.plan || planParam,
+                    expiryDate: firebase.firestore.Timestamp.fromDate(expiry),
+                    sessionId:  sessionId,
+                    source:     'client_verify'
+                  }, { merge: true }).then(function() {
+                    console.log('✅ Firestore premium written from client');
+                  }).catch(function(e) {
+                    console.warn('Firestore write failed (non-critical):', e.message);
+                  });
+                }
+              });
+            }
+          }
+        })
+        .catch(function(e) {
+          console.warn('verify-session failed (non-critical):', e.message);
+          // Even if verification fails, keep the user on the thank-you page —
+          // webhook will activate their account asynchronously
+        });
+    } else {
+      // No session_id — came here directly (e.g. bookmarked)
+      // Check localStorage as fallback
+      try {
+        const stored = JSON.parse(localStorage.getItem('srpPremium') || '{}');
+        if (stored.active && new Date(stored.expiry) > new Date()) {
+          console.log('✅ Premium confirmed via localStorage');
+        }
+      } catch(_) {}
+    }
+
+    // Analytics
+    if (typeof gtag !== 'undefined') {
+      gtag('event', 'purchase', {
+        transaction_id: sessionId || ('TXN_' + Date.now()),
+        currency: 'CAD',
+        items: [{ item_id: planParam, item_name: 'SpellRightPro ' + planParam }]
+      });
+    }
+  })();
+  </script>
+
+  <!-- Firebase SDKs (for client-side Firestore write) -->
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+  <script>
+    // Init Firebase for the Firestore write above
+    if (typeof firebase !== 'undefined' && !firebase.apps.length) {
+      firebase.initializeApp({
+        apiKey:    "AIzaSyCZ-rAPnRgVjSRFOFvbiQlowE6A3RVvwWo",
+        authDomain:"spellrightpro-firebase.firebaseapp.com",
+        projectId: "spellrightpro-firebase",
+        appId:     "1:798456641137:web:5c6d79db5bf49d04928dd0"
+      });
+    }
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/sw.js').catch(function(){});
+    }
+  </script>
+</body>
+</html>
