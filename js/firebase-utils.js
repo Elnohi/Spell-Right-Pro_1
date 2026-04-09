@@ -131,44 +131,104 @@ class FirebaseUtils {
   }
 
   // Check if user is premium
+  // Checks THREE sources in order — fastest first:
+  //   1. localStorage srpPremium (set by thank-you.html immediately after payment)
+  //   2. Firestore premiumUsers/{uid} (written by webhook or verify-session)
+  //   3. Firestore premiumByEmail/{email} (fallback when UID was not available at checkout)
   async checkPremiumStatus(user) {
-    if (!this.initialized || !user) {
-      console.warn('Firebase not initialized or no user');
+    if (!user) {
+      console.warn('checkPremiumStatus: no user');
       return false;
     }
 
+    // ── Source 1: localStorage (instant, set by thank-you.html) ─────────────
     try {
-      const userDoc = await this.db.collection('premiumUsers').doc(user.uid).get();
-      
-      if (userDoc.exists) {
-        const userData = userDoc.data();
-        const now = new Date();
-        const expiryDate = userData.expiryDate?.toDate();
-        
-        // Check if subscription is still valid
-        if (expiryDate && expiryDate > now && userData.active !== false) {
-          console.log('✅ User has active premium subscription');
-          return true;
-        } else {
-          console.log('❌ Premium subscription expired or inactive');
-          return false;
-        }
-      } else {
-        console.log('❌ User not found in premium users');
-        return false;
-      }
-    } catch (error) {
-      console.error('Error checking premium status:', error);
-      
-      // Fallback to localStorage for demo/offline
-      const localPremium = localStorage.getItem(`premium_${user.uid}`);
-      if (localPremium === 'true') {
-        console.log('✅ Using local premium status (fallback)');
+      const stored = JSON.parse(localStorage.getItem('srpPremium') || 'null');
+      if (stored && stored.active && new Date(stored.expiry) > new Date()) {
+        console.log('✅ Premium confirmed via localStorage');
         return true;
       }
-      
+    } catch (_) {}
+
+    // Also check the old key format
+    if (localStorage.getItem('premium_' + user.uid) === 'true') {
+      console.log('✅ Premium confirmed via legacy localStorage key');
+      return true;
+    }
+
+    if (!this.initialized) {
+      console.warn('Firebase not initialized — cannot check Firestore');
       return false;
     }
+
+    // ── Source 2: Firestore premiumUsers/{uid} ───────────────────────────────
+    try {
+      const userDoc = await this.db.collection('premiumUsers').doc(user.uid).get();
+      if (userDoc.exists) {
+        const data       = userDoc.data();
+        const expiryDate = data.expiryDate?.toDate();
+        if (data.active !== false && (!expiryDate || expiryDate > new Date())) {
+          console.log('✅ Premium confirmed via Firestore premiumUsers');
+          // Cache in localStorage for next load
+          localStorage.setItem('srpPremium', JSON.stringify({
+            active: true, email: user.email || '',
+            plan:   data.plan || 'premium',
+            expiry: expiryDate ? expiryDate.toISOString()
+                               : new Date(Date.now() + 30*86400000).toISOString(),
+            source: 'firestore_uid'
+          }));
+          return true;
+        } else {
+          console.log('❌ Firestore premiumUsers: subscription expired or inactive');
+          return false;
+        }
+      }
+    } catch (err) {
+      console.warn('Firestore premiumUsers check failed:', err.message);
+    }
+
+    // ── Source 3: Firestore premiumByEmail/{email} ───────────────────────────
+    // Catches users who paid before logging in (firebaseUid was empty at checkout)
+    if (user.email) {
+      try {
+        const safeEmail = user.email.replace(/[.#$[\]\/]/g, '_');
+        const emailDoc  = await this.db.collection('premiumByEmail').doc(safeEmail).get();
+        if (emailDoc.exists) {
+          const data       = emailDoc.data();
+          const expiryDate = data.expiryDate?.toDate();
+          if (data.active !== false && (!expiryDate || expiryDate > new Date())) {
+            console.log('✅ Premium confirmed via Firestore premiumByEmail');
+
+            // Now that we have the UID, upgrade the record to premiumUsers/{uid}
+            // so future logins use the faster Source 2 path
+            try {
+              await this.db.collection('premiumUsers').doc(user.uid).set({
+                ...data,
+                firebaseUid:  user.uid,
+                migratedFrom: 'premiumByEmail',
+                migratedAt:   firebase.firestore.FieldValue.serverTimestamp()
+              }, { merge: true });
+              console.log('✅ Migrated premiumByEmail → premiumUsers/' + user.uid);
+            } catch (_) {}
+
+            // Cache in localStorage
+            localStorage.setItem('srpPremium', JSON.stringify({
+              active: true, email: user.email,
+              plan:   data.plan || 'premium',
+              expiry: expiryDate ? expiryDate.toISOString()
+                                 : new Date(Date.now() + 30*86400000).toISOString(),
+              source: 'firestore_email'
+            }));
+            return true;
+          }
+        }
+      } catch (err) {
+        console.warn('Firestore premiumByEmail check failed:', err.message);
+      }
+    }
+
+    console.log('❌ No premium record found in any source');
+    return false;
   }
 
   // Save user progress with analytics
