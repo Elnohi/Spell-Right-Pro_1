@@ -53,6 +53,7 @@ app.post("/create-checkout-session", async (req, res) => {
 });
 
 // ✅ CRITICAL: Start server LAST
+
 app.listen(PORT, "0.0.0.0", () => {
   console.log(`Server running on port ${PORT}`);
 });
