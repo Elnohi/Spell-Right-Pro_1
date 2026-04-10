@@ -1,16 +1,14 @@
 {
   "name": "spellrightpro-api",
   "version": "1.0.0",
-  "description": "SpellRightPro Backend API",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"
   },
   "dependencies": {
     "express": "^4.18.2",
-    "nodemailer": "^6.9.8",
     "stripe": "^14.0.0",
-    "firebase-admin": "^12.0.0",
-    "dotenv": "^16.4.0"
+    "nodemailer": "^6.9.8",
+    "firebase-admin": "^12.0.0"
   }
 }
