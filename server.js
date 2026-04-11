@@ -54,7 +54,8 @@ app.post("/create-checkout-session", async (req, res) => {
 
 // ✅ CRITICAL: Start server LAST
 
-const PORT = process.env.PORT || 8080; // This is critical for Cloud Run
-app.listen(PORT, () => {
-  console.log(`Server listening on port ${PORT}`);
+const PORT = process.env.PORT || 8080;
+
+app.listen(PORT, "0.0.0.0", () => {
+  console.log(`Server running on port ${PORT}`);
 });
