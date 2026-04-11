@@ -5,16 +5,24 @@ const app = express();
 
 // ✅ CORS FIRST (VERY IMPORTANT)
 app.use(cors({
-  origin: [
-    "https://www.spellrightpro.org",
-    "https://spellrightpro.org"
-  ],
+  origin: function (origin, callback) {
+    const allowed = [
+      "https://www.spellrightpro.org",
+      "https://spellrightpro.org"
+    ];
+    if (!origin || allowed.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error("Not allowed by CORS"));
+    }
+  },
   methods: ["GET", "POST", "OPTIONS"],
   allowedHeaders: ["Content-Type"],
+  credentials: true
 }));
 
 // ✅ Handle preflight explicitly
-app.options("*", cors());
+app.options("/api/create-checkout-session", cors());
 
 // ✅ JSON parser AFTER CORS
 app.use(express.json());
