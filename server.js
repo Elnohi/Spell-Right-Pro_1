@@ -3,43 +3,40 @@ const cors = require("cors");
 
 const app = express();
 
-// ✅ CORS (correct placement)
+// ✅ CORS FIRST (VERY IMPORTANT)
 app.use(cors({
   origin: [
-    'https://www.spellrightpro.org',
-    'https://spellrightpro.org'
+    "https://www.spellrightpro.org",
+    "https://spellrightpro.org"
   ],
-  methods: ['GET', 'POST'],
-  allowedHeaders: ['Content-Type']
+  methods: ["GET", "POST", "OPTIONS"],
+  allowedHeaders: ["Content-Type"],
 }));
 
-app.options('*', cors());
+// ✅ Handle preflight explicitly
+app.options("*", cors());
 
-// ✅ Middleware
+// ✅ JSON parser AFTER CORS
 app.use(express.json());
-
-// ✅ PORT (ONLY ONCE)
-const PORT = process.env.PORT || 8080;
 
 // ✅ Stripe
 const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
 
 // ✅ Health check
 app.get("/", (req, res) => {
-  res.status(200).send("SpellRightPro API is running");
+  res.send("API running");
 });
 
 // ✅ TEST
 app.get("/test", (req, res) => {
-  res.send("API working");
+  res.send("OK");
 });
 
-// ✅ ✅ CORRECT ENDPOINT (MATCH FRONTEND)
+// ✅ CHECKOUT ROUTE (MATCH FRONTEND)
 app.post("/api/create-checkout-session", async (req, res) => {
   try {
     const { plan, email } = req.body;
 
-    // 🔥 Map plans to Stripe price IDs
     const priceMap = {
       school: process.env.STRIPE_PRICE_SCHOOL,
       complete: process.env.STRIPE_PRICE_COMPLETE,
@@ -54,19 +51,12 @@ app.post("/api/create-checkout-session", async (req, res) => {
 
     const session = await stripe.checkout.sessions.create({
       mode: "subscription",
-      payment_method_types: ["card"],
       customer_email: email,
-      line_items: [
-        {
-          price: priceId,
-          quantity: 1
-        }
-      ],
-      success_url: "https://spellrightpro.org/success.html",
-      cancel_url: "https://spellrightpro.org/premium.html"
+      line_items: [{ price: priceId, quantity: 1 }],
+      success_url: "https://www.spellrightpro.org/success.html",
+      cancel_url: "https://www.spellrightpro.org/premium.html",
     });
 
-    // ✅ IMPORTANT: match frontend expectation
     res.json({
       success: true,
       sessionUrl: session.url
@@ -74,14 +64,12 @@ app.post("/api/create-checkout-session", async (req, res) => {
 
   } catch (err) {
     console.error("Stripe error:", err);
-    res.status(500).json({
-      success: false,
-      message: err.message
-    });
+    res.status(500).json({ success: false, message: "Server error" });
   }
 });
 
-// ✅ Start server
+// ✅ START SERVER
+const PORT = process.env.PORT || 8080;
 app.listen(PORT, "0.0.0.0", () => {
-  console.log(`Server running on port ${PORT}`);
+  console.log("Server running on port", PORT);
 });
