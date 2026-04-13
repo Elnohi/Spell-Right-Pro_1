@@ -36,7 +36,7 @@
       gtag('event', 'premium_click', {
         event_category: 'premium_conversion',
         event_label: source,
-        value: plan === 'complete' ? 8.99 : plan === 'school' ? 4.99 : 14.99
+        value: plan === 'annual' ? 45 : 5
       });
     }
     
@@ -311,83 +311,78 @@
         All plans include our 14-day money-back guarantee. Cancel anytime.
       </p>
       
-      <div class="plans-grid">
-        <!-- Basic Plan -->
-        <div class="plan-card">
-          <div class="plan-header">
-            <h3 style="margin: 0; font-size: 1.5em;">School Premium</h3>
-            <p style="opacity: 0.8;">Perfect for students</p>
-          </div>
-          
-          <div class="plan-price">
-            $4.99<span>/month</span>
-          </div>
-          
-          <ul class="plan-features">
-            <li><i class="fa fa-check"></i> Unlimited school words</li>
-            <li><i class="fa fa-check"></i> Save 50 custom lists</li>
-            <li><i class="fa fa-check"></i> Basic progress tracking</li>
-            <li><i class="fa fa-check"></i> School-focused words</li>
-            <li><i class="fa fa-check"></i> Export to PDF</li>
-            <li><i class="fa fa-check"></i> Email support</li>
-          </ul>
-          
-          <a href="#checkout" class="btn-choose" data-plan="school">
-            Choose School Premium
-          </a>
-        </div>
+      <!-- Billing toggle -->
+      <div style="display:flex;justify-content:center;align-items:center;gap:16px;margin-bottom:36px;">
+        <span id="toggleMonthlyLabel"
+              style="font-weight:700;font-size:1rem;color:white;">Monthly</span>
+        <label style="position:relative;display:inline-block;width:52px;height:28px;cursor:pointer;">
+          <input type="checkbox" id="billingToggle"
+                 style="opacity:0;width:0;height:0;"
+                 onchange="switchBilling(this.checked)" />
+          <span style="position:absolute;inset:0;background:rgba(255,255,255,0.25);
+                       border-radius:99px;transition:.3s;" id="toggleTrack"></span>
+          <span style="position:absolute;left:4px;top:4px;width:20px;height:20px;
+                       background:white;border-radius:50%;transition:.3s;
+                       box-shadow:0 1px 4px rgba(0,0,0,.3);" id="toggleThumb"></span>
+        </label>
+        <span id="toggleAnnualLabel"
+              style="font-weight:700;font-size:1rem;color:rgba(255,255,255,0.6);">
+          Annual &nbsp;<span style="background:#ffd166;color:#333;font-size:0.75em;
+            padding:2px 8px;border-radius:99px;font-weight:800;">SAVE 25%</span>
+        </span>
+      </div>
 
-        <!-- Popular Plan -->
-        <div class="plan-card popular">
+      <div class="plans-grid" style="max-width:700px;margin:0 auto;
+                                     grid-template-columns:repeat(auto-fit,minmax(280px,1fr));">
+
+        <!-- Monthly Plan -->
+        <div class="plan-card" id="cardMonthly">
           <div class="plan-header">
-            <h3 style="margin: 0; font-size: 1.5em;">Complete Premium</h3>
-            <p style="opacity: 0.8;">Most Popular Choice</p>
+            <h3 style="margin:0;font-size:1.5em;">SpellRightPro Premium</h3>
+            <p style="opacity:0.8;">Full access — all modules</p>
           </div>
-          
-          <div class="plan-price">
-            $8.99<span>/month</span>
-            <div style="font-size: 0.5em; opacity: 0.8;">Save 40% with annual billing</div>
+          <div class="plan-price" id="priceDisplay">
+            CAD $5<span>/month</span>
           </div>
-          
           <ul class="plan-features">
-            <li><i class="fa fa-check"></i> <strong>All features from all modes</strong></li>
+            <li><i class="fa fa-check"></i> <strong>All 3 modules unlocked</strong> — School, OET &amp; Spelling Bee</li>
             <li><i class="fa fa-check"></i> Unlimited custom word lists</li>
-            <li><i class="fa fa-check"></i> Advanced progress analytics</li>
-            <li><i class="fa fa-check"></i> All voice accents unlocked</li>
-            <li><i class="fa fa-check"></i> Priority email & chat support</li>
-            <li><i class="fa fa-check"></i> Export to PDF & Excel</li>
-            <li><i class="fa fa-check"></i> Early access to new features</li>
+            <li><i class="fa fa-check"></i> Progress dashboard &amp; analytics</li>
+            <li><i class="fa fa-check"></i> Mistake review with spaced repetition</li>
+            <li><i class="fa fa-check"></i> Adaptive focus drills</li>
+            <li><i class="fa fa-check"></i> All voice accents</li>
+            <li><i class="fa fa-check"></i> No ads</li>
+            <li><i class="fa fa-check"></i> Priority support</li>
           </ul>
-          
-          <a href="#checkout" class="btn-choose" data-plan="complete" style="background: var(--accent); color: #333;">
-            <i class="fa fa-bolt"></i> Choose Complete Premium
+          <a href="#checkout" class="btn-choose" data-plan="monthly" id="choosePlanBtn"
+             style="background:var(--accent);color:#333;">
+            <i class="fa fa-bolt"></i> <span id="choosePlanLabel">Get Monthly — CAD $5/mo</span>
           </a>
         </div>
 
-        <!-- Family Plan -->
-        <div class="plan-card">
+        <!-- Free tier reminder -->
+        <div class="plan-card" style="opacity:0.75;border-style:dashed;">
           <div class="plan-header">
-            <h3 style="margin: 0; font-size: 1.5em;">Family Plan</h3>
-            <p style="opacity: 0.8;">For households & small groups</p>
+            <h3 style="margin:0;font-size:1.5em;">Free Forever</h3>
+            <p style="opacity:0.8;">No credit card needed</p>
           </div>
-          
           <div class="plan-price">
-            $14.99<span>/month</span>
+            $0<span>/month</span>
           </div>
-          
           <ul class="plan-features">
-            <li><i class="fa fa-check"></i> <strong>Up to 5 users</strong></li>
-            <li><i class="fa fa-check"></i> All Complete Premium features</li>
-            <li><i class="fa fa-check"></i> Separate progress tracking</li>
-            <li><i class="fa fa-check"></i> Family dashboard</li>
-            <li><i class="fa fa-check"></i> Group learning challenges</li>
-            <li><i class="fa fa-check"></i> Dedicated account manager</li>
+            <li><i class="fa fa-check"></i> School practice (25 words/session)</li>
+            <li><i class="fa fa-check"></i> OET practice (limited)</li>
+            <li><i class="fa fa-check"></i> Spelling Bee (25 words/session)</li>
+            <li><i class="fa fa-check"></i> 1 custom list per day</li>
+            <li style="opacity:0.4;"><i class="fa fa-times"></i> Progress dashboard</li>
+            <li style="opacity:0.4;"><i class="fa fa-times"></i> Mistake review</li>
+            <li style="opacity:0.4;"><i class="fa fa-times"></i> Ad-free</li>
           </ul>
-          
-          <a href="#checkout" class="btn-choose" data-plan="family">
-            Choose Family Plan
+          <a href="/" class="btn-choose" style="background:rgba(255,255,255,0.15);color:white;">
+            Continue Free
           </a>
         </div>
+      </div>
       </div>
       
       <!-- Money-Back Guarantee -->
@@ -737,34 +732,7 @@
     });
 
     // Plan selection
-    document.querySelectorAll('.btn-choose').forEach(button => {
-      button.addEventListener('click', function(e) {
-        e.preventDefault();
-        const plan = this.getAttribute('data-plan');
-        const planNames = {
-          'school': 'School Premium - $4.99/month',
-          'complete': 'Complete Premium - $8.99/month',
-          'family': 'Family Plan - $14.99/month'
-        };
-        
-        document.getElementById('selectedPlan').textContent = planNames[plan];
-        const checkoutEl = document.getElementById('checkout');
-        checkoutEl.style.display = 'block';
-        checkoutEl.removeAttribute('hidden');
-        document.getElementById('checkout').scrollIntoView({ behavior: 'smooth' });
-        
-        // Track plan selection
-        if (typeof gtag !== 'undefined') {
-          gtag('event', 'select_item', {
-            items: [{
-              item_id: plan,
-              item_name: planNames[plan],
-              item_category: 'premium_plans'
-            }]
-          });
-        }
-      });
-    });
+    // Plan selection handled by switchBilling() and choosePlanBtn listener above
 
     // Payment method toggle
     document.querySelectorAll('.payment-method').forEach(button => {
@@ -819,34 +787,59 @@
     // ── Plan data set by the "Choose Plan" buttons ──────────────────────────
     let selectedPlanKey = 'complete';
 
+    // ── Billing toggle ─────────────────────────────────────────────────────
+    let isAnnual = false;
+    window.switchBilling = function(annual) {
+      isAnnual = annual;
+      const priceEl   = document.getElementById('priceDisplay');
+      const labelEl   = document.getElementById('choosePlanLabel');
+      const mLabel    = document.getElementById('toggleMonthlyLabel');
+      const aLabel    = document.getElementById('toggleAnnualLabel');
+      const thumb     = document.getElementById('toggleThumb');
+      const track     = document.getElementById('toggleTrack');
+      if (annual) {
+        priceEl.innerHTML  = 'CAD $45<span>/year</span><div style="font-size:0.35em;opacity:0.8;margin-top:4px;">Equivalent to CAD $3.75/mo</div>';
+        labelEl.textContent = 'Get Annual — CAD $45/yr';
+        selectedPlanKey     = 'annual';
+        mLabel.style.color  = 'rgba(255,255,255,0.6)';
+        aLabel.style.color  = 'white';
+        thumb.style.left    = '28px';
+        track.style.background = 'rgba(255,209,102,0.6)';
+      } else {
+        priceEl.innerHTML  = 'CAD $5<span>/month</span>';
+        labelEl.textContent = 'Get Monthly — CAD $5/mo';
+        selectedPlanKey     = 'monthly';
+        mLabel.style.color  = 'white';
+        aLabel.style.color  = 'rgba(255,255,255,0.6)';
+        thumb.style.left    = '4px';
+        track.style.background = 'rgba(255,255,255,0.25)';
+      }
+    };
+    // Default plan key
+    selectedPlanKey = 'monthly';
+
+    // ── Plan button ─────────────────────────────────────────────────────────
     document.querySelectorAll('.btn-choose[data-plan]').forEach(function(btn) {
       btn.addEventListener('click', function(e) {
         e.preventDefault();
-        selectedPlanKey = this.getAttribute('data-plan');
-
-        const planLabels = {
-          school:   'School Premium — CAD $4.99 / month',
-          complete: 'Complete Premium — CAD $8.99 / month',
-          family:   'Family Plan — CAD $14.99 / month'
-        };
-
-        // Show + fill the checkout section
-        const checkoutEl = document.getElementById('checkout');
-        checkoutEl.style.display = 'block';
-        document.getElementById('selectedPlan').textContent =
-          planLabels[selectedPlanKey] || selectedPlanKey;
-
-        // Smooth scroll
-        setTimeout(function() {
-          checkoutEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        }, 50);
-
-        // Analytics
-        if (typeof gtag !== 'undefined') {
-          gtag('event', 'begin_checkout', {
-            currency: 'CAD',
-            items: [{ item_id: selectedPlanKey, item_name: planLabels[selectedPlanKey] }]
-          });
+        if (this.getAttribute('data-plan') === 'monthly') {
+          // selectedPlanKey already set by toggle (monthly or annual)
+          const planLabels = {
+            monthly: 'SpellRightPro Premium — CAD $5/month',
+            annual:  'SpellRightPro Premium — CAD $45/year (save 25%)'
+          };
+          const checkoutEl = document.getElementById('checkout');
+          checkoutEl.style.display = 'block';
+          document.getElementById('selectedPlan').textContent = planLabels[selectedPlanKey];
+          setTimeout(function() {
+            checkoutEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          }, 50);
+          if (typeof gtag !== 'undefined') {
+            gtag('event', 'begin_checkout', {
+              currency: 'CAD', value: isAnnual ? 45 : 5,
+              items: [{ item_id: selectedPlanKey, item_name: planLabels[selectedPlanKey] }]
+            });
+          }
         }
       });
     });
@@ -882,7 +875,10 @@
         } catch (_) {}
 
         // Ask server to create a Stripe Checkout Session
-        const res = await fetch(apiUrl + '/api/create-checkout-session', {
+        const checkoutUrl = apiUrl + '/api/create-checkout-session';
+        console.log('Calling:', checkoutUrl);
+
+        const res = await fetch(checkoutUrl, {
           method:  'POST',
           headers: { 'Content-Type': 'application/json' },
           body:    JSON.stringify({
@@ -894,7 +890,12 @@
 
         if (!res.ok) {
           const txt = await res.text();
-          throw new Error('Server error ' + res.status + ': ' + txt.substring(0, 120));
+          // Show a clean error — hide raw HTML
+          const isHtml = txt.trim().startsWith('<');
+          const msg = isHtml
+            ? `Server returned ${res.status}. The new server.js may not be deployed yet. URL: ${checkoutUrl}`
+            : `Server error ${res.status}: ${txt.substring(0, 200)}`;
+          throw new Error(msg);
         }
 
         const data = await res.json();
@@ -927,8 +928,8 @@
     // ⚠️  Card fields are placeholders. Integrate Stripe Elements before going live.
     // Plan data attributes for tracking
     document.querySelectorAll('.btn-choose[data-plan]').forEach(btn => {
-      const prices = { school: '4.99', complete: '8.99', family: '14.99' };
-      btn.dataset.price = prices[btn.dataset.plan] || '8.99';
+      const prices = { monthly: '5.00', annual: '45.00' };
+      btn.dataset.price = prices[btn.dataset.plan] || '5.00';
     });
   </script>
 </body>
