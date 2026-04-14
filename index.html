@@ -3,30 +3,28 @@
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
-  <meta name="description" content="SpellRightPro — free spelling trainer for students, OET candidates and Spelling Bee competitors. Practice with voice, track progress, and upgrade for premium features."/>
   <title>SpellRightPro — Spelling Trainer</title>
 
   <link rel="stylesheet" href="/css/styles.css"/>
   <link rel="stylesheet" href="/css/premium.css"/>
   <link rel="preload" href="/assets/logo.png" as="image"/>
-  <link rel="icon" href="/assets/logo.png"/>
-  <link rel="manifest" href="/manifest.json"/>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"/>
 
-  <!-- Firebase SDKs -->
+  <!-- Firebase SDKs - CORRECT ORDER -->
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-analytics.js"></script>
-
-  <!-- Google Analytics — no AdSense script here; ads-manager.js handles that -->
+  
+  <!-- Google Analytics -->
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-H09MF13297"></script>
   <script>
     window.dataLayer = window.dataLayer || [];
     function gtag(){dataLayer.push(arguments);}
     gtag('js', new Date());
     gtag('config', 'G-H09MF13297');
-
+    
+    // Function to track premium clicks
     function trackPremiumClick(source, plan) {
       gtag('event', 'premium_click', {
         event_category: 'premium_conversion',
@@ -34,15 +32,20 @@
         value: plan === 'complete' ? 8.99 : plan === 'school' ? 4.99 : 14.99
       });
     }
+    
+    // Function to track plan view
     function trackPlanView(plan) {
       gtag('event', 'view_item', {
-        items: [{ item_id: plan, item_name: 'SpellRightPro ' + plan, item_category: 'premium_plans' }]
+        items: [{
+          item_id: plan,
+          item_name: 'SpellRightPro ' + plan,
+          item_category: 'premium_plans'
+        }]
       });
     }
   </script>
 </head>
 <body data-page="index">
-
   <header class="navbar">
     <a href="/index.html" class="brand">
       <img src="/assets/logo.png" alt="SpellRightPro Logo" class="logo"/>
@@ -53,30 +56,70 @@
     </a>
     <div class="nav-actions">
       <button id="darkModeToggle" class="btn-icon" title="Toggle dark mode"><i class="fa fa-moon"></i></button>
-      <a class="btn-primary" href="/premium.html"><i class="fa fa-crown"></i> Premium</a>
+
+      <!-- Guest state (default — hidden when logged in) -->
+      <div id="navGuest" style="display:flex;gap:8px;align-items:center;">
+        <a href="/login" class="btn-secondary"
+           style="padding:7px 14px;border-radius:10px;font-weight:600;font-size:0.85rem;
+                  background:rgba(123,47,247,0.1);color:#7b2ff7;
+                  border:1px solid rgba(123,47,247,0.3);text-decoration:none;">
+          <i class="fa fa-sign-in-alt"></i> Sign In
+        </a>
+        <a href="/premium.html" class="btn-primary"
+           style="padding:7px 14px;border-radius:10px;font-weight:700;font-size:0.85rem;
+                  background:#7b2ff7;color:#fff;text-decoration:none;">
+          <i class="fa fa-crown"></i> Go Premium
+        </a>
+      </div>
+
+      <!-- Logged-in state (hidden until Firebase confirms auth) -->
+      <div id="navUser" style="display:none;gap:8px;align-items:center;">
+        <!-- Avatar circle with email initial -->
+        <div id="navAvatar"
+             style="width:34px;height:34px;border-radius:50%;
+                    background:linear-gradient(135deg,#7b2ff7,#f72585);
+                    color:#fff;font-weight:700;font-size:0.9rem;
+                    display:flex;align-items:center;justify-content:center;
+                    cursor:pointer;title='My Account'"
+             onclick="window.location.href='/trainer'">
+          ?
+        </div>
+        <!-- Premium users → trainer; non-premium → upgrade -->
+        <a id="navAccountBtn" href="/trainer"
+           style="padding:7px 14px;border-radius:10px;font-weight:700;font-size:0.85rem;
+                  background:#7b2ff7;color:#fff;text-decoration:none;">
+          <i class="fa fa-play"></i> Practice
+        </a>
+        <button id="navSignOut"
+                style="padding:7px 14px;border-radius:10px;font-weight:600;font-size:0.82rem;
+                       background:rgba(255,255,255,0.1);color:#666;
+                       border:1px solid rgba(0,0,0,0.1);cursor:pointer;">
+          <i class="fa fa-sign-out-alt"></i> Sign Out
+        </button>
+      </div>
     </div>
   </header>
 
-  <!--
-    ── NO inline <ins class="adsbygoogle"> here ──────────────────────────────
-    Ads are injected by js/ads-manager.js ONLY after cookie consent is given.
-    Placing an adsbygoogle.push() before consent violates GDPR.
-    ads-manager.js listens for the custom 'cookieConsentAccepted' event fired
-    by acceptCookies() below, then injects the AdSense <script> tag at that
-    point — never before.
-    ─────────────────────────────────────────────────────────────────────────
-  -->
+  <!-- Ad Container -->
+  <div class="ad-container" style="margin-top:10px;">
+    <div class="ad-label">Advertisement</div>
+    <ins class="adsbygoogle" style="display:block"
+         data-ad-client="ca-pub-7632930282249669"
+         data-ad-slot="3344556677"
+         data-ad-format="auto"
+         data-full-width-responsive="true"></ins>
+    <script>(adsbygoogle=window.adsbygoogle||[]).push({});</script>
+  </div>
 
   <main class="container">
-
     <!-- Launch Announcement Banner -->
-    <div id="launchBanner" style="background:linear-gradient(135deg,#7b2ff7,#f72585);color:white;padding:15px;text-align:center;margin-bottom:20px;border-radius:10px;">
-      <strong>🎉 LAUNCH SPECIAL!</strong> Get 30% off all Premium plans for the first month.
-      <a href="/premium.html" style="color:#ffd166;font-weight:bold;text-decoration:underline;margin-left:10px;">
+    <div id="launchBanner" style="background: linear-gradient(135deg, #7b2ff7, #f72585); color: white; padding: 15px; text-align: center; margin-bottom: 20px; border-radius: 10px;">
+      <strong>🎉 LAUNCH SPECIAL!</strong> Get 30% off all Premium plans for the first month. 
+      <a href="/premium.html" style="color: #ffd166; font-weight: bold; text-decoration: underline; margin-left: 10px;">
         Claim Your Discount →
       </a>
-      <button onclick="dismissBanner()"
-              style="background:none;border:none;color:white;margin-left:20px;cursor:pointer;font-size:1.2em;">×</button>
+      <button onclick="document.getElementById('launchBanner').style.display='none'" 
+              style="background: none; border: none; color: white; margin-left: 20px; cursor: pointer;">×</button>
     </div>
 
     <section class="training-card">
@@ -94,7 +137,7 @@
         </a>
         <a class="card link-card" href="/freemium-school.html">
           <h3><i class="fa fa-graduation-cap"></i> School</h3>
-          <p>Upload lists and practise classroom sets.</p>
+          <p>Upload lists and practice classroom sets.</p>
         </a>
       </div>
 
@@ -104,81 +147,85 @@
     </section>
 
     <!-- Premium Features Showcase -->
-    <section class="premium-showcase" style="margin:40px 0;padding:30px;background:linear-gradient(135deg,#7b2ff7,#f72585);border-radius:16px;color:white;">
-      <h2 style="margin-top:0;text-align:center;">🚀 Why Go Premium?</h2>
-      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:20px;margin:30px 0;">
-        <div style="text-align:center;padding:20px;">
-          <i class="fa fa-infinity" style="font-size:2.5em;margin-bottom:15px;display:block;"></i>
+    <section class="premium-showcase" style="margin: 40px 0; padding: 30px; background: linear-gradient(135deg, #7b2ff7 0%, #f72585 100%); border-radius: 16px; color: white;">
+      <h2 style="margin-top: 0; text-align: center;">🚀 Why Go Premium?</h2>
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; margin: 30px 0;">
+        <div style="text-align: center; padding: 20px;">
+          <i class="fa fa-infinity" style="font-size: 2.5em; margin-bottom: 15px;"></i>
           <h3>Unlimited Lists</h3>
           <p>Create and save unlimited custom word lists</p>
         </div>
-        <div style="text-align:center;padding:20px;">
-          <i class="fa fa-chart-line" style="font-size:2.5em;margin-bottom:15px;display:block;"></i>
+        <div style="text-align: center; padding: 20px;">
+          <i class="fa fa-chart-line" style="font-size: 2.5em; margin-bottom: 15px;"></i>
           <h3>Progress Tracking</h3>
           <p>Track your improvement with detailed analytics</p>
         </div>
-        <div style="text-align:center;padding:20px;">
-          <i class="fa fa-ad" style="font-size:2.5em;margin-bottom:15px;display:block;"></i>
+        <div style="text-align: center; padding: 20px;">
+          <i class="fa fa-ad" style="font-size: 2.5em; margin-bottom: 15px;"></i>
           <h3>Ad-Free Experience</h3>
           <p>Focus on learning without distractions</p>
         </div>
-        <div style="text-align:center;padding:20px;">
-          <i class="fa fa-flag" style="font-size:2.5em;margin-bottom:15px;display:block;"></i>
+        <div style="text-align: center; padding: 20px;">
+          <i class="fa fa-flag" style="font-size: 2.5em; margin-bottom: 15px;"></i>
           <h3>All Accents</h3>
           <p>Access all voice accents for comprehensive training</p>
         </div>
       </div>
-      <div style="text-align:center;">
-        <button onclick="window.location.href='/premium.html'"
-                style="background:white;color:#7b2ff7;border:none;padding:15px 40px;border-radius:50px;font-size:1.2em;font-weight:bold;cursor:pointer;display:inline-flex;align-items:center;gap:10px;">
-          <i class="fa fa-crown"></i> See Premium Plans
+      
+      <div style="text-align: center;">
+        <button onclick="window.location.href='/premium.html'" 
+                style="background: white; color: #7b2ff7; border: none; padding: 15px 40px; border-radius: 50px; font-size: 1.2em; font-weight: bold; cursor: pointer; display: inline-flex; align-items: center; gap: 10px;">
+          <i class="fa fa-crown"></i>
+          See Premium Plans
         </button>
-        <p style="margin-top:15px;opacity:0.9;"><small>Trusted by 10,000+ learners worldwide</small></p>
+        <p style="margin-top: 15px; opacity: 0.9;">
+          <small>Trusted by 10,000+ learners worldwide</small>
+        </p>
       </div>
     </section>
 
     <!-- Comparison Table -->
-    <section style="margin:40px 0;">
-      <h2 style="text-align:center;">Premium vs Freemium</h2>
-      <div style="overflow-x:auto;margin:20px 0;">
-        <table style="width:100%;border-collapse:collapse;background:rgba(255,255,255,0.05);border-radius:10px;">
+    <section style="margin: 40px 0;">
+      <h2 style="text-align: center;">Premium vs Freemium</h2>
+      <div style="overflow-x: auto; margin: 20px 0;">
+        <table style="width: 100%; border-collapse: collapse; background: rgba(255,255,255,0.05); border-radius: 10px;">
           <thead>
-            <tr style="background:rgba(123,47,247,0.1);">
-              <th style="padding:15px;text-align:left;border-bottom:2px solid #7b2ff7;">Feature</th>
-              <th style="padding:15px;text-align:center;border-bottom:2px solid #ccc;">Freemium</th>
-              <th style="padding:15px;text-align:center;border-bottom:2px solid #7b2ff7;background:rgba(123,47,247,0.1);">Premium</th>
+            <tr style="background: rgba(123, 47, 247, 0.1);">
+              <th style="padding: 15px; text-align: left; border-bottom: 2px solid #7b2ff7;">Feature</th>
+              <th style="padding: 15px; text-align: center; border-bottom: 2px solid #ccc;">Freemium</th>
+              <th style="padding: 15px; text-align: center; border-bottom: 2px solid #7b2ff7; background: rgba(123, 47, 247, 0.1);">Premium</th>
             </tr>
           </thead>
           <tbody>
             <tr>
-              <td style="padding:15px;border-bottom:1px solid rgba(255,255,255,0.1);">Custom Words per List</td>
-              <td style="padding:15px;text-align:center;border-bottom:1px solid rgba(255,255,255,0.1);">30–50</td>
-              <td style="padding:15px;text-align:center;border-bottom:1px solid rgba(255,255,255,0.1);background:rgba(123,47,247,0.05);">Unlimited</td>
+              <td style="padding: 15px; border-bottom: 1px solid rgba(255,255,255,0.1);">Custom Words per List</td>
+              <td style="padding: 15px; text-align: center; border-bottom: 1px solid rgba(255,255,255,0.1);">30-50</td>
+              <td style="padding: 15px; text-align: center; border-bottom: 1px solid rgba(255,255,255,0.1); background: rgba(123, 47, 247, 0.05);">Unlimited</td>
             </tr>
             <tr>
-              <td style="padding:15px;border-bottom:1px solid rgba(255,255,255,0.1);">Saved Lists</td>
-              <td style="padding:15px;text-align:center;border-bottom:1px solid rgba(255,255,255,0.1);">1 per day</td>
-              <td style="padding:15px;text-align:center;border-bottom:1px solid rgba(255,255,255,0.1);background:rgba(123,47,247,0.05);">Unlimited</td>
+              <td style="padding: 15px; border-bottom: 1px solid rgba(255,255,255,0.1);">Saved Lists</td>
+              <td style="padding: 15px; text-align: center; border-bottom: 1px solid rgba(255,255,255,0.1);">1 per day</td>
+              <td style="padding: 15px; text-align: center; border-bottom: 1px solid rgba(255,255,255,0.1); background: rgba(123, 47, 247, 0.05);">Unlimited</td>
             </tr>
             <tr>
-              <td style="padding:15px;border-bottom:1px solid rgba(255,255,255,0.1);">Advertisements</td>
-              <td style="padding:15px;text-align:center;border-bottom:1px solid rgba(255,255,255,0.1);">Yes</td>
-              <td style="padding:15px;text-align:center;border-bottom:1px solid rgba(255,255,255,0.1);background:rgba(123,47,247,0.05);">None</td>
+              <td style="padding: 15px; border-bottom: 1px solid rgba(255,255,255,0.1);">Advertisements</td>
+              <td style="padding: 15px; text-align: center; border-bottom: 1px solid rgba(255,255,255,0.1);">Yes</td>
+              <td style="padding: 15px; text-align: center; border-bottom: 1px solid rgba(255,255,255,0.1); background: rgba(123, 47, 247, 0.05);">None</td>
             </tr>
             <tr>
-              <td style="padding:15px;border-bottom:1px solid rgba(255,255,255,0.1);">Progress Tracking</td>
-              <td style="padding:15px;text-align:center;border-bottom:1px solid rgba(255,255,255,0.1);">Basic</td>
-              <td style="padding:15px;text-align:center;border-bottom:1px solid rgba(255,255,255,0.1);background:rgba(123,47,247,0.05);">Advanced</td>
+              <td style="padding: 15px; border-bottom: 1px solid rgba(255,255,255,0.1);">Progress Tracking</td>
+              <td style="padding: 15px; text-align: center; border-bottom: 1px solid rgba(255,255,255,0.1);">Basic</td>
+              <td style="padding: 15px; text-align: center; border-bottom: 1px solid rgba(255,255,255,0.1); background: rgba(123, 47, 247, 0.05);">Advanced</td>
             </tr>
             <tr>
-              <td style="padding:15px;border-bottom:1px solid rgba(255,255,255,0.1);">Voice Accents</td>
-              <td style="padding:15px;text-align:center;border-bottom:1px solid rgba(255,255,255,0.1);">Basic</td>
-              <td style="padding:15px;text-align:center;border-bottom:1px solid rgba(255,255,255,0.1);background:rgba(123,47,247,0.05);">All Accents</td>
+              <td style="padding: 15px; border-bottom: 1px solid rgba(255,255,255,0.1);">Voice Accents</td>
+              <td style="padding: 15px; text-align: center; border-bottom: 1px solid rgba(255,255,255,0.1);">Basic</td>
+              <td style="padding: 15px; text-align: center; border-bottom: 1px solid rgba(255,255,255,0.1); background: rgba(123, 47, 247, 0.05);">All Accents</td>
             </tr>
             <tr>
-              <td style="padding:15px;">Export Results</td>
-              <td style="padding:15px;text-align:center;">❌</td>
-              <td style="padding:15px;text-align:center;background:rgba(123,47,247,0.05);">✅</td>
+              <td style="padding: 15px;">Export Results</td>
+              <td style="padding: 15px; text-align: center;">❌</td>
+              <td style="padding: 15px; text-align: center; background: rgba(123, 47, 247, 0.05);">✅</td>
             </tr>
           </tbody>
         </table>
@@ -186,176 +233,365 @@
     </section>
 
     <!-- Trust Badges -->
-    <section style="text-align:center;margin:40px 0;">
-      <h3 style="margin-bottom:20px;">Trusted &amp; Secure</h3>
-      <div style="display:flex;justify-content:center;gap:40px;flex-wrap:wrap;">
-        <div style="text-align:center;"><i class="fa fa-lock" style="color:#7b2ff7;font-size:2em;"></i><div style="margin-top:10px;">SSL Secure</div></div>
-        <div style="text-align:center;"><i class="fa fa-shield-alt" style="color:#7b2ff7;font-size:2em;"></i><div style="margin-top:10px;">14-Day Refund</div></div>
-        <div style="text-align:center;"><i class="fa fa-user-shield" style="color:#7b2ff7;font-size:2em;"></i><div style="margin-top:10px;">GDPR Compliant</div></div>
-        <div style="text-align:center;"><i class="fa fa-globe" style="color:#7b2ff7;font-size:2em;"></i><div style="margin-top:10px;">Global Service</div></div>
+    <section style="text-align: center; margin: 40px 0;">
+      <h3 style="margin-bottom: 20px;">Trusted & Secure</h3>
+      <div style="display: flex; justify-content: center; gap: 40px; flex-wrap: wrap;">
+        <div style="text-align: center;">
+          <i class="fa fa-lock" style="color: #7b2ff7; font-size: 2em;"></i>
+          <div style="margin-top: 10px;">SSL Secure</div>
+        </div>
+        <div style="text-align: center;">
+          <i class="fa fa-shield-alt" style="color: #7b2ff7; font-size: 2em;"></i>
+          <div style="margin-top: 10px;">14-Day Refund</div>
+        </div>
+        <div style="text-align: center;">
+          <i class="fa fa-user-shield" style="color: #7b2ff7; font-size: 2em;"></i>
+          <div style="margin-top: 10px;">GDPR Compliant</div>
+        </div>
+        <div style="text-align: center;">
+          <i class="fa fa-globe" style="color: #7b2ff7; font-size: 2em;"></i>
+          <div style="margin-top: 10px;">Global Service</div>
+        </div>
       </div>
     </section>
-
   </main>
 
-  <footer style="text-align:center;margin-top:40px;padding:20px;color:#666;border-top:1px solid rgba(255,255,255,0.1);">
-    <div style="display:flex;justify-content:center;gap:30px;margin-bottom:20px;flex-wrap:wrap;">
-      <div style="text-align:center;"><i class="fa fa-lock" style="color:#7b2ff7;font-size:1.5em;"></i><div style="font-size:0.8em;">SSL Secure</div></div>
-      <div style="text-align:center;"><i class="fa fa-shield-alt" style="color:#7b2ff7;font-size:1.5em;"></i><div style="font-size:0.8em;">14-Day Refund</div></div>
-      <div style="text-align:center;"><i class="fa fa-user-shield" style="color:#7b2ff7;font-size:1.5em;"></i><div style="font-size:0.8em;">GDPR Compliant</div></div>
+<footer style="text-align: center; margin-top: 40px; padding: 20px; color: #666; border-top: 1px solid rgba(255,255,255,0.1);">
+  <div style="display: flex; justify-content: center; gap: 30px; margin-bottom: 20px; flex-wrap: wrap;">
+    <div style="text-align: center;">
+      <i class="fa fa-lock" style="color: #7b2ff7; font-size: 1.5em;"></i>
+      <div style="font-size: 0.8em;">SSL Secure</div>
     </div>
-    <p>
-      <a href="/privacy.html" style="color:#7b2ff7;text-decoration:none;">Privacy Policy</a> &nbsp;•&nbsp;
-      <a href="/terms.html" style="color:#7b2ff7;text-decoration:none;">Terms of Service</a> &nbsp;•&nbsp;
-      <a href="/refund-policy.html" style="color:#7b2ff7;text-decoration:none;">Refund Policy</a> &nbsp;•&nbsp;
-      <a href="/security.html" style="color:#7b2ff7;text-decoration:none;">Security</a> &nbsp;•&nbsp;
-      <a href="/contact.html" style="color:#7b2ff7;text-decoration:none;">Contact</a>
-    </p>
-    <p style="margin-top:10px;font-size:0.9em;">&copy; 2026 SpellRightPro. All rights reserved.</p>
-  </footer>
+    <div style="text-align: center;">
+      <i class="fa fa-shield-alt" style="color: #7b2ff7; font-size: 1.5em;"></i>
+      <div style="font-size: 0.8em;">14-Day Refund</div>
+    </div>
+    <div style="text-align: center;">
+      <i class="fa fa-user-shield" style="color: #7b2ff7; font-size: 1.5em;"></i>
+      <div style="font-size: 0.8em;">GDPR Compliant</div>
+    </div>
+  </div>
+  
+  <p>
+    <a href="/privacy.html" style="color: #7b2ff7; text-decoration: none;">Privacy Policy</a> 
+    • 
+    <a href="/terms.html" style="color: #7b2ff7; text-decoration: none;">Terms of Service</a>
+    • 
+    <a href="/refund-policy.html" style="color: #7b2ff7; text-decoration: none;">Refund Policy</a>
+    • 
+    <a href="/security.html" style="color: #7b2ff7; text-decoration: none;">Security</a>
+    • 
+    <a href="/contact.html" style="color: #7b2ff7; text-decoration: none;">Contact</a>
+  </p>
+  <p style="margin-top: 10px; font-size: 0.9em;">&copy; 2026 SpellRightPro. All rights reserved.</p>
+</footer>
 
-  <!-- Cookie Consent Banner -->
-  <div id="cookieConsentBanner" style="display:none;position:fixed;bottom:0;left:0;right:0;background:#333;color:white;padding:15px;text-align:center;z-index:9999;">
-    <p style="margin:0 0 8px;">We use cookies to provide our services and for analytics and ads.
-      <a href="/privacy.html" style="color:#7b2ff7;">Learn more</a>
+  <!-- COOKIE CONSENT BANNER -->
+  <div id="cookieConsentBanner" style="display: none; position: fixed; bottom: 0; left: 0; right: 0; background: #333; color: white; padding: 15px; text-align: center; z-index: 1000;">
+    <p>We use cookies to provide our services and for analytics and ads. 
+       <a href="/privacy.html" style="color: #7b2ff7;">Learn more</a>
     </p>
-    <button onclick="acceptCookies()" style="background:#7b2ff7;color:white;border:none;padding:8px 15px;margin:0 5px;border-radius:5px;cursor:pointer;">Accept</button>
-    <button onclick="declineCookies()" style="background:#666;color:white;border:none;padding:8px 15px;margin:0 5px;border-radius:5px;cursor:pointer;">Decline</button>
+    <button onclick="acceptCookies()" style="background: #7b2ff7; color: white; border: none; padding: 8px 15px; margin: 0 5px; border-radius: 5px; cursor: pointer;">
+        Accept
+    </button>
+    <button onclick="declineCookies()" style="background: #666; color: white; border: none; padding: 8px 15px; margin: 0 5px; border-radius: 5px; cursor: pointer;">
+        Decline
+    </button>
   </div>
 
-  <!-- Config + Firebase utils (must come before ads-manager) -->
+  <!-- YOUR CONFIG & SCRIPTS -->
   <script src="/js/config.js"></script>
   <script src="/js/firebase-utils.js"></script>
 
-  <!--
-    ads-manager.js — loaded here so it can attach the cookieConsentAccepted
-    listener before acceptCookies() could possibly fire.
-    It does NOT load the AdSense <script> tag by itself — that only happens
-    inside _activate(), which runs only after consent is confirmed.
-  -->
-  <script src="/js/ads-manager.js"></script>
-
+  <!-- COOKIE CONSENT SCRIPT -->
   <script>
-  // ── Cookie consent ─────────────────────────────────────────────────────────
-  // IMPORTANT: acceptCookies() dispatches 'cookieConsentAccepted' so that
-  // ads-manager.js (and any other consent-gated module) can react without
-  // polling localStorage.
-
+  // Enhanced Cookie Consent with Analytics
   function showCookieBanner() {
-    const consent = localStorage.getItem('cookieConsent');
-    if (consent === null) {
-      document.getElementById('cookieConsentBanner').style.display = 'block';
-    } else if (consent === 'true') {
-      // Already accepted in a previous session — init analytics now
-      initializeAnalytics();
-    }
+      const consent = localStorage.getItem('cookieConsent');
+      // Show banner if no consent decision has been made
+      if (consent === null) {
+          document.getElementById('cookieConsentBanner').style.display = 'block';
+      } else if (consent === 'true') {
+          // If consent was given, initialize analytics
+          initializeAnalytics();
+      }
   }
 
   function acceptCookies() {
-    localStorage.setItem('cookieConsent', 'true');
-    document.getElementById('cookieConsentBanner').style.display = 'none';
-    initializeAnalytics();
-
-    // Notify consent-gated modules (ads-manager, etc.)
-    window.dispatchEvent(new Event('cookieConsentAccepted'));
-
-    if (typeof gtag !== 'undefined') {
-      gtag('event', 'cookie_consent', { consent_type: 'accepted' });
-    }
+      localStorage.setItem('cookieConsent', 'true');
+      document.getElementById('cookieConsentBanner').style.display = 'none';
+      
+      // Initialize analytics immediately
+      initializeAnalytics();
+      
+      // Show feedback but don't reload
+      console.log('✅ Cookies accepted - Analytics enabled');
+      
+      // Track in Google Analytics
+      if (typeof gtag !== 'undefined') {
+        gtag('event', 'cookie_consent', {
+          consent_type: 'accepted'
+        });
+      }
   }
 
   function declineCookies() {
-    localStorage.setItem('cookieConsent', 'false');
-    document.getElementById('cookieConsentBanner').style.display = 'none';
-    if (typeof gtag !== 'undefined') {
-      gtag('event', 'cookie_consent', { consent_type: 'declined' });
-    }
+      localStorage.setItem('cookieConsent', 'false');
+      document.getElementById('cookieConsentBanner').style.display = 'none';
+      console.log('🔕 Cookies declined - Analytics disabled');
+      
+      // Track in Google Analytics
+      if (typeof gtag !== 'undefined') {
+        gtag('event', 'cookie_consent', {
+          consent_type: 'declined'
+        });
+      }
   }
 
   function initializeAnalytics() {
-    if (typeof window.initFirebase === 'function') {
-      setTimeout(() => window.initFirebase(), 500);
-    }
+      // Reinitialize Firebase with analytics
+      if (typeof window.initFirebase === 'function') {
+          setTimeout(() => {
+              window.initFirebase();
+          }, 500);
+      }
   }
 
-  // Show banner after a short delay so page content renders first
-  setTimeout(showCookieBanner, 600);
+  // Show banner immediately
+  setTimeout(showCookieBanner, 500);
 
-  // ── Dark mode ──────────────────────────────────────────────────────────────
-  (function() {
+  // Dark mode remembering
+  (function(){
     const toggle = document.getElementById('darkModeToggle');
     function apply() {
       const on = localStorage.getItem('dark') === 'true';
       document.body.classList.toggle('dark-mode', on);
       if (toggle) toggle.querySelector('i').className = on ? 'fa fa-sun' : 'fa fa-moon';
     }
-    toggle?.addEventListener('click', () => {
+    toggle?.addEventListener('click', ()=>{
       const on = !(localStorage.getItem('dark') === 'true');
       localStorage.setItem('dark', on);
       apply();
-      if (typeof gtag !== 'undefined') gtag('event', 'dark_mode_toggle', { dark_mode_enabled: on });
+      
+      // Track dark mode toggle
+      if (typeof gtag !== 'undefined') {
+        gtag('event', 'dark_mode_toggle', {
+          dark_mode_enabled: on
+        });
+      }
     });
     apply();
   })();
+  </script>
 
-  // ── Launch banner ──────────────────────────────────────────────────────────
-  function dismissBanner() {
-    document.getElementById('launchBanner').style.display = 'none';
-    localStorage.setItem('launchBannerDismissed', 'true');
-    if (typeof gtag !== 'undefined') {
-      gtag('event', 'banner_dismiss', { banner_id: 'launch_announcement' });
-    }
-  }
-
-  window.addEventListener('load', function() {
-    if (localStorage.getItem('launchBannerDismissed') === 'true') {
-      const b = document.getElementById('launchBanner');
-      if (b) b.style.display = 'none';
-    }
-
-    // Premium showcase view tracking
-    if (typeof gtag !== 'undefined' && document.querySelector('.premium-showcase')) {
-      setTimeout(() => gtag('event', 'premium_showcase_view', { page_path: window.location.pathname }), 1000);
-    }
-
-    // Performance monitoring (single handler)
-    const timing = window.performance && window.performance.timing;
-    if (timing) {
-      const loadTime = timing.loadEventEnd - timing.navigationStart;
-      if (loadTime > 3000 && typeof gtag !== 'undefined') {
-        gtag('event', 'performance_slow', { load_time: loadTime, page_path: window.location.pathname });
+  <!-- Premium Entry Points Scripts -->
+  <script>
+    // Track banner dismissal
+    document.querySelector('#launchBanner button')?.addEventListener('click', function() {
+      localStorage.setItem('launchBannerDismissed', 'true');
+      if (typeof gtag !== 'undefined') {
+        gtag('event', 'banner_dismiss', {
+          banner_id: 'launch_announcement',
+          banner_type: 'launch_special'
+        });
       }
-    }
-  });
+    });
 
-  // ── Premium button click tracking ──────────────────────────────────────────
-  document.querySelectorAll('.btn-primary, .premium-showcase button').forEach(btn => {
-    btn.addEventListener('click', function() {
-      if ((this.href && this.href.includes('premium.html')) || this.onclick) {
+    // Hide banner if previously dismissed
+    window.addEventListener('load', function() {
+      if (localStorage.getItem('launchBannerDismissed') === 'true') {
+        document.getElementById('launchBanner').style.display = 'none';
+      }
+      
+      // Track premium showcase views
+      if (typeof gtag !== 'undefined' && document.querySelector('.premium-showcase')) {
+        setTimeout(() => {
+          gtag('event', 'premium_showcase_view', {
+            page_path: window.location.pathname
+          });
+        }, 1000);
+      }
+    });
+
+    // Track premium button clicks
+    document.querySelectorAll('.btn-primary, .premium-showcase button').forEach(button => {
+      button.addEventListener('click', function(e) {
+        if (this.href && this.href.includes('premium.html')) {
+          if (typeof gtag !== 'undefined') {
+            gtag('event', 'premium_click', {
+              button_location: this.classList.contains('btn-primary') ? 'header' : 'showcase',
+              button_text: this.textContent.trim()
+            });
+          }
+        }
+      });
+    });
+
+    // Performance monitoring
+    window.addEventListener('load', function() {
+      const perfData = window.performance.timing;
+      const loadTime = perfData.loadEventEnd - perfData.navigationStart;
+      
+      if (loadTime > 3000) {
+        console.warn('Page load time slow:', loadTime, 'ms');
+        // Send to analytics
         if (typeof gtag !== 'undefined') {
-          gtag('event', 'premium_click', {
-            button_location: this.classList.contains('btn-primary') ? 'header' : 'showcase',
-            button_text: this.textContent.trim().substring(0, 50)
+          gtag('event', 'performance_slow', {
+            load_time: loadTime,
+            page_path: window.location.pathname
           });
         }
       }
     });
-  });
-
-  // ── Error tracking ─────────────────────────────────────────────────────────
-  window.addEventListener('error', function(e) {
-    if (typeof gtag !== 'undefined' && e.error) {
-      gtag('event', 'exception', { description: e.error.message, fatal: false });
-    }
-  });
   </script>
 
-  <!-- Service Worker -->
+  <!-- SW -->
+  <script>if('serviceWorker' in navigator){navigator.serviceWorker.register('/sw.js').catch(()=>{});}</script>
+
   <script>
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('/sw.js').catch(() => {});
+  // Performance monitoring
+  window.addEventListener('load', function() {
+    // Measure page load time
+    const timing = window.performance.timing;
+    const loadTime = timing.loadEventEnd - timing.navigationStart;
+    
+    // Log to console
+    console.log(`Page loaded in ${loadTime}ms`);
+    
+    // Send to analytics if load time is slow
+    if (loadTime > 3000 && typeof gtag !== 'undefined') {
+      gtag('event', 'slow_load_time', {
+        load_time: loadTime,
+        page_path: window.location.pathname
+      });
     }
-  </script>
+    
+    // Monitor premium feature usage
+    if (window.tierManager) {
+      console.log('Tier manager active:', window.tierManager);
+    }
+    
+    // Track page view
+    if (typeof gtag !== 'undefined') {
+      gtag('event', 'page_view', {
+        page_title: document.title,
+        page_path: window.location.pathname
+      });
+    }
+  });
+  
+  // Monitor errors
+  window.addEventListener('error', function(e) {
+    console.error('Page error:', e.error);
+    
+    // Send to error tracking service
+    if (typeof gtag !== 'undefined') {
+      gtag('event', 'exception', {
+        description: e.error.message,
+        fatal: false
+      });
+    }
+  });
+</script>
+  
 
+  <!-- ── Auth-aware header ─────────────────────────────────────────────── -->
+  <script>
+  (function() {
+    var FIREBASE_CONFIG = {
+      apiKey:    "AIzaSyCZ-rAPnRgVjSRFOFvbiQlowE6A3RVvwWo",
+      authDomain:"spellrightpro-firebase.firebaseapp.com",
+      projectId: "spellrightpro-firebase",
+      appId:     "1:798456641137:web:5c6d79db5bf49d04928dd0"
+    };
+
+    function initAuthHeader() {
+      if (typeof firebase === 'undefined') {
+        setTimeout(initAuthHeader, 300); return;
+      }
+      if (!firebase.apps.length) firebase.initializeApp(FIREBASE_CONFIG);
+
+      firebase.auth().onAuthStateChanged(function(user) {
+        var navGuest = document.getElementById('navGuest');
+        var navUser  = document.getElementById('navUser');
+        var avatar   = document.getElementById('navAvatar');
+        var btn      = document.getElementById('navAccountBtn');
+
+        if (user) {
+          // Show logged-in nav
+          if (navGuest) navGuest.style.display = 'none';
+          if (navUser)  navUser.style.display  = 'flex';
+
+          // Set avatar initial from email
+          if (avatar) avatar.textContent = (user.email || '?')[0].toUpperCase();
+
+          // Check premium status
+          var isPremium = false;
+
+          // 1. Check localStorage first (instant)
+          try {
+            var stored = JSON.parse(localStorage.getItem('srpPremium') || 'null');
+            if (stored && stored.active && new Date(stored.expiry) > new Date()) {
+              isPremium = true;
+            }
+          } catch(e) {}
+
+          // 2. Check Firestore if not confirmed locally
+          if (!isPremium && typeof firebase.firestore === 'function') {
+            firebase.firestore()
+              .collection('premiumUsers').doc(user.uid).get()
+              .then(function(doc) {
+                if (doc.exists) {
+                  var d = doc.data();
+                  var exp = d.expiryDate && d.expiryDate.toDate ? d.expiryDate.toDate() : null;
+                  if (d.active !== false && (!exp || exp > new Date())) {
+                    isPremium = true;
+                    updateAccountButton(btn, isPremium);
+                  }
+                }
+              }).catch(function() {});
+          }
+
+          updateAccountButton(btn, isPremium);
+
+        } else {
+          // Not logged in — show guest nav
+          if (navGuest) navGuest.style.display = 'flex';
+          if (navUser)  navUser.style.display  = 'none';
+        }
+      });
+    }
+
+    function updateAccountButton(btn, isPremium) {
+      if (!btn) return;
+      if (isPremium) {
+        btn.href      = '/trainer';
+        btn.innerHTML = '<i class="fa fa-play"></i> My Practice';
+        btn.style.background = 'linear-gradient(135deg,#7b2ff7,#f72585)';
+      } else {
+        btn.href      = '/premium.html';
+        btn.innerHTML = '<i class="fa fa-crown"></i> Upgrade';
+        btn.style.background = '#7b2ff7';
+      }
+    }
+
+    // Sign out button
+    document.addEventListener('DOMContentLoaded', function() {
+      var signOutBtn = document.getElementById('navSignOut');
+      if (signOutBtn) {
+        signOutBtn.addEventListener('click', function() {
+          if (typeof firebase !== 'undefined') {
+            firebase.auth().signOut().then(function() {
+              localStorage.removeItem('srpPremium');
+              window.location.reload();
+            });
+          }
+        });
+      }
+    });
+
+    initAuthHeader();
+  })();
+  </script>
 </body>
 </html>

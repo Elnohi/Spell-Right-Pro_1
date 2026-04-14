@@ -20,11 +20,11 @@
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-analytics.js"></script>
 
   <!-- Premium support modules -->
-  <script src="/js/firebase-utils.js" defer></script>
-  <script src="/js/common.js" defer></script>
-  <script src="/js/progress-dashboard.js" defer></script>
-  <script src="/js/mistake-review.js" defer></script>
-  <script src="/js/adaptive-drill.js" defer></script>
+  <script src="/js/firebase-utils.js"></script>
+  <script src="/js/common.js"></script>
+  <script src="/js/progress-dashboard.js"></script>
+  <script src="/js/mistake-review.js"></script>
+  <script src="/js/adaptive-drill.js"></script>
 
   <!-- Google Analytics -->
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-H09MF13297"></script>
@@ -91,16 +91,7 @@
     .auth-link { color:var(--brand); cursor:pointer; font-weight:600; }
     .auth-link:hover { text-decoration:underline; }
     .auth-toggle { text-align:center; margin-top:14px; font-size:0.88rem; color:var(--muted); }
-    .auth-quick { 
-      margin-top:16px; padding:10px; text-align:center;
-      border-top:1px solid var(--border); 
-    }
-    .btn-quick {
-      background:transparent; border:1.5px dashed var(--muted);
-      color:var(--muted); border-radius:10px; padding:7px 16px;
-      font-size:0.82rem; cursor:pointer; font-family:'DM Sans',sans-serif;
-    }
-    .btn-quick:hover { border-color:var(--brand); color:var(--brand); }
+
 
     /* ── Header ── */
     header {
@@ -323,10 +314,48 @@
 <!-- ══════════════════════════════════════════════════════
      AUTH OVERLAY — shown when not logged in / not premium
 ══════════════════════════════════════════════════════════ -->
+  <!-- ── Security note ───────────────────────────────────────────────────
+       The overlay is ALWAYS shown on page load. The main content starts
+       as display:none and is only revealed after Firebase Auth confirms:
+         1. User is signed in (auth.onAuthStateChanged)
+         2. User has an active premium record (Firestore or localStorage cache)
+       localStorage srpPremium is a CACHE that speeds up step 2 only.
+       It never bypasses step 1 (must be signed in).
+  ─────────────────────────────────────────────────────────────────── -->
+  <script>
+  (function() {
+    // Pre-load hint: if srpPremium is valid, set a flag so Firebase auth
+    // can activate premium instantly without a Firestore round-trip.
+    // The overlay is still shown — only auth.onAuthStateChanged removes it.
+    try {
+      var stored = JSON.parse(localStorage.getItem('srpPremium') || 'null');
+      if (stored && stored.active && new Date(stored.expiry) > new Date()) {
+        window._srpLocalPremium = true; // hint only — not a gate
+        console.log('💾 localStorage hint: premium record found, awaiting Firebase auth');
+      } else {
+        // Clear stale/expired record
+        localStorage.removeItem('srpPremium');
+      }
+    } catch(e) {
+      localStorage.removeItem('srpPremium');
+    }
+    // Overlay stays visible; main stays hidden — Firebase auth decides everything
+  })();
+  </script>
+
 <div id="loginOverlay">
   <div class="auth-card">
     <h2><i class="fa fa-crown" style="color:#f72585;"></i> Premium Trainer</h2>
     <p>Sign in to access your premium spelling practice</p>
+    <p style="margin:-16px 0 20px;font-size:0.8rem;color:var(--muted);">
+      <a href="/" style="color:var(--muted);text-decoration:none;">
+        <i class="fa fa-arrow-left"></i> Back to home
+      </a>
+      &nbsp;·&nbsp;
+      <a href="/premium.html" style="color:var(--brand);font-weight:600;">
+        Get Premium
+      </a>
+    </p>
 
     <!-- Login form -->
     <form id="loginForm" autocomplete="on">
@@ -360,12 +389,7 @@
       </button>
     </form>
 
-    <!-- Dev quick-access -->
-    <div class="auth-quick">
-      <button class="btn-quick" onclick="quickTest()">
-        <i class="fa fa-bolt"></i> Quick Test (dev bypass)
-      </button>
-    </div>
+
   </div>
 </div>
 

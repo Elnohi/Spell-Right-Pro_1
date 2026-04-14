@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Sign In — SpellRightPro</title>
+  <meta name="robots" content="noindex, nofollow" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" />
+
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+  <script src="/js/config.js"></script>
+
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800&display=swap');
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --brand: #7b2ff7; --accent: #f72585;
+      --ok: #00c57a;    --fail: #ff4560;
+    }
+
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: linear-gradient(145deg, #3a0087 0%, #8b00d4 50%, #f72585 100%);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    /* ── Card ── */
+    .login-card {
+      background: #fff;
+      border-radius: 22px;
+      padding: 40px 36px 36px;
+      width: 100%;
+      max-width: 420px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.25);
+    }
+
+    .logo-row {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      margin-bottom: 28px;
+    }
+    .logo-row img { height: 42px; border-radius: 10px; }
+    .logo-row span { font-size: 1.3rem; font-weight: 800; color: var(--brand); }
+
+    h2 {
+      text-align: center;
+      font-size: 1.5rem;
+      font-weight: 800;
+      color: #1a0533;
+      margin-bottom: 6px;
+    }
+    .subtitle {
+      text-align: center;
+      font-size: 0.88rem;
+      color: #7b6f8a;
+      margin-bottom: 28px;
+    }
+
+    /* ── Form tabs ── */
+    .tab-row {
+      display: flex;
+      background: #f4f0fc;
+      border-radius: 12px;
+      padding: 4px;
+      margin-bottom: 24px;
+    }
+    .tab-btn {
+      flex: 1;
+      padding: 9px;
+      border: none;
+      border-radius: 9px;
+      background: transparent;
+      font-size: 0.9rem;
+      font-weight: 600;
+      font-family: 'DM Sans', sans-serif;
+      cursor: pointer;
+      color: #7b6f8a;
+      transition: all .2s;
+    }
+    .tab-btn.active {
+      background: #fff;
+      color: var(--brand);
+      box-shadow: 0 2px 8px rgba(123,47,247,.15);
+    }
+
+    /* ── Fields ── */
+    .field {
+      width: 100%;
+      padding: 12px 14px;
+      border-radius: 10px;
+      border: 1.5px solid #e8e0f8;
+      background: #faf8ff;
+      color: #1a0533;
+      font-size: 1rem;
+      font-family: 'DM Sans', sans-serif;
+      margin-bottom: 12px;
+      display: block;
+      transition: border-color .2s;
+    }
+    .field:focus { outline: none; border-color: var(--brand); background: #fff; }
+
+    /* ── Submit button ── */
+    .btn-submit {
+      width: 100%;
+      padding: 13px;
+      background: linear-gradient(135deg, var(--brand), var(--accent));
+      color: #fff;
+      border: none;
+      border-radius: 12px;
+      font-size: 1rem;
+      font-weight: 700;
+      font-family: 'DM Sans', sans-serif;
+      cursor: pointer;
+      margin-top: 4px;
+      transition: all .2s;
+      box-shadow: 0 4px 16px rgba(123,47,247,.3);
+    }
+    .btn-submit:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(123,47,247,.4); }
+    .btn-submit:disabled { opacity: .5; cursor: not-allowed; transform: none; }
+
+    /* ── Error / success message ── */
+    #msgBox {
+      display: none;
+      padding: 10px 14px;
+      border-radius: 10px;
+      font-size: 0.88rem;
+      font-weight: 600;
+      margin-bottom: 14px;
+      text-align: center;
+    }
+    #msgBox.error   { background: rgba(255,69,96,.1);  color: #c0001a; border: 1px solid rgba(255,69,96,.3); }
+    #msgBox.success { background: rgba(0,197,122,.1); color: #007a4d; border: 1px solid rgba(0,197,122,.3); }
+    #msgBox.info    { background: rgba(123,47,247,.08); color: var(--brand); border: 1px solid rgba(123,47,247,.2); }
+
+    /* ── Forgot password ── */
+    .forgot-link {
+      text-align: right;
+      margin-top: -6px;
+      margin-bottom: 14px;
+      font-size: 0.8rem;
+    }
+    .forgot-link a { color: var(--brand); text-decoration: none; font-weight: 600; }
+    .forgot-link a:hover { text-decoration: underline; }
+
+    /* ── Footer link ── */
+    .card-footer {
+      text-align: center;
+      margin-top: 20px;
+      font-size: 0.82rem;
+      color: #7b6f8a;
+    }
+    .card-footer a { color: var(--brand); font-weight: 600; text-decoration: none; }
+
+    /* ── Back link ── */
+    .back-row {
+      margin-top: 20px;
+      text-align: center;
+    }
+    .back-row a {
+      color: rgba(255,255,255,0.75);
+      font-size: 0.85rem;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .back-row a:hover { color: #fff; }
+  </style>
+</head>
+<body>
+
+  <div class="login-card">
+
+    <!-- Logo -->
+    <div class="logo-row">
+      <img src="/assets/logo.png" alt="SpellRightPro" />
+      <span>SpellRightPro</span>
+    </div>
+
+    <h2 id="cardTitle">Welcome back</h2>
+    <p class="subtitle" id="cardSubtitle">Sign in to access your premium practice</p>
+
+    <!-- Tab toggle: Sign In / Create Account -->
+    <div class="tab-row">
+      <button class="tab-btn active" id="tabSignIn"  onclick="showTab('signin')">Sign In</button>
+      <button class="tab-btn"        id="tabRegister" onclick="showTab('register')">Create Account</button>
+    </div>
+
+    <!-- Message box -->
+    <div id="msgBox"></div>
+
+    <!-- ── SIGN IN FORM ── -->
+    <form id="signinForm" autocomplete="on">
+      <input class="field" type="email"    id="siEmail"    placeholder="Email address"
+             required autocomplete="email" />
+      <input class="field" type="password" id="siPassword" placeholder="Password"
+             required autocomplete="current-password" />
+      <div class="forgot-link">
+        <a href="#" id="forgotLink">Forgot password?</a>
+      </div>
+      <button class="btn-submit" type="submit" id="siSubmit">
+        <i class="fa fa-sign-in-alt"></i> Sign In
+      </button>
+    </form>
+
+    <!-- ── REGISTER FORM (hidden) ── -->
+    <form id="registerForm" style="display:none;" autocomplete="on">
+      <input class="field" type="email"    id="regEmail"    placeholder="Email address"
+             required autocomplete="email" />
+      <input class="field" type="password" id="regPassword" placeholder="Password (min 6 characters)"
+             required autocomplete="new-password" />
+      <input class="field" type="password" id="regConfirm"  placeholder="Confirm password"
+             required autocomplete="new-password" />
+      <button class="btn-submit" type="submit" id="regSubmit">
+        <i class="fa fa-user-plus"></i> Create Account
+      </button>
+    </form>
+
+    <!-- ── RESET FORM (hidden) ── -->
+    <form id="resetForm" style="display:none;" autocomplete="off">
+      <p style="font-size:0.88rem;color:#7b6f8a;margin-bottom:14px;text-align:center;">
+        Enter your email and we'll send you a reset link.
+      </p>
+      <input class="field" type="email" id="resetEmail" placeholder="Email address" required />
+      <button class="btn-submit" type="submit">
+        <i class="fa fa-paper-plane"></i> Send Reset Link
+      </button>
+      <div style="text-align:center;margin-top:12px;">
+        <a href="#" onclick="showTab('signin')" style="color:var(--brand);font-size:0.85rem;font-weight:600;">
+          ← Back to Sign In
+        </a>
+      </div>
+    </form>
+
+    <div class="card-footer" id="cardFooter">
+      New to SpellRightPro?
+      <a href="/premium.html">See our plans →</a>
+    </div>
+  </div>
+
+  <div class="back-row">
+    <a href="/"><i class="fa fa-arrow-left"></i> Back to Home</a>
+  </div>
+
+  <script>
+  (function() {
+    // ── Firebase init ─────────────────────────────────────────────────────
+    var CONFIG = {
+      apiKey:    "AIzaSyCZ-rAPnRgVjSRFOFvbiQlowE6A3RVvwWo",
+      authDomain:"spellrightpro-firebase.firebaseapp.com",
+      projectId: "spellrightpro-firebase",
+      appId:     "1:798456641137:web:5c6d79db5bf49d04928dd0"
+    };
+    if (typeof firebase !== 'undefined' && !firebase.apps.length) {
+      firebase.initializeApp(CONFIG);
+    }
+
+    var auth = typeof firebase !== 'undefined' ? firebase.auth() : null;
+    var db   = typeof firebase !== 'undefined' && firebase.firestore ? firebase.firestore() : null;
+
+    // ── If already logged in, redirect to correct destination ────────────
+    if (auth) {
+      auth.onAuthStateChanged(function(user) {
+        if (!user) return;
+
+        // Check localStorage first (instant)
+        try {
+          var stored = JSON.parse(localStorage.getItem('srpPremium') || 'null');
+          if (stored && stored.active && new Date(stored.expiry) > new Date()) {
+            window.location.href = '/trainer';
+            return;
+          }
+        } catch(e) {}
+
+        // Check Firestore
+        if (db) {
+          db.collection('premiumUsers').doc(user.uid).get()
+            .then(function(doc) {
+              if (doc.exists) {
+                var d   = doc.data();
+                var exp = d.expiryDate && d.expiryDate.toDate ? d.expiryDate.toDate() : null;
+                if (d.active !== false && (!exp || exp > new Date())) {
+                  // Cache it for future visits
+                  var expiry = exp || new Date(Date.now() + 30*86400000);
+                  localStorage.setItem('srpPremium', JSON.stringify({
+                    active: true, email: user.email,
+                    plan:   d.plan || 'premium',
+                    expiry: expiry.toISOString(),
+                    source: 'login_check'
+                  }));
+                  window.location.href = '/trainer';
+                } else {
+                  // Logged in but not premium
+                  window.location.href = '/premium.html';
+                }
+              } else {
+                // No premium doc — send to upgrade page
+                window.location.href = '/premium.html';
+              }
+            }).catch(function() {
+              // Firestore unavailable — go to trainer anyway (it will check again)
+              window.location.href = '/trainer';
+            });
+        } else {
+          window.location.href = '/trainer';
+        }
+      });
+    }
+
+    // ── Tab switcher ─────────────────────────────────────────────────────
+    window.showTab = function(tab) {
+      document.getElementById('signinForm').style.display   = tab === 'signin'   ? 'block' : 'none';
+      document.getElementById('registerForm').style.display = tab === 'register' ? 'block' : 'none';
+      document.getElementById('resetForm').style.display    = tab === 'reset'    ? 'block' : 'none';
+      document.getElementById('tabSignIn').classList.toggle('active',   tab === 'signin');
+      document.getElementById('tabRegister').classList.toggle('active', tab === 'register');
+      document.getElementById('cardFooter').style.display   = tab === 'reset' ? 'none' : 'block';
+      clearMsg();
+
+      var titles = {
+        signin:   ['Welcome back',       'Sign in to access your premium practice'],
+        register: ['Create your account','Start your spelling journey today'],
+        reset:    ['Reset password',     'We\'ll send you a link to reset it']
+      };
+      document.getElementById('cardTitle').textContent    = titles[tab][0];
+      document.getElementById('cardSubtitle').textContent = titles[tab][1];
+    };
+
+    // ── Message helpers ──────────────────────────────────────────────────
+    function showMsg(text, type) {
+      var el = document.getElementById('msgBox');
+      el.textContent   = text;
+      el.className     = type;
+      el.style.display = 'block';
+    }
+    function clearMsg() {
+      var el = document.getElementById('msgBox');
+      el.style.display = 'none';
+      el.textContent   = '';
+    }
+    function setLoading(btn, loading) {
+      btn.disabled  = loading;
+      if (loading) btn.dataset.orig = btn.innerHTML;
+      btn.innerHTML = loading
+        ? '<i class="fa fa-spinner fa-spin"></i> Please wait…'
+        : btn.dataset.orig;
+    }
+
+    // ── SIGN IN ──────────────────────────────────────────────────────────
+    document.getElementById('signinForm').addEventListener('submit', async function(e) {
+      e.preventDefault();
+      if (!auth) { showMsg('Auth service not available', 'error'); return; }
+
+      var email    = document.getElementById('siEmail').value.trim();
+      var password = document.getElementById('siPassword').value;
+      var btn      = document.getElementById('siSubmit');
+
+      clearMsg();
+      setLoading(btn, true);
+
+      try {
+        await auth.signInWithEmailAndPassword(email, password);
+        showMsg('Signed in! Redirecting…', 'success');
+        // onAuthStateChanged above handles the redirect
+
+      } catch(err) {
+        var msgs = {
+          'auth/user-not-found':    'No account found with this email.',
+          'auth/wrong-password':    'Incorrect password.',
+          'auth/invalid-email':     'Please enter a valid email address.',
+          'auth/too-many-requests': 'Too many attempts. Please try again later.',
+          'auth/user-disabled':     'This account has been disabled.'
+        };
+        showMsg(msgs[err.code] || err.message, 'error');
+        setLoading(btn, false);
+      }
+    });
+
+    // ── REGISTER ─────────────────────────────────────────────────────────
+    document.getElementById('registerForm').addEventListener('submit', async function(e) {
+      e.preventDefault();
+      if (!auth) { showMsg('Auth service not available', 'error'); return; }
+
+      var email    = document.getElementById('regEmail').value.trim();
+      var password = document.getElementById('regPassword').value;
+      var confirm  = document.getElementById('regConfirm').value;
+      var btn      = document.getElementById('regSubmit');
+
+      clearMsg();
+      if (password !== confirm) { showMsg('Passwords do not match.', 'error'); return; }
+      if (password.length < 6)  { showMsg('Password must be at least 6 characters.', 'error'); return; }
+
+      setLoading(btn, true);
+
+      try {
+        await auth.createUserWithEmailAndPassword(email, password);
+        showMsg('Account created! Redirecting to plans…', 'success');
+        setTimeout(function() { window.location.href = '/premium.html'; }, 1500);
+
+      } catch(err) {
+        var msgs = {
+          'auth/email-already-in-use': 'An account with this email already exists.',
+          'auth/invalid-email':        'Please enter a valid email address.',
+          'auth/weak-password':        'Password is too weak. Use at least 6 characters.'
+        };
+        showMsg(msgs[err.code] || err.message, 'error');
+        setLoading(btn, false);
+      }
+    });
+
+    // ── FORGOT PASSWORD ───────────────────────────────────────────────────
+    document.getElementById('forgotLink').addEventListener('click', function(e) {
+      e.preventDefault();
+      showTab('reset');
+    });
+
+    document.getElementById('resetForm').addEventListener('submit', async function(e) {
+      e.preventDefault();
+      if (!auth) { showMsg('Auth service not available', 'error'); return; }
+
+      var email = document.getElementById('resetEmail').value.trim();
+      clearMsg();
+
+      try {
+        await auth.sendPasswordResetEmail(email);
+        showMsg('Reset link sent! Check your inbox (and spam folder).', 'success');
+      } catch(err) {
+        var msgs = {
+          'auth/user-not-found': 'No account found with this email.',
+          'auth/invalid-email':  'Please enter a valid email address.'
+        };
+        showMsg(msgs[err.code] || err.message, 'error');
+      }
+    });
+
+  })();
+  </script>
+
+  <script>
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/sw.js').catch(function(){});
+    }
+  </script>
+</body>
+</html>
