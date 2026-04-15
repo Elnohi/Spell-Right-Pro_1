@@ -306,6 +306,109 @@
       from { height:6px; }
       to   { height:36px; }
     }
+  
+    /* ══════════════════════════════════════════════════════════
+       MOBILE REDESIGN — trainer.html max-width 520px
+    ══════════════════════════════════════════════════════════ */
+    @media (max-width: 520px) {
+      body { padding: 0 0 72px; }
+
+      /* Auth card tighter */
+      .auth-card { padding: 24px 18px 22px; }
+      .auth-card h2 { font-size: 1.25rem; }
+      .auth-field { font-size: 0.95rem; padding: 10px 12px; }
+      .auth-submit { padding: 12px; font-size: 0.95rem; }
+
+      /* Header */
+      header { border-radius:0; padding:8px 12px; position:sticky; top:0; z-index:100; }
+      header .brand h1 { font-size:0.95rem; }
+      header .brand img { height:30px; }
+      .nav-btn { padding:7px 9px; font-size:0; gap:0; }
+      .nav-btn i { font-size:14px; margin:0; }
+      #btnLogout { font-size:0; padding:7px 10px; }
+      #btnLogout i { font-size:14px; margin:0; }
+
+      /* Main content */
+      main { padding: 0 !important; }
+      .glass-card { border-radius:0; padding:14px 12px 20px; box-shadow:none; }
+
+      /* Mode tabs → horizontal scroll, no wrap */
+      .mode-tabs {
+        flex-direction: row !important;
+        flex-wrap: nowrap !important;
+        overflow-x: auto;
+        overflow-y: hidden;
+        gap: 8px;
+        padding-bottom: 4px;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
+        margin-bottom: 16px;
+      }
+      .mode-tabs::-webkit-scrollbar { display: none; }
+      .mode-btn {
+        flex-shrink: 0;
+        min-width: 0;
+        white-space: nowrap;
+        padding: 10px 16px;
+        font-size: 0.82rem;
+        border-radius: 20px;
+      }
+
+      /* Trainer area */
+      .trainer-area h3 { font-size: 1rem; margin-bottom: 12px; }
+      .accent-row { gap:8px; margin-bottom:10px; }
+      .accent-row label { font-size:0.78rem; white-space:nowrap; }
+      .accent-select { font-size:0.85rem; padding:6px 8px; }
+      .exam-row { gap:12px; margin-bottom:10px; }
+      .exam-row label { font-size:0.82rem; }
+
+      /* Progress */
+      .progress-text { font-size:0.85rem; font-weight:700; margin-bottom:4px; }
+      .progress-track { height:5px; margin-bottom:10px; }
+
+      /* Feedback pill */
+      .feedback-pill { font-size:0.92rem; padding:10px 14px; margin-bottom:12px; min-height:40px; }
+
+      /* Answer zone */
+      .answer-zone { padding:14px 10px 10px; margin-bottom:12px; }
+      .answer-input { font-size:1.45rem; min-height:50px; }
+      .real-time-hint { font-size:0.72rem; }
+
+      /* Button grid: submit full-width, helpers 3-col row */
+      .btn-grid { grid-template-columns: 1fr 1fr 1fr !important; gap:6px; }
+      .btn-start { grid-column:1/-1 !important; padding:15px; font-size:1rem; border-radius:14px; }
+      .btn-submit-answer { grid-column:1/-1 !important; padding:14px; font-size:0.98rem; border-radius:14px; }
+      .btn-sec { padding:11px 4px; font-size:0; gap:0; border-radius:11px; }
+      .btn-sec i { font-size:16px; margin:0; display:block; }
+      .btn-end { grid-column:1/-1 !important; padding:11px; font-size:0.88rem; }
+
+      /* Bee voice area */
+      #beeVoiceStatus { padding:14px; margin-bottom:12px; }
+      #beeVoiceText { font-size:0.9rem; }
+      #beeSpokenText { font-size:1.1rem; }
+
+      /* No-mode placeholder */
+      #noModeMsg { padding:30px 16px; }
+
+      /* Mobile tab bar */
+      .trainer-tab-bar { display: flex; }
+    }
+    /* Tab bar hidden on desktop */
+    .trainer-tab-bar { display: none; }
+    .trainer-tab-bar {
+      position:fixed; bottom:0; left:0; right:0;
+      background:var(--surface); border-top:1px solid var(--border);
+      z-index:200; padding:6px 0 max(10px,env(safe-area-inset-bottom));
+      box-shadow:0 -2px 12px rgba(0,0,0,0.07);
+    }
+    .trainer-tab-bar a {
+      flex:1; display:flex; flex-direction:column; align-items:center;
+      gap:3px; text-decoration:none; color:var(--muted);
+      font-size:0.65rem; font-weight:600; padding:4px 0; cursor:pointer;
+    }
+    .trainer-tab-bar a.active { color:var(--brand); }
+    .trainer-tab-bar a i { font-size:18px; }
+
   </style>
 </head>
 
@@ -711,5 +814,36 @@
   }
 </script>
 
+
+<nav class="trainer-tab-bar" aria-label="Navigation">
+  <a onclick="switchMode('school')" id="tab-school"><i class="fa fa-graduation-cap"></i>School</a>
+  <a onclick="switchMode('oet')"    id="tab-oet"><i class="fa fa-stethoscope"></i>OET</a>
+  <a onclick="switchMode('bee')"    id="tab-bee"><i class="fa fa-deaf"></i>Bee</a>
+  <a href="/" ><i class="fa fa-home"></i>Home</a>
+</nav>
+
+<script>
+// Sync bottom tab bar with active mode
+(function() {
+  function updateTabBar(mode) {
+    ['school','oet','bee'].forEach(function(m) {
+      var el = document.getElementById('tab-' + m);
+      if (el) el.classList.toggle('active', m === mode);
+    });
+  }
+  window.switchMode = function(mode) {
+    // Trigger the existing mode-btn click
+    var btn = document.querySelector('.mode-btn[data-mode="' + mode + '"]');
+    if (btn) btn.click();
+    updateTabBar(mode);
+  };
+  // Watch for mode changes triggered by top tabs
+  document.querySelectorAll('.mode-btn').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      updateTabBar(this.getAttribute('data-mode'));
+    });
+  });
+})();
+</script>
 </body>
 </html>

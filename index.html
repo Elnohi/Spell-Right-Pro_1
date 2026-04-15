@@ -44,6 +44,63 @@
       });
     }
   </script>
+
+    <style>
+    @media (max-width: 480px) {
+      body { padding-bottom: 72px; }
+
+      /* Hide launch banner and ad on mobile first load */
+      #launchBanner { display: none !important; }
+      .ad-container { display: none !important; }
+
+      /* Make training-card the hero on mobile */
+      .training-card { order: -1; margin-top: 0; }
+      .container { display: flex; flex-direction: column; padding: 0 12px 16px; }
+
+      /* Practice mode cards: bigger tap targets */
+      .card.link-card {
+        padding: 18px 16px;
+        border-radius: 14px;
+        margin-bottom: 2px;
+      }
+      .card.link-card h3 { font-size: 1.05rem; }
+
+      /* Header nav: icon-only */
+      .nav-actions { gap: 6px; }
+      #navGuest a { font-size: 0.75rem; padding: 7px 10px; }
+      #navUser { gap: 6px; }
+      #navAccountBtn { font-size: 0.75rem; padding: 7px 10px; }
+      #navSignOut { font-size: 0; padding: 7px 10px; }
+      #navSignOut i { font-size: 14px; margin: 0; }
+      #navAvatar { width: 30px; height: 30px; font-size: 0.8rem; }
+
+      /* Premium showcase: compact on mobile */
+      .premium-showcase { padding: 18px 16px; border-radius: 14px; margin: 16px 0; }
+      .premium-showcase h2 { font-size: 1.2rem; }
+
+      /* Bottom tab bar */
+      .index-tab-bar { display: flex; }
+    }
+    .index-tab-bar { display: none; }
+    .index-tab-bar {
+      position: fixed; bottom: 0; left: 0; right: 0;
+      background: white; border-top: 1px solid #e8e0f8;
+      z-index: 200; padding: 6px 0 max(10px, env(safe-area-inset-bottom));
+      box-shadow: 0 -2px 12px rgba(0,0,0,0.07);
+      font-family: inherit;
+    }
+    .index-tab-bar a {
+      flex: 1; display: flex; flex-direction: column; align-items: center;
+      gap: 3px; text-decoration: none; color: #7b6f8a;
+      font-size: 0.65rem; font-weight: 600; padding: 4px 0;
+    }
+    .index-tab-bar a i { font-size: 18px; }
+    @media (prefers-color-scheme: dark) {
+      .index-tab-bar { background: #160829; border-top-color: rgba(255,255,255,0.1); }
+    }
+    body.dark-mode .index-tab-bar { background: #160829; border-top-color: rgba(255,255,255,0.1); }
+    body.dark-mode .index-tab-bar a { color: #9d8fc0; }
+    </style>
 </head>
 <body data-page="index">
   <header class="navbar">
@@ -593,5 +650,13 @@
     initAuthHeader();
   })();
   </script>
+
+<nav class="index-tab-bar" aria-label="Navigation">
+  <a href="/freemium-school"><i class="fa fa-graduation-cap"></i>School</a>
+  <a href="/freemium-oet"><i class="fa fa-stethoscope"></i>OET</a>
+  <a href="/freemium-bee"><i class="fa fa-deaf"></i>Bee</a>
+  <a href="/premium"><i class="fa fa-crown"></i>Premium</a>
+  <a href="/login"><i class="fa fa-user"></i>Account</a>
+</nav>
 </body>
 </html>

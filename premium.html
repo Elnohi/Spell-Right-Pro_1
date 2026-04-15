@@ -267,6 +267,65 @@
         font-size: 2.5em;
       }
     }
+  
+    /* ══════════════════════════════════════════════════════════
+       MOBILE REDESIGN — premium.html max-width 480px
+    ══════════════════════════════════════════════════════════ */
+    @media (max-width: 480px) {
+      body { padding: 8px; }
+      .container { padding: 8px; }
+
+      /* Hero: smaller heading so plan cards visible above fold */
+      .hero { padding: 28px 16px 24px; border-radius: 14px; margin-bottom: 20px; }
+      .hero h1 { font-size: 1.6rem; margin-bottom: 10px; }
+      .hero p  { font-size: 0.9rem; }
+      .hero > div { gap:12px; }
+      .hero > div > div > div:first-child { font-size:1.4rem; }
+
+      /* Nav */
+      nav { padding: 10px 0; margin-bottom: 16px; }
+      nav a, nav div { font-size: 0.82rem; }
+
+      /* Plans section */
+      .pricing h2 { font-size: 1.5rem; margin-bottom: 10px; }
+      .pricing p  { font-size: 0.85rem; margin-bottom: 20px; }
+
+      /* Billing toggle compact */
+      #billingToggle + span { font-size:0.85rem; }
+
+      /* Plan cards: full-width, tighter padding */
+      .plans-grid { gap: 14px; }
+      .plan-card { padding: 22px 18px; border-radius: 14px; }
+      .plan-card.popular { transform: none !important; }
+      .plan-price { font-size: 2.5em; }
+      .plan-features li { padding: 8px 0; font-size: 0.88rem; }
+      .btn-choose { padding: 14px; font-size: 0.95rem; border-radius: 12px; }
+
+      /* Checkout section */
+      #checkout { margin: 40px 0; }
+      #checkout > div { max-width: 100%; }
+      #checkout .trust-badges { gap: 16px; margin-bottom: 18px; }
+      #checkout > div > div { padding: 22px 16px; border-radius: 14px; }
+      #selectedPlan { padding: 12px; font-size: 0.95rem; }
+      #emailInput { padding: 12px 13px; font-size: 0.95rem; }
+      #checkoutSubmit { padding: 15px; font-size: 1rem; border-radius: 13px; }
+
+      /* FAQ */
+      .faq-section h2 { font-size: 1.5rem; }
+      .faq-question { font-size: 0.9rem; padding: 14px; }
+
+      /* Trust section */
+      .trust-badges { gap: 20px; }
+
+      /* Testimonials */
+      .testimonial-grid { grid-template-columns: 1fr; }
+      .testimonials h2 { font-size: 1.5rem; }
+
+      /* Final CTA */
+      section:last-of-type { padding: 36px 16px; }
+      section:last-of-type h2 { font-size: 1.5rem; }
+    }
+
   </style>
 </head>
 <body>

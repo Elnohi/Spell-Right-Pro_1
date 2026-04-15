@@ -176,6 +176,44 @@
       gap: 6px;
     }
     .back-row a:hover { color: #fff; }
+  
+    .signin-loading {
+      display: none;
+      text-align: center;
+      padding: 20px;
+      color: #7b2ff7;
+      font-size: 0.9rem;
+    }
+    .spinner {
+      display: inline-block;
+      width: 22px; height: 22px;
+      border: 2.5px solid #e8e0f8;
+      border-top-color: #7b2ff7;
+      border-radius: 50%;
+      animation: spin .7s linear infinite;
+      vertical-align: middle;
+      margin-right: 8px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    @media (max-width: 480px) {
+      body { padding: 0; justify-content: flex-start; background: var(--color-background-primary, #fff); min-height: 100vh; }
+      .login-card {
+        border-radius: 0;
+        padding: 24px 18px 28px;
+        box-shadow: none;
+        min-height: 100vh;
+        max-width: 100%;
+      }
+      h2 { font-size: 1.3rem; }
+      .subtitle { font-size: 0.82rem; margin-bottom: 20px; }
+      .tab-row { margin-bottom: 18px; }
+      .tab-btn { padding: 8px; font-size: 0.88rem; }
+      .field { padding: 12px 13px; font-size: 0.95rem; margin-bottom: 10px; border-radius: 10px; }
+      .btn-submit { padding: 14px; font-size: 1rem; border-radius: 12px; }
+      .back-row { display: none; } /* hidden on mobile — card fills screen */
+    }
+
   </style>
 </head>
 <body>
@@ -199,6 +237,11 @@
 
     <!-- Message box -->
     <div id="msgBox"></div>
+
+    <!-- ── Loading state while Firestore checks premium ── -->
+    <div class="signin-loading" id="signinLoading">
+      <span class="spinner"></span> Checking your account…
+    </div>
 
     <!-- ── SIGN IN FORM ── -->
     <form id="signinForm" autocomplete="on">
@@ -273,6 +316,15 @@
     if (auth) {
       auth.onAuthStateChanged(function(user) {
         if (!user) return;
+        // Show loading spinner while checking premium status
+        var loadEl = document.getElementById('signinLoading');
+        if (loadEl) {
+          loadEl.style.display = 'block';
+          ['signinForm','registerForm','resetForm'].forEach(function(id) {
+            var el = document.getElementById(id); if (el) el.style.display = 'none';
+          });
+          document.getElementById('msgBox').style.display = 'none';
+        }
 
         // Check localStorage first (instant)
         try {
