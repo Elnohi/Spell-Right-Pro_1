@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>My Progress — SpellRightPro</title>
+  <meta name="robots" content="noindex, nofollow" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" />
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+  <script src="/js/config.js"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800&family=DM+Mono:wght@400;500&display=swap');
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    :root{
+      --brand:#7b2ff7;--accent:#f72585;--ok:#00c57a;--warn:#ffb800;--fail:#ff4560;
+      --surface:#ffffff;--surface2:#f4f0fc;--text:#1a0533;--muted:#7b6f8a;
+      --border:rgba(123,47,247,0.15);--radius:16px;--shadow:0 4px 24px rgba(100,30,200,0.10);
+    }
+    body.dark-mode{--surface:#160829;--surface2:#1f0d3a;--text:#f0e8ff;--muted:#9d8fc0;--border:rgba(255,255,255,0.10)}
+    body{font-family:'DM Sans',sans-serif;background:linear-gradient(145deg,#3a0087 0%,#8b00d4 50%,#f72585 100%);min-height:100vh;padding:0 0 40px;color:var(--text)}
+    header{background:rgba(255,255,255,0.95);backdrop-filter:blur(8px);padding:10px 20px;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:100;box-shadow:0 1px 12px rgba(0,0,0,0.08)}
+    body.dark-mode header{background:rgba(22,8,41,0.95)}
+    .brand{display:flex;align-items:center;gap:10px;text-decoration:none}
+    .brand img{height:38px;border-radius:10px}
+    .brand h1{font-size:1.05rem;font-weight:700;color:var(--brand)}
+    .nav-btn{background:var(--surface2);color:var(--brand);border:1px solid var(--border);border-radius:10px;padding:7px 14px;font-size:0.82rem;font-weight:600;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;gap:6px;font-family:'DM Sans',sans-serif;transition:all .2s}
+    .nav-btn:hover{background:rgba(123,47,247,.12)}
+    .nav-right{display:flex;gap:8px;align-items:center}
+    .page{max-width:860px;margin:0 auto;padding:24px 16px}
+    #authGate{background:var(--surface);border-radius:var(--radius);padding:40px;text-align:center;box-shadow:var(--shadow);margin-top:20px}
+    #authGate i{font-size:2.5rem;color:var(--brand);margin-bottom:16px;display:block}
+    #authGate h2{font-size:1.4rem;margin-bottom:8px}
+    #authGate p{color:var(--muted);margin-bottom:24px;font-size:0.95rem}
+    .btn-primary{background:linear-gradient(135deg,var(--brand),var(--accent));color:#fff;border:none;border-radius:12px;padding:13px 28px;font-size:1rem;font-weight:700;cursor:pointer;text-decoration:none;display:inline-block;font-family:'DM Sans',sans-serif}
+    #loadingState{text-align:center;padding:60px 20px;color:rgba(255,255,255,0.8)}
+    .spinner{display:inline-block;width:36px;height:36px;border:3px solid rgba(255,255,255,0.2);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite;margin-bottom:12px}
+    @keyframes spin{to{transform:rotate(360deg)}}
+    #dashboard{display:none}
+    .summary-bar{background:var(--surface);border-radius:var(--radius);padding:20px 24px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;margin-bottom:20px;box-shadow:var(--shadow)}
+    .summary-bar .greeting{font-size:1.1rem;font-weight:700;color:var(--text)}
+    .summary-bar .sync-time{font-size:0.8rem;color:var(--muted)}
+    .stat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px;margin-bottom:20px}
+    .stat-card{background:var(--surface);border-radius:var(--radius);padding:22px 20px;text-align:center;box-shadow:var(--shadow);border-top:3px solid var(--card-color,var(--brand))}
+    .stat-card .value{font-size:2.4rem;font-weight:800;color:var(--card-color,var(--brand));line-height:1;margin-bottom:4px}
+    .stat-card .label{font-size:0.82rem;color:var(--muted);font-weight:600;margin-bottom:6px}
+    .stat-card .sub{font-size:0.75rem;color:var(--muted)}
+    .section-card{background:var(--surface);border-radius:var(--radius);padding:24px;margin-bottom:20px;box-shadow:var(--shadow)}
+    .section-card h2{font-size:1rem;font-weight:700;color:var(--text);margin-bottom:18px;display:flex;align-items:center;gap:8px}
+    .section-card h2 i{color:var(--brand)}
+    .streak-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:5px}
+    .streak-day{aspect-ratio:1;border-radius:6px;background:var(--surface2);border:1px solid var(--border)}
+    .streak-day.active{background:var(--ok);border-color:var(--ok)}
+    .streak-day.today{border:2px solid var(--brand)}
+    .day-labels{display:grid;grid-template-columns:repeat(7,1fr);gap:5px;margin-bottom:6px}
+    .day-label{font-size:0.65rem;color:var(--muted);text-align:center;font-weight:600}
+    .streak-legend{display:flex;gap:14px;margin-top:12px;font-size:0.75rem;color:var(--muted);align-items:center}
+    .streak-legend span{display:flex;align-items:center;gap:5px}
+    .dot{width:10px;height:10px;border-radius:3px}
+    .chart-wrap{position:relative;height:180px}
+    .chart-svg{width:100%;height:100%}
+    .chart-no-data{text-align:center;padding:50px 0;color:var(--muted);font-size:0.9rem}
+    .chart-labels-x{display:flex;justify-content:space-between;font-size:0.7rem;color:var(--muted);margin-top:4px}
+    .cat-row{display:flex;align-items:center;gap:12px;margin-bottom:12px}
+    .cat-label{min-width:110px;font-size:0.85rem;font-weight:600;color:var(--text)}
+    .cat-track{flex:1;height:14px;background:var(--surface2);border-radius:99px;overflow:hidden}
+    .cat-fill{height:100%;border-radius:99px;transition:width .6s ease}
+    .cat-pct{min-width:38px;text-align:right;font-size:0.85rem;font-weight:700}
+    .cat-count{min-width:56px;font-size:0.72rem;color:var(--muted)}
+    .word-chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:4px}
+    .word-chip{background:rgba(0,197,122,0.12);border:1px solid rgba(0,197,122,0.3);color:#007a4d;border-radius:8px;padding:4px 10px;font-size:0.8rem;font-weight:600;font-family:'DM Mono',monospace}
+    body.dark-mode .word-chip{color:#00e88f}
+    .empty{text-align:center;padding:30px 20px;color:var(--muted)}
+    .empty i{font-size:1.8rem;display:block;margin-bottom:10px;opacity:.35}
+    #premiumGate{background:linear-gradient(135deg,var(--brand),var(--accent));color:#fff;border-radius:var(--radius);padding:32px 28px;text-align:center;margin-bottom:20px}
+    #premiumGate h2{font-size:1.3rem;margin-bottom:8px}
+    #premiumGate p{opacity:.85;margin-bottom:20px;font-size:0.92rem}
+    .btn-upgrade{background:#fff;color:var(--brand);border:none;border-radius:12px;padding:12px 28px;font-size:0.95rem;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;text-decoration:none;display:inline-block}
+    /* Mobile */
+    @media(max-width:480px){
+      .page{padding:14px 12px 80px}
+      .stat-grid{grid-template-columns:1fr 1fr;gap:10px}
+      .stat-card{padding:16px 14px}
+      .stat-card .value{font-size:1.9rem}
+      .summary-bar{padding:14px 16px}
+      .section-card{padding:16px 14px}
+      .cat-label{min-width:80px;font-size:0.78rem}
+      body{padding-bottom:72px}
+      .mobile-tab-bar{display:flex}
+    }
+    .mobile-tab-bar{display:none;position:fixed;bottom:0;left:0;right:0;background:var(--surface);border-top:1px solid var(--border);z-index:200;padding:6px 0 max(10px,env(safe-area-inset-bottom));box-shadow:0 -2px 12px rgba(0,0,0,0.07)}
+    .mobile-tab-bar a{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;text-decoration:none;color:var(--muted);font-size:0.65rem;font-weight:600;padding:4px 0}
+    .mobile-tab-bar a.active{color:var(--brand)}
+    .mobile-tab-bar a i{font-size:18px}
+  </style>
+</head>
+<body>
+
+<header>
+  <a href="/" class="brand">
+    <img src="/assets/logo.png" alt="SpellRightPro" />
+    <h1>SpellRightPro</h1>
+  </a>
+  <div class="nav-right">
+    <a href="/trainer" class="nav-btn"><i class="fa fa-play"></i> Practice</a>
+    <button class="nav-btn" id="toggleDark"><i class="fa fa-moon"></i></button>
+    <button class="nav-btn" id="btnSignOut" style="display:none;color:#ff4560;border-color:rgba(255,69,96,.25);">
+      <i class="fa fa-sign-out-alt"></i> Sign Out
+    </button>
+  </div>
+</header>
+
+<div class="page">
+  <div id="loadingState">
+    <div class="spinner"></div>
+    <div>Loading your progress…</div>
+  </div>
+
+  <div id="authGate" style="display:none;">
+    <i class="fa fa-chart-line"></i>
+    <h2>Sign in to see your progress</h2>
+    <p>Your streak, accuracy and mastered words are saved to your account.</p>
+    <a href="/login" class="btn-primary"><i class="fa fa-sign-in-alt"></i> Sign In</a>
+  </div>
+
+  <div id="dashboard">
+    <div id="premiumGate" style="display:none;">
+      <h2><i class="fa fa-lock"></i> Full progress tracking requires Premium</h2>
+      <p>Upgrade to unlock streak tracking, accuracy charts and your complete word history.</p>
+      <a href="/premium" class="btn-upgrade"><i class="fa fa-crown"></i> Upgrade — CAD $5/month</a>
+    </div>
+
+    <div class="summary-bar">
+      <div>
+        <div class="greeting" id="greetingText">Your Progress</div>
+        <div class="sync-time" id="syncTime"></div>
+      </div>
+      <a href="/trainer" class="nav-btn" style="background:var(--brand);color:#fff;border-color:var(--brand);">
+        <i class="fa fa-play"></i> Keep Practising
+      </a>
+    </div>
+
+    <div class="stat-grid">
+      <div class="stat-card" style="--card-color:#ffb800;">
+        <div class="value" id="statStreak">0</div>
+        <div class="label">Day Streak</div>
+        <div class="sub" id="statStreakSub">Start practising to build your streak</div>
+      </div>
+      <div class="stat-card" style="--card-color:#00c57a;">
+        <div class="value" id="statAccuracy">–</div>
+        <div class="label">Overall Accuracy</div>
+        <div class="sub" id="statAccuracySub">across all sessions</div>
+      </div>
+      <div class="stat-card" style="--card-color:#7b2ff7;">
+        <div class="value" id="statMastered">0</div>
+        <div class="label">Words Mastered</div>
+        <div class="sub" id="statMasteredSub">spelled correctly 2+ times</div>
+      </div>
+      <div class="stat-card" style="--card-color:#185FA5;">
+        <div class="value" id="statSessions">0</div>
+        <div class="label">Total Sessions</div>
+        <div class="sub" id="statSessionsSub">keep it up!</div>
+      </div>
+    </div>
+
+    <div class="section-card">
+      <h2><i class="fa fa-calendar-check"></i> Practice Streak — last 28 days</h2>
+      <div class="day-labels">
+        <div class="day-label">Mon</div><div class="day-label">Tue</div>
+        <div class="day-label">Wed</div><div class="day-label">Thu</div>
+        <div class="day-label">Fri</div><div class="day-label">Sat</div>
+        <div class="day-label">Sun</div>
+      </div>
+      <div class="streak-grid" id="streakGrid"></div>
+      <div class="streak-legend">
+        <span><div class="dot" style="background:var(--ok);"></div>Practised</span>
+        <span><div class="dot" style="background:var(--surface2);border:1px solid var(--border);"></div>No practice</span>
+        <span><div class="dot" style="background:transparent;border:2px solid var(--brand);"></div>Today</span>
+      </div>
+    </div>
+
+    <div class="section-card">
+      <h2><i class="fa fa-chart-line"></i> Accuracy over time</h2>
+      <div class="chart-wrap" id="chartWrap">
+        <div class="chart-no-data" id="chartNoData">
+          Complete at least 3 sessions to see your accuracy trend.
+        </div>
+        <svg class="chart-svg" id="chartSvg" style="display:none;" viewBox="0 0 600 160" preserveAspectRatio="none"></svg>
+      </div>
+      <div class="chart-labels-x" id="chartLabelsX"></div>
+    </div>
+
+    <div class="section-card">
+      <h2><i class="fa fa-list-alt"></i> Accuracy by module</h2>
+      <div id="categoryBars">
+        <div class="empty"><i class="fa fa-graduation-cap"></i>Start practising to see accuracy by module.</div>
+      </div>
+    </div>
+
+    <div class="section-card">
+      <h2><i class="fa fa-star"></i> Words mastered</h2>
+      <div id="masteredWords">
+        <div class="empty"><i class="fa fa-book"></i>Words you spell correctly twice will appear here.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<nav class="mobile-tab-bar" aria-label="Navigation">
+  <a href="/freemium-school"><i class="fa fa-graduation-cap"></i>School</a>
+  <a href="/freemium-oet"><i class="fa fa-stethoscope"></i>OET</a>
+  <a href="/freemium-bee"><i class="fa fa-deaf"></i>Bee</a>
+  <a href="/progress" class="active"><i class="fa fa-chart-line"></i>Progress</a>
+  <a href="/premium"><i class="fa fa-crown"></i>Premium</a>
+</nav>
+
+<script>
+(function(){
+'use strict';
+var CONFIG={apiKey:'AIzaSyCZ-rAPnRgVjSRFOFvbiQlowE6A3RVvwWo',authDomain:'spellrightpro-firebase.firebaseapp.com',projectId:'spellrightpro-firebase',appId:'1:798456641137:web:5c6d79db5bf49d04928dd0'};
+if(typeof firebase!=='undefined'&&!firebase.apps.length)firebase.initializeApp(CONFIG);
+var auth=typeof firebase!=='undefined'?firebase.auth():null;
+var db=typeof firebase!=='undefined'&&firebase.firestore?firebase.firestore():null;
+
+function $(id){return document.getElementById(id)}
+function show(id){var e=$(id);if(e)e.style.display='block'}
+function hide(id){var e=$(id);if(e)e.style.display='none'}
+function set(id,v){var e=$(id);if(e)e.textContent=v}
+
+function getAttempts(uid){try{return JSON.parse(localStorage.getItem('attempts_'+uid)||'[]')}catch{return[]}}
+function getStats(uid){try{return JSON.parse(localStorage.getItem('progress_'+uid)||'{}')}catch{return{}}}
+
+function isPremiumLocal(){
+  try{var s=JSON.parse(localStorage.getItem('srpPremium')||'null');return s&&s.active&&new Date(s.expiry)>new Date()}
+  catch{return false}
+}
+async function isPremiumFirestore(uid){
+  if(!db)return false;
+  try{
+    var doc=await db.collection('premiumUsers').doc(uid).get();
+    if(!doc.exists)return false;
+    var d=doc.data();
+    var exp=d.expiryDate&&d.expiryDate.toDate?d.expiryDate.toDate():null;
+    return d.active!==false&&(!exp||exp>new Date());
+  }catch{return false}
+}
+
+async function renderDashboard(user){
+  var uid=user.uid;
+  var name=(user.email||'').split('@')[0];
+  name=name.charAt(0).toUpperCase()+name.slice(1);
+  set('greetingText',name+"'s Progress");
+  set('syncTime','Updated '+new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}));
+  $('btnSignOut').style.display='flex';
+
+  var premium=isPremiumLocal();
+  if(!premium)premium=await isPremiumFirestore(uid);
+
+  var fsStats={};
+  if(db){try{var doc=await db.collection('userProgress').doc(uid).get();if(doc.exists)fsStats=doc.data();}catch{}}
+
+  var localStats=getStats(uid);
+  var stats=Object.assign({},fsStats,localStats);
+  var attempts=getAttempts(uid);
+
+  var totalAttempted=stats.totalWordsAttempted||attempts.length;
+  var totalCorrect=stats.totalWordsCorrect||attempts.filter(function(a){return a.correct}).length;
+  var accuracy=totalAttempted>0?Math.round((totalCorrect/totalAttempted)*100):0;
+  var totalSessions=stats.totalSessions||0;
+  var streak=stats.streak||0;
+
+  if(!premium){$('premiumGate').style.display='block'}
+
+  set('statStreak',streak);
+  set('statStreakSub',streak>0?streak+'-day streak 🔥':'Start today to build a streak');
+  set('statAccuracy',totalAttempted>0?accuracy+'%':'–');
+  set('statAccuracySub',totalAttempted+' words attempted');
+
+  var mastered=getMastered(attempts);
+  var weekM=getWeekMastered(attempts);
+  set('statMastered',mastered.length);
+  set('statMasteredSub','+'+weekM+' this week');
+  set('statSessions',totalSessions);
+  set('statSessionsSub',totalSessions===1?'1 session so far':totalSessions+' sessions so far');
+
+  renderStreakCalendar(uid);
+  renderAccuracyChart(attempts);
+  renderCategoryBars(attempts);
+  renderMasteredWords(mastered);
+  $('dashboard').style.display='block';
+}
+
+function renderStreakCalendar(uid){
+  var grid=$('streakGrid');if(!grid)return;
+  grid.innerHTML='';
+  var today=new Date();
+  var start=new Date(today);start.setDate(today.getDate()-27);
+  for(var i=0;i<28;i++){
+    var d=new Date(start);d.setDate(start.getDate()+i);
+    var key=d.toISOString().split('T')[0];
+    var active=!!localStorage.getItem('practice_'+key+'_'+uid);
+    var isToday=key===today.toISOString().split('T')[0];
+    var el=document.createElement('div');
+    el.className='streak-day'+(active?' active':'')+(isToday?' today':'');
+    el.title=key+(active?' — Practised ✓':'');
+    grid.appendChild(el);
+  }
+}
+
+function renderAccuracyChart(attempts){
+  var byDate={};
+  attempts.forEach(function(a){
+    var day=(a.timestamp||'').split('T')[0];if(!day)return;
+    if(!byDate[day])byDate[day]={correct:0,total:0};
+    byDate[day].total++;if(a.correct)byDate[day].correct++;
+  });
+  var days=Object.keys(byDate).sort();
+  if(days.length<3){hide('chartSvg');show('chartNoData');return}
+  hide('chartNoData');show('chartSvg');
+  var svg=$('chartSvg');var W=600,H=160,PAD=24;
+  var pts=days.map(function(d){return Math.round((byDate[d].correct/byDate[d].total)*100)});
+  var xs=pts.map(function(_,i){return PAD+(i/(pts.length-1))*(W-PAD*2)});
+  var ys=pts.map(function(p){return H-PAD-((p/100)*(H-PAD*2))});
+  var poly=xs.map(function(x,i){return x.toFixed(1)+','+ys[i].toFixed(1)}).join(' ');
+  var grid=[25,50,75,100].map(function(p){
+    var y=(H-PAD-((p/100)*(H-PAD*2))).toFixed(1);
+    return '<line x1="'+PAD+'" y1="'+y+'" x2="'+(W-PAD)+'" y2="'+y+'" stroke="rgba(123,47,247,0.1)" stroke-width="1" stroke-dasharray="4,3"/><text x="'+(PAD-4)+'" y="'+(parseFloat(y)+4)+'" font-size="9" fill="#9d8fc0" text-anchor="end">'+p+'</text>';
+  }).join('');
+  var dots=xs.map(function(x,i){
+    var c=pts[i]>=80?'#00c57a':pts[i]>=60?'#ffb800':'#ff4560';
+    return '<circle cx="'+x.toFixed(1)+'" cy="'+ys[i].toFixed(1)+'" r="4" fill="'+c+'"><title>'+days[i]+': '+pts[i]+'%</title></circle>';
+  }).join('');
+  svg.innerHTML=grid+'<polyline points="'+poly+'" fill="none" stroke="#7b2ff7" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>'+dots;
+  var labelsEl=$('chartLabelsX');
+  if(labelsEl&&days.length>=2){
+    labelsEl.innerHTML='';
+    [0,Math.floor((days.length-1)/2),days.length-1].forEach(function(idx){
+      var s=document.createElement('span');s.textContent=days[idx];labelsEl.appendChild(s);
+    });
+  }
+}
+
+function renderCategoryBars(attempts){
+  var c=$('categoryBars');if(!c)return;
+  var cats={school:'School',oet:'OET Medical',bee:'Spelling Bee',custom:'Custom List'};
+  var rows=Object.entries(cats).map(function(p){
+    var key=p[0],label=p[1];
+    var cat=attempts.filter(function(a){return a.category===key});
+    if(!cat.length)return'';
+    var pct=Math.round((cat.filter(function(a){return a.correct}).length/cat.length)*100);
+    var color=pct>=80?'#00c57a':pct>=60?'#ffb800':'#ff4560';
+    return '<div class="cat-row"><div class="cat-label">'+label+'</div><div class="cat-track"><div class="cat-fill" style="width:'+pct+'%;background:'+color+';"></div></div><div class="cat-pct" style="color:'+color+';">'+pct+'%</div><div class="cat-count">'+cat.length+' tries</div></div>';
+  }).filter(Boolean).join('');
+  c.innerHTML=rows||'<div class="empty"><i class="fa fa-graduation-cap"></i>No data yet — start practising!</div>';
+}
+
+function getMastered(attempts){
+  var counts={};
+  attempts.forEach(function(a){if(a.correct)counts[a.word]=(counts[a.word]||0)+1});
+  return Object.keys(counts).filter(function(w){return counts[w]>=2});
+}
+function getWeekMastered(attempts){
+  var weekAgo=Date.now()-7*86400000;
+  var counts={};
+  attempts.filter(function(a){return a.correct&&new Date(a.timestamp).getTime()>=weekAgo})
+    .forEach(function(a){counts[a.word]=(counts[a.word]||0)+1});
+  return Object.keys(counts).filter(function(w){return counts[w]>=2}).length;
+}
+function renderMasteredWords(mastered){
+  var c=$('masteredWords');if(!c)return;
+  if(!mastered.length){c.innerHTML='<div class="empty"><i class="fa fa-book"></i>Words you spell correctly twice will appear here.</div>';return}
+  c.innerHTML='<div style="margin-bottom:8px;font-size:0.8rem;color:var(--muted);">'+mastered.length+' words mastered</div><div class="word-chips">'+mastered.slice(-60).map(function(w){return'<span class="word-chip">'+w+'</span>'}).join('')+'</div>';
+}
+
+// Dark mode
+(function(){
+  var btn=$('toggleDark');
+  function apply(){var on=localStorage.getItem('dark')==='true';document.body.classList.toggle('dark-mode',on);if(btn)btn.querySelector('i').className=on?'fa fa-sun':'fa fa-moon'}
+  btn&&btn.addEventListener('click',function(){localStorage.setItem('dark',!(localStorage.getItem('dark')==='true'));apply()});
+  apply();
+})();
+
+$('btnSignOut').addEventListener('click',function(){
+  if(auth)auth.signOut().then(function(){localStorage.removeItem('srpPremium');window.location.href='/'});
+});
+
+if(!auth){hide('loadingState');show('authGate');return}
+auth.onAuthStateChanged(async function(user){
+  hide('loadingState');
+  if(!user){show('authGate');return}
+  await renderDashboard(user);
+});
+})();
+</script>
+<script>if('serviceWorker' in navigator){navigator.serviceWorker.register('/sw.js').catch(function(){})}</script>
+</body>
+</html>

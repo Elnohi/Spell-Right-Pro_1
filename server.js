@@ -287,6 +287,319 @@ app.post("/api/send-confirmation", async (req, res) => {
   }
 });
 
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// EMAIL SEQUENCES
+// Three automated emails:
+//   1. POST /api/email/welcome      — sent at signup (call from thank-you.html or webhook)
+//   2. POST /api/email/reengage     — day-3 nudge for free users (call from a daily Cloud Scheduler job)
+//   3. POST /api/email/renewal      — 7-day expiry reminder for premium users (call from Cloud Scheduler)
+//
+// Cloud Scheduler setup (Google Cloud Console → Cloud Scheduler → Create job):
+//   Schedule: 0 9 * * *  (daily at 09:00 UTC)
+//   Target:   HTTP POST https://spellrightpro-api-.../api/email/reengage  (no body needed)
+//   Target:   HTTP POST https://spellrightpro-api-.../api/email/renewal   (no body needed)
+//   Auth:     Add SCHEDULER_SECRET env var; pass as header X-Scheduler-Secret
+// ═══════════════════════════════════════════════════════════════════════════════
+
+// ── 1. Welcome email ──────────────────────────────────────────────────────────
+// Call this right after a user pays: POST /api/email/welcome { email, plan }
+app.post('/api/email/welcome', async (req, res) => {
+  try {
+    const { email, plan = 'premium' } = req.body;
+    if (!email) return res.status(400).json({ success: false, message: 'email required' });
+    if (!transporter) return res.json({ success: false, message: 'email not configured' });
+
+    const planLabel = plan === 'annual'
+      ? 'Complete Premium — Annual (CAD $45/yr)'
+      : 'Complete Premium — Monthly (CAD $5/mo)';
+
+    await transporter.sendMail({
+      from:    'SpellRightPro <spellrightpro@gmail.com>',
+      to:      email,
+      subject: '🎉 Welcome to SpellRightPro Premium — you're all set!',
+      html: `
+        <div style="font-family:'DM Sans',sans-serif;max-width:560px;margin:0 auto;padding:32px 24px;background:#ffffff;">
+          <img src="https://spellrightpro.org/assets/logo.png" alt="SpellRightPro"
+               style="height:48px;border-radius:12px;margin-bottom:20px;" />
+
+          <h1 style="font-size:1.5rem;color:#7b2ff7;margin:0 0 8px;">
+            Welcome to Premium! 🎉
+          </h1>
+          <p style="color:#444;line-height:1.6;margin:0 0 20px;">
+            Your subscription is active and all three practice modules are now unlocked.
+          </p>
+
+          <div style="background:#f4f0fc;border-radius:12px;padding:20px;margin-bottom:24px;">
+            <p style="margin:0 0 6px;"><strong>Plan:</strong> ${planLabel}</p>
+            <p style="margin:0;">Your premium features are active immediately.</p>
+          </div>
+
+          <h2 style="font-size:1.1rem;color:#1a0533;margin:0 0 12px;">What you now have access to:</h2>
+          <ul style="padding-left:20px;color:#444;line-height:2;">
+            <li><strong>School Practice</strong> — unlimited words, custom lists</li>
+            <li><strong>OET Medical</strong> — 1,511 curated medical terms</li>
+            <li><strong>Spelling Bee</strong> — voice recognition mode</li>
+            <li><strong>Progress Dashboard</strong> — streak, accuracy, words mastered</li>
+            <li><strong>Mistake Review</strong> — spaced repetition for words you miss</li>
+          </ul>
+
+          <a href="https://spellrightpro.org/trainer"
+             style="display:inline-block;margin-top:24px;background:linear-gradient(135deg,#7b2ff7,#f72585);
+                    color:#fff;text-decoration:none;padding:14px 28px;border-radius:12px;
+                    font-weight:700;font-size:1rem;">
+            Start Practising Now →
+          </a>
+
+          <p style="color:#888;font-size:0.82rem;margin-top:32px;line-height:1.5;">
+            Questions? Reply to this email or visit
+            <a href="https://spellrightpro.org/contact" style="color:#7b2ff7;">spellrightpro.org/contact</a>.<br/>
+            To cancel your subscription at any time, email us and we will handle it within 24 hours.
+          </p>
+        </div>`,
+      text: `Welcome to SpellRightPro Premium!\n\nPlan: ${planLabel}\n\nAll three modules are now unlocked.\n\nStart practising: https://spellrightpro.org/trainer\n\nQuestions? spellrightpro@gmail.com`
+    });
+
+    console.log(`📧 Welcome email sent to ${email}`);
+    res.json({ success: true });
+  } catch (err) {
+    console.error('❌ Welcome email error:', err.message);
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// ── 2. Day-3 re-engagement email for free users ───────────────────────────────
+// Called daily by Cloud Scheduler. Reads Firestore for users who signed up
+// 3 days ago and have NOT yet upgraded (no record in premiumUsers).
+// Falls back to a manual trigger if Firestore/Admin is not available.
+app.post('/api/email/reengage', async (req, res) => {
+  // Protect from public calls — only Cloud Scheduler should hit this
+  const secret = req.headers['x-scheduler-secret'];
+  if (process.env.SCHEDULER_SECRET && secret !== process.env.SCHEDULER_SECRET) {
+    return res.status(401).json({ error: 'Unauthorized' });
+  }
+
+  // Manual single-user trigger (for testing or manual sends)
+  if (req.body && req.body.email) {
+    const { email, name } = req.body;
+    try {
+      await sendReengageEmail(email, name || email.split('@')[0]);
+      return res.json({ success: true, sent: 1 });
+    } catch (err) {
+      return res.status(500).json({ success: false, message: err.message });
+    }
+  }
+
+  // Automated: scan Firestore for day-3 free users
+  if (!db) return res.json({ success: false, message: 'Firestore not available', sent: 0 });
+
+  try {
+    const threeDaysAgo = new Date();
+    threeDaysAgo.setDate(threeDaysAgo.getDate() - 3);
+    const threeDaysAgoStart = new Date(threeDaysAgo); threeDaysAgoStart.setHours(0,0,0,0);
+    const threeDaysAgoEnd   = new Date(threeDaysAgo); threeDaysAgoEnd.setHours(23,59,59,999);
+
+    // Get users who registered around 3 days ago
+    const usersSnap = await db.collection('users')
+      .where('createdAt', '>=', admin.firestore.Timestamp.fromDate(threeDaysAgoStart))
+      .where('createdAt', '<=', admin.firestore.Timestamp.fromDate(threeDaysAgoEnd))
+      .get();
+
+    let sent = 0;
+    for (const doc of usersSnap.docs) {
+      const user = doc.data();
+      if (!user.email) continue;
+
+      // Skip if already premium
+      const premSnap = await db.collection('premiumUsers').doc(doc.id).get();
+      if (premSnap.exists && premSnap.data().active) continue;
+
+      // Skip if already sent this email
+      if (user.reengageSent) continue;
+
+      await sendReengageEmail(user.email, user.displayName || user.email.split('@')[0]);
+
+      // Mark as sent so we don't send again
+      await db.collection('users').doc(doc.id).update({ reengageSent: true });
+      sent++;
+    }
+
+    console.log(`📧 Re-engage: sent to ${sent} users`);
+    res.json({ success: true, sent });
+  } catch (err) {
+    console.error('❌ Re-engage batch error:', err.message);
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+async function sendReengageEmail(email, name) {
+  if (!transporter) throw new Error('Email not configured');
+  const displayName = name.charAt(0).toUpperCase() + name.slice(1);
+
+  await transporter.sendMail({
+    from:    'SpellRightPro <spellrightpro@gmail.com>',
+    to:      email,
+    subject: `${displayName}, your spelling practice is waiting 📚`,
+    html: `
+      <div style="font-family:'DM Sans',sans-serif;max-width:560px;margin:0 auto;padding:32px 24px;">
+        <img src="https://spellrightpro.org/assets/logo.png" alt="SpellRightPro"
+             style="height:48px;border-radius:12px;margin-bottom:20px;" />
+
+        <h1 style="font-size:1.4rem;color:#7b2ff7;margin:0 0 8px;">
+          Ready to keep improving, ${displayName}?
+        </h1>
+        <p style="color:#444;line-height:1.6;margin:0 0 20px;">
+          You tried SpellRightPro a few days ago — your free practice sessions are still waiting.
+          Even 5 minutes a day makes a real difference over time.
+        </p>
+
+        <div style="background:#f4f0fc;border-radius:12px;padding:20px;margin-bottom:24px;">
+          <h2 style="font-size:1rem;color:#7b2ff7;margin:0 0 10px;">Free practice — no account needed:</h2>
+          <ul style="padding-left:18px;color:#444;line-height:2;margin:0;">
+            <li><strong>School Practice</strong> — academic word lists</li>
+            <li><strong>OET Medical</strong> — healthcare vocabulary</li>
+            <li><strong>Spelling Bee</strong> — voice recognition spelling</li>
+          </ul>
+        </div>
+
+        <a href="https://spellrightpro.org"
+           style="display:inline-block;background:linear-gradient(135deg,#7b2ff7,#f72585);
+                  color:#fff;text-decoration:none;padding:14px 28px;border-radius:12px;
+                  font-weight:700;font-size:1rem;">
+          Continue Practising — Free →
+        </a>
+
+        <div style="margin-top:28px;padding:16px;background:#fef9ee;border-radius:10px;border-left:3px solid #ffb800;">
+          <p style="margin:0;font-size:0.9rem;color:#444;">
+            <strong>Want to go further?</strong> Premium unlocks unlimited words, your full progress history,
+            mistake review and more — starting from just <strong>CAD $5/month</strong>.
+          </p>
+          <a href="https://spellrightpro.org/premium"
+             style="display:inline-block;margin-top:10px;color:#7b2ff7;font-weight:700;font-size:0.9rem;text-decoration:none;">
+            See Premium Plans →
+          </a>
+        </div>
+
+        <p style="color:#888;font-size:0.8rem;margin-top:28px;">
+          You received this because you tried SpellRightPro.
+          <a href="https://spellrightpro.org/contact" style="color:#7b2ff7;">Unsubscribe</a>
+        </p>
+      </div>`,
+    text: `Hi ${displayName},\n\nYour SpellRightPro practice sessions are still waiting.\n\nStart free: https://spellrightpro.org\n\nWant full access? Premium from CAD $5/mo: https://spellrightpro.org/premium`
+  });
+  console.log(`📧 Re-engage email sent to ${email}`);
+}
+
+// ── 3. Renewal reminder — 7 days before premium expires ──────────────────────
+// Called daily by Cloud Scheduler. Scans premiumUsers for accounts expiring
+// in exactly 7 days and sends a renewal reminder.
+app.post('/api/email/renewal', async (req, res) => {
+  const secret = req.headers['x-scheduler-secret'];
+  if (process.env.SCHEDULER_SECRET && secret !== process.env.SCHEDULER_SECRET) {
+    return res.status(401).json({ error: 'Unauthorized' });
+  }
+
+  // Manual single-user trigger
+  if (req.body && req.body.email) {
+    const { email, plan, expiryDate } = req.body;
+    try {
+      await sendRenewalEmail(email, plan || 'premium', expiryDate || 'soon');
+      return res.json({ success: true, sent: 1 });
+    } catch (err) {
+      return res.status(500).json({ success: false, message: err.message });
+    }
+  }
+
+  if (!db) return res.json({ success: false, message: 'Firestore not available', sent: 0 });
+
+  try {
+    const sevenDaysFromNow    = new Date(); sevenDaysFromNow.setDate(sevenDaysFromNow.getDate() + 7);
+    const windowStart = new Date(sevenDaysFromNow); windowStart.setHours(0,0,0,0);
+    const windowEnd   = new Date(sevenDaysFromNow); windowEnd.setHours(23,59,59,999);
+
+    const snap = await db.collection('premiumUsers')
+      .where('active',     '==', true)
+      .where('expiryDate', '>=', admin.firestore.Timestamp.fromDate(windowStart))
+      .where('expiryDate', '<=', admin.firestore.Timestamp.fromDate(windowEnd))
+      .get();
+
+    let sent = 0;
+    for (const doc of snap.docs) {
+      const user = doc.data();
+      if (!user.email) continue;
+      if (user.renewalReminderSent) continue;
+
+      const expiryStr = user.expiryDate.toDate().toLocaleDateString('en-GB', {
+        day: 'numeric', month: 'long', year: 'numeric'
+      });
+
+      await sendRenewalEmail(user.email, user.plan || 'premium', expiryStr);
+
+      await db.collection('premiumUsers').doc(doc.id).update({ renewalReminderSent: true });
+      sent++;
+    }
+
+    console.log(`📧 Renewal reminders sent to ${sent} users`);
+    res.json({ success: true, sent });
+  } catch (err) {
+    console.error('❌ Renewal reminder error:', err.message);
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+async function sendRenewalEmail(email, plan, expiryStr) {
+  if (!transporter) throw new Error('Email not configured');
+  const planLabel = plan === 'annual' ? 'Annual' : 'Monthly';
+  const siteUrl   = process.env.SITE_URL || 'https://spellrightpro.org';
+
+  await transporter.sendMail({
+    from:    'SpellRightPro <spellrightpro@gmail.com>',
+    to:      email,
+    subject: '⏰ Your SpellRightPro Premium expires in 7 days',
+    html: `
+      <div style="font-family:'DM Sans',sans-serif;max-width:560px;margin:0 auto;padding:32px 24px;">
+        <img src="${siteUrl}/assets/logo.png" alt="SpellRightPro"
+             style="height:48px;border-radius:12px;margin-bottom:20px;" />
+
+        <h1 style="font-size:1.4rem;color:#7b2ff7;margin:0 0 8px;">
+          Your Premium access expires on ${expiryStr}
+        </h1>
+        <p style="color:#444;line-height:1.6;margin:0 0 20px;">
+          Your SpellRightPro ${planLabel} subscription expires in 7 days.
+          If your subscription renews automatically (Stripe recurring billing), no action is needed.
+          If you cancelled and would like to resubscribe, you can do so any time below.
+        </p>
+
+        <div style="background:#f4f0fc;border-radius:12px;padding:20px;margin-bottom:24px;">
+          <p style="margin:0 0 6px;"><strong>Current plan:</strong> ${planLabel} Premium</p>
+          <p style="margin:0;"><strong>Expires:</strong> ${expiryStr}</p>
+        </div>
+
+        <a href="${siteUrl}/premium"
+           style="display:inline-block;background:linear-gradient(135deg,#7b2ff7,#f72585);
+                  color:#fff;text-decoration:none;padding:14px 28px;border-radius:12px;
+                  font-weight:700;font-size:1rem;">
+          Renew Premium →
+        </a>
+
+        <div style="margin-top:28px;padding:16px;background:#fff8f0;border-radius:10px;border-left:3px solid #ff9800;">
+          <p style="margin:0;font-size:0.9rem;color:#444;">
+            <strong>What you'll lose access to when it expires:</strong>
+            unlimited words, progress dashboard, mistake review, adaptive drills,
+            and all 1,511 OET medical terms.
+          </p>
+        </div>
+
+        <p style="color:#888;font-size:0.8rem;margin-top:28px;line-height:1.5;">
+          Questions about your subscription? Email us at
+          <a href="mailto:spellrightpro@gmail.com" style="color:#7b2ff7;">spellrightpro@gmail.com</a>.
+        </p>
+      </div>`,
+    text: `Your SpellRightPro ${planLabel} Premium expires on ${expiryStr}.\n\nRenew: ${siteUrl}/premium\n\nQuestions? spellrightpro@gmail.com`
+  });
+  console.log(`📧 Renewal reminder sent to ${email}`);
+}
+
 // ── START ─────────────────────────────────────────────────────────────────────
 const PORT = process.env.PORT || 8080;
 app.listen(PORT, "0.0.0.0", () => {
