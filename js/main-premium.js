@@ -118,15 +118,12 @@ function showNonPremiumMessage() {
     messageDiv.innerHTML = `
         <div style="text-align: center; margin: 15px 0; padding: 15px; background: rgba(123, 47, 247, 0.1); border-radius: 8px;">
             <p style="margin: 0 0 10px 0;">Premium access required for full features.</p>
-            <button onclick="window.location.href='/pricing.html'" 
+            <button onclick="window.location.href='/premium'" 
                     style="background: #7b2ff7; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; margin: 5px 0;">
                 <i class="fa fa-crown"></i> Upgrade to Premium
             </button>
             <br>
-            <button onclick="quickTest()" 
-                    style="background: #6c757d; color: white; border: none; padding: 8px 15px; border-radius: 6px; cursor: pointer; margin: 5px 0;">
-                <i class="fa fa-bolt"></i> Quick Test Mode
-            </button>
+
         </div>
     `;
     
@@ -193,7 +190,7 @@ document.getElementById('loginForm')?.addEventListener('submit', async (e) => {
         } else {
             showFeedback('Premium access required. Redirecting to pricing...', 'info');
             setTimeout(() => {
-                window.location.href = '/pricing.html';
+                window.location.href = '/premium';
             }, 2000);
         }
     } catch (error) {
@@ -228,7 +225,7 @@ document.getElementById('registerForm')?.addEventListener('submit', async (e) =>
         
         // Redirect to pricing page after a short delay
         setTimeout(() => {
-            window.location.href = '/pricing.html';
+            window.location.href = '/premium';
         }, 2000);
         
     } catch (error) {
@@ -1387,6 +1384,6 @@ function simulatePremiumAccess() {
 }
 
 // Make simulatePremiumAccess available globally for testing
-window.simulatePremiumAccess = simulatePremiumAccess;
-window.quickTest = quickTest;
+// simulatePremiumAccess kept for internal testing only (not exported publicly)
+
 
