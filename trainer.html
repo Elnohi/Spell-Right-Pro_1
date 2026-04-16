@@ -500,6 +500,117 @@
       .source-btn i { font-size:1.1rem; }
     }
 
+  
+    /* ── Setup / Training phase system ─────────────────────────────────────── */
+    .setup-phase   { display: block; }
+    .training-phase { display: none; }
+    .trainer-area.training-active .setup-phase   { display: none; }
+    .trainer-area.training-active .training-phase { display: block; }
+
+    /* Setup card */
+    .setup-card {
+      background: var(--surface2);
+      border-radius: 16px;
+      padding: 22px 20px;
+      margin-bottom: 16px;
+      border: 1px solid var(--border);
+    }
+    .setup-card h4 {
+      font-size: 0.88rem;
+      font-weight: 700;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: .06em;
+      margin: 0 0 12px;
+      display: flex;
+      align-items: center;
+      gap: 7px;
+    }
+    .setup-card h4 i { color: var(--brand); }
+
+    /* OET mode pills */
+    .oet-mode-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+    .oet-mode-btn {
+      border: 2px solid var(--border);
+      border-radius: 14px;
+      padding: 14px 12px;
+      background: var(--surface);
+      cursor: pointer;
+      text-align: center;
+      transition: all .2s;
+      font-family: 'DM Sans', sans-serif;
+      color: var(--text);
+    }
+    .oet-mode-btn.active {
+      border-color: var(--brand);
+      background: rgba(123,47,247,.1);
+    }
+    .oet-mode-btn i      { font-size:1.25rem; color:var(--brand); display:block; margin-bottom:5px; }
+    .oet-mode-btn strong { font-size:0.85rem; display:block; }
+    .oet-mode-btn small  { font-size:0.7rem; color:var(--muted); }
+
+    /* Start training button — large, prominent */
+    .btn-start-training {
+      width: 100%;
+      padding: 17px;
+      background: linear-gradient(135deg, var(--brand), #f72585);
+      color: #fff;
+      border: none;
+      border-radius: 14px;
+      font-size: 1.05rem;
+      font-weight: 700;
+      font-family: 'DM Sans', sans-serif;
+      cursor: pointer;
+      margin-top: 6px;
+      transition: all .2s;
+      box-shadow: 0 4px 20px rgba(123,47,247,.35);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+    }
+    .btn-start-training:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 30px rgba(123,47,247,.45);
+    }
+
+    /* Back to setup link */
+    .back-to-setup {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.8rem;
+      color: var(--muted);
+      cursor: pointer;
+      margin-bottom: 12px;
+      background: none;
+      border: none;
+      font-family: 'DM Sans', sans-serif;
+      padding: 0;
+    }
+    .back-to-setup:hover { color: var(--brand); }
+
+    /* Accent select row */
+    .accent-setup-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .accent-setup-row label { font-size:0.88rem; font-weight:600; color:var(--text); white-space:nowrap; }
+    .accent-setup-row select { flex:1; }
+
+    /* Mobile */
+    @media (max-width:520px) {
+      .setup-card { padding:16px 14px; }
+      .oet-mode-row { gap:8px; }
+      .oet-mode-btn { padding:12px 8px; }
+      .btn-start-training { padding:15px; font-size:0.98rem; }
+    }
+
   </style>
 </head>
 
@@ -636,60 +747,82 @@
     <div class="trainer-area" id="school-area">
       <h3><i class="fa fa-graduation-cap"></i> School Practice</h3>
 
-      <div class="accent-row">
-        <label>Accent</label>
-        <select class="accent-select" id="schoolAccent">
-          <option value="en-GB">British</option>
-          <option value="en-US">American</option>
-          <option value="en-AU">Australian</option>
-        </select>
-      </div>
+      <!-- ════ SETUP PHASE (shown first) ════ -->
+      <div class="setup-phase">
 
-      <!-- Progress -->
-      <div id="schoolProgress" class="progress-text"></div>
-      <div class="progress-track"><div class="progress-fill" id="schoolProgressFill"></div></div>
+        <!-- Word source selector — injected by createCustomWordsUI() -->
 
-      <!-- Feedback -->
-      <div id="schoolFeedback" class="feedback-pill">
-        Select a word list and click Start
-      </div>
-
-      <!-- Answer zone -->
-      <div class="answer-zone">
-        <span class="answer-zone-label">✏️ Type your spelling here</span>
-        <div class="input-group">
-          <textarea
-            id="schoolInput"
-            class="answer-input"
-            placeholder="type it…"
-            autocomplete="off" autocorrect="off"
-            autocapitalize="off" spellcheck="false"
-            rows="2"
-          ></textarea>
+        <!-- Accent -->
+        <div class="setup-card">
+          <h4><i class="fa fa-globe"></i> Pronunciation</h4>
+          <div class="accent-setup-row">
+            <label for="schoolAccent">Accent</label>
+            <select class="accent-select" id="schoolAccent">
+              <option value="en-GB">🇬🇧 British</option>
+              <option value="en-US">🇺🇸 American</option>
+              <option value="en-AU">🇦🇺 Australian</option>
+            </select>
+          </div>
         </div>
-        <p class="real-time-hint">
-          Real-time feedback active — green = correct, red = wrong
-        </p>
-      </div>
 
-      <!-- Controls -->
-      <div class="btn-grid">
-        <button class="btn-start start-btn" data-mode="school">
-          <i class="fa fa-play"></i> Start Practice
+        <!-- Start button -->
+        <button class="btn-start-training start-btn" data-mode="school">
+          <i class="fa fa-play"></i> Start School Practice
         </button>
-        <button class="btn-submit-answer" id="schoolSubmit">
-          <i class="fa fa-check"></i> Submit
+
+      </div><!-- /.setup-phase -->
+
+      <!-- ════ TRAINING PHASE (shown after Start) ════ -->
+      <div class="training-phase">
+
+        <button class="back-to-setup" onclick="backToSetup('school')">
+          <i class="fa fa-arrow-left"></i> Change settings
         </button>
-        <button class="btn-sec" id="schoolSayAgain">
-          <i class="fa fa-volume-up"></i> Say Again
-        </button>
-        <button class="btn-sec" id="schoolFlag">
-          <i class="fa fa-flag"></i> Flag
-        </button>
-        <button class="btn-end" id="schoolEnd">
-          <i class="fa fa-stop"></i> End Session
-        </button>
-      </div>
+
+        <!-- Progress -->
+        <div id="schoolProgress" class="progress-text"></div>
+        <div class="progress-track"><div class="progress-fill" id="schoolProgressFill"></div></div>
+
+        <!-- Feedback -->
+        <div id="schoolFeedback" class="feedback-pill">
+          Listen carefully and type the word…
+        </div>
+
+        <!-- Answer zone -->
+        <div class="answer-zone">
+          <span class="answer-zone-label">✏️ Type your spelling here</span>
+          <div class="input-group">
+            <textarea
+              id="schoolInput"
+              class="answer-input"
+              placeholder="type it…"
+              autocomplete="off" autocorrect="off"
+              autocapitalize="off" spellcheck="false"
+              rows="2"
+            ></textarea>
+          </div>
+          <p class="real-time-hint">
+            Real-time feedback — green = correct, red = wrong
+          </p>
+        </div>
+
+        <!-- Controls -->
+        <div class="btn-grid">
+          <button class="btn-submit-answer" id="schoolSubmit">
+            <i class="fa fa-check"></i> Submit
+          </button>
+          <button class="btn-sec" id="schoolSayAgain">
+            <i class="fa fa-volume-up"></i> Say Again
+          </button>
+          <button class="btn-sec" id="schoolFlag">
+            <i class="fa fa-flag"></i> Flag
+          </button>
+          <button class="btn-end" id="schoolEnd">
+            <i class="fa fa-stop"></i> End Session
+          </button>
+        </div>
+
+      </div><!-- /.training-phase -->
 
       <!-- Session summary -->
       <div id="schoolSummary" class="summary-panel" style="display:none;"></div>
@@ -699,72 +832,105 @@
     <div class="trainer-area" id="oet-area">
       <h3><i class="fa fa-stethoscope"></i> OET Medical English</h3>
 
-      <div class="accent-row">
-        <label>Accent</label>
-        <select class="accent-select" id="oetAccent">
-          <option value="en-GB">British</option>
-          <option value="en-US">American</option>
-          <option value="en-AU">Australian</option>
-        </select>
-      </div>
+      <!-- ════ SETUP PHASE ════ -->
+      <div class="setup-phase">
 
-      <!-- Exam type toggle -->
-      <div class="exam-row">
-        <label>
-          <input type="radio" name="examType" value="practice" checked />
-          Practice (full list)
-        </label>
-        <label>
-          <input type="radio" name="examType" value="test" />
-          Exam simulation (24 words)
-        </label>
-      </div>
+        <!-- Word source selector — injected by createCustomWordsUI() -->
 
-      <!-- Progress -->
-      <div id="oetProgress" class="progress-text"></div>
-      <div class="progress-track"><div class="progress-fill" id="oetProgressFill"></div></div>
-
-      <!-- Feedback -->
-      <div id="oetFeedback" class="feedback-pill">
-        Select a mode and click Start
-      </div>
-
-      <!-- Answer zone -->
-      <div class="answer-zone">
-        <span class="answer-zone-label">✏️ Type your spelling here</span>
-        <div class="input-group">
-          <textarea
-            id="oetInput"
-            class="answer-input"
-            placeholder="type it…"
-            autocomplete="off" autocorrect="off"
-            autocapitalize="off" spellcheck="false"
-            rows="2"
-          ></textarea>
+        <!-- OET mode: full list vs 24-word test -->
+        <div class="setup-card">
+          <h4><i class="fa fa-list-alt"></i> Practice Mode</h4>
+          <div class="oet-mode-row">
+            <button class="oet-mode-btn active" id="oetModePractice"
+                    onclick="selectOetMode('practice')">
+              <i class="fa fa-book-open"></i>
+              <strong>Full List</strong>
+              <small>1,511 medical words</small>
+            </button>
+            <button class="oet-mode-btn" id="oetModeTest"
+                    onclick="selectOetMode('test')">
+              <i class="fa fa-clock"></i>
+              <strong>Exam Simulation</strong>
+              <small>Random 24 words</small>
+            </button>
+          </div>
         </div>
-        <p class="real-time-hint">
-          Real-time feedback active — green = correct, red = wrong
-        </p>
-      </div>
 
-      <!-- Controls -->
-      <div class="btn-grid">
-        <button class="btn-start start-btn" data-mode="oet">
-          <i class="fa fa-play"></i> Start OET Practice
+        <!-- Accent -->
+        <div class="setup-card">
+          <h4><i class="fa fa-globe"></i> Pronunciation</h4>
+          <div class="accent-setup-row">
+            <label for="oetAccent">Accent</label>
+            <select class="accent-select" id="oetAccent">
+              <option value="en-GB">🇬🇧 British</option>
+              <option value="en-US">🇺🇸 American</option>
+              <option value="en-AU">🇦🇺 Australian</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Hidden radio for backward compat with loadOETWords() -->
+        <input type="radio" name="examType" id="examTypePractice" value="practice" checked style="display:none;" />
+        <input type="radio" name="examType" id="examTypeTest"     value="test"     style="display:none;" />
+
+        <!-- Start button -->
+        <button class="btn-start-training start-btn" data-mode="oet" id="oetStartBtn">
+          <i class="fa fa-play"></i> Start Full List Practice
         </button>
-        <button class="btn-submit-answer" id="oetSubmit">
-          <i class="fa fa-check"></i> Submit
+
+      </div><!-- /.setup-phase -->
+
+      <!-- ════ TRAINING PHASE ════ -->
+      <div class="training-phase">
+
+        <button class="back-to-setup" onclick="backToSetup('oet')">
+          <i class="fa fa-arrow-left"></i> Change settings
         </button>
-        <button class="btn-sec" id="oetSayAgain">
-          <i class="fa fa-volume-up"></i> Say Again
-        </button>
-        <button class="btn-sec" id="oetFlag">
-          <i class="fa fa-flag"></i> Flag
-        </button>
-        <button class="btn-end" id="oetEnd">
-          <i class="fa fa-stop"></i> End Session
-        </button>
-      </div>
+
+        <!-- Progress -->
+        <div id="oetProgress" class="progress-text"></div>
+        <div class="progress-track"><div class="progress-fill" id="oetProgressFill"></div></div>
+
+        <!-- Feedback -->
+        <div id="oetFeedback" class="feedback-pill">
+          Listen carefully and type the word…
+        </div>
+
+        <!-- Answer zone -->
+        <div class="answer-zone">
+          <span class="answer-zone-label">✏️ Type your spelling here</span>
+          <div class="input-group">
+            <textarea
+              id="oetInput"
+              class="answer-input"
+              placeholder="type it…"
+              autocomplete="off" autocorrect="off"
+              autocapitalize="off" spellcheck="false"
+              rows="2"
+            ></textarea>
+          </div>
+          <p class="real-time-hint">
+            Real-time feedback — green = correct, red = wrong
+          </p>
+        </div>
+
+        <!-- Controls -->
+        <div class="btn-grid">
+          <button class="btn-submit-answer" id="oetSubmit">
+            <i class="fa fa-check"></i> Submit
+          </button>
+          <button class="btn-sec" id="oetSayAgain">
+            <i class="fa fa-volume-up"></i> Say Again
+          </button>
+          <button class="btn-sec" id="oetFlag">
+            <i class="fa fa-flag"></i> Flag
+          </button>
+          <button class="btn-end" id="oetEnd">
+            <i class="fa fa-stop"></i> End Session
+          </button>
+        </div>
+
+      </div><!-- /.training-phase -->
 
       <!-- Session summary -->
       <div id="oetSummary" class="summary-panel" style="display:none;"></div>
@@ -774,56 +940,89 @@
     <div class="trainer-area" id="bee-area">
       <h3><i class="fa fa-deaf"></i> Spelling Bee — Voice Mode</h3>
 
-      <p style="color:var(--muted);font-size:0.9rem;margin:0 0 16px;">
-        Listen to the word, then spell it aloud letter-by-letter into your microphone.
-        The app marks your spelling automatically.
-      </p>
+      <!-- ════ SETUP PHASE ════ -->
+      <div class="setup-phase">
 
-      <!-- Progress -->
-      <div id="beeProgress" class="progress-text"></div>
-      <div class="progress-track"><div class="progress-fill" id="beeProgressFill"></div></div>
-
-      <!-- Feedback -->
-      <div id="beeFeedback" class="feedback-pill">
-        Click Start to begin the Spelling Bee
-      </div>
-
-      <!-- Voice recognition UI -->
-      <div id="beeVoiceStatus">
-        <div id="beeVoiceText">Listening… spell the word now</div>
-        <div class="voice-bars">
-          <div class="voice-bar"></div>
-          <div class="voice-bar"></div>
-          <div class="voice-bar"></div>
-          <div class="voice-bar"></div>
-          <div class="voice-bar"></div>
+        <div class="setup-card" style="border-left:3px solid #f72585;background:rgba(247,37,133,0.05);">
+          <h4><i class="fa fa-microphone" style="color:#f72585;"></i> How it works</h4>
+          <p style="font-size:0.85rem;color:var(--muted);margin:0;line-height:1.6;">
+            The app speaks each word aloud. You spell it back by saying the letters one by one into your microphone — e.g. say <em>"a-c-c-o-m-m-o-d-a-t-e"</em>. Your spelling is marked automatically.
+          </p>
         </div>
-      </div>
 
-      <!-- Recognized text display -->
-      <div id="beeRecognizedText">
-        <p>I heard you spell:</p>
-        <div id="beeSpokenText"></div>
-      </div>
+        <!-- Word source selector — injected by createCustomWordsUI() -->
 
-      <!-- Controls -->
-      <div class="btn-grid">
-        <button class="btn-start start-btn" data-mode="bee">
-          <i class="fa fa-play"></i> Start Spelling Bee
+        <!-- Accent -->
+        <div class="setup-card">
+          <h4><i class="fa fa-globe"></i> Pronunciation</h4>
+          <div class="accent-setup-row">
+            <label for="beeAccent">Accent</label>
+            <select class="accent-select" id="beeAccent">
+              <option value="en-GB">🇬🇧 British</option>
+              <option value="en-US">🇺🇸 American</option>
+              <option value="en-AU">🇦🇺 Australian</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Start button -->
+        <button class="btn-start-training start-btn" data-mode="bee">
+          <i class="fa fa-microphone"></i> Start Spelling Bee
         </button>
-        <button class="btn-sec" id="beeListen">
-          <i class="fa fa-microphone"></i> Speak Now
+
+      </div><!-- /.setup-phase -->
+
+      <!-- ════ TRAINING PHASE ════ -->
+      <div class="training-phase">
+
+        <button class="back-to-setup" onclick="backToSetup('bee')">
+          <i class="fa fa-arrow-left"></i> Change settings
         </button>
-        <button class="btn-sec" id="beeSayAgain">
-          <i class="fa fa-volume-up"></i> Say Again
-        </button>
-        <button class="btn-sec" id="beeFlag">
-          <i class="fa fa-flag"></i> Flag
-        </button>
-        <button class="btn-end" id="beeEnd">
-          <i class="fa fa-stop"></i> End Session
-        </button>
-      </div>
+
+        <!-- Progress -->
+        <div id="beeProgress" class="progress-text"></div>
+        <div class="progress-track"><div class="progress-fill" id="beeProgressFill"></div></div>
+
+        <!-- Feedback -->
+        <div id="beeFeedback" class="feedback-pill">
+          Listen to the word, then spell it aloud…
+        </div>
+
+        <!-- Voice recognition UI -->
+        <div id="beeVoiceStatus">
+          <div id="beeVoiceText">Listening… spell the word now</div>
+          <div class="voice-bars">
+            <div class="voice-bar"></div>
+            <div class="voice-bar"></div>
+            <div class="voice-bar"></div>
+            <div class="voice-bar"></div>
+            <div class="voice-bar"></div>
+          </div>
+        </div>
+
+        <!-- Recognized text display -->
+        <div id="beeRecognizedText">
+          <p>I heard you spell:</p>
+          <div id="beeSpokenText"></div>
+        </div>
+
+        <!-- Controls -->
+        <div class="btn-grid">
+          <button class="btn-sec" id="beeListen">
+            <i class="fa fa-microphone"></i> Speak Now
+          </button>
+          <button class="btn-sec" id="beeSayAgain">
+            <i class="fa fa-volume-up"></i> Say Again
+          </button>
+          <button class="btn-sec" id="beeFlag">
+            <i class="fa fa-flag"></i> Flag
+          </button>
+          <button class="btn-end" id="beeEnd">
+            <i class="fa fa-stop"></i> End Session
+          </button>
+        </div>
+
+      </div><!-- /.training-phase -->
 
       <!-- Session summary -->
       <div id="beeSummary" class="summary-panel" style="display:none;"></div>
