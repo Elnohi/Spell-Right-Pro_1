@@ -845,5 +845,35 @@
   });
 })();
 </script>
+
+<script>
+// Show welcome message for new signups arriving from /login?welcome=1
+(function() {
+  if (window.location.search.indexOf('welcome=1') >= 0) {
+    document.addEventListener('DOMContentLoaded', function() {
+      // Remove the param from URL without reload
+      history.replaceState({}, '', '/trainer');
+      // Show a brief welcome toast after auth clears the overlay
+      var check = setInterval(function() {
+        var overlay = document.getElementById('loginOverlay');
+        if (overlay && overlay.style.display === 'none') {
+          clearInterval(check);
+          var toast = document.createElement('div');
+          toast.style.cssText = 'position:fixed;top:16px;left:50%;transform:translateX(-50%);' +
+            'background:#00c57a;color:#fff;padding:12px 24px;border-radius:12px;' +
+            'font-weight:600;font-size:0.92rem;z-index:9999;box-shadow:0 4px 20px rgba(0,0,0,.2);';
+          toast.textContent = '🎉 Welcome to SpellRightPro! Choose a practice mode to begin.';
+          document.body.appendChild(toast);
+          setTimeout(function() {
+            toast.style.transition = 'opacity .4s';
+            toast.style.opacity = '0';
+            setTimeout(function() { toast.remove(); }, 400);
+          }, 4000);
+        }
+      }, 300);
+    });
+  }
+})();
+</script>
 </body>
 </html>

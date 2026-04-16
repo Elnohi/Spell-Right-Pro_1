@@ -457,8 +457,10 @@
 
       try {
         await auth.createUserWithEmailAndPassword(email, password);
-        showMsg('Account created! Redirecting to plans…', 'success');
-        setTimeout(function() { window.location.href = '/premium.html'; }, 1500);
+        showMsg('Account created! Taking you to the app…', 'success');
+        // New users land on trainer — they can try free features first
+        // and upgrade when they're ready via the Go Premium button
+        setTimeout(function() { window.location.href = '/trainer?welcome=1'; }, 1200);
 
       } catch(err) {
         var msgs = {

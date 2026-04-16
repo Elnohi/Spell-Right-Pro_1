@@ -505,7 +505,70 @@
       text-transform: uppercase;
       margin-bottom: 4px;
     }
-</style>
+
+    /* ── Redesigned setup panel ───────────────────────────────────── */
+    .word-source-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+    .source-btn {
+      border: 2px solid var(--border);
+      border-radius: 14px;
+      padding: 14px 12px;
+      background: var(--surface2);
+      cursor: pointer;
+      text-align: center;
+      transition: all .2s;
+      font-family: inherit;
+    }
+    .source-btn.active {
+      border-color: var(--brand);
+      background: rgba(123,47,247,.1);
+    }
+    .source-btn i  { font-size: 1.4rem; color: var(--brand); display: block; margin-bottom: 6px; }
+    .source-btn strong { font-size: 0.88rem; display: block; color: var(--text); }
+    .source-btn small  { font-size: 0.72rem; color: var(--muted); }
+    #customPanel {
+      display: none;
+      margin-top: 8px;
+      animation: fadeIn .2s ease;
+    }
+    #customPanel.open { display: block; }
+    @keyframes fadeIn { from{opacity:0;transform:translateY(-4px)} to{opacity:1;transform:none} }
+    #customWords {
+      width: 100%;
+      min-height: 80px;
+      border-radius: 10px;
+      border: 1.5px solid var(--border);
+      background: var(--surface2);
+      color: var(--text);
+      font-size: 0.88rem;
+      padding: 10px 12px;
+      resize: vertical;
+      font-family: 'DM Mono', monospace;
+      box-sizing: border-box;
+      margin-bottom: 8px;
+    }
+    #customWords:focus { outline: none; border-color: var(--brand); }
+    .upload-row {
+      display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+      margin-bottom: 6px;
+    }
+    .app-word-hint {
+      background: rgba(0,197,122,.08);
+      border: 1px solid rgba(0,197,122,.25);
+      border-radius: 10px;
+      padding: 10px 14px;
+      font-size: 0.82rem;
+      color: var(--text);
+      display: flex; align-items: center; gap: 8px;
+      margin-bottom: 8px;
+    }
+    .app-word-hint i { color: #00c57a; font-size: 1rem; }
+
+  </style>
 </head>
 <body data-mode="school">
   <!-- Header with Dark Mode Toggle -->
@@ -540,28 +603,52 @@
     <div id="setupPanel">
       <div class="setup-header" onclick="toggleSetup()">
         <span class="setup-title">
-          <i class="fa fa-list-ul"></i> Word List Setup
+          <i class="fa fa-cog"></i> Practice Setup
         </span>
         <span class="setup-toggle" id="setupToggleBtn">▲ Hide</span>
       </div>
 
       <div class="setup-body" id="setupBody">
-        <textarea
-          id="customWords"
-          placeholder="Paste your word list here (one per line, or comma-separated) — or leave blank to use the built-in school list…"
-        ></textarea>
 
-        <div class="setup-file-row">
-          <input type="file" id="fileInput" accept=".txt,.json" style="display:none;" />
-          <button class="nav-btn" onclick="document.getElementById('fileInput').click()">
-            <i class="fa fa-upload"></i> Upload File
+        <!-- Word source selector -->
+        <div class="word-source-row">
+          <button class="source-btn active" id="btnUseApp" onclick="selectSource('app')">
+            <i class="fa fa-book-open"></i>
+            <strong>Use App Words</strong>
+            <small>1,200+ built-in words</small>
           </button>
-          <span id="fileName" style="font-size:0.8rem;color:var(--muted);">No file chosen</span>
-          <button id="useCustomList" class="nav-btn" style="margin-left:auto;">
-            <i class="fa fa-check"></i> Use This List
+          <button class="source-btn" id="btnUseCustom" onclick="selectSource('custom')">
+            <i class="fa fa-pen"></i>
+            <strong>Add My Words</strong>
+            <small>Paste or upload your list</small>
           </button>
         </div>
-        <p class="setup-hint">Freemium: up to 1 custom list per day · <a href="/premium.html" style="color:var(--brand);">Upgrade</a> for unlimited</p>
+
+        <!-- App words hint (shown when app words selected) -->
+        <div class="app-word-hint" id="appWordHint">
+          <i class="fa fa-check-circle"></i>
+          <span>Built-in school word list ready — just press <strong>Start</strong> below.</span>
+        </div>
+
+        <!-- Custom words panel (hidden until user chooses "Add My Words") -->
+        <div id="customPanel">
+          <textarea
+            id="customWords"
+            placeholder="Paste your words here — one per line, or comma-separated&#10;&#10;Example:&#10;necessary&#10;accommodate&#10;rhythm"
+          ></textarea>
+          <div class="upload-row">
+            <input type="file" id="fileInput" accept=".txt,.json" style="display:none;" />
+            <button class="nav-btn" onclick="document.getElementById('fileInput').click()">
+              <i class="fa fa-upload"></i> Upload .txt file
+            </button>
+            <span id="fileName" style="font-size:0.78rem;color:var(--muted);">No file chosen</span>
+            <button id="useCustomList" class="nav-btn" style="margin-left:auto;">
+              <i class="fa fa-check"></i> Apply List
+            </button>
+          </div>
+          <p class="setup-hint">Freemium: up to 1 custom list per day · <a href="/premium.html" style="color:var(--brand);">Upgrade</a> for unlimited</p>
+        </div>
+
       </div>
     </div>
 
@@ -1537,5 +1624,30 @@ const firebaseConfig = {
   <a href="/premium" class=""><i class="fa fa-crown"></i>Premium</a>
 </nav>
   <script>if('serviceWorker' in navigator){navigator.serviceWorker.register('/sw.js').catch(function(){});}</script>
+
+<script>
+  // ── Word source selector ────────────────────────────────────────────────────
+  window._wordSource = 'app';
+  function selectSource(source) {
+    window._wordSource = source;
+    var appBtn    = document.getElementById('btnUseApp');
+    var custBtn   = document.getElementById('btnUseCustom');
+    var appHint   = document.getElementById('appWordHint');
+    var custPanel = document.getElementById('customPanel');
+    if (source === 'app') {
+      if (appBtn)  appBtn.classList.add('active');
+      if (custBtn) custBtn.classList.remove('active');
+      if (appHint)   appHint.style.display = 'flex';
+      if (custPanel) custPanel.classList.remove('open');
+      var cw = document.getElementById('customWords');
+      if (cw) cw.value = '';
+    } else {
+      if (custBtn) custBtn.classList.add('active');
+      if (appBtn)  appBtn.classList.remove('active');
+      if (appHint)   appHint.style.display = 'none';
+      if (custPanel) custPanel.classList.add('open');
+    }
+  }
+</script>
 </body>
 </html>
