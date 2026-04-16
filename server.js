@@ -601,8 +601,41 @@ async function sendRenewalEmail(email, plan, expiryStr) {
 }
 
 // ── START ─────────────────────────────────────────────────────────────────────
+
+// ── Daily email checks — self-triggered, no Cloud Scheduler needed ────────────
+// Runs once on startup and every 24 hours after that.
+// Cloud Run stays warm as long as users are active — if the server restarts,
+// the interval resets, which is fine (checks just run again on next startup).
+function runDailyEmailChecks() {
+  const headers = {
+    'Content-Type': 'application/json',
+    'X-Scheduler-Secret': process.env.SCHEDULER_SECRET || 'internal'
+  };
+  const base = `http://localhost:${process.env.PORT || 8080}`;
+
+  // Small stagger so both don't fire at the exact same millisecond
+  setTimeout(() => {
+    fetch(base + '/api/email/reengage', { method: 'POST', headers })
+      .then(r => r.json())
+      .then(d => console.log('✅ Re-engage check:', d.sent || 0, 'emails sent'))
+      .catch(e => console.error('Re-engage check error:', e.message));
+  }, 2000);
+
+  setTimeout(() => {
+    fetch(base + '/api/email/renewal', { method: 'POST', headers })
+      .then(r => r.json())
+      .then(d => console.log('✅ Renewal reminder check:', d.sent || 0, 'emails sent'))
+      .catch(e => console.error('Renewal check error:', e.message));
+  }, 5000);
+}
+
 const PORT = process.env.PORT || 8080;
 app.listen(PORT, "0.0.0.0", () => {
+
+  // Start daily email checks (runs on startup + every 24h)
+  setTimeout(runDailyEmailChecks, 10000); // 10s delay to let server fully start
+  setInterval(runDailyEmailChecks, 24 * 60 * 60 * 1000);
+
   console.log(`
 ╔═══════════════════════════════════════════════════════╗
 ║        SpellRightPro API — Port ${PORT}                ║

@@ -195,6 +195,15 @@
             localStorage.setItem('srpPremium', JSON.stringify(premiumRecord));
             console.log('✅ Premium activated in localStorage');
 
+            // Send rich welcome email (non-blocking — don't await)
+            fetch(apiUrl + '/api/email/welcome', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ email: data.email || '', plan: data.plan || 'monthly' })
+            }).then(function() {
+              console.log('✅ Welcome email triggered');
+            }).catch(function() {}); // fail silently — webhook also sends confirmation
+
             // Also try to activate via Firebase if user is logged in
             if (typeof firebase !== 'undefined') {
               firebase.auth().onAuthStateChanged(function(user) {
