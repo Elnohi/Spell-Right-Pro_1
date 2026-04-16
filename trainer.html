@@ -409,6 +409,97 @@
     .trainer-tab-bar a.active { color:var(--brand); }
     .trainer-tab-bar a i { font-size:18px; }
 
+  
+    /* ── Word source selector (premium trainer) ─────────────────── */
+    .word-source-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+    .source-btn {
+      border: 2px solid var(--border);
+      border-radius: 14px;
+      padding: 14px 10px;
+      background: var(--surface2);
+      cursor: pointer;
+      text-align: center;
+      transition: all .2s;
+      font-family: 'DM Sans', sans-serif;
+      color: var(--text);
+    }
+    .source-btn.active {
+      border-color: var(--brand);
+      background: rgba(123,47,247,.1);
+    }
+    .source-btn i      { font-size:1.25rem; color:var(--brand); display:block; margin-bottom:5px; }
+    .source-btn strong { font-size:0.82rem; display:block; color:var(--text); }
+    .source-btn small  { font-size:0.68rem; color:var(--muted); }
+    .app-word-hint {
+      background: rgba(0,197,122,.08);
+      border: 1px solid rgba(0,197,122,.25);
+      border-radius: 10px;
+      padding: 10px 14px;
+      font-size: 0.82rem;
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 14px;
+    }
+    .app-word-hint i { color:#00c57a; font-size:0.95rem; flex-shrink:0; }
+    /* Custom panel — collapsed by default, opened by JS */
+    .custom-words-area {
+      display: none;
+      margin-bottom: 14px;
+    }
+    .custom-words-area.open { display: block; }
+    /* Quick-create textarea */
+    #quickWordsInput {
+      width: 100%;
+      min-height: 80px;
+      border-radius: 10px;
+      border: 1.5px solid var(--border);
+      background: var(--surface2);
+      color: var(--text);
+      font-size: 0.85rem;
+      padding: 10px 12px;
+      resize: vertical;
+      font-family: 'DM Mono', monospace;
+      box-sizing: border-box;
+      margin-bottom: 6px;
+    }
+    #quickWordsInput:focus { outline:none; border-color:var(--brand); }
+    /* Saved lists */
+    .upload-label { font-size:0.78rem; font-weight:600; color:var(--muted); display:block; margin-bottom:5px; }
+    .upload-row   { display:flex; gap:8px; align-items:center; flex-wrap:wrap; margin-bottom:8px; }
+    .lists-container { display:flex; flex-direction:column; gap:6px; }
+    .list-card {
+      background: var(--surface2);
+      border-radius: 10px;
+      padding: 10px 14px;
+      border: 1px solid var(--border);
+    }
+    .list-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:4px; }
+    .list-header strong { font-size:0.85rem; color:var(--text); }
+    .word-count { font-size:0.72rem; color:var(--muted); }
+    .list-words-preview { font-size:0.75rem; color:var(--muted); margin-bottom:8px; font-style:italic; }
+    .list-actions { display:flex; gap:6px; }
+    .btn-small {
+      padding:5px 10px; border-radius:8px; font-size:0.75rem;
+      border:1px solid var(--border); background:var(--surface);
+      color:var(--brand); cursor:pointer; font-family:'DM Sans',sans-serif; transition:all .15s;
+    }
+    .btn-small:hover { background:rgba(123,47,247,.1); }
+    .btn-small.btn-danger { color:var(--fail); border-color:rgba(255,69,96,.25); }
+    .btn-small.btn-danger:hover { background:rgba(255,69,96,.08); }
+    /* Mobile tweaks */
+    @media (max-width:520px) {
+      .word-source-row { gap:8px; }
+      .source-btn { padding:12px 8px; border-radius:12px; }
+      .source-btn i { font-size:1.1rem; }
+    }
+
   </style>
 </head>
 
