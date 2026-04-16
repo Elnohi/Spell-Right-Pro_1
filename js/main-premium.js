@@ -1390,4 +1390,3 @@ function simulatePremiumAccess() {
 window.simulatePremiumAccess = simulatePremiumAccess;
 window.quickTest = quickTest;
 
-
