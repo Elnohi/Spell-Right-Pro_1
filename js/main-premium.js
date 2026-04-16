@@ -738,11 +738,8 @@ function premSelectSource(source, mode) {
     // Clear any typed/pasted words so the built-in list is used
     const qw = document.getElementById('quickWordsInput');
     if (qw) qw.value = '';
-    // Reset currentList so next Start uses the built-in list
+    // Clear any custom list selection so next Start uses built-in words
     if (typeof currentCustomList !== 'undefined') currentCustomList = null;
-    if (typeof currentList !== 'undefined' && typeof window['_defaultList_' + mode] !== 'undefined') {
-      currentList = window['_defaultList_' + mode];
-    }
   } else {
     if (custBtn)   custBtn.classList.add('active');
     if (appBtn)    appBtn.classList.remove('active');
@@ -946,6 +943,28 @@ function loadCustomLists() {
 // TRAINING LOGIC (Existing code remains the same)
 // =======================================================
 
+
+// OET mode selector — updates radio inputs and Start button label
+function selectOetMode(mode) {
+  var practiceBtn = document.getElementById('oetModePractice');
+  var testBtn     = document.getElementById('oetModeTest');
+  var startBtn    = document.getElementById('oetStartBtn');
+  var practiceRadio = document.getElementById('examTypePractice');
+  var testRadio     = document.getElementById('examTypeTest');
+
+  if (mode === 'test') {
+    if (testBtn)     testBtn.classList.add('active');
+    if (practiceBtn) practiceBtn.classList.remove('active');
+    if (testRadio)   testRadio.checked   = true;
+    if (startBtn)    startBtn.innerHTML  = '<i class="fa fa-clock"></i> Start Exam Simulation (24 words)';
+  } else {
+    if (practiceBtn) practiceBtn.classList.add('active');
+    if (testBtn)     testBtn.classList.remove('active');
+    if (practiceRadio) practiceRadio.checked = true;
+    if (startBtn)    startBtn.innerHTML  = '<i class="fa fa-play"></i> Start Full List Practice';
+  }
+}
+
 // Mode selection
 document.querySelectorAll(".mode-btn").forEach(btn => {
   btn.addEventListener("click", () => {
@@ -958,14 +977,16 @@ document.querySelectorAll(".mode-btn").forEach(btn => {
     
     const selectedArea = document.getElementById(`${currentMode}-area`);
     if (selectedArea) {
-      selectedArea.style.display = "block";
-      selectedArea.classList.add("active");
-      
-      // Source selector stays in its current state when switching modes
-      // (user's choice of app-words vs custom-words is preserved)
+      selectedArea.style.display = 'block';
+      selectedArea.classList.add('active');
+      // Always show setup phase when switching modes
+      selectedArea.classList.remove('training-active');
     }
-    
+
     resetTraining();
+    // Reset summary on mode switch
+    const summary = document.getElementById(currentMode + 'Summary');
+    if (summary) { summary.style.display = 'none'; summary.innerHTML = ''; }
   });
 });
 
@@ -1001,22 +1022,49 @@ document.querySelectorAll(".start-btn").forEach(btn => {
 
 function startTraining(mode) {
   resetTraining();
-  
+
+  // Activate training phase — hide setup, show training
+  const area = document.getElementById(mode + '-area');
+  if (area) area.classList.add('training-active');
+
   if (currentCustomList && customLists[currentCustomList]) {
     currentList = customLists[currentCustomList].words;
-    showFeedback(`Using "${currentCustomList}" - ${currentList.length} words`, 'info');
-  } else if (mode === "oet") {
-    loadOETWords();
+    showFeedback(`Using "${currentCustomList}" — ${currentList.length} words`, 'info');
+    nextWord();
+  } else if (mode === 'oet') {
+    loadOETWords(); // handles nextWord() internally
     return;
-  } else if (mode === "bee") {
-    currentList = ["accommodate", "rhythm", "occurrence", "necessary", "embarrass", "challenge", "definitely", "separate", "recommend", "privilege"];
-    showFeedback("Bee mode started with default words", "info");
-  } else if (mode === "school") {
-    currentList = ["example", "language", "grammar", "knowledge", "science", "mathematics", "history", "geography", "literature", "chemistry"];
-    showFeedback("School mode started with default words", "info");
+  } else if (mode === 'bee') {
+    // Use full OET_WORDS if available, otherwise built-in bee list
+    if (typeof window.OET_WORDS !== 'undefined') {
+      currentList = [...window.OET_WORDS];
+    } else {
+      currentList = ['accommodate','rhythm','occurrence','necessary','embarrass',
+                     'guarantee','privilege','immediately','separate','conscience',
+                     'manoeuvre','bureaucracy','liaison','supersede','threshold',
+                     'committee','conscientious','millennium','perseverance','questionnaire'];
+    }
+    showFeedback('Spelling Bee started — ' + currentList.length + ' words', 'info');
+    nextWord();
+  } else {
+    // school — use built-in school list
+    currentList = ['example','language','grammar','knowledge','science',
+                   'mathematics','history','geography','literature','chemistry',
+                   'necessary','accommodate','separate','recommend','privilege',
+                   'immediately','definitely','embarrass','occurrence','committee'];
+    showFeedback('School practice started — ' + currentList.length + ' words', 'info');
+    nextWord();
   }
-  
-  nextWord();
+}
+
+// Back to setup — hide training phase, show setup phase
+function backToSetup(mode) {
+  const area = document.getElementById(mode + '-area');
+  if (area) area.classList.remove('training-active');
+  resetTraining();
+  // Reset summary
+  const summary = document.getElementById(mode + 'Summary');
+  if (summary) { summary.style.display = 'none'; summary.innerHTML = ''; }
 }
 
 // OET words loading
