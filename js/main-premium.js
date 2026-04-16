@@ -318,7 +318,7 @@ function initializePremiumFeatures() {
   }
   
   // 4. Premium Content Packs
-  loadPremiumContentPacks();
+  // loadPremiumContentPacks() — removed
   
   // Set user as premium
   if (window.tierManager) {
@@ -330,130 +330,9 @@ function initializePremiumFeatures() {
   }
 }
 
-// Add new function for premium content
-function loadPremiumContentPacks() {
-  const premiumContentHTML = `
-    <div class="premium-content-packs" style="
-      background: rgba(255, 193, 7, 0.1);
-      border: 2px solid rgba(255, 193, 7, 0.3);
-      border-radius: var(--radius);
-      padding: 25px;
-      margin: 25px 0;
-    ">
-      <h3><i class="fa fa-star"></i> Premium Content Packs <span class="premium-badge">NEW</span></h3>
-      <p style="opacity: 0.9; margin-bottom: 20px;">
-        Expert-curated word lists for specific goals and challenges.
-      </p>
-      
-      <div class="packs-grid" style="
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-        gap: 20px;
-        margin-top: 20px;
-      ">
-        <!-- OET Medicine Pack -->
-        <div class="pack-card" style="
-          background: rgba(255,255,255,0.05);
-          border-radius: 10px;
-          padding: 20px;
-          border: 1px solid rgba(255,255,255,0.1);
-          transition: transform 0.3s ease;
-          cursor: pointer;
-        " onclick="loadPremiumPack('oet_medicine')">
-          <div style="
-            background: linear-gradient(135deg, #667eea, #764ba2);
-            width: 50px;
-            height: 50px;
-            border-radius: 10px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin-bottom: 15px;
-            color: white;
-            font-size: 1.5rem;
-          ">
-            <i class="fa fa-stethoscope"></i>
-          </div>
-          <h4 style="margin-bottom: 10px;">OET Medicine: Specialist Terms</h4>
-          <p style="font-size: 0.9rem; opacity: 0.8; margin-bottom: 15px;">
-            200+ challenging medical terms from various specialties. Avoid fatal errors in documentation.
-          </p>
-          <div style="
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            font-size: 0.9rem;
-          ">
-            <span>250 words</span>
-            <span style="
-              background: #7b2ff7;
-              color: white;
-              padding: 2px 8px;
-              border-radius: 12px;
-              font-size: 0.8rem;
-            ">PREMIUM</span>
-          </div>
-        </div>
-        
-        <!-- Spelling Champion Pack -->
-        <div class="pack-card" style="
-          background: rgba(255,255,255,0.05);
-          border-radius: 10px;
-          padding: 20px;
-          border: 1px solid rgba(255,255,255,0.1);
-          transition: transform 0.3s ease;
-          cursor: pointer;
-        " onclick="loadPremiumPack('spelling_champion')">
-          <div style="
-            background: linear-gradient(135deg, #ff6b6b, #ffa726);
-            width: 50px;
-            height: 50px;
-            border-radius: 10px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin-bottom: 15px;
-            color: white;
-            font-size: 1.5rem;
-          ">
-            <i class="fa fa-trophy"></i>
-          </div>
-          <h4 style="margin-bottom: 10px;">Spelling Champion's Drill</h4>
-          <p style="font-size: 0.9rem; opacity: 0.8; margin-bottom: 15px;">
-            The ultimate challenge: notoriously tricky words, homophones, and etymology-based patterns.
-          </p>
-          <div style="
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            font-size: 0.9rem;
-          ">
-            <span>150 words</span>
-            <span style="
-              background: #7b2ff7;
-              color: white;
-              padding: 2px 8px;
-              border-radius: 12px;
-              font-size: 0.8rem;
-            ">PREMIUM</span>
-          </div>
-        </div>
-      </div>
-      
-      <div style="text-align: center; margin-top: 20px; opacity: 0.7; font-size: 0.9rem;">
-        <i class="fa fa-info-circle"></i> More packs coming soon!
-      </div>
-    </div>
-  `;
-  
-  // Insert premium content packs
-  const target = document.querySelector('.adaptive-drill-section') || 
-                 document.querySelector('.mistake-review-section') ||
-                 document.querySelector('.custom-words-area');
-  if (target) {
-    target.insertAdjacentHTML('afterend', premiumContentHTML);
-  }
-}
+// loadPremiumContentPacks() removed — content pack UI was showing
+// placeholder cards with incorrect word counts. Words are still
+// accessible by uploading a custom list.
 
 // Add premium pack loading function
 function loadPremiumPack(packName) {
