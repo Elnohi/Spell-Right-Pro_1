@@ -1434,4 +1434,3 @@ function simulatePremiumAccess() {
 // Make simulatePremiumAccess available globally for testing
 // simulatePremiumAccess kept for internal testing only (not exported publicly)
 
-
