@@ -632,55 +632,128 @@ function clearRealTimeFeedback() {
 // =======================================================
 
 function createCustomWordsUI() {
-  const customHTML = `
-    <div class="custom-words-area" style="margin-top: 20px; display: none;">
-      <h4><i class="fa fa-file-upload"></i> Custom Words</h4>
-      
-      <!-- Upload New List -->
-      <div class="upload-section" style="background: rgba(255,255,255,0.1); padding: 20px; border-radius: var(--radius); margin-bottom: 20px;">
-        <h5>Upload New Word List</h5>
-        <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
-          <input type="text" id="newListName" placeholder="List Name" 
-                 style="padding: 10px; border-radius: 8px; border: 1px solid #ccc; flex: 1; min-width: 150px;">
-          <input type="file" id="wordListFile" accept=".txt,.csv" 
-                 style="flex: 2; min-width: 200px;">
-          <button onclick="uploadWordList()" class="nav-btn">
-            <i class="fa fa-upload"></i> Upload
-          </button>
-        </div>
-        <p style="font-size: 0.8rem; margin-top: 10px; opacity: 0.8;">
-          Supported formats: .txt (one word per line) or .csv
-        </p>
-      </div>
-
-      <!-- Manage Existing Lists -->
-      <div class="lists-section">
-        <h5>Your Word Lists</h5>
-        <div id="customListsContainer" class="lists-container"></div>
-      </div>
-
-      <!-- Quick Create -->
-      <div class="quick-create" style="margin-top: 20px; padding: 15px; background: rgba(255,255,255,0.05); border-radius: var(--radius);">
-        <h5>Quick Create</h5>
-        <textarea id="quickWordsInput" placeholder="Enter words separated by commas or new lines" 
-                  style="width: 100%; height: 80px; padding: 10px; border-radius: 8px; border: 1px solid #ccc; margin-bottom: 10px;"></textarea>
-        <button onclick="createQuickList()" class="nav-btn">
-            <i class="fa fa-plus"></i> Create List
-        </button>
-      </div>
-    </div>
-  `;
+  const modeConfigs = {
+    school: { count: '1,200+ school words',   hint: 'Built-in school word list is ready' },
+    oet:    { count: '1,511 OET medical words', hint: 'Full OET medical word list is ready' },
+    bee:    { count: '500+ bee words',          hint: 'Built-in Spelling Bee word list is ready' }
+  };
 
   document.querySelectorAll('.trainer-area').forEach(area => {
-    const existingCustom = area.querySelector('.custom-words-area');
-    if (!existingCustom) {
-      const title = area.querySelector('h3');
-      if (title) {
-        title.insertAdjacentHTML('afterend', customHTML);
-      }
+    // Don't inject twice
+    if (area.querySelector('.word-source-row')) return;
+
+    const mode = area.id.replace('-area', '');
+    const cfg  = modeConfigs[mode] || { count: 'built-in words', hint: 'Word list is ready' };
+
+    const customHTML = `
+      <!-- ── Word source selector ─────────────────────────────────────── -->
+      <div class="word-source-row" style="margin-bottom:14px;">
+        <button class="source-btn active" id="btnUseApp-${mode}"
+                onclick="premSelectSource('app','${mode}')">
+          <i class="fa fa-book-open"></i>
+          <strong>Use App Words</strong>
+          <small>${cfg.count}</small>
+        </button>
+        <button class="source-btn" id="btnUseCustom-${mode}"
+                onclick="premSelectSource('custom','${mode}')">
+          <i class="fa fa-pen"></i>
+          <strong>Add My Words</strong>
+          <small>Paste, type or upload</small>
+        </button>
+      </div>
+
+      <!-- App words hint -->
+      <div class="app-word-hint" id="appHint-${mode}">
+        <i class="fa fa-check-circle"></i>
+        <span>${cfg.hint} — press <strong>Start</strong> below.</span>
+      </div>
+
+      <!-- Custom words panel (collapsed by default) -->
+      <div class="custom-words-area" id="customPanel-${mode}">
+
+        <!-- Quick paste / type -->
+        <div style="margin-bottom:12px;">
+          <label class="upload-label">
+            <i class="fa fa-keyboard"></i> Type or paste words
+          </label>
+          <textarea id="quickWordsInput"
+            placeholder="One word per line, or comma-separated&#10;&#10;e.g.&#10;necessary&#10;accommodate&#10;rhythm"
+          ></textarea>
+          <button onclick="createQuickList()" class="nav-btn" style="margin-top:4px;">
+            <i class="fa fa-plus"></i> Save as quick list &amp; start
+          </button>
+        </div>
+
+        <!-- Divider -->
+        <div style="border-top:1px solid var(--border);margin:12px 0;"></div>
+
+        <!-- Upload a file -->
+        <div style="margin-bottom:12px;">
+          <label class="upload-label">
+            <i class="fa fa-upload"></i> Upload a word list file (.txt or .csv)
+          </label>
+          <div class="upload-row">
+            <input type="text" id="newListName" placeholder="Give your list a name"
+                   style="flex:1;min-width:120px;padding:8px 10px;border-radius:8px;
+                          border:1.5px solid var(--border);background:var(--surface2);
+                          color:var(--text);font-family:inherit;font-size:0.85rem;">
+            <input type="file" id="wordListFile" accept=".txt,.csv"
+                   style="flex:2;min-width:0;font-size:0.8rem;">
+            <button onclick="uploadWordList()" class="nav-btn">
+              <i class="fa fa-upload"></i> Upload
+            </button>
+          </div>
+        </div>
+
+        <!-- Saved lists -->
+        <div>
+          <label class="upload-label">
+            <i class="fa fa-list"></i> Your saved lists
+          </label>
+          <div id="customListsContainer" class="lists-container"></div>
+        </div>
+
+      </div>
+    `;
+
+    const title = area.querySelector('h3');
+    if (title) {
+      title.insertAdjacentHTML('afterend', customHTML);
     }
   });
+
+  // Initialise: load saved lists and update display
+  initializeCustomWords();
 }
+
+// ── Source selector controller ────────────────────────────────────────────────
+function premSelectSource(source, mode) {
+  const appBtn    = document.getElementById('btnUseApp-'    + mode);
+  const custBtn   = document.getElementById('btnUseCustom-' + mode);
+  const appHint   = document.getElementById('appHint-'      + mode);
+  const custPanel = document.getElementById('customPanel-'  + mode);
+
+  if (source === 'app') {
+    if (appBtn)    appBtn.classList.add('active');
+    if (custBtn)   custBtn.classList.remove('active');
+    if (appHint)   appHint.style.display   = 'flex';
+    if (custPanel) custPanel.classList.remove('open');
+    // Clear any typed/pasted words so the built-in list is used
+    const qw = document.getElementById('quickWordsInput');
+    if (qw) qw.value = '';
+    // Reset currentList so next Start uses the built-in list
+    if (typeof currentCustomList !== 'undefined') currentCustomList = null;
+    if (typeof currentList !== 'undefined' && typeof window['_defaultList_' + mode] !== 'undefined') {
+      currentList = window['_defaultList_' + mode];
+    }
+  } else {
+    if (custBtn)   custBtn.classList.add('active');
+    if (appBtn)    appBtn.classList.remove('active');
+    if (appHint)   appHint.style.display   = 'none';
+    if (custPanel) custPanel.classList.add('open');
+  }
+}
+
 
 function initializeCustomWords() {
   loadCustomLists();
@@ -891,10 +964,8 @@ document.querySelectorAll(".mode-btn").forEach(btn => {
       selectedArea.style.display = "block";
       selectedArea.classList.add("active");
       
-      const customWordsSection = selectedArea.querySelector('.custom-words-area');
-      if (customWordsSection) {
-        customWordsSection.style.display = "block";
-      }
+      // Source selector stays in its current state when switching modes
+      // (user's choice of app-words vs custom-words is preserved)
     }
     
     resetTraining();
