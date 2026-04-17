@@ -1,6 +1,7 @@
 User-agent: *
 Allow: /
 Disallow: /admin
+Disallow: /social-posts
 Disallow: /admin/
 Disallow: /private/
 Disallow: /thank-you.html

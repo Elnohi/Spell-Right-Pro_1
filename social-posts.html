@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Social Media Posts — SpellRightPro</title>
+  <meta name="robots" content="noindex"/>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"/>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800&family=DM+Mono:wght@400&display=swap');
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:'DM Sans',sans-serif;background:#f4f0fc;color:#1a0533;line-height:1.6;padding:32px 16px 60px}
+    h1{font-size:1.6rem;font-weight:800;color:#7b2ff7;margin-bottom:6px}
+    .intro{font-size:0.95rem;color:#7b6f8a;margin-bottom:32px;max-width:640px}
+    .section{margin-bottom:40px}
+    .section-head{
+      font-size:0.72rem;font-weight:700;color:#7b6f8a;text-transform:uppercase;
+      letter-spacing:.08em;margin-bottom:16px;display:flex;align-items:center;gap:8px;
+    }
+    .section-head::after{content:'';flex:1;height:1px;background:rgba(123,47,247,0.15)}
+    .post-card{
+      background:#fff;border-radius:14px;padding:22px 20px 16px;
+      margin-bottom:14px;box-shadow:0 2px 12px rgba(100,30,200,0.08);
+      border:1px solid rgba(123,47,247,0.1);
+    }
+    .post-label{
+      font-size:0.72rem;font-weight:700;color:#7b2ff7;text-transform:uppercase;
+      letter-spacing:.06em;margin-bottom:10px;display:flex;align-items:center;gap:6px;
+    }
+    .post-text{
+      font-family:'DM Mono',monospace;font-size:0.82rem;color:#1a0533;
+      background:#f8f5ff;border:1px solid rgba(123,47,247,0.12);border-radius:10px;
+      padding:14px 16px;white-space:pre-wrap;line-height:1.65;margin-bottom:12px;
+    }
+    .post-footer{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px}
+    .post-meta{font-size:0.75rem;color:#9d8fc0}
+    .copy-btn{
+      padding:7px 16px;background:#7b2ff7;color:#fff;border:none;border-radius:8px;
+      font-size:0.8rem;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;
+      display:inline-flex;align-items:center;gap:5px;transition:all .15s;
+    }
+    .copy-btn:hover{background:#6320d8}
+    .copy-btn.copied{background:#00c57a}
+    .tag-row{display:flex;flex-wrap:wrap;gap:5px;margin-top:8px}
+    .tag{
+      background:rgba(123,47,247,0.08);color:#7b2ff7;
+      font-size:0.72rem;padding:2px 9px;border-radius:10px;font-weight:600;
+    }
+    .where-to-post{
+      background:#fff8e1;border:1px solid #ffb800;border-radius:10px;
+      padding:14px 16px;margin-bottom:20px;font-size:0.85rem;color:#1a0533;
+    }
+    .where-to-post strong{color:#7a4d00}
+    .where-to-post ul{margin:8px 0 0 16px}
+    .where-to-post li{margin-bottom:4px}
+    .tip-box{
+      background:#e8f5e9;border:1px solid #4caf50;border-radius:10px;
+      padding:14px 16px;margin-top:16px;font-size:0.85rem;color:#1a0533;
+    }
+    .tip-box strong{color:#2e7d32}
+    .gsc-steps{counter-reset:step}
+    .gsc-step{
+      display:flex;gap:14px;align-items:flex-start;
+      background:#fff;border-radius:12px;padding:16px;
+      margin-bottom:10px;box-shadow:0 2px 8px rgba(100,30,200,0.07);
+    }
+    .gsc-num{
+      width:30px;height:30px;border-radius:50%;background:#7b2ff7;color:#fff;
+      display:flex;align-items:center;justify-content:center;font-weight:700;
+      font-size:0.88rem;flex-shrink:0;
+    }
+    .gsc-content h4{font-size:0.95rem;font-weight:700;margin-bottom:4px}
+    .gsc-content p{font-size:0.85rem;color:#7b6f8a;margin:0}
+    .gsc-content code{
+      font-family:'DM Mono',monospace;font-size:0.78rem;
+      background:#f4f0fc;padding:2px 6px;border-radius:5px;color:#7b2ff7;
+    }
+    .url-box{
+      background:#f4f0fc;border:1px solid rgba(123,47,247,.2);border-radius:8px;
+      padding:10px 14px;font-family:'DM Mono',monospace;font-size:0.82rem;
+      color:#7b2ff7;display:flex;justify-content:space-between;align-items:center;
+      margin:8px 0;
+    }
+  </style>
+</head>
+<body>
+
+<h1>📱 Social Media Post Pack</h1>
+<p class="intro">
+  Ready-to-copy posts for OET Facebook groups and WhatsApp communities.
+  Each post is written to provide genuine value — not to advertise.
+  The rule: help first, mention the tool second.
+</p>
+
+<!-- WHERE TO POST -->
+<div class="section">
+  <div class="section-head"><i class="fab fa-facebook"></i> Where to post</div>
+  <div class="where-to-post">
+    <strong>Facebook groups to join and post in:</strong>
+    <ul>
+      <li>OET Preparation Group (search Facebook — largest group, 200k+ members)</li>
+      <li>OET Writing Skills</li>
+      <li>OET for Nurses — Philippines</li>
+      <li>OET for Nurses — India</li>
+      <li>OET for Nurses — Nigeria</li>
+      <li>OET Medicine Community</li>
+      <li>IELTS / OET Preparation (mixed)</li>
+    </ul>
+    <br/>
+    <strong>WhatsApp:</strong> Search for OET study group invites in those Facebook groups — many have linked WhatsApp communities.
+  </div>
+  <div class="tip-box">
+    <strong>💡 Strategy:</strong> Join 3–5 groups. Spend the first few days answering questions and being helpful before posting about SpellRightPro. Groups ban obvious self-promotion — but they welcome people who share useful tools and resources naturally.
+  </div>
+</div>
+
+<!-- POST 1 — Value-first, word list -->
+<div class="section">
+  <div class="section-head"><i class="fa fa-star"></i> Post 1 — High-value list (Facebook/WhatsApp)</div>
+  <div class="post-card">
+    <div class="post-label"><i class="fab fa-facebook-f"></i> Facebook group post</div>
+    <div class="post-text" id="post1">🚨 OET spelling trap — these 10 words catch out almost every candidate:
+
+1. diarrhoea (NOT diarrhea — British spelling)
+2. haemorrhage (NOT hemorrhage)
+3. catheterisation (NOT catheterization)
+4. oesophagus (NOT esophagus)
+5. appendicectomy (NOT appendectomy)
+6. ophthalmologist (NOT opthalmologist)
+7. psychiatrist (NOT psyciatrist)
+8. hospitalisation (NOT hospitalization)
+9. cholecystectomy (NOT colecistectomy)
+10. discolouration (NOT discoloration)
+
+The OET uses British/Australian spelling. If you trained in a country using American English, you need to actively re-learn these.
+
+I've been using SpellRightPro (spellrightpro.org/freemium-oet) to practice — it speaks the words aloud and marks your spelling instantly. 1,511 OET words, completely free.
+
+Has anyone else been caught out by British vs American spelling? 👇</div>
+    <div class="post-footer">
+      <div class="post-meta">~180 words · Facebook group · Expect 15–40 comments</div>
+      <button class="copy-btn" onclick="copyPost('post1', this)"><i class="fa fa-copy"></i> Copy</button>
+    </div>
+    <div class="tag-row">
+      <span class="tag">OET Writing</span><span class="tag">British spelling</span>
+      <span class="tag">High engagement</span>
+    </div>
+  </div>
+</div>
+
+<!-- POST 2 — WhatsApp short -->
+<div class="section">
+  <div class="section-head"><i class="fab fa-whatsapp"></i> Post 2 — Short (WhatsApp group)</div>
+  <div class="post-card">
+    <div class="post-label"><i class="fab fa-whatsapp"></i> WhatsApp message</div>
+    <div class="post-text" id="post2">Good morning everyone 🌟
+
+Quick spelling tip for OET Writing:
+
+The exam uses BRITISH spelling, not American. Most common mistakes:
+• haemorrhage (not hemorrhage)
+• diarrhoea (not diarrhea)
+• catheterisation (not catheterization)
+• paediatric (not pediatric)
+
+If you want to practice all the OET medical words with audio, this free tool has 1,511 words: spellrightpro.org/freemium-oet
+
+It speaks the word and marks your spelling. No signup needed 👍</div>
+    <div class="post-footer">
+      <div class="post-meta">~85 words · WhatsApp · Direct and scannable</div>
+      <button class="copy-btn" onclick="copyPost('post2', this)"><i class="fa fa-copy"></i> Copy</button>
+    </div>
+    <div class="tag-row"><span class="tag">WhatsApp</span><span class="tag">Short</span><span class="tag">High conversion</span></div>
+  </div>
+</div>
+
+<!-- POST 3 — Article share -->
+<div class="section">
+  <div class="section-head"><i class="fa fa-newspaper"></i> Post 3 — Article share (Facebook)</div>
+  <div class="post-card">
+    <div class="post-label"><i class="fab fa-facebook-f"></i> Facebook — article share post</div>
+    <div class="post-text" id="post3">📚 I put together a full guide on OET spelling — specifically the 50 words that trip up most candidates.
+
+Covers:
+✅ British vs American spelling differences
+✅ The hae-/ae- pattern (haemoglobin, anaemia, etc.)
+✅ Silent letter openings (psychiatrist, ophthalmologist)
+✅ Drug names that candidates consistently misspell
+✅ The -isation vs -ization rule
+
+Free to read: spellrightpro.org/oet-spelling-guide
+
+Hope it helps someone preparing for their exam 🙏</div>
+    <div class="post-footer">
+      <div class="post-meta">~90 words · Facebook · Share when article is live</div>
+      <button class="copy-btn" onclick="copyPost('post3', this)"><i class="fa fa-copy"></i> Copy</button>
+    </div>
+    <div class="tag-row"><span class="tag">Article promotion</span><span class="tag">Educational</span></div>
+  </div>
+</div>
+
+<!-- POST 4 — Question/engagement -->
+<div class="section">
+  <div class="section-head"><i class="fa fa-question-circle"></i> Post 4 — Engagement question (Facebook)</div>
+  <div class="post-card">
+    <div class="post-label"><i class="fab fa-facebook-f"></i> Facebook — discussion starter</div>
+    <div class="post-text" id="post4">Quick poll for OET Writing candidates 📝
+
+Which section do you find hardest to score well in?
+
+A) Spelling and medical vocabulary
+B) Sentence structure and grammar
+C) Organising the letter / structure
+D) Covering all the relevant case note information
+
+I'm asking because I'm trying to understand what most candidates actually struggle with. Spelling is where I personally keep losing marks — specifically British spelling conventions like "diarrhoea", "haemoglobin" and "catheterisation".
+
+What's your experience? 👇
+
+(I've been using spellrightpro.org to practice the medical vocabulary if anyone else is struggling with the same thing)</div>
+    <div class="post-footer">
+      <div class="post-meta">~115 words · Facebook · High comment rate from poll format</div>
+      <button class="copy-btn" onclick="copyPost('post4', this)"><i class="fa fa-copy"></i> Copy</button>
+    </div>
+    <div class="tag-row"><span class="tag">Engagement</span><span class="tag">Poll</span><span class="tag">Organic</span></div>
+  </div>
+</div>
+
+<!-- POST 5 — Filipino nurse community -->
+<div class="section">
+  <div class="section-head"><i class="fa fa-user-nurse"></i> Post 5 — For Filipino nurse OET groups</div>
+  <div class="post-card">
+    <div class="post-label"><i class="fab fa-facebook-f"></i> Facebook — Filipino OET nurse group</div>
+    <div class="post-text" id="post5">Hello po sa lahat! 👋
+
+For those preparing for OET — I wanted to share something that's been helping me with the Writing sub-test.
+
+The spelling part is harder than it looks because the OET uses British/Australian spelling, not American. So words we know from nursing school in American spelling need to be relearned:
+
+• diarrhea → diarrhoea ✅
+• hemoglobin → haemoglobin ✅
+• catheterization → catheterisation ✅
+• pediatric → paediatric ✅
+
+I found a free tool that has 1,511 OET medical words with audio — you type the spelling and it marks you instantly: spellrightpro.org/freemium-oet
+
+No registration needed. You can use it on your phone during break time 📱
+
+Sana makatulong! 🙏</div>
+    <div class="post-footer">
+      <div class="post-meta">~140 words · Filipino OET groups · Mix of English + Tagalog closing</div>
+      <button class="copy-btn" onclick="copyPost('post5', this)"><i class="fa fa-copy"></i> Copy</button>
+    </div>
+    <div class="tag-row"><span class="tag">Filipino nurses</span><span class="tag">Localised</span><span class="tag">Warm tone</span></div>
+  </div>
+</div>
+
+<!-- GOOGLE SEARCH CONSOLE GUIDE -->
+<div class="section">
+  <div class="section-head"><i class="fab fa-google"></i> Google Search Console — step by step</div>
+
+  <div class="where-to-post" style="background:#e8f0fe;border-color:#4285f4;">
+    <strong style="color:#1a73e8;">What this does:</strong> Tells Google your site exists, submits your sitemap so all pages get indexed, and gives you data on which search terms bring people to SpellRightPro. Do this today — it can take 1–4 weeks for pages to start appearing in search results, so the sooner you submit the better.
+  </div>
+
+  <div class="gsc-steps">
+
+    <div class="gsc-step">
+      <div class="gsc-num">1</div>
+      <div class="gsc-content">
+        <h4>Go to Google Search Console</h4>
+        <p>Open <a href="https://search.google.com/search-console" target="_blank" style="color:#1a73e8;">search.google.com/search-console</a> and sign in with any Google account.</p>
+      </div>
+    </div>
+
+    <div class="gsc-step">
+      <div class="gsc-num">2</div>
+      <div class="gsc-content">
+        <h4>Add a new property</h4>
+        <p>Click <strong>Add property</strong> → choose <strong>URL prefix</strong> → enter:</p>
+        <div class="url-box">https://spellrightpro.org</div>
+        <p>Click Continue.</p>
+      </div>
+    </div>
+
+    <div class="gsc-step">
+      <div class="gsc-num">3</div>
+      <div class="gsc-content">
+        <h4>Verify ownership — HTML tag method (easiest)</h4>
+        <p>Choose <strong>HTML tag</strong> verification. Google gives you a meta tag like:</p>
+        <div class="url-box"><code>&lt;meta name="google-site-verification" content="XXXX..." /&gt;</code></div>
+        <p>Add this tag to the <code>&lt;head&gt;</code> of your <code>index.html</code>, deploy to Netlify, then click <strong>Verify</strong> in Search Console.</p>
+      </div>
+    </div>
+
+    <div class="gsc-step">
+      <div class="gsc-num">4</div>
+      <div class="gsc-content">
+        <h4>Submit your sitemap</h4>
+        <p>In the left sidebar go to <strong>Sitemaps</strong> → enter:</p>
+        <div class="url-box">sitemap.xml</div>
+        <p>Click <strong>Submit</strong>. Google will crawl all 10 pages in your sitemap.</p>
+      </div>
+    </div>
+
+    <div class="gsc-step">
+      <div class="gsc-num">5</div>
+      <div class="gsc-content">
+        <h4>Request indexing for the OET article</h4>
+        <p>In the top search bar of Search Console paste:</p>
+        <div class="url-box">https://spellrightpro.org/oet-spelling-guide</div>
+        <p>Click <strong>Request Indexing</strong>. This asks Google to crawl the article immediately rather than waiting for its normal schedule.</p>
+      </div>
+    </div>
+
+    <div class="gsc-step">
+      <div class="gsc-num">6</div>
+      <div class="gsc-content">
+        <h4>Do the same for Bing (5 extra minutes)</h4>
+        <p>Go to <a href="https://www.bing.com/webmasters" target="_blank" style="color:#1a73e8;">bing.com/webmasters</a>. You can import your Google Search Console property automatically — just sign in with a Microsoft account and click <strong>Import from Google Search Console</strong>. Takes 2 minutes and covers Bing and DuckDuckGo.</p>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="tip-box">
+    <strong>📊 What to check in 2 weeks:</strong> Go back to Search Console → Performance → Search results. You'll see which queries are bringing people to the site and which pages are getting impressions. The OET article and freemium-oet page should start appearing. If they're getting impressions but low clicks, the meta descriptions need to be more compelling.
+  </div>
+
+</div>
+
+<script>
+function copyPost(id, btn) {
+  var text = document.getElementById(id).textContent;
+  navigator.clipboard.writeText(text).then(function() {
+    btn.innerHTML = '<i class="fa fa-check"></i> Copied!';
+    btn.classList.add('copied');
+    setTimeout(function() {
+      btn.innerHTML = '<i class="fa fa-copy"></i> Copy';
+      btn.classList.remove('copied');
+    }, 2500);
+  });
+}
+</script>
+</body>
+</html>
