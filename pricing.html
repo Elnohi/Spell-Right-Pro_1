@@ -3,522 +3,465 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>SpellRightPro – Pricing</title>
 
-  <!-- Styles -->
-  <link rel="stylesheet" href="/css/styles.css" />
+  <title>SpellRightPro Premium — Unlimited Spelling Practice from CAD $5/month</title>
+  <meta name="description" content="Unlock unlimited spelling practice, full OET word list, progress dashboard and mistake review. CAD $5/month or $45/year. Cancel anytime." />
+  <meta name="keywords" content="spelling trainer premium, OET premium practice, spelling subscription, spelling app" />
+  <meta name="robots" content="index, follow" />
+  <link rel="canonical" href="https://spellrightpro.org/pricing" />
+  <meta property="og:type"        content="website" />
+  <meta property="og:title"       content="SpellRightPro Premium Plans" />
+  <meta property="og:description" content="Unlimited OET medical spelling, school practice and Spelling Bee — with progress tracking and spaced repetition. From CAD $5/month." />
+  <meta property="og:url"         content="https://spellrightpro.org/pricing" />
+  <meta property="og:image"       content="https://spellrightpro.org/assets/og-image.png" />
+  <meta property="og:site_name"   content="SpellRightPro" />
+  <meta name="twitter:card"        content="summary_large_image" />
+  <meta name="twitter:title"       content="SpellRightPro Premium Plans" />
+  <meta name="twitter:description" content="Unlimited OET medical spelling, school practice and Spelling Bee. From CAD $5/month." />
+  <meta name="twitter:image"       content="https://spellrightpro.org/assets/og-image.png" />
+
   <link rel="icon" href="/assets/logo.png" />
-  <link rel="stylesheet"
-        href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" />
 
-  <!-- Analytics -->
-  <script async src="https://www.googletagmanager.com/gtag/js?id=G-H09MF13297"></script>
-  <script src="/js/analytics.js"></script>
-  
   <style>
-    .pricing-card {
-      background: white;
-      border-radius: 12px;
-      padding: 30px;
-      margin: 20px 0;
-      box-shadow: 0 8px 16px rgba(0,0,0,0.1);
-      border: 1px solid #e7e7e7;
-      transition: transform 0.3s ease, box-shadow 0.3s ease;
+    @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800&display=swap');
+
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    :root{
+      --brand:#7b2ff7;--accent:#f72585;--ok:#00c57a;
+      --text:#1a0533;--muted:#7b6f8a;--surface:#fff;--surface2:#f4f0fc;
+      --border:rgba(123,47,247,0.15);--radius:16px;
+      --shadow:0 4px 24px rgba(100,30,200,0.10);
     }
-    
-    .pricing-card:hover {
-      transform: translateY(-5px);
-      box-shadow: 0 12px 24px rgba(0,0,0,0.15);
+    body.dark-mode{
+      --text:#f0e8ff;--muted:#9d8fc0;--surface:#160829;--surface2:#1f0d3a;
+      --border:rgba(255,255,255,0.10);
     }
-    
-    .pricing-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-      gap: 25px;
-      margin: 30px 0;
-    }
-    
-    .pricing-feature {
-      display: flex;
-      align-items: center;
-      margin: 8px 0;
-    }
-    
-    .pricing-feature i {
-      width: 20px;
-      margin-right: 10px;
-    }
-    
-    .feature-included {
-      color: #28a745;
-    }
-    
-    .feature-excluded {
-      color: #dc3545;
-    }
-    
-    .price-amount {
-      font-size: 2.5em;
-      font-weight: bold;
-      color: #7b2ff7;
-      margin: 15px 0;
-    }
-    
-    .price-period {
-      color: #666;
-      font-size: 1em;
-    }
-    
-    .promo-badge {
-      background: linear-gradient(135deg, #ff6b6b, #ffa726);
-      color: white;
-      padding: 5px 12px;
-      border-radius: 20px;
-      font-size: 0.8em;
-      font-weight: bold;
-      display: inline-block;
-      margin-left: 10px;
-    }
-    
-    .recommended-card {
-      border: 2px solid #7b2ff7;
-      position: relative;
-      transform: scale(1.02);
-    }
-    
-    .recommended-badge {
-      position: absolute;
-      top: -10px;
-      left: 50%;
-      transform: translateX(-50%);
-      background: #7b2ff7;
-      color: white;
-      padding: 5px 15px;
-      border-radius: 15px;
-      font-size: 0.8em;
-      font-weight: bold;
+    body{
+      font-family:'DM Sans',sans-serif;
+      background:linear-gradient(145deg,#3a0087 0%,#8b00d4 55%,#f72585 100%);
+      min-height:100vh;color:var(--text);overflow-x:hidden;
     }
 
-    .plan-toggle {
-      display: flex;
-      justify-content: center;
-      margin: 20px 0 30px 0;
-      background: #f8f9fa;
-      padding: 10px;
-      border-radius: 50px;
-      max-width: 300px;
-      margin-left: auto;
-      margin-right: auto;
+    /* ── Header ── */
+    header{
+      background:rgba(255,255,255,0.95);backdrop-filter:blur(8px);
+      padding:10px 20px;display:flex;justify-content:space-between;align-items:center;
+      position:sticky;top:0;z-index:100;box-shadow:0 1px 12px rgba(0,0,0,0.08);
+    }
+    body.dark-mode header{background:rgba(22,8,41,0.95)}
+    .brand{display:flex;align-items:center;gap:10px;text-decoration:none}
+    .brand img{height:36px;border-radius:9px}
+    .brand h1{font-size:1rem;font-weight:700;color:var(--brand)}
+    .nav-right{display:flex;gap:8px;align-items:center}
+    .nav-btn{
+      background:var(--surface2);color:var(--brand);
+      border:1px solid var(--border);border-radius:10px;
+      padding:7px 14px;font-size:0.82rem;font-weight:600;
+      cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;gap:6px;
+      font-family:'DM Sans',sans-serif;transition:all .2s;
+    }
+    .nav-btn:hover{background:rgba(123,47,247,.12)}
+
+    /* ── Page ── */
+    .page{max-width:900px;margin:0 auto;padding:40px 16px 60px}
+
+    /* ── Hero ── */
+    .hero{text-align:center;margin-bottom:48px;color:#fff}
+    .hero h2{font-size:2.2rem;font-weight:800;margin-bottom:12px;line-height:1.2}
+    .hero p{font-size:1.05rem;opacity:.85;max-width:560px;margin:0 auto 24px;line-height:1.6}
+    .free-tag{
+      display:inline-block;background:rgba(255,255,255,0.15);
+      border:1px solid rgba(255,255,255,0.3);border-radius:20px;
+      padding:6px 18px;font-size:0.85rem;font-weight:600;color:#fff;margin-bottom:16px;
     }
 
-    .plan-toggle button {
-      padding: 10px 20px;
-      border: none;
-      background: none;
-      border-radius: 25px;
-      cursor: pointer;
-      font-weight: 600;
-      transition: all 0.3s ease;
-      flex: 1;
+    /* ── Billing toggle ── */
+    .billing-row{
+      display:flex;align-items:center;justify-content:center;gap:12px;
+      margin-bottom:36px;
     }
-
-    .plan-toggle button.active {
-      background: #7b2ff7;
-      color: white;
+    .billing-label{font-size:0.95rem;font-weight:600;color:rgba(255,255,255,0.85)}
+    .billing-label.active{color:#fff}
+    .save-badge{
+      background:#ffb800;color:#412402;font-size:0.72rem;
+      font-weight:700;padding:2px 8px;border-radius:20px;margin-left:4px;
     }
-
-    .monthly-plans, .annual-plans {
-      display: none;
+    .toggle-track{
+      width:48px;height:26px;background:rgba(255,255,255,0.25);
+      border-radius:99px;position:relative;cursor:pointer;
+      transition:background .2s;border:none;padding:0;
     }
-
-    .monthly-plans.active, .annual-plans.active {
-      display: block;
+    .toggle-track.annual{background:var(--ok)}
+    .toggle-thumb{
+      width:20px;height:20px;background:#fff;border-radius:50%;
+      position:absolute;top:3px;left:3px;transition:transform .2s;
+      box-shadow:0 1px 4px rgba(0,0,0,.2);
     }
+    .toggle-track.annual .toggle-thumb{transform:translateX(22px)}
 
-    .savings-badge {
-      background: #28a745;
-      color: white;
-      padding: 4px 8px;
-      border-radius: 12px;
-      font-size: 0.7em;
-      font-weight: bold;
-      margin-left: 8px;
+    /* ── Plans grid ── */
+    .plans{
+      display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));
+      gap:20px;margin-bottom:48px;
     }
-
-    .logo {
-      height: 40px;
-      width: auto;
+    .plan-card{
+      background:var(--surface);border-radius:var(--radius);
+      padding:28px 24px;position:relative;
+      border:2px solid transparent;box-shadow:var(--shadow);
+      transition:transform .2s,box-shadow .2s;
     }
-
-    .brand {
-      display: flex;
-      align-items: center;
-      gap: 10px;
+    .plan-card:hover{transform:translateY(-3px);box-shadow:0 8px 36px rgba(100,30,200,.18)}
+    .plan-card.popular{border-color:var(--brand)}
+    .popular-badge{
+      position:absolute;top:-12px;left:50%;transform:translateX(-50%);
+      background:linear-gradient(135deg,var(--brand),var(--accent));
+      color:#fff;font-size:0.72rem;font-weight:700;
+      padding:4px 16px;border-radius:20px;white-space:nowrap;
     }
-
-    .brand span {
-      font-size: 1.5rem;
-      font-weight: bold;
-      color: #7b2ff7;
+    .plan-name{font-size:1.1rem;font-weight:700;color:var(--text);margin-bottom:6px}
+    .plan-price-row{display:flex;align-items:baseline;gap:4px;margin-bottom:4px}
+    .plan-price{font-size:2.6rem;font-weight:800;color:var(--brand);line-height:1}
+    .plan-currency{font-size:1rem;font-weight:700;color:var(--brand);align-self:flex-start;padding-top:6px}
+    .plan-period{font-size:0.88rem;color:var(--muted)}
+    .plan-equiv{font-size:0.78rem;color:var(--ok);font-weight:600;margin-bottom:20px}
+    .plan-divider{border:none;border-top:1px solid var(--border);margin:16px 0}
+    .plan-features{list-style:none;margin-bottom:24px}
+    .plan-features li{
+      display:flex;align-items:flex-start;gap:10px;
+      padding:7px 0;font-size:0.88rem;color:var(--text);line-height:1.4;
     }
-
-    .payment-options {
-      margin-top: 20px;
-      padding: 15px;
-      background: #f8f9fa;
-      border-radius: 8px;
-      text-align: center;
+    .plan-features li i{color:var(--ok);font-size:0.82rem;flex-shrink:0;margin-top:2px}
+    .plan-features li.dim{color:var(--muted)}
+    .plan-features li.dim i{color:var(--border)}
+    .btn-plan{
+      display:block;width:100%;padding:14px;
+      background:linear-gradient(135deg,var(--brand),var(--accent));
+      color:#fff;border:none;border-radius:12px;
+      font-size:0.95rem;font-weight:700;font-family:'DM Sans',sans-serif;
+      cursor:pointer;text-align:center;text-decoration:none;
+      transition:all .2s;box-shadow:0 4px 16px rgba(123,47,247,.3);
     }
-
-    .payment-options h4 {
-      margin-bottom: 10px;
-      color: #333;
+    .btn-plan:hover{transform:translateY(-1px);box-shadow:0 6px 22px rgba(123,47,247,.45)}
+    .btn-plan.outline{
+      background:transparent;color:var(--brand);
+      border:2px solid var(--border);box-shadow:none;
     }
+    .btn-plan.outline:hover{background:var(--surface2);box-shadow:none}
 
-    .payment-icons {
-      display: flex;
-      justify-content: center;
-      gap: 15px;
-      margin-top: 10px;
+    /* ── Compare table ── */
+    .compare-section{margin-bottom:48px}
+    .compare-section h3{
+      text-align:center;font-size:1.4rem;font-weight:700;color:#fff;margin-bottom:24px;
     }
+    .compare-table{
+      width:100%;border-collapse:collapse;background:var(--surface);
+      border-radius:var(--radius);overflow:hidden;box-shadow:var(--shadow);
+    }
+    .compare-table th{
+      padding:14px 20px;text-align:left;font-size:0.82rem;
+      font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;
+      background:var(--surface2);
+    }
+    .compare-table th:not(:first-child){text-align:center}
+    .compare-table td{
+      padding:13px 20px;font-size:0.88rem;color:var(--text);
+      border-top:1px solid var(--border);
+    }
+    .compare-table td:not(:first-child){text-align:center;font-weight:600}
+    .compare-table tr:hover td{background:var(--surface2)}
+    .check{color:var(--ok);font-size:1rem}
+    .cross{color:var(--border);font-size:1rem}
+    .compare-table .col-prem{color:var(--brand)}
 
-    .payment-icons i {
-      font-size: 2rem;
-      color: #666;
+    /* ── FAQ ── */
+    .faq-section{margin-bottom:48px}
+    .faq-section h3{text-align:center;font-size:1.4rem;font-weight:700;color:#fff;margin-bottom:24px}
+    .faq-item{
+      background:var(--surface);border-radius:var(--radius);
+      margin-bottom:10px;box-shadow:var(--shadow);overflow:hidden;
+    }
+    .faq-q{
+      width:100%;padding:16px 20px;background:none;border:none;
+      text-align:left;font-family:'DM Sans',sans-serif;font-size:0.92rem;font-weight:600;
+      color:var(--text);cursor:pointer;display:flex;justify-content:space-between;align-items:center;
+    }
+    .faq-q:hover{background:var(--surface2)}
+    .faq-q i{color:var(--muted);transition:transform .2s;font-size:0.8rem}
+    .faq-q.open i{transform:rotate(180deg)}
+    .faq-a{
+      display:none;padding:0 20px 16px;font-size:0.88rem;
+      color:var(--muted);line-height:1.6;
+    }
+    .faq-a.open{display:block}
+
+    /* ── CTA banner ── */
+    .cta-banner{
+      background:var(--surface);border-radius:var(--radius);
+      padding:36px 32px;text-align:center;box-shadow:var(--shadow);
+      margin-bottom:24px;
+    }
+    .cta-banner h3{font-size:1.5rem;font-weight:800;color:var(--text);margin-bottom:8px}
+    .cta-banner p{color:var(--muted);margin-bottom:24px;font-size:0.95rem}
+    .btn-cta{
+      display:inline-block;padding:15px 36px;
+      background:linear-gradient(135deg,var(--brand),var(--accent));
+      color:#fff;text-decoration:none;border-radius:14px;
+      font-size:1rem;font-weight:700;font-family:'DM Sans',sans-serif;
+      box-shadow:0 4px 20px rgba(123,47,247,.35);transition:all .2s;
+    }
+    .btn-cta:hover{transform:translateY(-2px);box-shadow:0 8px 30px rgba(123,47,247,.45)}
+
+    /* ── Mobile ── */
+    @media(max-width:480px){
+      .page{padding:24px 12px 48px}
+      .hero h2{font-size:1.6rem}
+      .plans{grid-template-columns:1fr;gap:16px}
+      .plan-card.popular{transform:none}
+      .compare-table{font-size:0.8rem}
+      .compare-table th,.compare-table td{padding:10px 12px}
+      header .brand h1{font-size:0.9rem}
+      .nav-btn{font-size:0;padding:7px 9px}
+      .nav-btn i{font-size:14px;margin:0}
     }
   </style>
 </head>
-
 <body>
-  <div class="container fade-in">
-    <!-- ===== NAVBAR ===== -->
-    <nav class="navbar">
-      <div class="brand">
-        <img src="/assets/logo.png" alt="Logo" class="logo" />
-        <span>SpellRightPro</span>
-      </div>
-      <div class="nav-actions">
-        <a href="/index.html" class="btn-secondary"><i class="fa fa-home"></i> Home</a>
-        <a href="/premium.html" class="premium-button">
-          <i class="fa fa-crown"></i> Premium
-        </a>
-      </div>
-    </nav>
 
-    <!-- ===== PROMO BANNER ===== -->
-    <div id="promo-banner" class="ad-banner" style="display:none; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 15px; border-radius: 8px; text-align: center; margin: 20px 0;">
-      <i class="fa fa-bolt"></i>
-      <strong>Special Offer:</strong> Get Premium for only <b>CAD $39.99/year</b> (was $69.99)!
-      <br />
-      <small>Offer ends in <span id="promo-countdown"></span>.</small>
-    </div>
+<header>
+  <a href="/" class="brand">
+    <img src="/assets/logo.png" alt="SpellRightPro" />
+    <h1>SpellRightPro</h1>
+  </a>
+  <div class="nav-right">
+    <a href="/freemium-school" class="nav-btn"><i class="fa fa-play"></i> Try Free</a>
+    <a href="/login" class="nav-btn"><i class="fa fa-sign-in-alt"></i> Sign In</a>
+    <button class="nav-btn" id="darkToggle"><i class="fa fa-moon"></i></button>
+  </div>
+</header>
 
-    <!-- ===== PRICING SECTION ===== -->
-    <div class="pricing-card fade-in">
-      <h1 class="card-title" style="text-align: center; margin-bottom: 10px;">
-        <i class="fa fa-tags"></i> Choose Your Plan
-      </h1>
-      <p style="text-align: center; color: #666; margin-bottom: 30px;">
-        Start free, upgrade when you're ready. No hidden fees.
-      </p>
+<div class="page">
 
-      <!-- Plan Toggle -->
-      <div class="plan-toggle">
-        <button id="monthlyToggle" class="active">Monthly</button>
-        <button id="annualToggle">Annual <span class="savings-badge">Save 17%</span></button>
-      </div>
-
-      <!-- Monthly Plans -->
-      <div id="monthlyPlans" class="monthly-plans active">
-        <div class="pricing-grid">
-          <!-- Free Plan -->
-          <div class="pricing-card">
-            <h3 style="color: #28a745;"><i class="fa fa-leaf"></i> Freemium</h3>
-            <p style="color: #666;">Perfect for casual learners or first-time users.</p>
-            
-            <div class="price-amount">Free</div>
-            <div class="price-period">forever</div>
-            
-            <div style="margin: 25px 0;">
-              <div class="pricing-feature">
-                <i class="fa fa-check feature-included"></i>
-                <span>OET practice word list</span>
-              </div>
-              <div class="pricing-feature">
-                <i class="fa fa-check feature-included"></i>
-                <span>One custom list per day</span>
-              </div>
-              <div class="pricing-feature">
-                <i class="fa fa-check feature-included"></i>
-                <span>Limited Bee & School modes</span>
-              </div>
-              <div class="pricing-feature">
-                <i class="fa fa-times feature-excluded"></i>
-                <span style="color: #999;">No progress tracking</span>
-              </div>
-              <div class="pricing-feature">
-                <i class="fa fa-times feature-excluded"></i>
-                <span style="color: #999;">Ads displayed</span>
-              </div>
-            </div>
-            
-            <button class="btn-secondary" onclick="window.location.href='/index.html'" style="width: 100%;">
-              Start Free
-            </button>
-          </div>
-
-          <!-- Monthly Premium Plan -->
-          <div class="pricing-card recommended-card">
-            <div class="recommended-badge">MOST POPULAR</div>
-            <h3 style="color: #7b2ff7;"><i class="fa fa-crown"></i> Premium Monthly</h3>
-            <p style="color: #666;">Best for dedicated learners and professionals.</p>
-            
-            <div class="price-amount">
-              CAD $4.99
-            </div>
-            <div class="price-period">per month</div>
-            
-            <div style="margin: 25px 0;">
-              <div class="pricing-feature">
-                <i class="fa fa-check feature-included"></i>
-                <span>Full OET, School, and Bee modes</span>
-              </div>
-              <div class="pricing-feature">
-                <i class="fa fa-check feature-included"></i>
-                <span>Unlimited custom lists</span>
-              </div>
-              <div class="pricing-feature">
-                <i class="fa fa-check feature-included"></i>
-                <span>Audio spelling + voice recognition</span>
-              </div>
-              <div class="pricing-feature">
-                <i class="fa fa-check feature-included"></i>
-                <span>Error tracking & flagged words</span>
-              </div>
-              <div class="pricing-feature">
-                <i class="fa fa-check feature-included"></i>
-                <span>Ad-free learning experience</span>
-              </div>
-              <div class="pricing-feature">
-                <i class="fa fa-check feature-included"></i>
-                <span>Real-time spelling feedback</span>
-              </div>
-            </div>
-            
-            <button class="btn-primary" onclick="selectPlan('monthly')" style="width: 100%; background: #7b2ff7; border: none;">
-              <i class="fa fa-crown"></i> Get Monthly Plan
-            </button>
-          </div>
-        </div>
-      </div>
-
-      <!-- Annual Plans -->
-      <div id="annualPlans" class="annual-plans">
-        <div class="pricing-grid">
-          <!-- Free Plan (Annual View) -->
-          <div class="pricing-card">
-            <h3 style="color: #28a745;"><i class="fa fa-leaf"></i> Freemium</h3>
-            <p style="color: #666;">Perfect for casual learners or first-time users.</p>
-            
-            <div class="price-amount">Free</div>
-            <div class="price-period">forever</div>
-            
-            <div style="margin: 25px 0;">
-              <div class="pricing-feature">
-                <i class="fa fa-check feature-included"></i>
-                <span>OET practice word list</span>
-              </div>
-              <div class="pricing-feature">
-                <i class="fa fa-check feature-included"></i>
-                <span>One custom list per day</span>
-              </div>
-              <div class="pricing-feature">
-                <i class="fa fa-check feature-included"></i>
-                <span>Limited Bee & School modes</span>
-              </div>
-              <div class="pricing-feature">
-                <i class="fa fa-times feature-excluded"></i>
-                <span style="color: #999;">No progress tracking</span>
-              </div>
-              <div class="pricing-feature">
-                <i class="fa fa-times feature-excluded"></i>
-                <span style="color: #999;">Ads displayed</span>
-              </div>
-            </div>
-            
-            <button class="btn-secondary" onclick="window.location.href='/index.html'" style="width: 100%;">
-              Start Free
-            </button>
-          </div>
-
-          <!-- Annual Premium Plan -->
-          <div class="pricing-card recommended-card">
-            <div class="recommended-badge">BEST VALUE</div>
-            <h3 style="color: #7b2ff7;"><i class="fa fa-crown"></i> Premium Annual</h3>
-            <p style="color: #666;">Best for dedicated learners and professionals.</p>
-            
-            <div class="price-amount">
-              <span id="annual-price">CAD $49.99</span>
-              <span class="promo-badge" id="promo-badge" style="display: none;">SAVE 17%</span>
-            </div>
-            <div class="price-period">per year</div>
-            <div style="color: #666; font-size: 0.9em; margin-top: 5px;">
-              Equivalent to $4.16 per month
-            </div>
-            
-            <div style="margin: 25px 0;">
-              <div class="pricing-feature">
-                <i class="fa fa-check feature-included"></i>
-                <span>Full OET, School, and Bee modes</span>
-              </div>
-              <div class="pricing-feature">
-                <i class="fa fa-check feature-included"></i>
-                <span>Unlimited custom lists</span>
-              </div>
-              <div class="pricing-feature">
-                <i class="fa fa-check feature-included"></i>
-                <span>Audio spelling + voice recognition</span>
-              </div>
-              <div class="pricing-feature">
-                <i class="fa fa-check feature-included"></i>
-                <span>Error tracking & flagged words</span>
-              </div>
-              <div class="pricing-feature">
-                <i class="fa fa-check feature-included"></i>
-                <span>Ad-free learning experience</span>
-              </div>
-              <div class="pricing-feature">
-                <i class="fa fa-check feature-included"></i>
-                <span>Real-time spelling feedback</span>
-              </div>
-              <div class="pricing-feature">
-                <i class="fa fa-check feature-included"></i>
-                <span>Priority email support</span>
-              </div>
-            </div>
-            
-            <button class="btn-primary" onclick="selectPlan('annual')" style="width: 100%; background: #7b2ff7; border: none;">
-              <i class="fa fa-crown"></i> Get Annual Plan
-            </button>
-          </div>
-        </div>
-      </div>
-
-      <!-- Payment Options -->
-      <div class="payment-options">
-        <h4><i class="fa fa-shield-alt"></i> Secure Payment</h4>
-        <p style="color: #666; margin: 10px 0; font-size: 0.9rem;">
-          All payments are secure and encrypted. We accept:
-        </p>
-        <div class="payment-icons">
-          <i class="fab fa-cc-visa" title="Visa"></i>
-          <i class="fab fa-cc-mastercard" title="Mastercard"></i>
-          <i class="fab fa-cc-amex" title="American Express"></i>
-          <i class="fab fa-cc-paypal" title="PayPal"></i>
-        </div>
-      </div>
-
-      <!-- ===== GUARANTEE SECTION ===== -->
-      <div style="text-align: center; margin-top: 40px; padding: 20px; background: #f8f9fa; border-radius: 8px;">
-        <h4><i class="fa fa-shield-alt"></i> Risk-Free Guarantee</h4>
-        <p style="color: #666; margin: 10px 0;">
-          48-hour money-back guarantee. If Premium isn't right for you, we'll refund your payment.
-        </p>
-        <small style="color: #999;">
-          <a href="/refund-policy.html" style="color: #7b2ff7;">View refund policy</a>
-        </small>
-      </div>
-    </div>
-
-    <!-- ===== FOOTER ===== -->
-    <footer class="text-center mt-4" style="padding: 30px 0; border-top: 1px solid #e7e7e7;">
-      <p>
-        <a href="/terms.html">Terms</a> ·
-        <a href="/privacy.html">Privacy</a> ·
-        <a href="/refund-policy.html">Refund Policy</a> ·
-        <a href="/contact.html">Contact</a>
-      </p>
-      <p style="font-size: 0.8rem; color: gray;">© 2025 SpellRightPro</p>
-    </footer>
+  <!-- Hero -->
+  <div class="hero">
+    <div class="free-tag"><i class="fa fa-check-circle"></i> Free forever — upgrade when you're ready</div>
+    <h2>Master spelling with Premium</h2>
+    <p>Unlimited words, full OET medical vocabulary, progress tracking and mistake review. Cancel anytime.</p>
   </div>
 
-  <!-- ===== PRICING & PLAN SELECTION SCRIPT ===== -->
-  <script>
-    // Plan Toggle Functionality
-    const monthlyToggle = document.getElementById('monthlyToggle');
-    const annualToggle = document.getElementById('annualToggle');
-    const monthlyPlans = document.getElementById('monthlyPlans');
-    const annualPlans = document.getElementById('annualPlans');
+  <!-- Billing toggle -->
+  <div class="billing-row">
+    <span class="billing-label active" id="labelMonthly">Monthly</span>
+    <button class="toggle-track" id="billingToggle" onclick="toggleBilling()">
+      <div class="toggle-thumb"></div>
+    </button>
+    <span class="billing-label" id="labelAnnual">
+      Annual <span class="save-badge">Save 25%</span>
+    </span>
+  </div>
 
-    monthlyToggle.addEventListener('click', () => {
-      monthlyToggle.classList.add('active');
-      annualToggle.classList.remove('active');
-      monthlyPlans.classList.add('active');
-      annualPlans.classList.remove('active');
-    });
+  <!-- Plans -->
+  <div class="plans">
 
-    annualToggle.addEventListener('click', () => {
-      annualToggle.classList.add('active');
-      monthlyToggle.classList.remove('active');
-      annualPlans.classList.add('active');
-      monthlyPlans.classList.remove('active');
-    });
+    <!-- Free plan -->
+    <div class="plan-card">
+      <div class="plan-name">Free</div>
+      <div class="plan-price-row">
+        <span class="plan-currency">CAD</span>
+        <span class="plan-price">$0</span>
+        <span class="plan-period">/forever</span>
+      </div>
+      <div class="plan-equiv">&nbsp;</div>
+      <hr class="plan-divider" />
+      <ul class="plan-features">
+        <li><i class="fa fa-check"></i> School, OET &amp; Spelling Bee modes</li>
+        <li><i class="fa fa-check"></i> 25 words per session</li>
+        <li><i class="fa fa-check"></i> Text-to-speech (3 accents)</li>
+        <li><i class="fa fa-check"></i> 1 custom list per day</li>
+        <li class="dim"><i class="fa fa-times"></i> Progress dashboard</li>
+        <li class="dim"><i class="fa fa-times"></i> Mistake review &amp; spaced repetition</li>
+        <li class="dim"><i class="fa fa-times"></i> Unlimited custom lists</li>
+        <li class="dim"><i class="fa fa-times"></i> Full 1,511 OET word list</li>
+      </ul>
+      <a href="/freemium-school" class="btn-plan outline">
+        <i class="fa fa-play"></i> Start Free
+      </a>
+    </div>
 
-    // Plan Selection Function - Redirects to Payment Page
-    function selectPlan(planType) {
-      // Store the selected plan in localStorage
-      localStorage.setItem('selectedPlan', planType);
-      localStorage.setItem('selectedPlanPrice', planType === 'monthly' ? '4.99' : '49.99');
-      localStorage.setItem('selectedPlanCurrency', 'CAD');
-      
-      // Redirect to payment page with plan parameters
-      window.location.href = `/payment.html?plan=${planType}&price=${planType === 'monthly' ? '4.99' : '49.99'}&currency=CAD`;
+    <!-- Premium monthly / annual -->
+    <div class="plan-card popular">
+      <div class="popular-badge"><i class="fa fa-crown"></i> Most Popular</div>
+      <div class="plan-name" id="planName">Premium — Monthly</div>
+      <div class="plan-price-row">
+        <span class="plan-currency">CAD</span>
+        <span class="plan-price" id="planPrice">$5</span>
+        <span class="plan-period" id="planPeriod">/month</span>
+      </div>
+      <div class="plan-equiv" id="planEquiv">&nbsp;</div>
+      <hr class="plan-divider" />
+      <ul class="plan-features">
+        <li><i class="fa fa-check"></i> Everything in Free</li>
+        <li><i class="fa fa-check"></i> Unlimited words per session</li>
+        <li><i class="fa fa-check"></i> Full 1,511 OET medical words</li>
+        <li><i class="fa fa-check"></i> OET exam simulation (24 words)</li>
+        <li><i class="fa fa-check"></i> Progress dashboard &amp; streak</li>
+        <li><i class="fa fa-check"></i> Mistake review &amp; spaced repetition</li>
+        <li><i class="fa fa-check"></i> Unlimited custom word lists</li>
+        <li><i class="fa fa-check"></i> No ads</li>
+      </ul>
+      <a href="/premium" class="btn-plan" id="planBtn">
+        <i class="fa fa-crown"></i> Get Premium — CAD $5/mo
+      </a>
+    </div>
+
+  </div><!-- /.plans -->
+
+  <!-- Compare table -->
+  <div class="compare-section">
+    <h3>Free vs Premium — full comparison</h3>
+    <table class="compare-table">
+      <thead>
+        <tr>
+          <th>Feature</th>
+          <th>Free</th>
+          <th class="col-prem">Premium</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td>School, OET &amp; Spelling Bee modes</td><td><i class="fa fa-check check"></i></td><td><i class="fa fa-check check"></i></td></tr>
+        <tr><td>Words per session</td><td>25</td><td class="col-prem">Unlimited</td></tr>
+        <tr><td>Text-to-speech (British, US, Australian)</td><td><i class="fa fa-check check"></i></td><td><i class="fa fa-check check"></i></td></tr>
+        <tr><td>Full OET word list (1,511 words)</td><td><i class="fa fa-times cross"></i></td><td><i class="fa fa-check check"></i></td></tr>
+        <tr><td>OET exam simulation (random 24 words)</td><td><i class="fa fa-times cross"></i></td><td><i class="fa fa-check check"></i></td></tr>
+        <tr><td>Custom word lists</td><td>1 per day</td><td class="col-prem">Unlimited</td></tr>
+        <tr><td>Progress dashboard &amp; streak calendar</td><td><i class="fa fa-times cross"></i></td><td><i class="fa fa-check check"></i></td></tr>
+        <tr><td>Accuracy over time chart</td><td><i class="fa fa-times cross"></i></td><td><i class="fa fa-check check"></i></td></tr>
+        <tr><td>Words mastered tracker</td><td><i class="fa fa-times cross"></i></td><td><i class="fa fa-check check"></i></td></tr>
+        <tr><td>Mistake review &amp; spaced repetition</td><td><i class="fa fa-times cross"></i></td><td><i class="fa fa-check check"></i></td></tr>
+        <tr><td>Ads</td><td>Yes</td><td class="col-prem">None</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- FAQ -->
+  <div class="faq-section">
+    <h3>Frequently asked questions</h3>
+
+    <div class="faq-item">
+      <button class="faq-q" onclick="toggleFaq(this)">
+        Can I cancel anytime? <i class="fa fa-chevron-down"></i>
+      </button>
+      <div class="faq-a">Yes — cancel any time by emailing spellrightpro@gmail.com. Your premium access continues until the end of your current billing period. No partial refunds are issued for unused time.</div>
+    </div>
+
+    <div class="faq-item">
+      <button class="faq-q" onclick="toggleFaq(this)">
+        What is the OET exam simulation mode? <i class="fa fa-chevron-down"></i>
+      </button>
+      <div class="faq-a">The OET exam simulation picks 24 random words from the full 1,511-word medical vocabulary list — the same number of spelling questions used in a real OET Writing sub-test. It's timed and marked exactly like the full practice mode.</div>
+    </div>
+
+    <div class="faq-item">
+      <button class="faq-q" onclick="toggleFaq(this)">
+        Is there a free trial? <i class="fa fa-chevron-down"></i>
+      </button>
+      <div class="faq-a">All three modules — School, OET and Spelling Bee — are free forever with no time limit. You can practise 25 words per session and upload one custom list per day without paying anything. Premium simply removes all limits and adds progress tracking.</div>
+    </div>
+
+    <div class="faq-item">
+      <button class="faq-q" onclick="toggleFaq(this)">
+        Can I use SpellRightPro on my phone? <i class="fa fa-chevron-down"></i>
+      </button>
+      <div class="faq-a">Yes — SpellRightPro is fully optimised for mobile. All three practice modes, the progress dashboard, and the account pages are designed for one-thumb use on any phone screen.</div>
+    </div>
+
+    <div class="faq-item">
+      <button class="faq-q" onclick="toggleFaq(this)">
+        Is payment secure? <i class="fa fa-chevron-down"></i>
+      </button>
+      <div class="faq-a">All payments are processed by Stripe — one of the world's most trusted payment processors. Your card details are never stored on SpellRightPro's servers. Stripe handles the entire checkout and billing process.</div>
+    </div>
+
+    <div class="faq-item">
+      <button class="faq-q" onclick="toggleFaq(this)">
+        What currency are prices in? <i class="fa fa-chevron-down"></i>
+      </button>
+      <div class="faq-a">All prices are in Canadian dollars (CAD). If you're paying from another country, your bank will convert automatically at the current exchange rate.</div>
+    </div>
+
+  </div><!-- /.faq-section -->
+
+  <!-- Bottom CTA -->
+  <div class="cta-banner">
+    <h3>Ready to master spelling?</h3>
+    <p>Join thousands of students, nurses and spelling bee competitors using SpellRightPro every day.</p>
+    <a href="/freemium-school" class="btn-cta">
+      <i class="fa fa-play"></i> Start Free — No Signup Needed
+    </a>
+    <p style="margin-top:14px;font-size:0.8rem;color:var(--muted);">
+      Or <a href="/premium" style="color:var(--brand);font-weight:600;">go straight to Premium →</a>
+    </p>
+  </div>
+
+</div><!-- /.page -->
+
+<script>
+  var isAnnual = false;
+
+  function toggleBilling() {
+    isAnnual = !isAnnual;
+    var track = document.getElementById('billingToggle');
+    var lm    = document.getElementById('labelMonthly');
+    var la    = document.getElementById('labelAnnual');
+    var name  = document.getElementById('planName');
+    var price = document.getElementById('planPrice');
+    var period= document.getElementById('planPeriod');
+    var equiv = document.getElementById('planEquiv');
+    var btn   = document.getElementById('planBtn');
+
+    track.classList.toggle('annual', isAnnual);
+    lm.classList.toggle('active', !isAnnual);
+    la.classList.toggle('active', isAnnual);
+
+    if (isAnnual) {
+      name.textContent   = 'Premium — Annual';
+      price.textContent  = '$45';
+      period.textContent = '/year';
+      equiv.textContent  = 'Just $3.75/month — save 25%';
+      btn.innerHTML      = '<i class="fa fa-crown"></i> Get Premium — CAD $45/yr';
+      btn.href           = '/premium';
+    } else {
+      name.textContent   = 'Premium — Monthly';
+      price.textContent  = '$5';
+      period.textContent = '/month';
+      equiv.textContent  = ' ';
+      btn.innerHTML      = '<i class="fa fa-crown"></i> Get Premium — CAD $5/mo';
+      btn.href           = '/premium';
     }
+  }
 
-    // Promo Countdown Logic
-    const promoEnd = new Date("2025-10-15T23:59:59");
-    const banner = document.getElementById("promo-banner");
-    const countdown = document.getElementById("promo-countdown");
-    const annualPrice = document.getElementById("annual-price");
-    const promoBadge = document.getElementById("promo-badge");
+  function toggleFaq(btn) {
+    btn.classList.toggle('open');
+    var answer = btn.nextElementSibling;
+    answer.classList.toggle('open');
+  }
 
-    function updateCountdown() {
-      const now = new Date();
-      const diff = promoEnd - now;
-      
-      if (diff <= 0) {
-        // Promo ended
-        banner.style.display = "none";
-        return;
-      }
-      
-      // Promo active
-      banner.style.display = "block";
-      promoBadge.style.display = "inline-block";
-      
-      // Calculate time remaining
-      const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-      const hrs = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-      const mins = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-      
-      if (days > 0) {
-        countdown.textContent = `${days}d ${hrs}h ${mins}m`;
-      } else {
-        countdown.textContent = `${hrs}h ${mins}m`;
-      }
+  // Dark mode
+  (function(){
+    var btn = document.getElementById('darkToggle');
+    function apply(){
+      var on = localStorage.getItem('dark') === 'true';
+      document.body.classList.toggle('dark-mode', on);
+      if(btn) btn.querySelector('i').className = on ? 'fa fa-sun' : 'fa fa-moon';
     }
-
-    // Initialize
-    updateCountdown();
-    setInterval(updateCountdown, 60000); // Update every minute
-
-    // Check if user came from premium page and show annual plans by default
-    document.addEventListener('DOMContentLoaded', function() {
-      const urlParams = new URLSearchParams(window.location.search);
-      if (urlParams.get('show') === 'annual') {
-        annualToggle.click();
-      }
+    btn && btn.addEventListener('click', function(){
+      localStorage.setItem('dark', !(localStorage.getItem('dark') === 'true'));
+      apply();
     });
-  </script>
+    apply();
+  })();
+</script>
+
+<script>if('serviceWorker' in navigator){navigator.serviceWorker.register('/sw.js').catch(function(){})}</script>
 </body>
 </html>
