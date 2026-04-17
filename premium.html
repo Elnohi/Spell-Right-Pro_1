@@ -410,6 +410,7 @@
         <label style="position:relative;display:inline-block;width:52px;height:28px;cursor:pointer;">
           <input type="checkbox" id="billingToggle"
                  style="opacity:0;width:0;height:0;"
+                 checked
                  onchange="switchBilling(this.checked)" />
           <span style="position:absolute;inset:0;background:rgba(255,255,255,0.25);
                        border-radius:99px;transition:.3s;" id="toggleTrack"></span>
@@ -434,7 +435,13 @@
             <p style="opacity:0.8;">Full access — all modules</p>
           </div>
           <div class="plan-price" id="priceDisplay">
-            CAD $5<span>/month</span>
+            CAD $45<span>/year</span>
+            <div style="font-size:0.35em;opacity:0.8;margin-top:4px;">
+              Equivalent to CAD $3.75/mo — save 25%
+            </div>
+          </div>
+          <div id="currencyContext" style="font-size:0.8rem;opacity:0.7;margin:-8px 0 10px;text-align:center;letter-spacing:0.01em;">
+            ≈ USD $33 &nbsp;·&nbsp; GBP 26 &nbsp;·&nbsp; AUD 50 &nbsp;·&nbsp; PHP 1,900 &nbsp;·&nbsp; INR 2,700
           </div>
           <ul class="plan-features">
             <li><i class="fa fa-check"></i> <strong>All 3 modules unlocked</strong> — School, OET &amp; Spelling Bee</li>
@@ -448,7 +455,7 @@
           </ul>
           <a href="#checkout" class="btn-choose" data-plan="monthly" id="choosePlanBtn"
              style="background:var(--accent);color:#333;">
-            <i class="fa fa-bolt"></i> <span id="choosePlanLabel">Get Monthly — CAD $5/mo</span>
+            <i class="fa fa-bolt"></i> <span id="choosePlanLabel">Get Annual — CAD $45/yr</span>
           </a>
         </div>
 
@@ -883,10 +890,21 @@
       : 'https://spellrightpro-api-798456641137.us-central1.run.app';
 
     // ── Plan data set by the "Choose Plan" buttons ──────────────────────────
-    let selectedPlanKey = 'complete';
+    let selectedPlanKey = 'annual';  // Annual is default
 
     // ── Billing toggle ─────────────────────────────────────────────────────
-    let isAnnual = false;
+    let isAnnual = true;  // Annual is default
+    // Pre-set toggle visual to annual state on load
+    (function() {
+      var thumb = document.getElementById('toggleThumb');
+      var track = document.getElementById('toggleTrack');
+      var mLabel = document.getElementById('toggleMonthlyLabel');
+      var aLabel = document.getElementById('toggleAnnualLabel');
+      if (thumb)  thumb.style.left = '28px';
+      if (track)  track.style.background = 'rgba(255,209,102,0.6)';
+      if (mLabel) mLabel.style.color = 'rgba(255,255,255,0.6)';
+      if (aLabel) aLabel.style.color = 'white';
+    })();
     window.switchBilling = function(annual) {
       isAnnual = annual;
       const priceEl   = document.getElementById('priceDisplay');
@@ -896,8 +914,10 @@
       const thumb     = document.getElementById('toggleThumb');
       const track     = document.getElementById('toggleTrack');
       if (annual) {
-        priceEl.innerHTML  = 'CAD $45<span>/year</span><div style="font-size:0.35em;opacity:0.8;margin-top:4px;">Equivalent to CAD $3.75/mo</div>';
+        priceEl.innerHTML  = 'CAD $45<span>/year</span><div style="font-size:0.35em;opacity:0.8;margin-top:4px;">Equivalent to CAD $3.75/mo — save 25%</div>';
         labelEl.textContent = 'Get Annual — CAD $45/yr';
+        var ctx = document.getElementById('currencyContext');
+        if (ctx) ctx.textContent = '≈ USD $33 · GBP 26 · AUD 50 · PHP 1,900 · INR 2,700';
         selectedPlanKey     = 'annual';
         mLabel.style.color  = 'rgba(255,255,255,0.6)';
         aLabel.style.color  = 'white';
@@ -906,6 +926,8 @@
       } else {
         priceEl.innerHTML  = 'CAD $5<span>/month</span>';
         labelEl.textContent = 'Get Monthly — CAD $5/mo';
+        var ctx = document.getElementById('currencyContext');
+        if (ctx) ctx.textContent = '≈ USD $3.60 · GBP 2.80 · AUD 5.50 · PHP 200 · INR 300';
         selectedPlanKey     = 'monthly';
         mLabel.style.color  = 'white';
         aLabel.style.color  = 'rgba(255,255,255,0.6)';

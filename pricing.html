@@ -251,11 +251,11 @@
 
   <!-- Billing toggle -->
   <div class="billing-row">
-    <span class="billing-label active" id="labelMonthly">Monthly</span>
-    <button class="toggle-track" id="billingToggle" onclick="toggleBilling()">
-      <div class="toggle-thumb"></div>
+    <span class="billing-label" id="labelMonthly">Monthly</span>
+    <button class="toggle-track annual" id="billingToggle" onclick="toggleBilling()">
+      <div class="toggle-thumb" style="transform:translateX(22px);"></div>
     </button>
-    <span class="billing-label" id="labelAnnual">
+    <span class="billing-label active" id="labelAnnual">
       Annual <span class="save-badge">Save 25%</span>
     </span>
   </div>
@@ -291,13 +291,16 @@
     <!-- Premium monthly / annual -->
     <div class="plan-card popular">
       <div class="popular-badge"><i class="fa fa-crown"></i> Most Popular</div>
-      <div class="plan-name" id="planName">Premium — Monthly</div>
+      <div class="plan-name" id="planName">Premium — Annual</div>
       <div class="plan-price-row">
         <span class="plan-currency">CAD</span>
-        <span class="plan-price" id="planPrice">$5</span>
-        <span class="plan-period" id="planPeriod">/month</span>
+        <span class="plan-price" id="planPrice">$45</span>
+        <span class="plan-period" id="planPeriod">/year</span>
       </div>
-      <div class="plan-equiv" id="planEquiv">&nbsp;</div>
+      <div class="plan-equiv" id="planEquiv">Just $3.75/month — save 25%</div>
+      <div id="currencyCtx" style="font-size:0.78rem;color:var(--muted);margin:-6px 0 10px;">
+        ≈ USD $33 &nbsp;·&nbsp; GBP 26 &nbsp;·&nbsp; AUD 50 &nbsp;·&nbsp; PHP 1,900 &nbsp;·&nbsp; INR 2,700
+      </div>
       <hr class="plan-divider" />
       <ul class="plan-features">
         <li><i class="fa fa-check"></i> Everything in Free</li>
@@ -310,7 +313,7 @@
         <li><i class="fa fa-check"></i> No ads</li>
       </ul>
       <a href="/premium" class="btn-plan" id="planBtn">
-        <i class="fa fa-crown"></i> Get Premium — CAD $5/mo
+        <i class="fa fa-crown"></i> Get Premium — CAD $45/yr
       </a>
     </div>
 
@@ -406,7 +409,7 @@
 </div><!-- /.page -->
 
 <script>
-  var isAnnual = false;
+  var isAnnual = true;  // Annual is default
 
   function toggleBilling() {
     isAnnual = !isAnnual;
@@ -423,6 +426,7 @@
     lm.classList.toggle('active', !isAnnual);
     la.classList.toggle('active', isAnnual);
 
+    var ctx = document.getElementById('currencyCtx');
     if (isAnnual) {
       name.textContent   = 'Premium — Annual';
       price.textContent  = '$45';
@@ -430,6 +434,7 @@
       equiv.textContent  = 'Just $3.75/month — save 25%';
       btn.innerHTML      = '<i class="fa fa-crown"></i> Get Premium — CAD $45/yr';
       btn.href           = '/premium';
+      if (ctx) ctx.textContent = '≈ USD $33 · GBP 26 · AUD 50 · PHP 1,900 · INR 2,700';
     } else {
       name.textContent   = 'Premium — Monthly';
       price.textContent  = '$5';
@@ -437,6 +442,7 @@
       equiv.textContent  = ' ';
       btn.innerHTML      = '<i class="fa fa-crown"></i> Get Premium — CAD $5/mo';
       btn.href           = '/premium';
+      if (ctx) ctx.textContent = '≈ USD $3.60 · GBP 2.80 · AUD 5.50 · PHP 200 · INR 300';
     }
   }
 
