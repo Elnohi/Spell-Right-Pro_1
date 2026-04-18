@@ -622,7 +622,7 @@
       <button class="nav-btn" id="toggleDark">
         <i class="fa fa-moon"></i> Dark Mode
       </button>
-      <button class="btn-premium" onclick="window.location.href='/premium.html'">
+      <button class="btn-premium" onclick="window.location.href='/premium'">
         <i class="fa fa-crown"></i> Go Premium
       </button>
     </div>
@@ -878,7 +878,7 @@ const firebaseConfig = {
               • Export results<br>
               • No ads
             </p>
-            <button onclick="window.location.href='/premium.html'" 
+            <button onclick="window.location.href='/premium'" 
               style="background: white; color: #7b2ff7; border: none; padding: 8px 20px; border-radius: 5px; font-weight: bold; cursor: pointer;">
               <i class="fa fa-crown"></i> Get School Premium
             </button>
@@ -1097,6 +1097,12 @@ const firebaseConfig = {
     
     // Start session
     function startSession() {
+      // ── Daily session limit check ──────────────────────────────
+      if (!srpLimit.canStart('school')) {
+        srpLimit.showGate('school');
+        return;
+      }
+
       const customText = elements.customBox ? elements.customBox.value.trim() : '';
       
       if (customText) {
@@ -1250,7 +1256,7 @@ const firebaseConfig = {
             • Export results<br>
             • No ads
           </p>
-          <button onclick="window.location.href='/premium.html'" 
+          <button onclick="window.location.href='/premium'" 
             style="background: white; color: #7b2ff7; border: none; padding: 8px 20px; border-radius: 5px; font-weight: bold; cursor: pointer;">
             <i class="fa fa-crown"></i> Get School Premium
           </button>
@@ -1262,6 +1268,7 @@ const firebaseConfig = {
       if (elements.summaryArea) {
         elements.summaryArea.innerHTML = summaryHTML;
         elements.summaryArea.style.display = 'block';
+        srpLimit.recordSession('school');
         elements.summaryArea.classList.remove('hidden');
         // Rating prompt
         srpRating.recordSession();
@@ -1783,5 +1790,181 @@ const firebaseConfig = {
 })();
 </script>
 
+
+<script>
+// ── Daily session limit system ───────────────────────────────────────────────
+// Shared across all freemium pages via localStorage
+// Keys:
+//   srp_daily_date     — today's date string (YYYY-MM-DD)
+//   srp_daily_count    — sessions completed today
+//   srp_daily_module   — which module (school/oet/bee)
+
+window.srpLimit = (function() {
+
+  var FREE_SESSIONS_PER_DAY = 3;
+
+  // Word counts per module
+  var TOTAL_WORDS = {
+    school: 1200,
+    oet:    1511,
+    bee:    500
+  };
+
+  var FREE_WORDS = {
+    school: 50,
+    oet:    50,
+    bee:    25
+  };
+
+  function todayStr() {
+    return new Date().toISOString().slice(0, 10); // YYYY-MM-DD
+  }
+
+  function getCount() {
+    if (localStorage.getItem('srp_daily_date') !== todayStr()) {
+      // New day — reset counter
+      localStorage.setItem('srp_daily_date',  todayStr());
+      localStorage.setItem('srp_daily_count', '0');
+    }
+    return parseInt(localStorage.getItem('srp_daily_count') || '0');
+  }
+
+  function increment() {
+    var n = getCount() + 1;
+    localStorage.setItem('srp_daily_count', n);
+    return n;
+  }
+
+  function remaining() {
+    return Math.max(0, FREE_SESSIONS_PER_DAY - getCount());
+  }
+
+  // Call at session START — returns false if gate should show
+  function canStart(module) {
+    return getCount() < FREE_SESSIONS_PER_DAY;
+  }
+
+  // Call when session ENDS — increments count, returns new count
+  function recordSession(module) {
+    return increment();
+  }
+
+  // Build the "X of 1,511 words" banner shown above Start button
+  function getWordBannerHTML(module) {
+    var free  = FREE_WORDS[module]  || 50;
+    var total = TOTAL_WORDS[module] || 1511;
+    var rem   = remaining();
+    var sessionText = rem === 1 ? '1 free session left today'
+                    : rem > 1  ? rem + ' free sessions left today'
+                    : 'Daily free sessions used';
+    return '<div id="srpWordBanner" style="' +
+      'background:rgba(123,47,247,0.08);border:1px solid rgba(123,47,247,0.2);' +
+      'border-radius:12px;padding:12px 16px;margin-bottom:14px;' +
+      'display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">' +
+      '<span style="font-size:0.85rem;color:var(--text,#1a0533);">' +
+      '&#128218; Free practice: <strong>' + free + ' of ' + total + ' words</strong>' +
+      '</span>' +
+      '<span style="font-size:0.78rem;color:var(--muted,#7b6f8a);">' +
+      '&#8987; ' + sessionText +
+      '</span>' +
+      '</div>';
+  }
+
+  // Build the soft gate screen shown after 3rd session
+  function getGateHTML(module) {
+    var free  = FREE_WORDS[module]  || 50;
+    var total = TOTAL_WORDS[module] || 1511;
+    var remaining_words = total - free;
+    var moduleLabel = module === 'oet'    ? 'OET Medical'
+                    : module === 'school' ? 'School'
+                    : 'Spelling Bee';
+    var moduleIcon  = module === 'oet'    ? '&#128138;'
+                    : module === 'school' ? '&#127979;'
+                    : '&#127881;';
+
+    // Midnight reset countdown
+    var now       = new Date();
+    var midnight  = new Date(now);
+    midnight.setHours(24, 0, 0, 0);
+    var diffMs    = midnight - now;
+    var diffHrs   = Math.floor(diffMs / 3600000);
+    var diffMins  = Math.floor((diffMs % 3600000) / 60000);
+    var resetTime = diffHrs > 0 ? diffHrs + 'h ' + diffMins + 'm' : diffMins + ' minutes';
+
+    return '<div id="srpDailyGate" style="' +
+      'position:fixed;inset:0;background:rgba(26,5,51,0.92);z-index:9999;' +
+      'display:flex;align-items:center;justify-content:center;padding:20px;">' +
+      '<div style="background:var(--surface,#fff);border-radius:20px;padding:32px 28px;' +
+      'max-width:420px;width:100%;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,0.4);">' +
+
+      // Icon + title
+      '<div style="font-size:2.5rem;margin-bottom:12px;">' + moduleIcon + '</div>' +
+      '<h3 style="font-size:1.2rem;font-weight:800;color:var(--text,#1a0533);margin:0 0 8px;">' +
+      'You\'ve completed today\'s free practice!</h3>' +
+
+      // Word count context — the key message
+      '<div style="background:rgba(123,47,247,0.07);border-radius:12px;padding:14px;margin:16px 0;">' +
+      '<p style="font-size:0.92rem;color:var(--text,#1a0533);margin:0 0 6px;">' +
+      'You\'ve mastered <strong>' + free + ' ' + moduleLabel + ' words</strong> today.' +
+      '</p>' +
+      '<p style="font-size:0.85rem;color:var(--muted,#7b6f8a);margin:0;">' +
+      'Premium unlocks <strong>' + remaining_words.toLocaleString() + ' more words</strong> — ' +
+      'the full ' + total.toLocaleString() + '-word list.' +
+      '</p>' +
+      '</div>' +
+
+      // Premium CTA
+      '<a href="/premium" style="' +
+      'display:block;padding:15px;background:linear-gradient(135deg,#7b2ff7,#f72585);' +
+      'color:#fff;border-radius:12px;font-weight:700;font-size:1rem;' +
+      'text-decoration:none;margin-bottom:12px;">' +
+      '&#128081; Unlock full ' + total.toLocaleString() + '-word list' +
+      '</a>' +
+
+      // Come back tomorrow
+      '<button onclick="srpLimit.dismissGate()" style="' +
+      'width:100%;padding:12px;background:transparent;' +
+      'border:1px solid rgba(123,47,247,0.2);border-radius:12px;' +
+      'color:var(--muted,#7b6f8a);font-size:0.88rem;font-weight:600;' +
+      'cursor:pointer;font-family:inherit;">' +
+      '&#8987; Come back in ' + resetTime + ' for more free practice' +
+      '</button>' +
+
+      // Small print
+      '<p style="font-size:0.72rem;color:var(--muted,#7b6f8a);margin:12px 0 0;">' +
+      '3 free sessions per day &nbsp;&#183;&nbsp; Resets at midnight' +
+      '</p>' +
+
+      '</div></div>';
+  }
+
+  function dismissGate() {
+    var gate = document.getElementById('srpDailyGate');
+    if (gate) gate.remove();
+  }
+
+  // Show gate overlay
+  function showGate(module) {
+    // Remove any existing gate
+    var existing = document.getElementById('srpDailyGate');
+    if (existing) existing.remove();
+    document.body.insertAdjacentHTML('beforeend', getGateHTML(module));
+  }
+
+  return {
+    canStart:       canStart,
+    recordSession:  recordSession,
+    remaining:      remaining,
+    getCount:       getCount,
+    getWordBannerHTML: getWordBannerHTML,
+    showGate:       showGate,
+    dismissGate:    dismissGate,
+    FREE_SESSIONS:  FREE_SESSIONS_PER_DAY,
+    TOTAL_WORDS:    TOTAL_WORDS,
+    FREE_WORDS:     FREE_WORDS
+  };
+})();
+
+</script>
 </body>
 </html>
