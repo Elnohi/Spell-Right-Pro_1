@@ -3,8 +3,24 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <title>Premium Trainer — SpellRightPro</title>
+  <meta name="description" content="Your premium SpellRightPro practice — School, OET Medical, and Spelling Bee with unlimited words and full progress tracking." />
   <meta name="robots" content="noindex, nofollow" />
-  <title>SpellRightPro Premium Trainer</title>
+  <link rel="canonical" href="https://spellrightpro.org/trainer" />
+  <!-- Open Graph -->
+  <meta property="og:type"        content="website" />
+  <meta property="og:title"       content="Premium Trainer — SpellRightPro" />
+  <meta property="og:description" content="Premium spelling practice with School, OET Medical, and Spelling Bee modes." />
+  <meta property="og:url"         content="https://spellrightpro.org/trainer" />
+  <meta property="og:image"       content="https://spellrightpro.org/assets/og-image.png" />
+  <meta property="og:site_name"   content="SpellRightPro" />
+  <!-- Twitter Card -->
+  <meta name="twitter:card"        content="summary_large_image" />
+  <meta name="twitter:title"       content="Premium Trainer — SpellRightPro" />
+  <meta name="twitter:description" content="Premium spelling practice with School, OET Medical, and Spelling Bee modes." />
+  <meta name="twitter:image"       content="https://spellrightpro.org/assets/og-image.png" />
+
 
   <link rel="stylesheet" href="/css/styles.css" />
   <link rel="stylesheet" href="/css/premium.css" />
@@ -610,6 +626,21 @@
       .oet-mode-btn { padding:12px 8px; }
       .btn-start-training { padding:15px; font-size:0.98rem; }
     }
+
+  
+    /* ── Rating prompt (premium trainer) ───────────────────────── */
+    .rating-prompt { background:var(--surface2); border:1px solid var(--border); border-radius:16px; padding:22px 20px; margin-top:20px; text-align:center; }
+    .rating-prompt h4 { font-size:1rem; font-weight:700; color:var(--text); margin:0 0 6px; }
+    .rating-prompt p { font-size:0.85rem; color:var(--muted); margin:0 0 16px; }
+    .star-row { display:flex; justify-content:center; gap:8px; margin-bottom:14px; }
+    .star-btn { font-size:2rem; background:none; border:none; cursor:pointer; color:rgba(255,255,255,0.25); transition:color .15s,transform .15s; padding:0; line-height:1; font-family:inherit; }
+    .star-btn:hover,.star-btn.selected { color:#ffb800; transform:scale(1.15); }
+    .rating-actions { display:flex; gap:10px; justify-content:center; flex-wrap:wrap; }
+    .rating-action-btn { padding:10px 20px; border-radius:10px; font-size:0.88rem; font-weight:600; cursor:pointer; font-family:'DM Sans',sans-serif; transition:all .15s; border:none; }
+    .rating-action-btn.primary { background:linear-gradient(135deg,#7b2ff7,#f72585); color:#fff; }
+    .rating-action-btn.secondary { background:transparent; color:var(--muted); border:1px solid var(--border); }
+    .rating-action-btn:hover { opacity:.85; }
+    .rating-thanks { font-size:0.95rem; font-weight:600; color:#00c57a; padding:10px 0; }
 
   </style>
 </head>

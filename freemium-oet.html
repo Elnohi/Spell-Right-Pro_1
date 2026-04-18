@@ -615,6 +615,22 @@
     }
     .app-word-hint i { color: #00c57a; font-size: 1rem; }
 
+  
+    /* ── Rating prompt ───────────────────────────────────────────── */
+    .rating-prompt { background:var(--surface,#fff); border:1px solid var(--border,rgba(123,47,247,0.15)); border-radius:16px; padding:22px 20px; margin-top:20px; text-align:center; box-shadow:0 4px 20px rgba(123,47,247,0.1); }
+    body.dark-mode .rating-prompt { background:var(--surface2,#1f0d3a); border-color:rgba(255,255,255,0.1); }
+    .rating-prompt h4 { font-size:1rem; font-weight:700; color:var(--text,#1a0533); margin:0 0 6px; }
+    .rating-prompt p { font-size:0.85rem; color:var(--muted,#7b6f8a); margin:0 0 16px; }
+    .star-row { display:flex; justify-content:center; gap:8px; margin-bottom:14px; }
+    .star-btn { font-size:2rem; background:none; border:none; cursor:pointer; color:#ddd; transition:color .15s,transform .15s; padding:0; line-height:1; }
+    .star-btn:hover,.star-btn.selected { color:#ffb800; transform:scale(1.15); }
+    .rating-actions { display:flex; gap:10px; justify-content:center; flex-wrap:wrap; }
+    .rating-action-btn { padding:10px 20px; border-radius:10px; font-size:0.88rem; font-weight:600; cursor:pointer; font-family:inherit; transition:all .15s; border:none; }
+    .rating-action-btn.primary { background:linear-gradient(135deg,#7b2ff7,#f72585); color:#fff; }
+    .rating-action-btn.secondary { background:transparent; color:var(--muted,#7b6f8a); border:1px solid var(--border,rgba(123,47,247,0.15)); }
+    .rating-action-btn:hover { opacity:.85; }
+    .rating-thanks { font-size:0.95rem; font-weight:600; color:#00c57a; padding:10px 0; }
+
   </style>
 </head>
 
@@ -1356,6 +1372,10 @@ const firebaseConfig = {
         elements.summaryArea.innerHTML = summaryHTML;
         elements.summaryArea.style.display = 'block';
         elements.summaryArea.classList.remove('hidden');
+        // Rating prompt
+        srpRating.recordSession();
+        var ratingHTML = srpRating.getPromptHTML();
+        if (ratingHTML) elements.summaryArea.insertAdjacentHTML('beforeend', ratingHTML);
       }
       
       updateFeedback('Session completed! Check your results below.');
@@ -1866,5 +1886,92 @@ const firebaseConfig = {
     }
   }
 </script>
+
+<script>
+// ── Rating prompt ────────────────────────────────────────────────────────────
+(function() {
+  var SESSIONS_KEY = 'srp_sessions_count';
+  var DONE_KEY     = 'srp_rating_done';
+  var GOOGLE_URL   = 'https://g.page/r/REPLACE_WITH_YOUR_GOOGLE_REVIEW_LINK/review';
+
+  window.srpRating = {
+    _selected: 0,
+
+    recordSession: function() {
+      if (localStorage.getItem(DONE_KEY)) return;
+      var n = parseInt(localStorage.getItem(SESSIONS_KEY) || '0') + 1;
+      localStorage.setItem(SESSIONS_KEY, n);
+    },
+
+    getPromptHTML: function() {
+      if (localStorage.getItem(DONE_KEY)) return '';
+      if (parseInt(localStorage.getItem(SESSIONS_KEY) || '0') < 2) return '';
+      return '<div class="rating-prompt" id="srpRatingPrompt">' +
+        '<h4>Enjoying SpellRightPro? \u2B50</h4>' +
+        '<p>Tap a star to rate \u2014 it helps other learners find us.</p>' +
+        '<div class="star-row" id="srpStarRow">' +
+        '<button class="star-btn" data-val="1" onclick="srpRating.selectStar(1)">\u2605</button>' +
+        '<button class="star-btn" data-val="2" onclick="srpRating.selectStar(2)">\u2605</button>' +
+        '<button class="star-btn" data-val="3" onclick="srpRating.selectStar(3)">\u2605</button>' +
+        '<button class="star-btn" data-val="4" onclick="srpRating.selectStar(4)">\u2605</button>' +
+        '<button class="star-btn" data-val="5" onclick="srpRating.selectStar(5)">\u2605</button>' +
+        '</div>' +
+        '<div class="rating-actions" id="srpRatingActions" style="display:none;">' +
+        '<button class="rating-action-btn primary" id="srpRatingSubmit" onclick="srpRating.submit()">Submit rating</button>' +
+        '<button class="rating-action-btn secondary" onclick="srpRating.dismiss()">Maybe later</button>' +
+        '</div></div>';
+    },
+
+    selectStar: function(val) {
+      this._selected = val;
+      document.querySelectorAll('.star-btn').forEach(function(s) {
+        s.classList.toggle('selected', parseInt(s.getAttribute('data-val')) <= val);
+      });
+      var a = document.getElementById('srpRatingActions');
+      if (a) a.style.display = 'flex';
+      var b = document.getElementById('srpRatingSubmit');
+      if (b) b.textContent = val >= 4 ? 'Submit & leave a Google review \u2605' : 'Submit feedback';
+    },
+
+    submit: function() {
+      var val = this._selected;
+      if (!val) return;
+      localStorage.setItem(DONE_KEY, '1');
+      localStorage.setItem('srp_user_rating', val);
+      // Save to Firestore if available
+      try {
+        if (typeof firebase !== 'undefined' && typeof firebase.firestore === 'function') {
+          firebase.firestore().collection('ratings').add({
+            rating: val, page: window.location.pathname,
+            timestamp: firebase.firestore.FieldValue.serverTimestamp()
+          }).catch(function(){});
+        }
+      } catch(e) {}
+      var prompt = document.getElementById('srpRatingPrompt');
+      if (!prompt) return;
+      if (val >= 4) {
+        prompt.innerHTML = '<div class="rating-thanks">Thank you! \uD83C\uDF89</div>' +
+          '<p style="font-size:0.82rem;color:var(--muted);margin:8px 0 12px;">Would you take 30 seconds to leave a Google review? It really helps other OET candidates find us.</p>' +
+          '<div class="rating-actions">' +
+          '<a href="' + GOOGLE_URL + '" target="_blank" rel="noopener" class="rating-action-btn primary" style="text-decoration:none;">\u2B50 Leave a Google review</a>' +
+          '<button class="rating-action-btn secondary" onclick="document.getElementById(\'srpRatingPrompt\').style.display=\'none\'">No thanks</button>' +
+          '</div>';
+      } else {
+        prompt.innerHTML = '<div class="rating-thanks" style="color:var(--brand);">Thank you for your honest feedback \uD83D\uDE4F</div>' +
+          '<p style="font-size:0.82rem;color:var(--muted);margin:8px 0 12px;">We\'d love to hear what we can improve.</p>' +
+          '<a href="/contact" class="rating-action-btn primary" style="display:inline-block;text-decoration:none;">Send us feedback</a>';
+      }
+    },
+
+    dismiss: function() {
+      var n = parseInt(localStorage.getItem(SESSIONS_KEY) || '0');
+      localStorage.setItem(SESSIONS_KEY, Math.max(0, n - 1));
+      var p = document.getElementById('srpRatingPrompt');
+      if (p) p.style.display = 'none';
+    }
+  };
+})();
+</script>
+
 </body>
 </html>
