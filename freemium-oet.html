@@ -1262,16 +1262,24 @@ const firebaseConfig = {
       speechSynthesis.cancel();
       if (typeof deactivateSessionUI === 'function') deactivateSessionUI();
       
-      const total = state.words.length;
+      const total = state.correct.length + state.incorrect.length;
       const correctCount = state.correct.length;
       const incorrectWords = state.incorrect;
       const flaggedWords = Array.from(state.flags);
       
+      const pct_s   = total > 0 ? Math.round((correctCount / total) * 100) : 0;
+      const scoreMsg_s = pct_s >= 90 ? 'Outstanding! &#127942;'
+                       : pct_s >= 75 ? 'Great Job! &#127891;'
+                       : pct_s >= 60 ? 'Good effort! &#128077;'
+                       : pct_s >= 40 ? 'Keep practising! &#128170;'
+                       : "Don't give up &#128218;";
+      const scoreCol_s = pct_s >= 75 ? '#00c57a' : pct_s >= 50 ? '#ffb800' : '#f72585';
+
       let summaryHTML = `
         <div style="background: rgba(0,0,0,0.1); padding: 20px; border-radius: 10px;">
-          <h3 style="margin-top: 0; color: #7b2ff7;">Session Complete! 🎉</h3>
-          <p style="font-size: 1.2em; font-weight: bold; color: #7b2ff7;">
-            Score: ${correctCount}/${total} correct (${Math.round((correctCount/total)*100)}%)
+          <h3 style="margin-top: 0; color: ${scoreCol_s};">${scoreMsg_s}</h3>
+          <p style="font-size: 1.2em; font-weight: bold; color: ${scoreCol_s};">
+            Score: ${correctCount}/${total} correct (${pct_s}%)
           </p>
       `;
       

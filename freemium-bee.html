@@ -1258,18 +1258,20 @@
       speechSynthesis.cancel();
       deactivateBeeSessionUI();
 
-      const total   = state.words.length;
       const correct = state.correct.length;
+      // Total = words actually attempted (correct + incorrect voiced)
+      const total   = state.correct.length + (state.incorrect ? state.incorrect.length : 0) || state.currentIndex || 1;
+      const beePct  = Math.round((correct / total) * 100);
 
       let grade = 'Beginner 🐣';
-      if      (state.score >= 200) grade = 'Champion 🏆';
-      else if (state.score >= 150) grade = 'Expert ⭐';
-      else if (state.score >= 100) grade = 'Advanced 🚀';
-      else if (state.score >= 50)  grade = 'Intermediate 📚';
+      if      (beePct >= 90) grade = 'Outstanding! 🏆';
+      else if (beePct >= 75) grade = 'Great Job! ⭐';
+      else if (beePct >= 60) grade = 'Good effort! 🚀';
+      else if (beePct >= 40) grade = 'Keep practising! 📚';
 
       let html = `
         <div style="background:rgba(0,0,0,0.1);padding:20px;border-radius:10px;">
-          <h3 style="margin-top:0;color:#7b2ff7;">Spelling Bee Complete!</h3>
+          <h3 style="margin-top:0;color:${beePct>=75?"#00c57a":beePct>=50?"#ffb800":"#f72585"};">${grade}</h3>
           <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:15px;margin:20px 0;">
             <div style="background:rgba(123,47,247,0.1);padding:15px;border-radius:8px;text-align:center;">
               <div style="font-size:2em;font-weight:bold;color:#7b2ff7;">${state.score}</div>

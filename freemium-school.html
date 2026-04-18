@@ -1149,16 +1149,25 @@ const firebaseConfig = {
       speechSynthesis.cancel();
       if (typeof deactivateSessionUI === 'function') deactivateSessionUI();
       
-      const total = state.words.length;
       const correctCount = state.correct.length;
       const incorrectWords = state.incorrect;
       const flaggedWords = Array.from(state.flags);
-      
+      // Total = words actually attempted (correct + incorrect), not full list length
+      const total = correctCount + state.incorrect.length;
+      const pct   = total > 0 ? Math.round((correctCount / total) * 100) : 0;
+      // Dynamic message based on score
+      const scoreMsg = pct >= 90 ? 'Outstanding! 🏆'
+                     : pct >= 75 ? 'Great Job! 🎓'
+                     : pct >= 60 ? 'Good effort! 👍'
+                     : pct >= 40 ? 'Keep practising! 💪'
+                     : 'Don\'t give up — practice makes perfect! 📚';
+      const scoreColor = pct >= 75 ? '#00c57a' : pct >= 50 ? '#ffb800' : '#f72585';
+
       let summaryHTML = `
         <div style="background: rgba(0,0,0,0.1); padding: 20px; border-radius: 10px;">
-          <h3 style="margin-top: 0; color: #7b2ff7;">Great Job! 🎓</h3>
-          <p style="font-size: 1.2em; font-weight: bold; color: #7b2ff7;">
-            Score: ${correctCount}/${total} correct (${Math.round((correctCount/total)*100)}%)
+          <h3 style="margin-top: 0; color: ${scoreColor};">${scoreMsg}</h3>
+          <p style="font-size: 1.2em; font-weight: bold; color: ${scoreColor};">
+            Score: ${correctCount}/${total} correct (${pct}%)
           </p>
       `;
       
