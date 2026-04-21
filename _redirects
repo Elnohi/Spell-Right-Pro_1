@@ -1,3 +1,19 @@
+# Trailing slash redirects — send /page/ to /page (prevents double redirect)
+/freemium-bee/     /freemium-bee     301
+/freemium-oet/     /freemium-oet     301
+/freemium-school/  /freemium-school  301
+/oet-spelling-guide/ /oet-spelling-guide 301
+/premium/          /premium          301
+/pricing/          /pricing          301
+/login/            /login            301
+/progress/         /progress         301
+/admin/            /admin            301
+/privacy/          /privacy          301
+/terms/            /terms            301
+/contact/          /contact          301
+/refund-policy/    /refund-policy    301
+/security/         /security         301
+
 /ads.txt             /ads.txt               200
 /robots.txt          /robots.txt            200
 /sitemap.xml         /sitemap.xml           200
