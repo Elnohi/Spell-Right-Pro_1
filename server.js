@@ -66,13 +66,14 @@ try {
 
 // ── Plan config ───────────────────────────────────────────────────────────────
 const PLANS = {
-  // Two plans: monthly $5 CAD  or  annual $45 CAD (all modules included in both)
-  monthly: { name: "SpellRightPro Premium — Monthly", amount: 500,  interval: "month", priceId: process.env.STRIPE_PRICE_MONTHLY || null },
-  annual:  { name: "SpellRightPro Premium — Annual",  amount: 4500, interval: "year",  priceId: process.env.STRIPE_PRICE_ANNUAL  || null },
+  // Three plans: Monthly $5 · 6-month $26 · Annual $45 CAD (all modules included in all)
+  monthly:  { name: "SpellRightPro Premium — Monthly",  amount: 500,  interval: "month", intervalCount: 1, priceId: process.env.STRIPE_PRICE_MONTHLY  || null },
+  sixmonth: { name: "SpellRightPro Premium — 6 months", amount: 2600, interval: "month", intervalCount: 6, priceId: process.env.STRIPE_PRICE_SIXMONTH || null },
+  annual:   { name: "SpellRightPro Premium — Annual",   amount: 4500, interval: "year",  intervalCount: 1, priceId: process.env.STRIPE_PRICE_ANNUAL   || null },
   // legacy keys — map old plan names to monthly for backward compatibility
-  school:   { name: "SpellRightPro Premium — Monthly", amount: 500,  interval: "month", priceId: process.env.STRIPE_PRICE_MONTHLY || null },
-  complete: { name: "SpellRightPro Premium — Monthly", amount: 500,  interval: "month", priceId: process.env.STRIPE_PRICE_MONTHLY || null },
-  family:   { name: "SpellRightPro Premium — Monthly", amount: 500,  interval: "month", priceId: process.env.STRIPE_PRICE_MONTHLY || null },
+  school:   { name: "SpellRightPro Premium — Monthly", amount: 500, interval: "month", intervalCount: 1, priceId: process.env.STRIPE_PRICE_MONTHLY || null },
+  complete: { name: "SpellRightPro Premium — Monthly", amount: 500, interval: "month", intervalCount: 1, priceId: process.env.STRIPE_PRICE_MONTHLY || null },
+  family:   { name: "SpellRightPro Premium — Monthly", amount: 500, interval: "month", intervalCount: 1, priceId: process.env.STRIPE_PRICE_MONTHLY || null },
 };
 
 const SITE = process.env.SITE_URL || "https://spellrightpro.org";
@@ -81,7 +82,10 @@ const SITE = process.env.SITE_URL || "https://spellrightpro.org";
 async function writePremiumRecord(uid, email, plan, sessionId, source) {
   if (!db || !email) return;
   const expiry = new Date();
-  expiry.setDate(expiry.getDate() + 30);
+  // Set expiry based on plan duration
+  if (plan === 'annual')        expiry.setFullYear(expiry.getFullYear() + 1);
+  else if (plan === 'sixmonth') expiry.setMonth(expiry.getMonth() + 6);
+  else                          expiry.setDate(expiry.getDate() + 30);  // monthly / legacy
   const record = {
     email, plan, active: true,
     activatedAt:     admin.firestore.FieldValue.serverTimestamp(),
@@ -107,7 +111,11 @@ app.get("/",          (_, res) => res.json({ status: "ok", service: "SpellRightP
 app.get("/test",      (_, res) => res.json({ status: "ok" }));
 app.get("/api/health",(_, res) => res.json({
   status: "healthy", stripe: !!stripe, firebase: !!db, email: !!transporter,
-  plans: { monthly: { amount: 500, priceId: PLANS.monthly.priceId }, annual: { amount: 4500, priceId: PLANS.annual.priceId } },
+  plans: {
+    monthly:  { amount: 500,  priceId: PLANS.monthly.priceId  },
+    sixmonth: { amount: 2600, priceId: PLANS.sixmonth.priceId },
+    annual:   { amount: 4500, priceId: PLANS.annual.priceId   }
+  },
   timestamp: new Date().toISOString()
 }));
 
@@ -310,9 +318,9 @@ app.post('/api/email/welcome', async (req, res) => {
     if (!email) return res.status(400).json({ success: false, message: 'email required' });
     if (!transporter) return res.json({ success: false, message: 'email not configured' });
 
-    const planLabel = plan === 'annual'
-      ? 'Complete Premium — Annual (CAD $45/yr)'
-      : 'Complete Premium — Monthly (CAD $5/mo)';
+    const planLabel = plan === 'annual'   ? 'Complete Premium — Annual (CAD $45/yr)'
+                    : plan === 'sixmonth' ? 'Complete Premium — 6 months (CAD $26)'
+                    : 'Complete Premium — Monthly (CAD $5/mo)';
 
     await transporter.sendMail({
       from:    'SpellRightPro <spellrightpro@gmail.com>',
@@ -549,7 +557,7 @@ app.post('/api/email/renewal', async (req, res) => {
 
 async function sendRenewalEmail(email, plan, expiryStr) {
   if (!transporter) throw new Error('Email not configured');
-  const planLabel = plan === 'annual' ? 'Annual' : 'Monthly';
+  const planLabel = plan === 'annual' ? 'Annual' : plan === 'sixmonth' ? '6 months' : 'Monthly';
   const siteUrl   = process.env.SITE_URL || 'https://spellrightpro.org';
 
   await transporter.sendMail({
@@ -643,7 +651,7 @@ app.listen(PORT, "0.0.0.0", () => {
 ║  GET  /                           health              ║
 ║  GET  /api/health                 detailed health     ║
 ║  POST /api/create-checkout-session Stripe checkout    ║
-║  Env: STRIPE_PRICE_MONTHLY, STRIPE_PRICE_ANNUAL       ║
+║  Env: STRIPE_PRICE_MONTHLY, _SIXMONTH, _ANNUAL        ║
 ║  GET  /api/verify-session         confirm payment     ║
 ║  POST /api/stripe-webhook         Stripe events       ║
 ║  POST /api/send-confirmation      email fallback      ║

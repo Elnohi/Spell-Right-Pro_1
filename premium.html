@@ -403,26 +403,36 @@
         Cancel anytime. Your access continues until the end of your billing period.
       </p>
       
-      <!-- Billing toggle -->
-      <div style="display:flex;justify-content:center;align-items:center;gap:16px;margin-bottom:36px;">
-        <span id="toggleMonthlyLabel"
-              style="font-weight:700;font-size:1rem;color:white;">Monthly</span>
-        <label style="position:relative;display:inline-block;width:52px;height:28px;cursor:pointer;">
-          <input type="checkbox" id="billingToggle"
-                 style="opacity:0;width:0;height:0;"
-                 checked
-                 onchange="switchBilling(this.checked)" />
-          <span style="position:absolute;inset:0;background:rgba(255,255,255,0.25);
-                       border-radius:99px;transition:.3s;" id="toggleTrack"></span>
-          <span style="position:absolute;left:4px;top:4px;width:20px;height:20px;
-                       background:white;border-radius:50%;transition:.3s;
-                       box-shadow:0 1px 4px rgba(0,0,0,.3);" id="toggleThumb"></span>
-        </label>
-        <span id="toggleAnnualLabel"
-              style="font-weight:700;font-size:1rem;color:rgba(255,255,255,0.6);">
-          Annual &nbsp;<span style="background:#ffd166;color:#333;font-size:0.75em;
-            padding:2px 8px;border-radius:99px;font-weight:800;">SAVE 25%</span>
-        </span>
+      <!-- Plan selector (3-way tabs) -->
+      <div style="display:flex;justify-content:center;margin-bottom:36px;">
+        <div style="display:flex;gap:6px;background:rgba(255,255,255,0.1);border-radius:14px;padding:6px;max-width:520px;width:100%;">
+          <button id="tabMonthly" onclick="selectPlanKey('monthly')"
+                  style="flex:1;padding:12px 8px;border:none;background:transparent;color:rgba(255,255,255,0.75);
+                         border-radius:10px;cursor:pointer;font-family:'DM Sans',sans-serif;
+                         font-size:0.85rem;font-weight:700;transition:all .2s;
+                         display:flex;flex-direction:column;gap:2px;line-height:1.2;">
+            <span>Monthly</span>
+            <span style="font-size:0.7rem;font-weight:500;opacity:.7;">Flexible</span>
+          </button>
+          <button id="tabSixmonth" onclick="selectPlanKey('sixmonth')"
+                  style="flex:1;padding:12px 8px;border:none;background:transparent;color:rgba(255,255,255,0.75);
+                         border-radius:10px;cursor:pointer;font-family:'DM Sans',sans-serif;
+                         font-size:0.85rem;font-weight:700;transition:all .2s;
+                         display:flex;flex-direction:column;gap:2px;line-height:1.2;">
+            <span>6 months</span>
+            <span style="font-size:0.7rem;font-weight:500;opacity:.7;">Save 13%</span>
+          </button>
+          <button id="tabAnnual" onclick="selectPlanKey('annual')"
+                  style="flex:1;padding:12px 8px;border:none;background:white;color:#7b2ff7;
+                         border-radius:10px;cursor:pointer;font-family:'DM Sans',sans-serif;
+                         font-size:0.85rem;font-weight:700;transition:all .2s;box-shadow:0 2px 10px rgba(0,0,0,0.2);
+                         display:flex;flex-direction:column;gap:2px;line-height:1.2;position:relative;">
+            <span style="position:absolute;top:-9px;right:6px;background:#ffd166;color:#412402;
+                         font-size:0.6rem;padding:2px 7px;border-radius:20px;font-weight:800;">BEST VALUE</span>
+            <span>Annual</span>
+            <span style="font-size:0.7rem;font-weight:500;opacity:.7;">Save 25%</span>
+          </button>
+        </div>
       </div>
 
       <div class="plans-grid" style="max-width:700px;margin:0 auto;
@@ -459,31 +469,14 @@
           </a>
         </div>
 
-        <!-- Free tier reminder -->
-        <div class="plan-card" style="opacity:0.75;border-style:dashed;">
-          <div class="plan-header">
-            <h3 style="margin:0;font-size:1.5em;">Free Forever</h3>
-            <p style="opacity:0.8;">No credit card needed</p>
-          </div>
-          <div class="plan-price">
-            $0<span>/month</span>
-          </div>
-          <ul class="plan-features">
-            <li><i class="fa fa-check"></i> School practice (25 words/session)</li>
-            <li><i class="fa fa-check"></i> OET practice (limited)</li>
-            <li><i class="fa fa-check"></i> Spelling Bee (25 words/session)</li>
-            <li><i class="fa fa-check"></i> 1 custom list per day</li>
-            <li style="opacity:0.4;"><i class="fa fa-times"></i> Progress dashboard</li>
-            <li style="opacity:0.4;"><i class="fa fa-times"></i> Mistake review</li>
-            <li style="opacity:0.4;"><i class="fa fa-times"></i> Ad-free</li>
-          </ul>
-          <a href="/" class="btn-choose" style="background:rgba(255,255,255,0.15);color:white;">
-            Continue Free
-          </a>
-        </div>
+
       </div>
       </div>
-      
+
+      <p style="text-align:center;margin:24px 0 0;font-size:0.9rem;opacity:0.8;">
+        Not ready to commit? <a href="/freemium-oet" style="color:#ffd166;font-weight:700;">Try SpellRightPro free first</a> — no signup needed.
+      </p>
+
       <!-- Money-Back Guarantee -->
       <div style="text-align: center; margin: 40px 0;">
         <div style="display: inline-flex; align-items: center; gap: 15px; padding: 15px 30px; background: rgba(76, 175, 80, 0.1); border: 2px solid #4CAF50; border-radius: 50px;">
@@ -892,74 +885,87 @@
     // ── Plan data set by the "Choose Plan" buttons ──────────────────────────
     let selectedPlanKey = 'annual';  // Annual is default
 
-    // ── Billing toggle ─────────────────────────────────────────────────────
-    let isAnnual = true;  // Annual is default
-    // Pre-set toggle visual to annual state on load
-    (function() {
-      var thumb = document.getElementById('toggleThumb');
-      var track = document.getElementById('toggleTrack');
-      var mLabel = document.getElementById('toggleMonthlyLabel');
-      var aLabel = document.getElementById('toggleAnnualLabel');
-      if (thumb)  thumb.style.left = '28px';
-      if (track)  track.style.background = 'rgba(255,209,102,0.6)';
-      if (mLabel) mLabel.style.color = 'rgba(255,255,255,0.6)';
-      if (aLabel) aLabel.style.color = 'white';
-    })();
-    window.switchBilling = function(annual) {
-      isAnnual = annual;
-      const priceEl   = document.getElementById('priceDisplay');
-      const labelEl   = document.getElementById('choosePlanLabel');
-      const mLabel    = document.getElementById('toggleMonthlyLabel');
-      const aLabel    = document.getElementById('toggleAnnualLabel');
-      const thumb     = document.getElementById('toggleThumb');
-      const track     = document.getElementById('toggleTrack');
-      if (annual) {
-        priceEl.innerHTML  = 'CAD $45<span>/year</span><div style="font-size:0.35em;opacity:0.8;margin-top:4px;">Equivalent to CAD $3.75/mo — save 25%</div>';
-        labelEl.textContent = 'Get Annual — CAD $45/yr';
-        var ctx = document.getElementById('currencyContext');
-        if (ctx) ctx.textContent = '≈ USD $33 · GBP 26 · AUD 50 · PHP 1,900 · INR 2,700';
-        selectedPlanKey     = 'annual';
-        mLabel.style.color  = 'rgba(255,255,255,0.6)';
-        aLabel.style.color  = 'white';
-        thumb.style.left    = '28px';
-        track.style.background = 'rgba(255,209,102,0.6)';
-      } else {
-        priceEl.innerHTML  = 'CAD $5<span>/month</span>';
-        labelEl.textContent = 'Get Monthly — CAD $5/mo';
-        var ctx = document.getElementById('currencyContext');
-        if (ctx) ctx.textContent = '≈ USD $3.60 · GBP 2.80 · AUD 5.50 · PHP 200 · INR 300';
-        selectedPlanKey     = 'monthly';
-        mLabel.style.color  = 'white';
-        aLabel.style.color  = 'rgba(255,255,255,0.6)';
-        thumb.style.left    = '4px';
-        track.style.background = 'rgba(255,255,255,0.25)';
+    // ── 3-way plan selector ────────────────────────────────────────────────
+    const PLAN_DATA = {
+      monthly:  {
+        priceHTML: 'CAD $5<span>/month</span>',
+        btnLabel:  'Get Monthly — CAD $5/mo',
+        currency:  '≈ USD $3.60 · GBP 2.80 · AUD 5.50 · PHP 200 · INR 300',
+        amount:    5,
+        label:     'SpellRightPro Premium — CAD $5/month'
+      },
+      sixmonth: {
+        priceHTML: 'CAD $26<span>/6 months</span><div style="font-size:0.35em;opacity:0.8;margin-top:4px;">Equivalent to CAD $4.33/mo — save 13%</div>',
+        btnLabel:  'Get 6 Months — CAD $26',
+        currency:  '≈ USD $19 · GBP 15 · AUD 29 · PHP 1,100 · INR 1,600',
+        amount:    26,
+        label:     'SpellRightPro Premium — CAD $26 (6 months, save 13%)'
+      },
+      annual:   {
+        priceHTML: 'CAD $45<span>/year</span><div style="font-size:0.35em;opacity:0.8;margin-top:4px;">Equivalent to CAD $3.75/mo — save 25%</div>',
+        btnLabel:  'Get Annual — CAD $45/yr',
+        currency:  '≈ USD $33 · GBP 26 · AUD 50 · PHP 1,900 · INR 2,700',
+        amount:    45,
+        label:     'SpellRightPro Premium — CAD $45/year (save 25%)'
       }
     };
-    // Default plan key
-    selectedPlanKey = 'monthly';
+
+    window.selectPlanKey = function(plan) {
+      selectedPlanKey = plan;
+      const data = PLAN_DATA[plan];
+
+      // Update tab styling
+      ['monthly','sixmonth','annual'].forEach(function(p) {
+        const tabId = p === 'sixmonth' ? 'tabSixmonth'
+                   : p === 'monthly'  ? 'tabMonthly'
+                   : 'tabAnnual';
+        const tab = document.getElementById(tabId);
+        if (!tab) return;
+        if (p === plan) {
+          tab.style.background = 'white';
+          tab.style.color      = '#7b2ff7';
+          tab.style.boxShadow  = '0 2px 10px rgba(0,0,0,0.2)';
+        } else {
+          tab.style.background = 'transparent';
+          tab.style.color      = 'rgba(255,255,255,0.75)';
+          tab.style.boxShadow  = 'none';
+        }
+      });
+
+      // Update plan card
+      document.getElementById('priceDisplay').innerHTML     = data.priceHTML;
+      document.getElementById('choosePlanLabel').textContent = data.btnLabel;
+      const ctx = document.getElementById('currencyContext');
+      if (ctx) ctx.textContent = data.currency;
+    };
+
+    // Read plan from URL query (?plan=sixmonth|monthly|annual)
+    (function() {
+      const params = new URLSearchParams(window.location.search);
+      const plan   = params.get('plan');
+      if (plan && PLAN_DATA[plan]) {
+        selectPlanKey(plan);
+      }
+    })();
 
     // ── Plan button ─────────────────────────────────────────────────────────
     document.querySelectorAll('.btn-choose[data-plan]').forEach(function(btn) {
       btn.addEventListener('click', function(e) {
         e.preventDefault();
-        if (this.getAttribute('data-plan') === 'monthly') {
-          // selectedPlanKey already set by toggle (monthly or annual)
-          const planLabels = {
-            monthly: 'SpellRightPro Premium — CAD $5/month',
-            annual:  'SpellRightPro Premium — CAD $45/year (save 25%)'
-          };
-          const checkoutEl = document.getElementById('checkout');
-          checkoutEl.style.display = 'block';
-          document.getElementById('selectedPlan').textContent = planLabels[selectedPlanKey];
-          setTimeout(function() {
-            checkoutEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
-          }, 50);
-          if (typeof gtag !== 'undefined') {
-            gtag('event', 'begin_checkout', {
-              currency: 'CAD', value: isAnnual ? 45 : 5,
-              items: [{ item_id: selectedPlanKey, item_name: planLabels[selectedPlanKey] }]
-            });
-          }
+        const data = PLAN_DATA[selectedPlanKey];
+        if (!data) return;
+        const checkoutEl = document.getElementById('checkout');
+        checkoutEl.style.display = 'block';
+        document.getElementById('selectedPlan').textContent = data.label;
+        setTimeout(function() {
+          checkoutEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }, 50);
+        if (typeof gtag !== 'undefined') {
+          gtag('event', 'begin_checkout', {
+            currency: 'CAD',
+            value:    data.amount,
+            items: [{ item_id: selectedPlanKey, item_name: data.label }]
+          });
         }
       });
     });
