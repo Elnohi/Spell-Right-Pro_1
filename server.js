@@ -78,6 +78,183 @@ const PLANS = {
 
 const SITE = process.env.SITE_URL || "https://spellrightpro.org";
 
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// EMAIL HELPERS — Customer receipt & Admin notification
+// Used by both the Stripe webhook and the manual send-confirmation fallback
+// ═══════════════════════════════════════════════════════════════════════════════
+
+async function sendCustomerReceipt({ email, customerName, plan, planLabel, amount, paymentDate, expiryStr, billingNote, txnId }) {
+  if (!transporter) return;
+  const SITE_URL = process.env.SITE_URL || 'https://spellrightpro.org';
+  const safeName = customerName || email.split('@')[0];
+  const safeAmount = parseFloat(amount || 0).toFixed(2);
+
+  const html = `
+  <div style="font-family:'DM Sans',Arial,sans-serif;max-width:600px;margin:0 auto;padding:0;background:#f4f0fc;">
+    <div style="background:#fff;padding:30px 28px;">
+
+      <!-- Header -->
+      <div style="text-align:center;margin-bottom:24px;">
+        <img src="${SITE_URL}/assets/logo.png" alt="SpellRightPro" style="height:48px;border-radius:10px;" />
+      </div>
+
+      <h1 style="font-size:1.5rem;color:#7b2ff7;margin:0 0 8px;text-align:center;">
+        🎉 Welcome to Premium!
+      </h1>
+      <p style="color:#444;line-height:1.6;margin:0 0 24px;text-align:center;font-size:0.95rem;">
+        Hi ${safeName}, your payment was successful and your premium access is now active.
+      </p>
+
+      <!-- Receipt -->
+      <div style="border:1px solid #e8e0f8;border-radius:12px;overflow:hidden;margin-bottom:24px;">
+        <div style="background:linear-gradient(135deg,#7b2ff7,#f72585);padding:14px 20px;color:#fff;font-weight:700;font-size:0.95rem;">
+          📄 PAYMENT RECEIPT
+        </div>
+        <table style="width:100%;border-collapse:collapse;font-size:0.9rem;">
+          <tr>
+            <td style="padding:12px 20px;color:#888;border-bottom:1px solid #f0eaff;">Plan</td>
+            <td style="padding:12px 20px;color:#1a0533;font-weight:600;text-align:right;border-bottom:1px solid #f0eaff;">${planLabel}</td>
+          </tr>
+          <tr>
+            <td style="padding:12px 20px;color:#888;border-bottom:1px solid #f0eaff;">Amount</td>
+            <td style="padding:12px 20px;color:#1a0533;font-weight:600;text-align:right;border-bottom:1px solid #f0eaff;">CAD $${safeAmount}</td>
+          </tr>
+          <tr>
+            <td style="padding:12px 20px;color:#888;border-bottom:1px solid #f0eaff;">Payment date</td>
+            <td style="padding:12px 20px;color:#1a0533;font-weight:600;text-align:right;border-bottom:1px solid #f0eaff;">${paymentDate}</td>
+          </tr>
+          <tr>
+            <td style="padding:12px 20px;color:#888;border-bottom:1px solid #f0eaff;">Active until</td>
+            <td style="padding:12px 20px;color:#1a0533;font-weight:600;text-align:right;border-bottom:1px solid #f0eaff;">${expiryStr}</td>
+          </tr>
+          <tr>
+            <td style="padding:12px 20px;color:#888;border-bottom:1px solid #f0eaff;">Billing</td>
+            <td style="padding:12px 20px;color:#1a0533;font-weight:600;text-align:right;border-bottom:1px solid #f0eaff;font-size:0.82rem;">${billingNote}</td>
+          </tr>
+          <tr>
+            <td style="padding:12px 20px;color:#888;">Transaction ID</td>
+            <td style="padding:12px 20px;color:#1a0533;font-family:monospace;font-size:0.78rem;text-align:right;">…${txnId}</td>
+          </tr>
+        </table>
+      </div>
+
+      <!-- What you have access to -->
+      <h2 style="font-size:1rem;color:#1a0533;margin:0 0 12px;">Your premium access includes:</h2>
+      <ul style="padding-left:20px;color:#444;line-height:1.9;font-size:0.9rem;margin:0 0 24px;">
+        <li><strong>School Practice</strong> — unlimited words &amp; custom lists</li>
+        <li><strong>OET Medical</strong> — full 1,511-word vocabulary</li>
+        <li><strong>Spelling Bee</strong> — voice-recognition mode</li>
+        <li><strong>Progress Dashboard</strong> — streak, accuracy, mastered words</li>
+        <li><strong>Mistake Review</strong> — spaced repetition for missed words</li>
+        <li><strong>No ads</strong> — distraction-free practice</li>
+      </ul>
+
+      <!-- CTA -->
+      <div style="text-align:center;margin:24px 0;">
+        <a href="${SITE_URL}/trainer"
+           style="display:inline-block;background:linear-gradient(135deg,#7b2ff7,#f72585);
+                  color:#fff;text-decoration:none;padding:14px 32px;border-radius:12px;
+                  font-weight:700;font-size:0.95rem;box-shadow:0 4px 16px rgba(123,47,247,0.3);">
+          Start Practising Now →
+        </a>
+      </div>
+
+      <!-- Footer -->
+      <hr style="border:none;border-top:1px solid #e8e0f8;margin:24px 0;" />
+      <p style="color:#888;font-size:0.78rem;line-height:1.5;margin:0;text-align:center;">
+        Need help or want to cancel? Reply to this email or visit
+        <a href="${SITE_URL}/contact" style="color:#7b2ff7;">spellrightpro.org/contact</a>.<br/>
+        Cancellations are processed within 24 hours. Access continues until your billing period ends.
+      </p>
+
+      <p style="color:#aaa;font-size:0.72rem;text-align:center;margin-top:18px;">
+        SpellRightPro · ${SITE_URL}<br/>
+        This is an automated receipt for your records.
+      </p>
+    </div>
+  </div>`;
+
+  const text = `Welcome to SpellRightPro Premium!\n\n` +
+               `Hi ${safeName},\n\n` +
+               `Your payment was successful. Receipt:\n\n` +
+               `Plan:           ${planLabel}\n` +
+               `Amount:         CAD $${safeAmount}\n` +
+               `Payment date:   ${paymentDate}\n` +
+               `Active until:   ${expiryStr}\n` +
+               `Billing:        ${billingNote}\n` +
+               `Transaction ID: ...${txnId}\n\n` +
+               `Start practising: ${SITE_URL}/trainer\n\n` +
+               `Questions? Reply to this email or visit ${SITE_URL}/contact`;
+
+  await transporter.sendMail({
+    from:    'SpellRightPro <spellrightpro@gmail.com>',
+    to:      email,
+    subject: `✅ SpellRightPro Premium — Payment receipt (CAD $${safeAmount})`,
+    html, text
+  });
+  console.log(`📧 Receipt sent to ${email}`);
+}
+
+async function sendAdminNotification({ email, customerName, plan, planLabel, amount, paymentDate, expiryStr, txnId, sessionId }) {
+  if (!transporter) return;
+  const ADMIN = 'spellrightpro@gmail.com';
+  const safeAmount = parseFloat(amount || 0).toFixed(2);
+  const safeName = customerName || '(not provided)';
+
+  const html = `
+  <div style="font-family:'DM Sans',Arial,sans-serif;max-width:560px;margin:0 auto;padding:20px;">
+    <div style="background:linear-gradient(135deg,#00c57a,#0097db);color:#fff;padding:20px;border-radius:12px;margin-bottom:20px;">
+      <h2 style="margin:0;font-size:1.3rem;">🎉 New Premium Subscriber!</h2>
+      <p style="margin:6px 0 0;opacity:0.9;font-size:0.9rem;">SpellRightPro just received a new subscription</p>
+    </div>
+
+    <table style="width:100%;border-collapse:collapse;background:#f8f5ff;border-radius:12px;overflow:hidden;font-size:0.9rem;">
+      <tr><td style="padding:12px 16px;color:#888;border-bottom:1px solid #e8e0f8;">Customer email</td>
+          <td style="padding:12px 16px;font-weight:600;text-align:right;border-bottom:1px solid #e8e0f8;">${email}</td></tr>
+      <tr><td style="padding:12px 16px;color:#888;border-bottom:1px solid #e8e0f8;">Customer name</td>
+          <td style="padding:12px 16px;font-weight:600;text-align:right;border-bottom:1px solid #e8e0f8;">${safeName}</td></tr>
+      <tr><td style="padding:12px 16px;color:#888;border-bottom:1px solid #e8e0f8;">Plan</td>
+          <td style="padding:12px 16px;font-weight:600;text-align:right;border-bottom:1px solid #e8e0f8;color:#7b2ff7;">${planLabel}</td></tr>
+      <tr><td style="padding:12px 16px;color:#888;border-bottom:1px solid #e8e0f8;">Amount</td>
+          <td style="padding:12px 16px;font-weight:700;text-align:right;border-bottom:1px solid #e8e0f8;color:#00c57a;">CAD $${safeAmount}</td></tr>
+      <tr><td style="padding:12px 16px;color:#888;border-bottom:1px solid #e8e0f8;">Payment date</td>
+          <td style="padding:12px 16px;font-weight:600;text-align:right;border-bottom:1px solid #e8e0f8;">${paymentDate}</td></tr>
+      <tr><td style="padding:12px 16px;color:#888;border-bottom:1px solid #e8e0f8;">Expires</td>
+          <td style="padding:12px 16px;font-weight:600;text-align:right;border-bottom:1px solid #e8e0f8;">${expiryStr}</td></tr>
+      <tr><td style="padding:12px 16px;color:#888;">Stripe session</td>
+          <td style="padding:12px 16px;font-family:monospace;font-size:0.78rem;text-align:right;color:#666;">${(sessionId||'').slice(0,30)}…</td></tr>
+    </table>
+
+    <div style="background:#fff8e1;border-left:3px solid #ffb800;padding:12px 16px;margin:20px 0;border-radius:6px;font-size:0.85rem;color:#1a0533;">
+      💡 <strong>Action:</strong> Send a personal welcome email to ${email} within 24 hours.
+      Personal contact from a founder dramatically improves retention and customer satisfaction.
+    </div>
+
+    <div style="text-align:center;margin-top:20px;">
+      <a href="https://dashboard.stripe.com/customers" style="display:inline-block;background:#7b2ff7;color:#fff;text-decoration:none;padding:10px 22px;border-radius:8px;font-weight:600;font-size:0.85rem;margin:0 4px;">View in Stripe</a>
+      <a href="https://spellrightpro.org/admin" style="display:inline-block;background:transparent;color:#7b2ff7;text-decoration:none;padding:10px 22px;border-radius:8px;font-weight:600;font-size:0.85rem;border:1px solid #7b2ff7;margin:0 4px;">Admin Dashboard</a>
+    </div>
+  </div>`;
+
+  await transporter.sendMail({
+    from:    'SpellRightPro Bot <spellrightpro@gmail.com>',
+    to:      ADMIN,
+    subject: `🛒 New ${planLabel} subscriber: ${email} — CAD $${safeAmount}`,
+    html,
+    text: `New SpellRightPro Premium subscriber!\n\n` +
+          `Customer: ${email} (${safeName})\n` +
+          `Plan: ${planLabel}\n` +
+          `Amount: CAD $${safeAmount}\n` +
+          `Payment date: ${paymentDate}\n` +
+          `Expires: ${expiryStr}\n` +
+          `Session: ${sessionId}\n\n` +
+          `View in Stripe: https://dashboard.stripe.com/customers\n` +
+          `Admin dashboard: https://spellrightpro.org/admin`
+  });
+  console.log(`📧 Admin notification sent for ${email}`);
+}
+
 // Helper: write premium record to Firestore
 async function writePremiumRecord(uid, email, plan, sessionId, source) {
   if (!db || !email) return;
@@ -231,32 +408,37 @@ app.post("/api/stripe-webhook", async (req, res) => {
       console.error("Webhook Firestore write failed:", e.message)
     );
 
-    // Send confirmation email
+    // ── Send 3 emails on successful subscription ────────────────────────────
+    //  1. Customer welcome + receipt
+    //  2. Admin notification
     if (transporter && email) {
-      const expiry = new Date(); expiry.setDate(expiry.getDate() + 30);
-      const expiryStr = expiry.toLocaleDateString("en-GB", { day:"numeric", month:"long", year:"numeric" });
-      transporter.sendMail({
-        from:    "SpellRightPro <spellrightpro@gmail.com>",
-        to:      email,
-        subject: "✅ Your SpellRightPro Premium is now active!",
-        html: `<div style="font-family:sans-serif;max-width:560px;margin:0 auto;padding:30px;">
-          <h1 style="color:#7b2ff7;">Welcome to Premium!</h1>
-          <p>Your payment was successful. Your premium access is now active.</p>
-          <div style="background:#f4f0fc;border-radius:12px;padding:20px;margin:20px 0;">
-            <p><strong>Plan:</strong> ${plan}</p>
-            <p><strong>Amount:</strong> CAD $${amount.toFixed(2)}/month</p>
-            <p><strong>Active until:</strong> ${expiryStr}</p>
-          </div>
-          <a href="${SITE}/trainer" style="display:inline-block;background:#7b2ff7;color:#fff;
-            text-decoration:none;padding:14px 28px;border-radius:10px;font-weight:700;margin:10px 0;">
-            Start Practising →
-          </a>
-          <p style="color:#888;font-size:0.85rem;margin-top:24px;">
-            Questions? <a href="${SITE}/contact">Contact us</a>
-          </p></div>`,
-        text: `Welcome to SpellRightPro Premium!\n\nPlan: ${plan}\nAmount: CAD $${amount.toFixed(2)}/month\n\nStart: ${SITE}/trainer`
-      }).then(() => console.log(`📧 Confirmation sent to ${email}`))
-        .catch(e => console.error("Email failed:", e.message));
+      // Calculate plan-specific values
+      const expiry = new Date();
+      if (plan === 'annual')        expiry.setFullYear(expiry.getFullYear() + 1);
+      else if (plan === 'sixmonth') expiry.setMonth(expiry.getMonth() + 6);
+      else                          expiry.setDate(expiry.getDate() + 30);
+      const expiryStr = expiry.toLocaleDateString('en-GB', { day:'numeric', month:'long', year:'numeric' });
+      const paymentDate = new Date().toLocaleDateString('en-GB', { day:'numeric', month:'long', year:'numeric' });
+      const planLabel = plan === 'annual'   ? 'Annual (12 months)'
+                      : plan === 'sixmonth' ? '6 months'
+                      : 'Monthly (1 month)';
+      const billingNote = plan === 'annual'   ? 'Renews yearly until cancelled'
+                        : plan === 'sixmonth' ? 'Renews every 6 months until cancelled'
+                        : 'Renews monthly until cancelled';
+      const txnId = (session.id || '').slice(-12);
+      const customerName = (session.customer_details && session.customer_details.name) || email.split('@')[0];
+
+      // ── EMAIL 1: Customer welcome + receipt ────────────────────────────────
+      sendCustomerReceipt({
+        email, customerName, plan, planLabel, amount,
+        paymentDate, expiryStr, billingNote, txnId
+      }).catch(e => console.error('Customer email failed:', e.message));
+
+      // ── EMAIL 2: Admin notification ────────────────────────────────────────
+      sendAdminNotification({
+        email, customerName, plan, planLabel, amount,
+        paymentDate, expiryStr, txnId, sessionId: session.id
+      }).catch(e => console.error('Admin email failed:', e.message));
     }
   }
 
@@ -264,28 +446,40 @@ app.post("/api/stripe-webhook", async (req, res) => {
 });
 
 // ── SEND CONFIRMATION (fallback) ──────────────────────────────────────────────
+// Called by thank-you.html as a backup if the Stripe webhook doesn't fire.
+// Uses the same helpers as the webhook so the receipt format is identical.
 app.post("/api/send-confirmation", async (req, res) => {
   try {
-    const { email, customerName, plan, planName, amount } = req.body;
+    const { email, customerName, plan = 'monthly', planName, amount, sessionId } = req.body;
     if (!email) return res.status(400).json({ success: false, message: "email required" });
 
     if (transporter) {
-      const name  = customerName || email.split("@")[0];
-      const label = planName || plan || "Premium";
-      const price = parseFloat(amount || 0).toFixed(2);
-      await transporter.sendMail({
-        from:    "SpellRightPro <spellrightpro@gmail.com>",
-        to:      email,
-        subject: `✅ SpellRightPro ${label} — order received`,
-        html:    `<p>Hi ${name}, thank you for choosing <strong>${label}</strong> (CAD $${price}/mo). Your access will be activated shortly.</p>`,
-        text:    `Hi ${name}, thank you for choosing ${label}. Your access will be activated shortly.`
-      });
-      transporter.sendMail({
-        from: "SpellRightPro <spellrightpro@gmail.com>",
-        to:   "spellrightpro@gmail.com",
-        subject: `🛒 New order: ${label} — ${email}`,
-        text:    `Customer: ${email}\nPlan: ${label}\nAmount: CAD $${price}/mo\n${new Date().toUTCString()}`
-      }).catch(() => {});
+      // Compute the same plan-specific values as the webhook handler
+      const expiry = new Date();
+      if (plan === 'annual')        expiry.setFullYear(expiry.getFullYear() + 1);
+      else if (plan === 'sixmonth') expiry.setMonth(expiry.getMonth() + 6);
+      else                          expiry.setDate(expiry.getDate() + 30);
+      const expiryStr   = expiry.toLocaleDateString('en-GB', { day:'numeric', month:'long', year:'numeric' });
+      const paymentDate = new Date().toLocaleDateString('en-GB', { day:'numeric', month:'long', year:'numeric' });
+      const planLabel = plan === 'annual'   ? 'Annual (12 months)'
+                      : plan === 'sixmonth' ? '6 months'
+                      : 'Monthly (1 month)';
+      const billingNote = plan === 'annual'   ? 'Renews yearly until cancelled'
+                        : plan === 'sixmonth' ? 'Renews every 6 months until cancelled'
+                        : 'Renews monthly until cancelled';
+      const txnId = (sessionId || '').slice(-12) || 'pending';
+      const name = customerName || email.split('@')[0];
+
+      // Send both emails — receipt to customer, notification to admin
+      sendCustomerReceipt({
+        email, customerName: name, plan, planLabel, amount,
+        paymentDate, expiryStr, billingNote, txnId
+      }).catch(e => console.error('Customer email failed:', e.message));
+
+      sendAdminNotification({
+        email, customerName: name, plan, planLabel, amount,
+        paymentDate, expiryStr, txnId, sessionId: sessionId || ''
+      }).catch(e => console.error('Admin email failed:', e.message));
     }
 
     res.json({ success: true });
@@ -325,7 +519,7 @@ app.post('/api/email/welcome', async (req, res) => {
     await transporter.sendMail({
       from:    'SpellRightPro <spellrightpro@gmail.com>',
       to:      email,
-      subject: '🎉 Welcome to SpellRightPro Premium — you're all set!',
+      subject: "🎉 Welcome to SpellRightPro Premium — you're all set!",
       html: `
         <div style="font-family:'DM Sans',sans-serif;max-width:560px;margin:0 auto;padding:32px 24px;background:#ffffff;">
           <img src="https://spellrightpro.org/assets/logo.png" alt="SpellRightPro"
