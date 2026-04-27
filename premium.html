@@ -352,6 +352,63 @@
       section:last-of-type h2 { font-size: 1.5rem; }
     }
 
+  
+    /* ── Exit-intent feedback survey ────────────────────────── */
+    .srp-survey-overlay{
+      position:fixed;inset:0;background:rgba(26,5,51,0.85);
+      z-index:99999;display:none;align-items:center;justify-content:center;padding:20px;
+      animation:srp-fade-in .25s ease;
+    }
+    .srp-survey-overlay.show{display:flex;}
+    @keyframes srp-fade-in{from{opacity:0;}to{opacity:1;}}
+    .srp-survey-card{
+      background:#fff;border-radius:18px;padding:32px 28px;
+      max-width:440px;width:100%;text-align:center;
+      box-shadow:0 20px 60px rgba(0,0,0,.4);
+      animation:srp-slide-in .3s ease;color:#1a0533;
+    }
+    @keyframes srp-slide-in{from{opacity:0;transform:translateY(20px);}to{opacity:1;transform:none;}}
+    .srp-survey-card h3{font-size:1.3rem;font-weight:800;color:#1a0533;margin:0 0 8px;}
+    .srp-survey-card p{font-size:0.92rem;color:#7b6f8a;margin:0 0 20px;line-height:1.5;}
+    .srp-survey-options{display:flex;flex-direction:column;gap:10px;margin-bottom:18px;}
+    .srp-survey-btn{
+      padding:14px 18px;background:#f4f0fc;border:2px solid transparent;
+      border-radius:12px;cursor:pointer;text-align:left;
+      font-family:'DM Sans',sans-serif;font-size:0.92rem;color:#1a0533;
+      transition:all .15s;display:flex;align-items:center;gap:10px;
+    }
+    .srp-survey-btn:hover{border-color:#7b2ff7;background:#fff;}
+    .srp-survey-btn.selected{border-color:#7b2ff7;background:#fff;color:#7b2ff7;font-weight:700;}
+    .srp-survey-btn i{font-size:1.1rem;color:#7b2ff7;flex-shrink:0;}
+    .srp-survey-text{
+      width:100%;min-height:80px;border-radius:10px;
+      border:1.5px solid #e8e0f8;background:#faf8ff;
+      color:#1a0533;font-size:0.9rem;padding:10px 12px;
+      resize:vertical;font-family:'DM Sans',sans-serif;
+      box-sizing:border-box;margin-bottom:14px;display:none;
+    }
+    .srp-survey-text:focus{outline:none;border-color:#7b2ff7;}
+    .srp-survey-text.show{display:block;}
+    .srp-survey-actions{display:flex;gap:10px;}
+    .srp-survey-submit{
+      flex:1;padding:13px;background:linear-gradient(135deg,#7b2ff7,#f72585);
+      color:#fff;border:none;border-radius:11px;
+      font-size:0.92rem;font-weight:700;cursor:pointer;font-family:inherit;
+    }
+    .srp-survey-submit:disabled{opacity:0.4;cursor:not-allowed;}
+    .srp-survey-skip{
+      padding:13px 18px;background:transparent;color:#7b6f8a;
+      border:1px solid #e8e0f8;border-radius:11px;
+      font-size:0.85rem;cursor:pointer;font-family:inherit;
+    }
+    .srp-survey-thanks{
+      font-size:1rem;color:#00c57a;font-weight:700;padding:14px 0;
+    }
+    body.dark-mode .srp-survey-card{background:#1f0d3a;color:#f0e8ff;}
+    body.dark-mode .srp-survey-card h3{color:#f0e8ff;}
+    body.dark-mode .srp-survey-btn{background:rgba(255,255,255,.05);color:#f0e8ff;}
+    body.dark-mode .srp-survey-text{background:rgba(255,255,255,.05);color:#f0e8ff;border-color:rgba(255,255,255,.1);}
+
   </style>
 </head>
 <body>
@@ -1058,5 +1115,154 @@
       btn.dataset.price = prices[btn.dataset.plan] || '5.00';
     });
   </script>
+
+<script>
+// ── Exit-intent feedback survey ──────────────────────────────────────────
+(function() {
+  // Don't show if already shown, already paid, or in checkout flow
+  if (localStorage.getItem('srp_survey_shown')) return;
+  if (localStorage.getItem('srpPremium') === 'true') return;
+
+  var hasInteracted = false;     // clicked any plan button
+  var triggered     = false;
+  var minTimeOnPage = 30000;     // 30 seconds minimum
+  var pageStartTime = Date.now();
+
+  // Track if user clicked any of the plan buttons (= they're considering payment)
+  document.querySelectorAll('.btn-choose').forEach(function(btn) {
+    btn.addEventListener('click', function() { hasInteracted = true; });
+  });
+
+  // Trigger on:
+  //   - Mouse leaving viewport (desktop)
+  //   - About to scroll past the plans (mobile)
+  //   - Browser back button
+  function maybeShow(reason) {
+    if (triggered) return;
+    if (Date.now() - pageStartTime < minTimeOnPage) return;
+    if (hasInteracted) return; // they're in checkout, don't interrupt
+    triggered = true;
+    showSurvey();
+  }
+
+  // Desktop: detect cursor leaving viewport upward (toward tab close / address bar)
+  document.addEventListener('mouseleave', function(e) {
+    if (e.clientY < 10) maybeShow('exit-intent');
+  });
+
+  // Mobile: detect when user scrolls back up significantly (about to close tab)
+  var lastScroll = window.scrollY;
+  var scrollUpDistance = 0;
+  window.addEventListener('scroll', function() {
+    var current = window.scrollY;
+    if (current < lastScroll) {
+      scrollUpDistance += (lastScroll - current);
+      if (scrollUpDistance > 600) maybeShow('mobile-scroll-up');
+    } else {
+      scrollUpDistance = 0;
+    }
+    lastScroll = current;
+  });
+
+  // Browser back/close intent
+  window.addEventListener('beforeunload', function() {
+    // Don't actually trigger here — too late — but log for analytics
+    if (typeof gtag !== 'undefined') {
+      gtag('event', 'leave_premium_no_purchase', { value: Math.round((Date.now()-pageStartTime)/1000) });
+    }
+  });
+
+  function showSurvey() {
+    var overlay = document.createElement('div');
+    overlay.className = 'srp-survey-overlay';
+    overlay.innerHTML =
+      '<div class="srp-survey-card" onclick="event.stopPropagation()">' +
+        '<h3>Quick question — before you go 👋</h3>' +
+        '<p>What\'s holding you back from upgrading? Your answer helps us improve (one click — anonymous).</p>' +
+        '<div class="srp-survey-options" id="srpSurveyOpts">' +
+          '<button class="srp-survey-btn" data-reason="price"><i class="fa fa-dollar-sign"></i> The price feels too high</button>' +
+          '<button class="srp-survey-btn" data-reason="not-ready"><i class="fa fa-clock"></i> I\'m not ready to pay yet — just exploring</button>' +
+          '<button class="srp-survey-btn" data-reason="missing-feature"><i class="fa fa-puzzle-piece"></i> I need a feature I don\'t see</button>' +
+          '<button class="srp-survey-btn" data-reason="payment-concern"><i class="fa fa-shield-alt"></i> I have a payment / security concern</button>' +
+          '<button class="srp-survey-btn" data-reason="other"><i class="fa fa-comment"></i> Something else</button>' +
+        '</div>' +
+        '<textarea class="srp-survey-text" id="srpSurveyText" placeholder="Tell us more (optional)"></textarea>' +
+        '<div class="srp-survey-actions">' +
+          '<button class="srp-survey-submit" id="srpSurveySubmit" disabled>Submit feedback</button>' +
+          '<button class="srp-survey-skip" id="srpSurveySkip">Not now</button>' +
+        '</div>' +
+      '</div>';
+    document.body.appendChild(overlay);
+    setTimeout(function() { overlay.classList.add('show'); }, 10);
+
+    var selectedReason = null;
+    var textArea = document.getElementById('srpSurveyText');
+    var submit   = document.getElementById('srpSurveySubmit');
+
+    document.querySelectorAll('.srp-survey-btn').forEach(function(btn) {
+      btn.addEventListener('click', function() {
+        document.querySelectorAll('.srp-survey-btn').forEach(function(b){ b.classList.remove('selected'); });
+        btn.classList.add('selected');
+        selectedReason = btn.getAttribute('data-reason');
+        textArea.classList.add('show');
+        submit.disabled = false;
+      });
+    });
+
+    document.getElementById('srpSurveySkip').addEventListener('click', function() {
+      saveAndClose(null, null, true);
+    });
+
+    submit.addEventListener('click', function() {
+      saveAndClose(selectedReason, textArea.value, false);
+    });
+
+    function saveAndClose(reason, comment, skipped) {
+      localStorage.setItem('srp_survey_shown', '1');
+
+      // Save to Firestore if available
+      try {
+        if (typeof firebase !== 'undefined' && firebase.firestore) {
+          var user = firebase.auth ? firebase.auth().currentUser : null;
+          firebase.firestore().collection('feedback').add({
+            type:      'exit-intent-premium',
+            reason:    reason || 'skipped',
+            comment:   comment || '',
+            skipped:   skipped,
+            uid:       user ? user.uid : null,
+            email:     user ? user.email : null,
+            timeOnPage: Math.round((Date.now()-pageStartTime)/1000),
+            page:      window.location.pathname,
+            timestamp: firebase.firestore.FieldValue.serverTimestamp()
+          }).catch(function(){});
+        }
+      } catch(e) {}
+
+      // Track in GA
+      if (typeof gtag !== 'undefined') {
+        gtag('event', 'premium_exit_feedback', {
+          reason:  reason || 'skipped',
+          skipped: skipped
+        });
+      }
+
+      // Show thanks for 1.5s then close
+      if (!skipped) {
+        var card = overlay.querySelector('.srp-survey-card');
+        card.innerHTML = '<div class="srp-survey-thanks">🙏 Thank you for the feedback!</div>' +
+                         '<p style="margin:0;color:#7b6f8a;font-size:0.85rem;">Your honest answers help us build a better product.</p>';
+        setTimeout(function() {
+          overlay.classList.remove('show');
+          setTimeout(function() { overlay.remove(); }, 250);
+        }, 1800);
+      } else {
+        overlay.classList.remove('show');
+        setTimeout(function() { overlay.remove(); }, 250);
+      }
+    }
+  }
+})();
+</script>
+
 </body>
 </html>
