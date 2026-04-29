@@ -26,7 +26,7 @@
 
   <link rel="stylesheet" href="/css/styles.css"/>
   <link rel="stylesheet" href="/css/premium.css"/>
-  <link rel="preload" href="/assets/logo.png" as="image"/>
+  <link rel="preload" href="/assets/logo-160.webp" as="image" type="image/webp" fetchpriority="high"/>
 
   <!-- Preconnect to critical third-parties -->
   <link rel="preconnect" href="https://www.gstatic.com" crossorigin/>
@@ -130,7 +130,10 @@
 <body data-page="index">
   <header class="navbar">
     <a href="/index.html" class="brand">
-      <img src="/assets/logo.png" alt="SpellRightPro Logo" class="logo" width="80" height="80" decoding="async" fetchpriority="high"/>
+      <picture>
+        <source type="image/webp" srcset="/assets/logo-160.webp 1x, /assets/logo-320.webp 2x"/>
+        <img src="/assets/logo-160.png" alt="SpellRightPro Logo" class="logo" width="80" height="80" decoding="async" fetchpriority="high"/>
+      </picture>
       <div>
         <span>SpellRightPro</span>
         <span class="subtitle">— Spelling Trainer</span>
