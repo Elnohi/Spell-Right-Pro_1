@@ -27,13 +27,19 @@
   <link rel="stylesheet" href="/css/styles.css"/>
   <link rel="stylesheet" href="/css/premium.css"/>
   <link rel="preload" href="/assets/logo.png" as="image"/>
+
+  <!-- Preconnect to critical third-parties -->
+  <link rel="preconnect" href="https://www.gstatic.com" crossorigin/>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link rel="dns-prefetch" href="https://pagead2.googlesyndication.com"/>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"/>
 
-  <!-- Firebase SDKs - CORRECT ORDER -->
-  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-analytics.js"></script>
+  <!-- Firebase SDKs - deferred for faster paint -->
+  <script defer src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+  <script defer src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+  <script defer src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+  <script defer src="https://www.gstatic.com/firebasejs/8.10.1/firebase-analytics.js"></script>
   
   <!-- Google Analytics -->
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-H09MF13297"></script>
@@ -124,7 +130,7 @@
 <body data-page="index">
   <header class="navbar">
     <a href="/index.html" class="brand">
-      <img src="/assets/logo.png" alt="SpellRightPro Logo" class="logo"/>
+      <img src="/assets/logo.png" alt="SpellRightPro Logo" class="logo" width="80" height="80" decoding="async" fetchpriority="high"/>
       <div>
         <span>SpellRightPro</span>
         <span class="subtitle">— Spelling Trainer</span>
@@ -191,7 +197,7 @@
 
 
     <section class="training-card">
-      <h1 class="card-title">Choose Your Practice</h1>
+      <h2 class="card-title">Choose Your Practice</h2>
       <p class="muted">Start with the mode that suits you best.</p>
 
       <div class="mode-grid" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px;">
@@ -302,7 +308,7 @@
 
     <!-- Trust Badges -->
     <section style="text-align: center; margin: 40px 0;">
-      <h3 style="margin-bottom: 20px;">Trusted & Secure</h3>
+      <h2 style="margin-bottom: 20px;">Trusted &amp; Secure</h2>
       <div style="display: flex; justify-content: center; gap: 40px; flex-wrap: wrap;">
         <div style="text-align: center;">
           <i class="fa fa-lock" style="color: #7b2ff7; font-size: 2em;"></i>
@@ -368,8 +374,8 @@
   </div>
 
   <!-- YOUR CONFIG & SCRIPTS -->
-  <script src="/js/config.js"></script>
-  <script src="/js/firebase-utils.js"></script>
+  <script defer src="/js/config.js"></script>
+  <script defer src="/js/firebase-utils.js"></script>
 
   <!-- COOKIE CONSENT SCRIPT -->
   <script>
