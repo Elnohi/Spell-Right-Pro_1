@@ -1011,14 +1011,11 @@ const firebaseConfig = {
         utterance.rate = 0.9; // Slightly faster for school
         utterance.pitch = 1;
         utterance.volume = 1;
-        utterance.lang = 'en-GB';
+        utterance.lang = 'en-US';
         
         const voices = speechSynthesis.getVoices();
         if (voices.length > 0) {
-          const voice = voices.find(v => v.lang === 'en-GB' && /female|hazel|susan|kate|serena/i.test(v.name))
-                     || voices.find(v => v.lang === 'en-GB')
-                     || voices.find(v => v.lang.startsWith('en'))
-                     || voices[0];
+          const voice = voices.find(v => v.lang.includes('en')) || voices[0];
           utterance.voice = voice;
         }
         
@@ -1651,8 +1648,8 @@ const firebaseConfig = {
       <div style="font-size: 0.8em;">SSL Secure</div>
     </div>
     <div style="text-align: center;">
-      <i class="fa fa-calendar-times" style="color: #7b2ff7; font-size: 1.5em;"></i>
-      <div style="font-size: 0.8em;">Cancel Anytime</div>
+      <i class="fa fa-shield-alt" style="color: #7b2ff7; font-size: 1.5em;"></i>
+      <div style="font-size: 0.8em;">14-Day Refund</div>
     </div>
     <div style="text-align: center;">
       <i class="fa fa-user-shield" style="color: #7b2ff7; font-size: 1.5em;"></i>
@@ -1664,6 +1661,8 @@ const firebaseConfig = {
     <a href="/privacy.html" style="color: #7b2ff7; text-decoration: none;">Privacy Policy</a> 
     • 
     <a href="/terms.html" style="color: #7b2ff7; text-decoration: none;">Terms of Service</a>
+    • 
+    <a href="/refund-policy.html" style="color: #7b2ff7; text-decoration: none;">Refund Policy</a>
     • 
     <a href="/security.html" style="color: #7b2ff7; text-decoration: none;">Security</a>
     • 
