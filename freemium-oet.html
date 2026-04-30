@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
   <title>Free OET Spelling Practice — 1,511 Medical Words | SpellRightPro</title>
-  <meta name="description" content="Practice OET medical spelling with 1,511 curated healthcare words. Real-time marking, British/Australian/American accents, exam simulation mode. Free — no signup needed." />
+  <meta name="description" content="Practice OET medical spelling with 1,511 curated healthcare words. Real-time marking, British accent, exam simulation mode. Free — no signup needed." />
   <meta name="keywords" content="OET spelling practice, OET medical vocabulary, occupational english test spelling, medical English spelling, OET preparation" />
   <meta name="robots" content="index, follow" />
   <link rel="canonical" href="https://spellrightpro.org/freemium-oet" />
@@ -427,6 +427,7 @@
     #startRow  { display: flex; flex-direction: column; gap: 10px; }
     #activeRow { display: none; }
     body.session-active #startRow  { display: none; }
+    body.session-active #srpWordBannerSlot { display: none; }
     body.session-active #activeRow { display: grid; }
     body.session-active #setupPanel { max-height: 52px; padding: 0 24px; border-bottom: 1px solid var(--border); overflow: hidden; }
 
@@ -448,23 +449,6 @@
     }
   
     /* ── OET-specific ── */
-    .accent-row {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      margin-bottom: 14px;
-    }
-    .accent-row label { font-size: 0.82rem; font-weight: 600; color: var(--muted); }
-    #oetAccent {
-      padding: 7px 12px;
-      border-radius: 10px;
-      border: 1.5px solid var(--border);
-      background: var(--surface2);
-      color: var(--text);
-      font-size: 0.85rem;
-      font-family: 'DM Sans', sans-serif;
-    }
-    body.dark-mode #oetAccent { background: rgba(255,255,255,.07); color: var(--text); }
     .tab-group { display: flex; gap: 8px; margin-bottom: 16px; }
     .tab-btn {
       flex: 1; padding: 9px; border-radius: 10px; border: 1.5px solid var(--border);
@@ -744,6 +728,9 @@
 
       <!-- Buttons -->
       <div class="button-group">
+        <!-- Word count banner (injected by srpLimit on init) -->
+        <div id="srpWordBannerSlot"></div>
+
         <div id="startRow">
           <button id="btnStart" class="btn-start">
             <i class="fa fa-play"></i> Start OET Practice
@@ -963,7 +950,6 @@ const firebaseConfig = {
       summaryArea: document.getElementById('summaryArea'),
       tabExam: document.getElementById('tabExam'),
       tabPractice: document.getElementById('tabPractice'),
-      accentSelect: document.getElementById('oetAccent'),
       customBox: document.getElementById('customWords'),
       useCustom: document.getElementById('useCustomList'),
       wordDisplay: document.getElementById('wordPlaceholder'),
@@ -1068,15 +1054,14 @@ const firebaseConfig = {
         utterance.pitch = 1;
         utterance.volume = 1;
         
-        const accent = elements.accentSelect ? elements.accentSelect.value : 'en-US';
-        utterance.lang = accent;
+        utterance.lang = 'en-GB';
         
         const voices = speechSynthesis.getVoices();
         if (voices.length > 0) {
-          let voice = voices.find(v => v.lang === accent);
-          if (!voice) {
-            voice = voices.find(v => v.lang.includes('en')) || voices[0];
-          }
+          let voice = voices.find(v => v.lang === 'en-GB' && /female|hazel|susan|kate|serena/i.test(v.name))
+                   || voices.find(v => v.lang === 'en-GB')
+                   || voices.find(v => v.lang.startsWith('en'))
+                   || voices[0];
           utterance.voice = voice;
         }
         
@@ -1090,7 +1075,7 @@ const firebaseConfig = {
         };
         
         speechSynthesis.speak(utterance);
-        updateFeedback(`Word spoken with ${getAccentName(accent)} accent`);
+        updateFeedback('Word spoken — type your answer below');
         
       } catch (error) {
         console.error('Speech error:', error);
@@ -1098,16 +1083,6 @@ const firebaseConfig = {
       }
     }
     
-    // Get accent display name
-    function getAccentName(accentCode) {
-      const accentMap = {
-        'en-US': 'American',
-        'en-GB': 'British', 
-        'en-AU': 'Australian',
-        'en-CA': 'Canadian'
-      };
-      return accentMap[accentCode] || accentCode;
-    }
     
     // Speak current word
     function speakCurrentWord() {
@@ -1711,6 +1686,13 @@ const firebaseConfig = {
       }, 1500);
       
       updateFeedback('Ready! Click "Start" to begin your OET spelling practice.');
+
+      // Inject word count / session banner above Start button
+      var bannerSlot = document.getElementById('srpWordBannerSlot');
+      if (bannerSlot && window.srpLimit) {
+        bannerSlot.innerHTML = window.srpLimit.getWordBannerHTML('oet');
+      }
+
       console.log('✅ OET Spelling Test initialized successfully');
     }
     
@@ -1846,8 +1828,8 @@ const firebaseConfig = {
       <div style="font-size: 0.8em;">SSL Secure</div>
     </div>
     <div style="text-align: center;">
-      <i class="fa fa-shield-alt" style="color: #7b2ff7; font-size: 1.5em;"></i>
-      <div style="font-size: 0.8em;">14-Day Refund</div>
+      <i class="fa fa-calendar-times" style="color: #7b2ff7; font-size: 1.5em;"></i>
+      <div style="font-size: 0.8em;">Cancel Anytime</div>
     </div>
     <div style="text-align: center;">
       <i class="fa fa-user-shield" style="color: #7b2ff7; font-size: 1.5em;"></i>
@@ -1859,8 +1841,6 @@ const firebaseConfig = {
     <a href="/privacy.html" style="color: #7b2ff7; text-decoration: none;">Privacy Policy</a> 
     • 
     <a href="/terms.html" style="color: #7b2ff7; text-decoration: none;">Terms of Service</a>
-    • 
-    <a href="/refund-policy.html" style="color: #7b2ff7; text-decoration: none;">Refund Policy</a>
     • 
     <a href="/security.html" style="color: #7b2ff7; text-decoration: none;">Security</a>
     • 
