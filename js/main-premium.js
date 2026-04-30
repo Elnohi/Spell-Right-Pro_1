@@ -1440,87 +1440,88 @@ function simulatePremiumAccess() {
 // Make simulatePremiumAccess available globally for testing
 // simulatePremiumAccess kept for internal testing only (not exported publicly)
 
-// ── Rating prompt (premium trainer) ─────────────────────────────────────────
-(function() {
+// ── Rating prompt (premium trainer) ────────────────────────────────────────
+(function () {
   var SESSIONS_KEY = 'srp_sessions_count';
   var DONE_KEY     = 'srp_rating_done';
-  var GOOGLE_URL   = 'https://g.page/r/https://g.page/r/CcXpShfGcR9GEAE/review/review';
+  var GOOGLE_URL   = 'https://g.page/r/REPLACE_WITH_YOUR_GOOGLE_REVIEW_LINK/review';
 
-  if (!window.srpRating || !window.srpRating.selectStar) {
-    window.srpRating = {
-      _selected: 0,
+  window.srpRating = window.srpRating || {};
 
-      recordSession: function() {
-        if (localStorage.getItem(DONE_KEY)) return;
-        localStorage.setItem(SESSIONS_KEY,
-          parseInt(localStorage.getItem(SESSIONS_KEY) || '0') + 1);
-      },
+  window.srpRating.recordSession = function () {
+    if (localStorage.getItem(DONE_KEY)) return;
+    var n = parseInt(localStorage.getItem(SESSIONS_KEY) || '0', 10);
+    localStorage.setItem(SESSIONS_KEY, n + 1);
+  };
 
-      getPromptHTML: function() {
-        if (localStorage.getItem(DONE_KEY)) return '';
-        if (parseInt(localStorage.getItem(SESSIONS_KEY) || '0') < 2) return '';
-        var stars = [1,2,3,4,5].map(function(v){
-          return '<button class="star-btn" data-val="'+v+'" onclick="srpRating.selectStar('+v+')">&#9733;</button>';
-        }).join('');
-        return '<div class="rating-prompt" id="srpRatingPrompt">' +
-          '<h4>Enjoying SpellRightPro? &#11088;</h4>' +
-          '<p>Tap a star to rate &#8212; it helps other learners find us.</p>' +
-          '<div class="star-row">' + stars + '</div>' +
-          '<div class="rating-actions" id="srpRatingActions" style="display:none;">' +
-          '<button class="rating-action-btn primary" id="srpRatingSubmit" onclick="srpRating.submit()">Submit rating</button>' +
-          '<button class="rating-action-btn secondary" onclick="srpRating.dismiss()">Maybe later</button>' +
-          '</div></div>';
-      },
+  window.srpRating.getPromptHTML = function () {
+    if (localStorage.getItem(DONE_KEY)) return '';
+    if (parseInt(localStorage.getItem(SESSIONS_KEY) || '0', 10) < 2) return '';
+    var stars = [1, 2, 3, 4, 5].map(function (v) {
+      return '<button class="star-btn" data-val="' + v +
+             '" onclick="srpRating.selectStar(' + v + ')">&#9733;</button>';
+    }).join('');
+    return '<div class="rating-prompt" id="srpRatingPrompt">' +
+      '<h4>Enjoying SpellRightPro?</h4>' +
+      '<p>Rate your experience:</p>' +
+      '<div class="star-row">' + stars + '</div>' +
+      '<div class="rating-actions" id="srpRatingActions">' +
+      '<button class="rating-action-btn secondary" onclick="srpRating.dismiss()">Maybe later</button>' +
+      '</div></div>';
+  };
 
-      selectStar: function(val) {
-        this._selected = val;
-        document.querySelectorAll('.star-btn').forEach(function(s) {
-          s.classList.toggle('selected', parseInt(s.getAttribute('data-val')) <= val);
+  window.srpRating.selectStar = function (val) {
+    this._selected = val;
+    document.querySelectorAll('.star-btn').forEach(function (btn) {
+      btn.classList.toggle('selected', parseInt(btn.dataset.val, 10) <= val);
+    });
+    var actions = document.getElementById('srpRatingActions');
+    if (!actions) return;
+    var label = val >= 4 ? 'Submit &#x2B50; Leave a Google review' : 'Submit feedback';
+    actions.innerHTML =
+      '<button class="rating-action-btn primary" onclick="srpRating.submit()">' + label + '</button>' +
+      '<button class="rating-action-btn secondary" onclick="srpRating.dismiss()">Maybe later</button>';
+  };
+
+  window.srpRating._selected = 0;
+
+  window.srpRating.submit = function () {
+    var val = this._selected;
+    if (!val) return;
+    localStorage.setItem(DONE_KEY, '1');
+    try {
+      if (typeof firebase !== 'undefined' && firebase.auth) {
+        var user = firebase.auth().currentUser;
+        firebase.firestore().collection('ratings').add({
+          uid:       user ? user.uid : 'anon',
+          rating:    val,
+          page:      window.location.pathname,
+          timestamp: firebase.firestore.FieldValue.serverTimestamp()
         });
-        var a = document.getElementById('srpRatingActions');
-        if (a) a.style.display = 'flex';
-        var b = document.getElementById('srpRatingSubmit');
-        if (b) b.textContent = val >= 4 ? 'Submit & leave a Google review' : 'Submit feedback';
-      },
-
-      submit: function() {
-        var val = this._selected;
-        if (!val) return;
-        localStorage.setItem(DONE_KEY, '1');
-        try {
-          if (typeof firebase !== 'undefined' && typeof firebase.firestore === 'function') {
-            var user = firebase.auth ? firebase.auth().currentUser : null;
-            firebase.firestore().collection('ratings').add({
-              uid: user ? user.uid : 'anon', rating: val,
-              page: window.location.pathname,
-              timestamp: firebase.firestore.FieldValue.serverTimestamp()
-            }).catch(function(){});
-          }
-        } catch(e) {}
-        var prompt = document.getElementById('srpRatingPrompt');
-        if (!prompt) return;
-        if (val >= 4) {
-          prompt.innerHTML =
-            '<div class="rating-thanks">Thank you! &#127881;</div>' +
-            '<p style="font-size:0.82rem;color:var(--muted);margin:8px 0 12px;">Would you take 30 seconds to leave a Google review?</p>' +
-            '<div class="rating-actions">' +
-            '<a href="' + GOOGLE_URL + '" target="_blank" rel="noopener" class="rating-action-btn primary" style="text-decoration:none;">&#11088; Leave a Google review</a>' +
-            '<button class="rating-action-btn secondary" onclick="document.getElementById('srpRatingPrompt').style.display='none'">No thanks</button>' +
-            '</div>';
-        } else {
-          prompt.innerHTML =
-            '<div class="rating-thanks" style="color:#7b2ff7;">Thank you &#128591;</div>' +
-            '<p style="font-size:0.82rem;color:var(--muted);margin:8px 0 12px;">We'd love to hear what we can improve.</p>' +
-            '<a href="/contact" class="rating-action-btn primary" style="display:inline-block;text-decoration:none;">Send us feedback</a>';
-        }
-      },
-
-      dismiss: function() {
-        var n = parseInt(localStorage.getItem(SESSIONS_KEY) || '0');
-        localStorage.setItem(SESSIONS_KEY, Math.max(0, n - 1));
-        var p = document.getElementById('srpRatingPrompt');
-        if (p) p.style.display = 'none';
       }
-    };
-  }
-})();
+    } catch (e) {}
+    var prompt = document.getElementById('srpRatingPrompt');
+    if (!prompt) return;
+    if (val >= 4) {
+      prompt.innerHTML =
+        '<div class="rating-thanks">Thank you! &#x1F389;</div>' +
+        '<p>Would you take 30 seconds to leave a Google review?</p>' +
+        '<div class="rating-actions">' +
+        '<a href="' + GOOGLE_URL + '" target="_blank" rel="noopener" class="rating-action-btn primary">&#x2B50; Leave a Google review</a>' +
+        '<button class="rating-action-btn secondary" onclick="document.getElementById(\'srpRatingPrompt\').style.display=\'none\'">No thanks</button>' +
+        '</div>';
+    } else {
+      prompt.innerHTML =
+        '<div class="rating-thanks">Thank you &#x1F64F;</div>' +
+        '<p>We\'d love to hear what we can improve.</p>' +
+        '<a href="/contact" class="rating-action-btn primary">Send us feedback</a>';
+    }
+  };
+
+  window.srpRating.dismiss = function () {
+    var n = parseInt(localStorage.getItem(SESSIONS_KEY) || '0', 10);
+    localStorage.setItem(SESSIONS_KEY, Math.max(0, n - 1));
+    var p = document.getElementById('srpRatingPrompt');
+    if (p) p.style.display = 'none';
+  };
+}());
