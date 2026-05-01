@@ -674,6 +674,19 @@
 
       <div class="setup-body" id="setupBody">
 
+        <!-- Accent: hardcoded British for free OET (premium unlocks 3 accents) -->
+        <div class="accent-row" style="font-size:0.78rem;color:var(--muted);background:rgba(123,47,247,0.06);padding:8px 12px;border-radius:8px;margin-bottom:12px;">
+          <i class="fa fa-volume-up" style="color:var(--brand);"></i>
+          Voice accent: <strong style="color:var(--text);">British (en-GB)</strong>
+          &nbsp;·&nbsp;
+          <a href="/premium" style="color:var(--brand);font-weight:600;text-decoration:none;">
+            Premium unlocks American &amp; Australian
+          </a>
+        </div>
+        <!-- Hidden accent value used by JS (always British for free) -->
+        <input type="hidden" id="oetAccent" value="en-GB"/>
+
+
         <!-- Word source selector -->
         <div class="word-source-row">
           <button class="source-btn active" id="btnUseApp" onclick="selectSource('app')">
