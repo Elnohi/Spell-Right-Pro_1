@@ -272,6 +272,42 @@ document.getElementById('toggleDark')?.addEventListener('click', () => {
 });
 
 // Initialize premium features only for paid users
+
+// Activate the default trainer area (School) after login.
+// Without this, all .trainer-area elements remain display:none and the
+// page appears blank after authentication. The mode-tab buttons then
+// allow switching between school / oet / bee.
+function activateDefaultMode() {
+  // Pick the first trainer-area (school) by default
+  var defaultArea = document.getElementById('school-area');
+  if (!defaultArea) {
+    // Fallback: first trainer area in the DOM
+    defaultArea = document.querySelector('.trainer-area');
+  }
+  if (defaultArea) {
+    defaultArea.style.display = 'block';
+    defaultArea.classList.add('active');
+    defaultArea.classList.remove('training-active'); // Show setup phase
+    console.log('✅ Default trainer area activated:', defaultArea.id);
+  }
+
+  // Mark the corresponding mode button as active in tab bar
+  var defaultBtn = document.querySelector('.mode-btn[data-mode="school"]') ||
+                   document.querySelector('.mode-btn');
+  if (defaultBtn) {
+    document.querySelectorAll('.mode-btn').forEach(function(b){ b.classList.remove('active'); });
+    defaultBtn.classList.add('active');
+    window.currentMode = defaultBtn.dataset.mode || 'school';
+  }
+
+  // Sync bottom tab bar (mobile)
+  var defaultTabLink = document.querySelector('.trainer-tab-bar a[data-mode="school"]');
+  if (defaultTabLink) {
+    document.querySelectorAll('.trainer-tab-bar a').forEach(function(a){ a.classList.remove('active'); });
+    defaultTabLink.classList.add('active');
+  }
+}
+
 function initializePremiumFeatures() {
   if (window._premiumFeaturesInitialized) {
     console.log('⚠️ initializePremiumFeatures already ran — skipping duplicate');
@@ -316,7 +352,10 @@ function initializePremiumFeatures() {
   
   // 4. Premium Content Packs
   // loadPremiumContentPacks() — removed
-  
+
+  // 5. Activate default trainer area (School) so the page isn't blank after login
+  activateDefaultMode();
+
   // Set user as premium
   if (window.tierManager) {
     window.tierManager.setTier('premium', {
