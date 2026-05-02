@@ -1544,12 +1544,12 @@ function simulatePremiumAccess() {
             '<p style="font-size:0.82rem;color:var(--muted);margin:8px 0 12px;">Would you take 30 seconds to leave a Google review?</p>' +
             '<div class="rating-actions">' +
             '<a href="' + GOOGLE_URL + '" target="_blank" rel="noopener" class="rating-action-btn primary" style="text-decoration:none;">&#11088; Leave a Google review</a>' +
-            '<button class="rating-action-btn secondary" onclick="document.getElementById('srpRatingPrompt').style.display='none'">No thanks</button>' +
+            '<button class="rating-action-btn secondary" onclick="document.getElementById(\'srpRatingPrompt\').style.display=\'none\'">No thanks</button>' +
             '</div>';
         } else {
           prompt.innerHTML =
             '<div class="rating-thanks" style="color:#7b2ff7;">Thank you &#128591;</div>' +
-            '<p style="font-size:0.82rem;color:var(--muted);margin:8px 0 12px;">We'd love to hear what we can improve.</p>' +
+            '<p style="font-size:0.82rem;color:var(--muted);margin:8px 0 12px;">We\'d love to hear what we can improve.</p>' +
             '<a href="/contact" class="rating-action-btn primary" style="display:inline-block;text-decoration:none;">Send us feedback</a>';
         }
       },
