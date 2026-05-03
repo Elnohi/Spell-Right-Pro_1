@@ -66,22 +66,17 @@ try {
 
 // ── Plan config ───────────────────────────────────────────────────────────────
 const PLANS = {
-  // Three plans: Monthly $5 · 6-month $26 · Annual $45 CAD (all modules included in all)
   monthly:  { name: "SpellRightPro Premium — Monthly",  amount: 500,  interval: "month", intervalCount: 1, priceId: process.env.STRIPE_PRICE_MONTHLY  || null },
   sixmonth: { name: "SpellRightPro Premium — 6 months", amount: 2600, interval: "month", intervalCount: 6, priceId: process.env.STRIPE_PRICE_SIXMONTH || null },
   annual:   { name: "SpellRightPro Premium — Annual",   amount: 4500, interval: "year",  intervalCount: 1, priceId: process.env.STRIPE_PRICE_ANNUAL   || null },
-  // legacy keys — map old plan names to monthly for backward compatibility
   school:   { name: "SpellRightPro Premium — Monthly", amount: 500, interval: "month", intervalCount: 1, priceId: process.env.STRIPE_PRICE_MONTHLY || null },
   complete: { name: "SpellRightPro Premium — Monthly", amount: 500, interval: "month", intervalCount: 1, priceId: process.env.STRIPE_PRICE_MONTHLY || null },
   family:   { name: "SpellRightPro Premium — Monthly", amount: 500, interval: "month", intervalCount: 1, priceId: process.env.STRIPE_PRICE_MONTHLY || null },
 };
-
 const SITE = process.env.SITE_URL || "https://spellrightpro.org";
-
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // EMAIL HELPERS — Customer receipt & Admin notification
-// Used by both the Stripe webhook and the manual send-confirmation fallback
 // ═══════════════════════════════════════════════════════════════════════════════
 
 async function sendCustomerReceipt({ email, customerName, plan, planLabel, amount, paymentDate, expiryStr, billingNote, txnId }) {
@@ -93,53 +88,24 @@ async function sendCustomerReceipt({ email, customerName, plan, planLabel, amoun
   const html = `
   <div style="font-family:'DM Sans',Arial,sans-serif;max-width:600px;margin:0 auto;padding:0;background:#f4f0fc;">
     <div style="background:#fff;padding:30px 28px;">
-
-      <!-- Header -->
       <div style="text-align:center;margin-bottom:24px;">
         <img src="${SITE_URL}/assets/logo.png" alt="SpellRightPro" style="height:48px;border-radius:10px;" />
       </div>
-
-      <h1 style="font-size:1.5rem;color:#7b2ff7;margin:0 0 8px;text-align:center;">
-        🎉 Welcome to Premium!
-      </h1>
+      <h1 style="font-size:1.5rem;color:#7b2ff7;margin:0 0 8px;text-align:center;">🎉 Welcome to Premium!</h1>
       <p style="color:#444;line-height:1.6;margin:0 0 24px;text-align:center;font-size:0.95rem;">
         Hi ${safeName}, your payment was successful and your premium access is now active.
       </p>
-
-      <!-- Receipt -->
       <div style="border:1px solid #e8e0f8;border-radius:12px;overflow:hidden;margin-bottom:24px;">
-        <div style="background:linear-gradient(135deg,#7b2ff7,#f72585);padding:14px 20px;color:#fff;font-weight:700;font-size:0.95rem;">
-          📄 PAYMENT RECEIPT
-        </div>
+        <div style="background:linear-gradient(135deg,#7b2ff7,#f72585);padding:14px 20px;color:#fff;font-weight:700;font-size:0.95rem;">📄 PAYMENT RECEIPT</div>
         <table style="width:100%;border-collapse:collapse;font-size:0.9rem;">
-          <tr>
-            <td style="padding:12px 20px;color:#888;border-bottom:1px solid #f0eaff;">Plan</td>
-            <td style="padding:12px 20px;color:#1a0533;font-weight:600;text-align:right;border-bottom:1px solid #f0eaff;">${planLabel}</td>
-          </tr>
-          <tr>
-            <td style="padding:12px 20px;color:#888;border-bottom:1px solid #f0eaff;">Amount</td>
-            <td style="padding:12px 20px;color:#1a0533;font-weight:600;text-align:right;border-bottom:1px solid #f0eaff;">CAD $${safeAmount}</td>
-          </tr>
-          <tr>
-            <td style="padding:12px 20px;color:#888;border-bottom:1px solid #f0eaff;">Payment date</td>
-            <td style="padding:12px 20px;color:#1a0533;font-weight:600;text-align:right;border-bottom:1px solid #f0eaff;">${paymentDate}</td>
-          </tr>
-          <tr>
-            <td style="padding:12px 20px;color:#888;border-bottom:1px solid #f0eaff;">Active until</td>
-            <td style="padding:12px 20px;color:#1a0533;font-weight:600;text-align:right;border-bottom:1px solid #f0eaff;">${expiryStr}</td>
-          </tr>
-          <tr>
-            <td style="padding:12px 20px;color:#888;border-bottom:1px solid #f0eaff;">Billing</td>
-            <td style="padding:12px 20px;color:#1a0533;font-weight:600;text-align:right;border-bottom:1px solid #f0eaff;font-size:0.82rem;">${billingNote}</td>
-          </tr>
-          <tr>
-            <td style="padding:12px 20px;color:#888;">Transaction ID</td>
-            <td style="padding:12px 20px;color:#1a0533;font-family:monospace;font-size:0.78rem;text-align:right;">…${txnId}</td>
-          </tr>
+          <tr><td style="padding:12px 20px;color:#888;border-bottom:1px solid #f0eaff;">Plan</td><td style="padding:12px 20px;color:#1a0533;font-weight:600;text-align:right;border-bottom:1px solid #f0eaff;">${planLabel}</td></tr>
+          <tr><td style="padding:12px 20px;color:#888;border-bottom:1px solid #f0eaff;">Amount</td><td style="padding:12px 20px;color:#1a0533;font-weight:600;text-align:right;border-bottom:1px solid #f0eaff;">CAD $${safeAmount}</td></tr>
+          <tr><td style="padding:12px 20px;color:#888;border-bottom:1px solid #f0eaff;">Payment date</td><td style="padding:12px 20px;color:#1a0533;font-weight:600;text-align:right;border-bottom:1px solid #f0eaff;">${paymentDate}</td></tr>
+          <tr><td style="padding:12px 20px;color:#888;border-bottom:1px solid #f0eaff;">Active until</td><td style="padding:12px 20px;color:#1a0533;font-weight:600;text-align:right;border-bottom:1px solid #f0eaff;">${expiryStr}</td></tr>
+          <tr><td style="padding:12px 20px;color:#888;border-bottom:1px solid #f0eaff;">Billing</td><td style="padding:12px 20px;color:#1a0533;font-weight:600;text-align:right;border-bottom:1px solid #f0eaff;font-size:0.82rem;">${billingNote}</td></tr>
+          <tr><td style="padding:12px 20px;color:#888;">Transaction ID</td><td style="padding:12px 20px;color:#1a0533;font-family:monospace;font-size:0.78rem;text-align:right;">…${txnId}</td></tr>
         </table>
       </div>
-
-      <!-- What you have access to -->
       <h2 style="font-size:1rem;color:#1a0533;margin:0 0 12px;">Your premium access includes:</h2>
       <ul style="padding-left:20px;color:#444;line-height:1.9;font-size:0.9rem;margin:0 0 24px;">
         <li><strong>School Practice</strong> — unlimited words &amp; custom lists</li>
@@ -149,43 +115,19 @@ async function sendCustomerReceipt({ email, customerName, plan, planLabel, amoun
         <li><strong>Mistake Review</strong> — spaced repetition for missed words</li>
         <li><strong>No ads</strong> — distraction-free practice</li>
       </ul>
-
-      <!-- CTA -->
       <div style="text-align:center;margin:24px 0;">
-        <a href="${SITE_URL}/trainer"
-           style="display:inline-block;background:linear-gradient(135deg,#7b2ff7,#f72585);
-                  color:#fff;text-decoration:none;padding:14px 32px;border-radius:12px;
-                  font-weight:700;font-size:0.95rem;box-shadow:0 4px 16px rgba(123,47,247,0.3);">
-          Start Practising Now →
-        </a>
+        <a href="${SITE_URL}/trainer" style="display:inline-block;background:linear-gradient(135deg,#7b2ff7,#f72585);color:#fff;text-decoration:none;padding:14px 32px;border-radius:12px;font-weight:700;font-size:0.95rem;box-shadow:0 4px 16px rgba(123,47,247,0.3);">Start Practising Now →</a>
       </div>
-
-      <!-- Footer -->
       <hr style="border:none;border-top:1px solid #e8e0f8;margin:24px 0;" />
       <p style="color:#888;font-size:0.78rem;line-height:1.5;margin:0;text-align:center;">
-        Need help or want to cancel? Reply to this email or visit
-        <a href="${SITE_URL}/contact" style="color:#7b2ff7;">spellrightpro.org/contact</a>.<br/>
+        Need help or want to cancel? Reply to this email or visit <a href="${SITE_URL}/contact" style="color:#7b2ff7;">spellrightpro.org/contact</a>.<br/>
         Cancellations are processed within 24 hours. Access continues until your billing period ends.
       </p>
-
-      <p style="color:#aaa;font-size:0.72rem;text-align:center;margin-top:18px;">
-        SpellRightPro · ${SITE_URL}<br/>
-        This is an automated receipt for your records.
-      </p>
+      <p style="color:#aaa;font-size:0.72rem;text-align:center;margin-top:18px;">SpellRightPro · ${SITE_URL}<br/>This is an automated receipt for your records.</p>
     </div>
   </div>`;
 
-  const text = `Welcome to SpellRightPro Premium!\n\n` +
-               `Hi ${safeName},\n\n` +
-               `Your payment was successful. Receipt:\n\n` +
-               `Plan:           ${planLabel}\n` +
-               `Amount:         CAD $${safeAmount}\n` +
-               `Payment date:   ${paymentDate}\n` +
-               `Active until:   ${expiryStr}\n` +
-               `Billing:        ${billingNote}\n` +
-               `Transaction ID: ...${txnId}\n\n` +
-               `Start practising: ${SITE_URL}/trainer\n\n` +
-               `Questions? Reply to this email or visit ${SITE_URL}/contact`;
+  const text = `Welcome to SpellRightPro Premium!\n\nHi ${safeName},\n\nYour payment was successful. Receipt:\n\nPlan: ${planLabel}\nAmount: CAD $${safeAmount}\nPayment date: ${paymentDate}\nActive until: ${expiryStr}\nBilling: ${billingNote}\nTransaction ID: ...${txnId}\n\nStart practising: ${SITE_URL}/trainer\n\nQuestions? Reply to this email or visit ${SITE_URL}/contact`;
 
   await transporter.sendMail({
     from:    'SpellRightPro <spellrightpro@gmail.com>',
@@ -208,29 +150,18 @@ async function sendAdminNotification({ email, customerName, plan, planLabel, amo
       <h2 style="margin:0;font-size:1.3rem;">🎉 New Premium Subscriber!</h2>
       <p style="margin:6px 0 0;opacity:0.9;font-size:0.9rem;">SpellRightPro just received a new subscription</p>
     </div>
-
     <table style="width:100%;border-collapse:collapse;background:#f8f5ff;border-radius:12px;overflow:hidden;font-size:0.9rem;">
-      <tr><td style="padding:12px 16px;color:#888;border-bottom:1px solid #e8e0f8;">Customer email</td>
-          <td style="padding:12px 16px;font-weight:600;text-align:right;border-bottom:1px solid #e8e0f8;">${email}</td></tr>
-      <tr><td style="padding:12px 16px;color:#888;border-bottom:1px solid #e8e0f8;">Customer name</td>
-          <td style="padding:12px 16px;font-weight:600;text-align:right;border-bottom:1px solid #e8e0f8;">${safeName}</td></tr>
-      <tr><td style="padding:12px 16px;color:#888;border-bottom:1px solid #e8e0f8;">Plan</td>
-          <td style="padding:12px 16px;font-weight:600;text-align:right;border-bottom:1px solid #e8e0f8;color:#7b2ff7;">${planLabel}</td></tr>
-      <tr><td style="padding:12px 16px;color:#888;border-bottom:1px solid #e8e0f8;">Amount</td>
-          <td style="padding:12px 16px;font-weight:700;text-align:right;border-bottom:1px solid #e8e0f8;color:#00c57a;">CAD $${safeAmount}</td></tr>
-      <tr><td style="padding:12px 16px;color:#888;border-bottom:1px solid #e8e0f8;">Payment date</td>
-          <td style="padding:12px 16px;font-weight:600;text-align:right;border-bottom:1px solid #e8e0f8;">${paymentDate}</td></tr>
-      <tr><td style="padding:12px 16px;color:#888;border-bottom:1px solid #e8e0f8;">Expires</td>
-          <td style="padding:12px 16px;font-weight:600;text-align:right;border-bottom:1px solid #e8e0f8;">${expiryStr}</td></tr>
-      <tr><td style="padding:12px 16px;color:#888;">Stripe session</td>
-          <td style="padding:12px 16px;font-family:monospace;font-size:0.78rem;text-align:right;color:#666;">${(sessionId||'').slice(0,30)}…</td></tr>
+      <tr><td style="padding:12px 16px;color:#888;border-bottom:1px solid #e8e0f8;">Customer email</td><td style="padding:12px 16px;font-weight:600;text-align:right;border-bottom:1px solid #e8e0f8;">${email}</td></tr>
+      <tr><td style="padding:12px 16px;color:#888;border-bottom:1px solid #e8e0f8;">Customer name</td><td style="padding:12px 16px;font-weight:600;text-align:right;border-bottom:1px solid #e8e0f8;">${safeName}</td></tr>
+      <tr><td style="padding:12px 16px;color:#888;border-bottom:1px solid #e8e0f8;">Plan</td><td style="padding:12px 16px;font-weight:600;text-align:right;border-bottom:1px solid #e8e0f8;color:#7b2ff7;">${planLabel}</td></tr>
+      <tr><td style="padding:12px 16px;color:#888;border-bottom:1px solid #e8e0f8;">Amount</td><td style="padding:12px 16px;font-weight:700;text-align:right;border-bottom:1px solid #e8e0f8;color:#00c57a;">CAD $${safeAmount}</td></tr>
+      <tr><td style="padding:12px 16px;color:#888;border-bottom:1px solid #e8e0f8;">Payment date</td><td style="padding:12px 16px;font-weight:600;text-align:right;border-bottom:1px solid #e8e0f8;">${paymentDate}</td></tr>
+      <tr><td style="padding:12px 16px;color:#888;border-bottom:1px solid #e8e0f8;">Expires</td><td style="padding:12px 16px;font-weight:600;text-align:right;border-bottom:1px solid #e8e0f8;">${expiryStr}</td></tr>
+      <tr><td style="padding:12px 16px;color:#888;">Stripe session</td><td style="padding:12px 16px;font-family:monospace;font-size:0.78rem;text-align:right;color:#666;">${(sessionId||'').slice(0,30)}…</td></tr>
     </table>
-
     <div style="background:#fff8e1;border-left:3px solid #ffb800;padding:12px 16px;margin:20px 0;border-radius:6px;font-size:0.85rem;color:#1a0533;">
       💡 <strong>Action:</strong> Send a personal welcome email to ${email} within 24 hours.
-      Personal contact from a founder dramatically improves retention and customer satisfaction.
     </div>
-
     <div style="text-align:center;margin-top:20px;">
       <a href="https://dashboard.stripe.com/customers" style="display:inline-block;background:#7b2ff7;color:#fff;text-decoration:none;padding:10px 22px;border-radius:8px;font-weight:600;font-size:0.85rem;margin:0 4px;">View in Stripe</a>
       <a href="https://spellrightpro.org/admin" style="display:inline-block;background:transparent;color:#7b2ff7;text-decoration:none;padding:10px 22px;border-radius:8px;font-weight:600;font-size:0.85rem;border:1px solid #7b2ff7;margin:0 4px;">Admin Dashboard</a>
@@ -242,27 +173,18 @@ async function sendAdminNotification({ email, customerName, plan, planLabel, amo
     to:      ADMIN,
     subject: `🛒 New ${planLabel} subscriber: ${email} — CAD $${safeAmount}`,
     html,
-    text: `New SpellRightPro Premium subscriber!\n\n` +
-          `Customer: ${email} (${safeName})\n` +
-          `Plan: ${planLabel}\n` +
-          `Amount: CAD $${safeAmount}\n` +
-          `Payment date: ${paymentDate}\n` +
-          `Expires: ${expiryStr}\n` +
-          `Session: ${sessionId}\n\n` +
-          `View in Stripe: https://dashboard.stripe.com/customers\n` +
-          `Admin dashboard: https://spellrightpro.org/admin`
+    text: `New SpellRightPro Premium subscriber!\n\nCustomer: ${email} (${safeName})\nPlan: ${planLabel}\nAmount: CAD $${safeAmount}\nPayment date: ${paymentDate}\nExpires: ${expiryStr}\nSession: ${sessionId}\n\nView in Stripe: https://dashboard.stripe.com/customers`
   });
   console.log(`📧 Admin notification sent for ${email}`);
 }
 
-// Helper: write premium record to Firestore
+// ── Helper: write premium record to Firestore ────────────────────────────────
 async function writePremiumRecord(uid, email, plan, sessionId, source) {
   if (!db || !email) return;
   const expiry = new Date();
-  // Set expiry based on plan duration
   if (plan === 'annual')        expiry.setFullYear(expiry.getFullYear() + 1);
   else if (plan === 'sixmonth') expiry.setMonth(expiry.getMonth() + 6);
-  else                          expiry.setDate(expiry.getDate() + 30);  // monthly / legacy
+  else                          expiry.setDate(expiry.getDate() + 30);
   const record = {
     email, plan, active: true,
     activatedAt:     admin.firestore.FieldValue.serverTimestamp(),
@@ -278,6 +200,92 @@ async function writePremiumRecord(uid, email, plan, sessionId, source) {
   await db.collection("premiumByEmail").doc(safeEmail)
     .set({ ...record, firebaseUid: uid || null }, { merge: true });
   console.log(`✅ Firestore premiumByEmail/${safeEmail} [${source}]`);
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// NEW: Renewal / Cancellation helpers (Stripe subscription lifecycle)
+// ═══════════════════════════════════════════════════════════════════════════════
+
+// Extends premium expiry on successful renewal — called by invoice.payment_succeeded.
+// CRITICAL: without this, monthly subscribers lose access on day 31 even though
+// Stripe successfully charged them.
+async function extendPremiumExpiry(email, plan, invoiceId, amount) {
+  if (!db || !email) return null;
+  const safeEmail = email.replace(/[.#$[\]/]/g, "_");
+  const ref = db.collection("premiumByEmail").doc(safeEmail);
+  const snap = await ref.get();
+
+  // Extend FROM current expiry (if in the future) or FROM now (if past or missing)
+  let baseDate = new Date();
+  if (snap.exists) {
+    const data = snap.data();
+    const currentExpiry = data.expiryDate && data.expiryDate.toDate ? data.expiryDate.toDate() : null;
+    if (currentExpiry && currentExpiry > baseDate) baseDate = currentExpiry;
+  }
+  const newExpiry = new Date(baseDate);
+  if (plan === 'annual')        newExpiry.setFullYear(newExpiry.getFullYear() + 1);
+  else if (plan === 'sixmonth') newExpiry.setMonth(newExpiry.getMonth() + 6);
+  else                          newExpiry.setDate(newExpiry.getDate() + 30);
+
+  const update = {
+    active:        true,
+    expiryDate:    admin.firestore.Timestamp.fromDate(newExpiry),
+    lastRenewedAt: admin.firestore.FieldValue.serverTimestamp(),
+    lastInvoiceId: invoiceId || "",
+    plan
+  };
+  await ref.set(update, { merge: true });
+  console.log(`🔄 Extended expiry for ${email} to ${newExpiry.toISOString().slice(0,10)}`);
+
+  // Also update the uid record if we can resolve it
+  if (snap.exists) {
+    const uid = snap.data().firebaseUid;
+    if (uid) {
+      await db.collection("premiumUsers").doc(uid).set(update, { merge: true });
+    }
+  }
+  return newExpiry;
+}
+
+// Marks a user inactive when subscription is fully cancelled.
+// We do NOT touch expiryDate — user keeps access until period ends.
+async function deactivatePremium(email, reason) {
+  if (!db || !email) return;
+  const safeEmail = email.replace(/[.#$[\]/]/g, "_");
+  const ref = db.collection("premiumByEmail").doc(safeEmail);
+  const snap = await ref.get();
+  if (!snap.exists) {
+    console.log(`⚠️  deactivatePremium: no record for ${email}`);
+    return;
+  }
+  const update = {
+    active:       false,
+    cancelledAt:  admin.firestore.FieldValue.serverTimestamp(),
+    cancelReason: reason || 'subscription_deleted'
+  };
+  await ref.set(update, { merge: true });
+  console.log(`🛑 Deactivated premium for ${email} (${reason})`);
+
+  const uid = snap.data().firebaseUid;
+  if (uid) {
+    await db.collection("premiumUsers").doc(uid).set(update, { merge: true });
+  }
+}
+
+// Send admin alert email
+async function sendAdminAlert(subject, bodyHtml, bodyText) {
+  if (!transporter) return;
+  try {
+    await transporter.sendMail({
+      from:    'SpellRightPro Bot <spellrightpro@gmail.com>',
+      to:      'spellrightpro@gmail.com',
+      subject,
+      html:    bodyHtml,
+      text:    bodyText
+    });
+  } catch (e) {
+    console.error('Admin alert failed:', e.message);
+  }
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -300,14 +308,11 @@ app.get("/api/health",(_, res) => res.json({
 app.post("/api/create-checkout-session", async (req, res) => {
   try {
     if (!stripe) return res.status(500).json({ error: "Stripe not configured on server" });
-
     const { plan = "complete", email, firebaseUid = "" } = req.body;
     const planInfo = PLANS[plan] || PLANS.complete;
-
     if (!email || !email.includes("@")) {
       return res.status(400).json({ error: "Valid email required" });
     }
-
     const lineItems = planInfo.priceId
       ? [{ price: planInfo.priceId, quantity: 1 }]
       : [{
@@ -323,7 +328,6 @@ app.post("/api/create-checkout-session", async (req, res) => {
           },
           quantity: 1
         }];
-
     const session = await stripe.checkout.sessions.create({
       mode:                 "subscription",
       payment_method_types: ["card"],
@@ -335,11 +339,8 @@ app.post("/api/create-checkout-session", async (req, res) => {
       cancel_url:  `${SITE}/premium.html?cancelled=1`,
       allow_promotion_codes: true
     });
-
     console.log(`✅ Checkout session: ${session.id} | ${email} | ${plan}`);
-    // Return both url and sessionUrl/sessionId for compatibility with different frontend versions
     res.json({ url: session.url, sessionUrl: session.url, sessionId: session.id, success: true });
-
   } catch (err) {
     console.error("❌ create-checkout-session:", err.message);
     res.status(500).json({ error: err.message, success: false });
@@ -350,33 +351,31 @@ app.post("/api/create-checkout-session", async (req, res) => {
 app.get("/api/verify-session", async (req, res) => {
   try {
     if (!stripe) return res.status(500).json({ paid: false, error: "Stripe not configured" });
-
     const { session_id } = req.query;
     if (!session_id) return res.status(400).json({ paid: false, error: "session_id required" });
-
     const session = await stripe.checkout.sessions.retrieve(session_id);
     const paid    = session.payment_status === "paid";
-    const email   = session.customer_email || session.customer_details?.email || "";
-    const plan    = session.metadata?.plan || "complete";
-    const uid     = session.metadata?.firebaseUid || "";
-
+    const email   = session.customer_email || (session.customer_details && session.customer_details.email) || "";
+    const plan    = (session.metadata && session.metadata.plan) || "complete";
+    const uid     = (session.metadata && session.metadata.firebaseUid) || "";
     console.log(`🔍 verify-session: ${session_id} paid=${paid} ${email}`);
-
     if (paid) {
       await writePremiumRecord(uid, email, plan, session_id, "verify_session").catch(e =>
         console.error("Firestore write failed (non-critical):", e.message)
       );
     }
-
     res.json({ paid, email, plan, sessionId: session_id });
-
   } catch (err) {
     console.error("❌ verify-session:", err.message);
     res.status(500).json({ paid: false, error: err.message });
   }
 });
 
-// ── STRIPE WEBHOOK ────────────────────────────────────────────────────────────
+// ── STRIPE WEBHOOK (handles 4 events) ─────────────────────────────────────────
+// 1. checkout.session.completed   — initial purchase (welcome + receipt)
+// 2. invoice.payment_succeeded    — renewal (extends expiryDate, sends receipt)
+// 3. invoice.payment_failed       — card declined (admin alert, Stripe auto-retries)
+// 4. customer.subscription.deleted — cancellation (marks active:false)
 app.post("/api/stripe-webhook", async (req, res) => {
   const sig    = req.headers["stripe-signature"];
   const secret = process.env.STRIPE_WEBHOOK_SECRET;
@@ -390,16 +389,16 @@ app.post("/api/stripe-webhook", async (req, res) => {
       return res.status(400).json({ error: "Signature verification failed" });
     }
   } else {
-    // No secret set yet — parse without verification (dev mode)
     try { event = JSON.parse(req.body.toString()); } catch { event = {}; }
     console.warn("⚠️  Webhook running without signature verification — set STRIPE_WEBHOOK_SECRET");
   }
 
+  // ─── EVENT 1: Initial purchase ──────────────────────────────────────────────
   if (event.type === "checkout.session.completed") {
     const session = event.data.object;
-    const email   = session.customer_email || session.customer_details?.email || "";
-    const uid     = session.metadata?.firebaseUid || "";
-    const plan    = session.metadata?.plan || "complete";
+    const email   = session.customer_email || (session.customer_details && session.customer_details.email) || "";
+    const uid     = (session.metadata && session.metadata.firebaseUid) || "";
+    const plan    = (session.metadata && session.metadata.plan) || "complete";
     const amount  = (session.amount_total || 0) / 100;
 
     console.log(`💳 Webhook: ${event.type} | ${email} | ${plan} | $${amount}`);
@@ -408,11 +407,7 @@ app.post("/api/stripe-webhook", async (req, res) => {
       console.error("Webhook Firestore write failed:", e.message)
     );
 
-    // ── Send 3 emails on successful subscription ────────────────────────────
-    //  1. Customer welcome + receipt
-    //  2. Admin notification
     if (transporter && email) {
-      // Calculate plan-specific values
       const expiry = new Date();
       if (plan === 'annual')        expiry.setFullYear(expiry.getFullYear() + 1);
       else if (plan === 'sixmonth') expiry.setMonth(expiry.getMonth() + 6);
@@ -428,13 +423,11 @@ app.post("/api/stripe-webhook", async (req, res) => {
       const txnId = (session.id || '').slice(-12);
       const customerName = (session.customer_details && session.customer_details.name) || email.split('@')[0];
 
-      // ── EMAIL 1: Customer welcome + receipt ────────────────────────────────
       sendCustomerReceipt({
         email, customerName, plan, planLabel, amount,
         paymentDate, expiryStr, billingNote, txnId
       }).catch(e => console.error('Customer email failed:', e.message));
 
-      // ── EMAIL 2: Admin notification ────────────────────────────────────────
       sendAdminNotification({
         email, customerName, plan, planLabel, amount,
         paymentDate, expiryStr, txnId, sessionId: session.id
@@ -442,19 +435,130 @@ app.post("/api/stripe-webhook", async (req, res) => {
     }
   }
 
+  // ─── EVENT 2: Renewal (subscription cycle) ──────────────────────────────────
+  else if (event.type === "invoice.payment_succeeded") {
+    const invoice = event.data.object;
+
+    // Skip the first invoice — already handled by checkout.session.completed
+    if (invoice.billing_reason === 'subscription_create') {
+      console.log(`💳 Webhook: ${event.type} | initial invoice — already handled`);
+    } else if (invoice.billing_reason === 'subscription_cycle' || invoice.billing_reason === 'subscription_update') {
+      const email  = invoice.customer_email || "";
+      const amount = (invoice.amount_paid || 0) / 100;
+
+      // Resolve plan key — try invoice metadata first, fall back to subscription lookup
+      let plan = (invoice.lines && invoice.lines.data && invoice.lines.data[0] && invoice.lines.data[0].metadata && invoice.lines.data[0].metadata.plan) || "";
+      if (!plan && invoice.subscription) {
+        try {
+          const sub = await stripe.subscriptions.retrieve(invoice.subscription);
+          plan = (sub.metadata && sub.metadata.plan) || "";
+          if (!plan) {
+            // Infer from price interval
+            const item = sub.items && sub.items.data && sub.items.data[0];
+            const interval = item && item.price && item.price.recurring && item.price.recurring.interval;
+            const count    = item && item.price && item.price.recurring && item.price.recurring.interval_count;
+            if (interval === 'year') plan = 'annual';
+            else if (interval === 'month' && count === 6) plan = 'sixmonth';
+            else plan = 'monthly';
+          }
+        } catch (e) {
+          console.error('Could not fetch subscription:', e.message);
+          plan = 'monthly';
+        }
+      }
+
+      console.log(`🔄 Webhook: ${event.type} | ${email} | ${plan} | $${amount} | renewal`);
+
+      const newExpiry = await extendPremiumExpiry(email, plan, invoice.id, amount).catch(e => {
+        console.error('Renewal Firestore update failed:', e.message);
+        return null;
+      });
+
+      // Send a brief renewal receipt to the customer
+      if (transporter && email && newExpiry) {
+        const planLabel = plan === 'annual' ? 'Annual' : plan === 'sixmonth' ? '6 months' : 'Monthly';
+        const expiryStr = newExpiry.toLocaleDateString('en-GB', { day:'numeric', month:'long', year:'numeric' });
+        const safeAmount = parseFloat(amount || 0).toFixed(2);
+        transporter.sendMail({
+          from:    'SpellRightPro <spellrightpro@gmail.com>',
+          to:      email,
+          subject: `✅ SpellRightPro Premium renewed (CAD $${safeAmount})`,
+          html: `<div style="font-family:'DM Sans',Arial,sans-serif;max-width:560px;margin:0 auto;padding:24px;">
+            <h2 style="color:#7b2ff7;">🔄 Subscription renewed</h2>
+            <p>Hi, your <strong>${planLabel}</strong> subscription was successfully renewed for CAD $${safeAmount}.</p>
+            <p>Premium access continues until <strong>${expiryStr}</strong>.</p>
+            <p style="margin-top:24px;">
+              <a href="https://spellrightpro.org/trainer" style="background:#7b2ff7;color:#fff;padding:10px 20px;border-radius:8px;text-decoration:none;font-weight:600;">Continue practising →</a>
+            </p>
+            <p style="color:#888;font-size:0.82rem;margin-top:24px;">To cancel future renewals, reply to this email or visit spellrightpro.org/contact. Access continues until the end of the period you've paid for.</p>
+          </div>`,
+          text: `Your SpellRightPro ${planLabel} subscription was renewed for CAD $${safeAmount}.\nPremium access continues until ${expiryStr}.\nContinue: https://spellrightpro.org/trainer`
+        }).catch(e => console.error('Renewal email failed:', e.message));
+      }
+    }
+  }
+
+  // ─── EVENT 3: Payment failed (card declined / expired) ──────────────────────
+  else if (event.type === "invoice.payment_failed") {
+    const invoice = event.data.object;
+    const email   = invoice.customer_email || "";
+    const amount  = (invoice.amount_due || 0) / 100;
+    const attempt = invoice.attempt_count || 1;
+    console.log(`⚠️  Webhook: ${event.type} | ${email} | $${amount} | attempt ${attempt}`);
+
+    sendAdminAlert(
+      `⚠️ Payment failed: ${email} (attempt ${attempt})`,
+      `<div style="font-family:Arial,sans-serif;max-width:520px;">
+        <h2 style="color:#c0005a;">Payment retry needed</h2>
+        <p><strong>Customer:</strong> ${email}</p>
+        <p><strong>Amount:</strong> CAD $${parseFloat(amount).toFixed(2)}</p>
+        <p><strong>Attempt:</strong> ${attempt} of 4</p>
+        <p>Stripe will retry automatically. If all retries fail, the subscription will be cancelled and you'll get a separate notification. No action needed right now.</p>
+      </div>`,
+      `Payment failed: ${email} ($${amount}, attempt ${attempt}). Stripe will retry automatically.`
+    );
+  }
+
+  // ─── EVENT 4: Subscription cancelled (user-initiated or retries exhausted) ──
+  else if (event.type === "customer.subscription.deleted") {
+    const sub = event.data.object;
+    let email = sub.customer_email || "";
+    if (!email && sub.customer) {
+      try {
+        const customer = await stripe.customers.retrieve(sub.customer);
+        email = customer.email || "";
+      } catch (e) { console.error('Could not fetch customer email:', e.message); }
+    }
+    const reason = (sub.cancellation_details && sub.cancellation_details.reason) || 'cancelled';
+    console.log(`🛑 Webhook: ${event.type} | ${email} | reason: ${reason}`);
+
+    await deactivatePremium(email, reason).catch(e =>
+      console.error('Deactivation failed:', e.message)
+    );
+
+    sendAdminAlert(
+      `🛑 Subscription cancelled: ${email}`,
+      `<div style="font-family:Arial,sans-serif;max-width:520px;">
+        <h2 style="color:#7b6f8a;">Subscription cancelled</h2>
+        <p><strong>Customer:</strong> ${email}</p>
+        <p><strong>Reason:</strong> ${reason}</p>
+        <p>The user retains access until their current billing period ends, then access reverts to free. Their record has been marked active:false in Firestore.</p>
+        <p style="font-size:0.85rem;color:#888;">If you'd like to reach out to ask why they cancelled, this is a great opportunity to learn what could be improved.</p>
+      </div>`,
+      `Subscription cancelled: ${email} (${reason}). Access continues until current period ends.`
+    );
+  }
+
   res.json({ received: true });
 });
 
 // ── SEND CONFIRMATION (fallback) ──────────────────────────────────────────────
-// Called by thank-you.html as a backup if the Stripe webhook doesn't fire.
-// Uses the same helpers as the webhook so the receipt format is identical.
 app.post("/api/send-confirmation", async (req, res) => {
   try {
     const { email, customerName, plan = 'monthly', planName, amount, sessionId } = req.body;
     if (!email) return res.status(400).json({ success: false, message: "email required" });
 
     if (transporter) {
-      // Compute the same plan-specific values as the webhook handler
       const expiry = new Date();
       if (plan === 'annual')        expiry.setFullYear(expiry.getFullYear() + 1);
       else if (plan === 'sixmonth') expiry.setMonth(expiry.getMonth() + 6);
@@ -470,7 +574,6 @@ app.post("/api/send-confirmation", async (req, res) => {
       const txnId = (sessionId || '').slice(-12) || 'pending';
       const name = customerName || email.split('@')[0];
 
-      // Send both emails — receipt to customer, notification to admin
       sendCustomerReceipt({
         email, customerName: name, plan, planLabel, amount,
         paymentDate, expiryStr, billingNote, txnId
@@ -489,23 +592,7 @@ app.post("/api/send-confirmation", async (req, res) => {
   }
 });
 
-
-// ═══════════════════════════════════════════════════════════════════════════════
-// EMAIL SEQUENCES
-// Three automated emails:
-//   1. POST /api/email/welcome      — sent at signup (call from thank-you.html or webhook)
-//   2. POST /api/email/reengage     — day-3 nudge for free users (call from a daily Cloud Scheduler job)
-//   3. POST /api/email/renewal      — 7-day expiry reminder for premium users (call from Cloud Scheduler)
-//
-// Cloud Scheduler setup (Google Cloud Console → Cloud Scheduler → Create job):
-//   Schedule: 0 9 * * *  (daily at 09:00 UTC)
-//   Target:   HTTP POST https://spellrightpro-api-.../api/email/reengage  (no body needed)
-//   Target:   HTTP POST https://spellrightpro-api-.../api/email/renewal   (no body needed)
-//   Auth:     Add SCHEDULER_SECRET env var; pass as header X-Scheduler-Secret
-// ═══════════════════════════════════════════════════════════════════════════════
-
-// ── 1. Welcome email ──────────────────────────────────────────────────────────
-// Call this right after a user pays: POST /api/email/welcome { email, plan }
+// ─── Welcome email endpoint ───────────────────────────────────────────────────
 app.post('/api/email/welcome', async (req, res) => {
   try {
     const { email, plan = 'premium' } = req.body;
@@ -520,48 +607,19 @@ app.post('/api/email/welcome', async (req, res) => {
       from:    'SpellRightPro <spellrightpro@gmail.com>',
       to:      email,
       subject: "🎉 Welcome to SpellRightPro Premium — you're all set!",
-      html: `
-        <div style="font-family:'DM Sans',sans-serif;max-width:560px;margin:0 auto;padding:32px 24px;background:#ffffff;">
-          <img src="https://spellrightpro.org/assets/logo.png" alt="SpellRightPro"
-               style="height:48px;border-radius:12px;margin-bottom:20px;" />
-
-          <h1 style="font-size:1.5rem;color:#7b2ff7;margin:0 0 8px;">
-            Welcome to Premium! 🎉
-          </h1>
-          <p style="color:#444;line-height:1.6;margin:0 0 20px;">
-            Your subscription is active and all three practice modules are now unlocked.
-          </p>
-
-          <div style="background:#f4f0fc;border-radius:12px;padding:20px;margin-bottom:24px;">
-            <p style="margin:0 0 6px;"><strong>Plan:</strong> ${planLabel}</p>
-            <p style="margin:0;">Your premium features are active immediately.</p>
-          </div>
-
-          <h2 style="font-size:1.1rem;color:#1a0533;margin:0 0 12px;">What you now have access to:</h2>
-          <ul style="padding-left:20px;color:#444;line-height:2;">
-            <li><strong>School Practice</strong> — unlimited words, custom lists</li>
-            <li><strong>OET Medical</strong> — 1,511 curated medical terms</li>
-            <li><strong>Spelling Bee</strong> — voice recognition mode</li>
-            <li><strong>Progress Dashboard</strong> — streak, accuracy, words mastered</li>
-            <li><strong>Mistake Review</strong> — spaced repetition for words you miss</li>
-          </ul>
-
-          <a href="https://spellrightpro.org/trainer"
-             style="display:inline-block;margin-top:24px;background:linear-gradient(135deg,#7b2ff7,#f72585);
-                    color:#fff;text-decoration:none;padding:14px 28px;border-radius:12px;
-                    font-weight:700;font-size:1rem;">
-            Start Practising Now →
-          </a>
-
-          <p style="color:#888;font-size:0.82rem;margin-top:32px;line-height:1.5;">
-            Questions? Reply to this email or visit
-            <a href="https://spellrightpro.org/contact" style="color:#7b2ff7;">spellrightpro.org/contact</a>.<br/>
-            To cancel your subscription at any time, email us and we will handle it within 24 hours.
-          </p>
-        </div>`,
-      text: `Welcome to SpellRightPro Premium!\n\nPlan: ${planLabel}\n\nAll three modules are now unlocked.\n\nStart practising: https://spellrightpro.org/trainer\n\nQuestions? spellrightpro@gmail.com`
+      html: `<div style="font-family:'DM Sans',sans-serif;max-width:560px;margin:0 auto;padding:32px 24px;background:#ffffff;">
+        <img src="https://spellrightpro.org/assets/logo.png" alt="SpellRightPro" style="height:48px;border-radius:12px;margin-bottom:20px;" />
+        <h1 style="font-size:1.5rem;color:#7b2ff7;margin:0 0 8px;">Welcome to Premium! 🎉</h1>
+        <p style="color:#444;line-height:1.6;margin:0 0 20px;">Your subscription is active and all three practice modules are now unlocked.</p>
+        <div style="background:#f4f0fc;border-radius:12px;padding:20px;margin-bottom:24px;">
+          <p style="margin:0 0 6px;"><strong>Plan:</strong> ${planLabel}</p>
+          <p style="margin:0;">Your premium features are active immediately.</p>
+        </div>
+        <a href="https://spellrightpro.org/trainer" style="display:inline-block;margin-top:8px;background:linear-gradient(135deg,#7b2ff7,#f72585);color:#fff;text-decoration:none;padding:14px 28px;border-radius:12px;font-weight:700;font-size:1rem;">Start Practising Now →</a>
+        <p style="color:#888;font-size:0.82rem;margin-top:32px;line-height:1.5;">Questions? Reply to this email or visit <a href="https://spellrightpro.org/contact" style="color:#7b2ff7;">spellrightpro.org/contact</a>.<br/>To cancel your subscription at any time, email us and we will handle it within 24 hours.</p>
+      </div>`,
+      text: `Welcome to SpellRightPro Premium!\nPlan: ${planLabel}\n\nStart practising: https://spellrightpro.org/trainer\n\nQuestions? spellrightpro@gmail.com`
     });
-
     console.log(`📧 Welcome email sent to ${email}`);
     res.json({ success: true });
   } catch (err) {
@@ -570,18 +628,12 @@ app.post('/api/email/welcome', async (req, res) => {
   }
 });
 
-// ── 2. Day-3 re-engagement email for free users ───────────────────────────────
-// Called daily by Cloud Scheduler. Reads Firestore for users who signed up
-// 3 days ago and have NOT yet upgraded (no record in premiumUsers).
-// Falls back to a manual trigger if Firestore/Admin is not available.
+// ─── Re-engagement endpoint ───────────────────────────────────────────────────
 app.post('/api/email/reengage', async (req, res) => {
-  // Protect from public calls — only Cloud Scheduler should hit this
   const secret = req.headers['x-scheduler-secret'];
   if (process.env.SCHEDULER_SECRET && secret !== process.env.SCHEDULER_SECRET) {
     return res.status(401).json({ error: 'Unauthorized' });
   }
-
-  // Manual single-user trigger (for testing or manual sends)
   if (req.body && req.body.email) {
     const { email, name } = req.body;
     try {
@@ -591,17 +643,13 @@ app.post('/api/email/reengage', async (req, res) => {
       return res.status(500).json({ success: false, message: err.message });
     }
   }
-
-  // Automated: scan Firestore for day-3 free users
   if (!db) return res.json({ success: false, message: 'Firestore not available', sent: 0 });
-
   try {
     const threeDaysAgo = new Date();
     threeDaysAgo.setDate(threeDaysAgo.getDate() - 3);
     const threeDaysAgoStart = new Date(threeDaysAgo); threeDaysAgoStart.setHours(0,0,0,0);
     const threeDaysAgoEnd   = new Date(threeDaysAgo); threeDaysAgoEnd.setHours(23,59,59,999);
 
-    // Get users who registered around 3 days ago
     const usersSnap = await db.collection('users')
       .where('createdAt', '>=', admin.firestore.Timestamp.fromDate(threeDaysAgoStart))
       .where('createdAt', '<=', admin.firestore.Timestamp.fromDate(threeDaysAgoEnd))
@@ -611,21 +659,13 @@ app.post('/api/email/reengage', async (req, res) => {
     for (const doc of usersSnap.docs) {
       const user = doc.data();
       if (!user.email) continue;
-
-      // Skip if already premium
       const premSnap = await db.collection('premiumUsers').doc(doc.id).get();
       if (premSnap.exists && premSnap.data().active) continue;
-
-      // Skip if already sent this email
       if (user.reengageSent) continue;
-
       await sendReengageEmail(user.email, user.displayName || user.email.split('@')[0]);
-
-      // Mark as sent so we don't send again
       await db.collection('users').doc(doc.id).update({ reengageSent: true });
       sent++;
     }
-
     console.log(`📧 Re-engage: sent to ${sent} users`);
     res.json({ success: true, sent });
   } catch (err) {
@@ -637,71 +677,31 @@ app.post('/api/email/reengage', async (req, res) => {
 async function sendReengageEmail(email, name) {
   if (!transporter) throw new Error('Email not configured');
   const displayName = name.charAt(0).toUpperCase() + name.slice(1);
-
   await transporter.sendMail({
     from:    'SpellRightPro <spellrightpro@gmail.com>',
     to:      email,
     subject: `${displayName}, your spelling practice is waiting 📚`,
-    html: `
-      <div style="font-family:'DM Sans',sans-serif;max-width:560px;margin:0 auto;padding:32px 24px;">
-        <img src="https://spellrightpro.org/assets/logo.png" alt="SpellRightPro"
-             style="height:48px;border-radius:12px;margin-bottom:20px;" />
-
-        <h1 style="font-size:1.4rem;color:#7b2ff7;margin:0 0 8px;">
-          Ready to keep improving, ${displayName}?
-        </h1>
-        <p style="color:#444;line-height:1.6;margin:0 0 20px;">
-          You tried SpellRightPro a few days ago — your free practice sessions are still waiting.
-          Even 5 minutes a day makes a real difference over time.
-        </p>
-
-        <div style="background:#f4f0fc;border-radius:12px;padding:20px;margin-bottom:24px;">
-          <h2 style="font-size:1rem;color:#7b2ff7;margin:0 0 10px;">Free practice — no account needed:</h2>
-          <ul style="padding-left:18px;color:#444;line-height:2;margin:0;">
-            <li><strong>School Practice</strong> — academic word lists</li>
-            <li><strong>OET Medical</strong> — healthcare vocabulary</li>
-            <li><strong>Spelling Bee</strong> — voice recognition spelling</li>
-          </ul>
-        </div>
-
-        <a href="https://spellrightpro.org"
-           style="display:inline-block;background:linear-gradient(135deg,#7b2ff7,#f72585);
-                  color:#fff;text-decoration:none;padding:14px 28px;border-radius:12px;
-                  font-weight:700;font-size:1rem;">
-          Continue Practising — Free →
-        </a>
-
-        <div style="margin-top:28px;padding:16px;background:#fef9ee;border-radius:10px;border-left:3px solid #ffb800;">
-          <p style="margin:0;font-size:0.9rem;color:#444;">
-            <strong>Want to go further?</strong> Premium unlocks unlimited words, your full progress history,
-            mistake review and more — starting from just <strong>CAD $5/month</strong>.
-          </p>
-          <a href="https://spellrightpro.org/premium"
-             style="display:inline-block;margin-top:10px;color:#7b2ff7;font-weight:700;font-size:0.9rem;text-decoration:none;">
-            See Premium Plans →
-          </a>
-        </div>
-
-        <p style="color:#888;font-size:0.8rem;margin-top:28px;">
-          You received this because you tried SpellRightPro.
-          <a href="https://spellrightpro.org/contact" style="color:#7b2ff7;">Unsubscribe</a>
-        </p>
-      </div>`,
-    text: `Hi ${displayName},\n\nYour SpellRightPro practice sessions are still waiting.\n\nStart free: https://spellrightpro.org\n\nWant full access? Premium from CAD $5/mo: https://spellrightpro.org/premium`
+    html: `<div style="font-family:'DM Sans',sans-serif;max-width:560px;margin:0 auto;padding:32px 24px;">
+      <img src="https://spellrightpro.org/assets/logo.png" alt="SpellRightPro" style="height:48px;border-radius:12px;margin-bottom:20px;" />
+      <h1 style="font-size:1.4rem;color:#7b2ff7;margin:0 0 8px;">Ready to keep improving, ${displayName}?</h1>
+      <p style="color:#444;line-height:1.6;margin:0 0 20px;">You tried SpellRightPro a few days ago. Even 5 minutes a day makes a difference.</p>
+      <a href="https://spellrightpro.org" style="display:inline-block;background:linear-gradient(135deg,#7b2ff7,#f72585);color:#fff;text-decoration:none;padding:14px 28px;border-radius:12px;font-weight:700;font-size:1rem;">Continue Practising — Free →</a>
+      <div style="margin-top:28px;padding:16px;background:#fef9ee;border-radius:10px;border-left:3px solid #ffb800;">
+        <p style="margin:0;font-size:0.9rem;color:#444;"><strong>Want to go further?</strong> Premium from <strong>CAD $5/month</strong>. Cancel anytime.</p>
+        <a href="https://spellrightpro.org/premium" style="display:inline-block;margin-top:10px;color:#7b2ff7;font-weight:700;font-size:0.9rem;text-decoration:none;">See Premium Plans →</a>
+      </div>
+    </div>`,
+    text: `Hi ${displayName},\n\nYour SpellRightPro practice sessions are still waiting.\n\nStart free: https://spellrightpro.org`
   });
   console.log(`📧 Re-engage email sent to ${email}`);
 }
 
-// ── 3. Renewal reminder — 7 days before premium expires ──────────────────────
-// Called daily by Cloud Scheduler. Scans premiumUsers for accounts expiring
-// in exactly 7 days and sends a renewal reminder.
+// ─── Renewal reminder endpoint ────────────────────────────────────────────────
 app.post('/api/email/renewal', async (req, res) => {
   const secret = req.headers['x-scheduler-secret'];
   if (process.env.SCHEDULER_SECRET && secret !== process.env.SCHEDULER_SECRET) {
     return res.status(401).json({ error: 'Unauthorized' });
   }
-
-  // Manual single-user trigger
   if (req.body && req.body.email) {
     const { email, plan, expiryDate } = req.body;
     try {
@@ -711,16 +711,14 @@ app.post('/api/email/renewal', async (req, res) => {
       return res.status(500).json({ success: false, message: err.message });
     }
   }
-
   if (!db) return res.json({ success: false, message: 'Firestore not available', sent: 0 });
-
   try {
-    const sevenDaysFromNow    = new Date(); sevenDaysFromNow.setDate(sevenDaysFromNow.getDate() + 7);
+    const sevenDaysFromNow = new Date(); sevenDaysFromNow.setDate(sevenDaysFromNow.getDate() + 7);
     const windowStart = new Date(sevenDaysFromNow); windowStart.setHours(0,0,0,0);
     const windowEnd   = new Date(sevenDaysFromNow); windowEnd.setHours(23,59,59,999);
 
     const snap = await db.collection('premiumUsers')
-      .where('active',     '==', true)
+      .where('active', '==', true)
       .where('expiryDate', '>=', admin.firestore.Timestamp.fromDate(windowStart))
       .where('expiryDate', '<=', admin.firestore.Timestamp.fromDate(windowEnd))
       .get();
@@ -730,17 +728,11 @@ app.post('/api/email/renewal', async (req, res) => {
       const user = doc.data();
       if (!user.email) continue;
       if (user.renewalReminderSent) continue;
-
-      const expiryStr = user.expiryDate.toDate().toLocaleDateString('en-GB', {
-        day: 'numeric', month: 'long', year: 'numeric'
-      });
-
+      const expiryStr = user.expiryDate.toDate().toLocaleDateString('en-GB', { day:'numeric', month:'long', year:'numeric' });
       await sendRenewalEmail(user.email, user.plan || 'premium', expiryStr);
-
       await db.collection('premiumUsers').doc(doc.id).update({ renewalReminderSent: true });
       sent++;
     }
-
     console.log(`📧 Renewal reminders sent to ${sent} users`);
     res.json({ success: true, sent });
   } catch (err) {
@@ -753,61 +745,26 @@ async function sendRenewalEmail(email, plan, expiryStr) {
   if (!transporter) throw new Error('Email not configured');
   const planLabel = plan === 'annual' ? 'Annual' : plan === 'sixmonth' ? '6 months' : 'Monthly';
   const siteUrl   = process.env.SITE_URL || 'https://spellrightpro.org';
-
   await transporter.sendMail({
     from:    'SpellRightPro <spellrightpro@gmail.com>',
     to:      email,
     subject: '⏰ Your SpellRightPro Premium expires in 7 days',
-    html: `
-      <div style="font-family:'DM Sans',sans-serif;max-width:560px;margin:0 auto;padding:32px 24px;">
-        <img src="${siteUrl}/assets/logo.png" alt="SpellRightPro"
-             style="height:48px;border-radius:12px;margin-bottom:20px;" />
-
-        <h1 style="font-size:1.4rem;color:#7b2ff7;margin:0 0 8px;">
-          Your Premium access expires on ${expiryStr}
-        </h1>
-        <p style="color:#444;line-height:1.6;margin:0 0 20px;">
-          Your SpellRightPro ${planLabel} subscription expires in 7 days.
-          If your subscription renews automatically (Stripe recurring billing), no action is needed.
-          If you cancelled and would like to resubscribe, you can do so any time below.
-        </p>
-
-        <div style="background:#f4f0fc;border-radius:12px;padding:20px;margin-bottom:24px;">
-          <p style="margin:0 0 6px;"><strong>Current plan:</strong> ${planLabel} Premium</p>
-          <p style="margin:0;"><strong>Expires:</strong> ${expiryStr}</p>
-        </div>
-
-        <a href="${siteUrl}/premium"
-           style="display:inline-block;background:linear-gradient(135deg,#7b2ff7,#f72585);
-                  color:#fff;text-decoration:none;padding:14px 28px;border-radius:12px;
-                  font-weight:700;font-size:1rem;">
-          Renew Premium →
-        </a>
-
-        <div style="margin-top:28px;padding:16px;background:#fff8f0;border-radius:10px;border-left:3px solid #ff9800;">
-          <p style="margin:0;font-size:0.9rem;color:#444;">
-            <strong>What you'll lose access to when it expires:</strong>
-            unlimited words, progress dashboard, mistake review, adaptive drills,
-            and all 1,511 OET medical terms.
-          </p>
-        </div>
-
-        <p style="color:#888;font-size:0.8rem;margin-top:28px;line-height:1.5;">
-          Questions about your subscription? Email us at
-          <a href="mailto:spellrightpro@gmail.com" style="color:#7b2ff7;">spellrightpro@gmail.com</a>.
-        </p>
-      </div>`,
-    text: `Your SpellRightPro ${planLabel} Premium expires on ${expiryStr}.\n\nRenew: ${siteUrl}/premium\n\nQuestions? spellrightpro@gmail.com`
+    html: `<div style="font-family:'DM Sans',sans-serif;max-width:560px;margin:0 auto;padding:32px 24px;">
+      <img src="${siteUrl}/assets/logo.png" alt="SpellRightPro" style="height:48px;border-radius:12px;margin-bottom:20px;" />
+      <h1 style="font-size:1.4rem;color:#7b2ff7;margin:0 0 8px;">Your Premium access expires on ${expiryStr}</h1>
+      <p style="color:#444;line-height:1.6;margin:0 0 20px;">Your SpellRightPro ${planLabel} subscription expires in 7 days. If your subscription renews automatically, no action is needed.</p>
+      <div style="background:#f4f0fc;border-radius:12px;padding:20px;margin-bottom:24px;">
+        <p style="margin:0 0 6px;"><strong>Current plan:</strong> ${planLabel} Premium</p>
+        <p style="margin:0;"><strong>Expires:</strong> ${expiryStr}</p>
+      </div>
+      <a href="${siteUrl}/premium" style="display:inline-block;background:linear-gradient(135deg,#7b2ff7,#f72585);color:#fff;text-decoration:none;padding:14px 28px;border-radius:12px;font-weight:700;font-size:1rem;">Renew Premium →</a>
+    </div>`,
+    text: `Your SpellRightPro ${planLabel} Premium expires on ${expiryStr}.\nRenew: ${siteUrl}/premium`
   });
   console.log(`📧 Renewal reminder sent to ${email}`);
 }
 
-// ── START ─────────────────────────────────────────────────────────────────────
-
-// ── Daily email checks — self-triggered, no Cloud Scheduler needed ────────────
-// Runs once on startup and every 24 hours after that.
-// Cloud Run stays warm as long as users are active — if the server restarts,
-// the interval resets, which is fine (checks just run again on next startup).
+// ── Daily email checks ────────────────────────────────────────────────────────
 function runDailyEmailChecks() {
   const headers = {
     'Content-Type': 'application/json',
@@ -815,7 +772,6 @@ function runDailyEmailChecks() {
   };
   const base = `http://localhost:${process.env.PORT || 8080}`;
 
-  // Small stagger so both don't fire at the exact same millisecond
   setTimeout(() => {
     fetch(base + '/api/email/reengage', { method: 'POST', headers })
       .then(r => r.json())
@@ -831,13 +787,11 @@ function runDailyEmailChecks() {
   }, 5000);
 }
 
+// ── START ─────────────────────────────────────────────────────────────────────
 const PORT = process.env.PORT || 8080;
 app.listen(PORT, "0.0.0.0", () => {
-
-  // Start daily email checks (runs on startup + every 24h)
-  setTimeout(runDailyEmailChecks, 10000); // 10s delay to let server fully start
+  setTimeout(runDailyEmailChecks, 10000);
   setInterval(runDailyEmailChecks, 24 * 60 * 60 * 1000);
-
   console.log(`
 ╔═══════════════════════════════════════════════════════╗
 ║        SpellRightPro API — Port ${PORT}                ║
@@ -845,9 +799,8 @@ app.listen(PORT, "0.0.0.0", () => {
 ║  GET  /                           health              ║
 ║  GET  /api/health                 detailed health     ║
 ║  POST /api/create-checkout-session Stripe checkout    ║
-║  Env: STRIPE_PRICE_MONTHLY, _SIXMONTH, _ANNUAL        ║
-║  GET  /api/verify-session         confirm payment     ║
-║  POST /api/stripe-webhook         Stripe events       ║
+║  POST /api/stripe-webhook         4 events handled    ║
 ║  POST /api/send-confirmation      email fallback      ║
+║  Env: STRIPE_PRICE_MONTHLY, _SIXMONTH, _ANNUAL        ║
 ╚═══════════════════════════════════════════════════════╝`);
 });
