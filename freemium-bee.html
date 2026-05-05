@@ -455,6 +455,45 @@
       color: #7b2ff7;
       animation: micPulse 1s ease-in-out infinite;
     }
+    /* ── Adaptive difficulty badge ────────────────────────────── */
+    #difficultyBadge {
+      display: none;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 8px 14px;
+      margin: 0 auto 12px;
+      background: linear-gradient(135deg, rgba(123,47,247,0.12), rgba(247,37,133,0.08));
+      border: 1px solid rgba(123,47,247,0.25);
+      border-radius: 20px;
+      font-size: 0.82rem;
+      font-weight: 700;
+      color: var(--brand);
+      width: fit-content;
+      max-width: 100%;
+      transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    #difficultyBadge.visible { display: inline-flex; }
+    #difficultyBadge .icon { font-size: 1.05rem; }
+    #difficultyBadge .label { letter-spacing: 0.02em; }
+    #difficultyBadge .meta {
+      font-size: 0.7rem;
+      font-weight: 600;
+      opacity: 0.7;
+      margin-left: 4px;
+    }
+    /* Pulse animation when level changes */
+    @keyframes srpLevelUp {
+      0%   { transform: scale(1); }
+      50%  { transform: scale(1.08); box-shadow: 0 0 20px rgba(123,47,247,0.4); }
+      100% { transform: scale(1); }
+    }
+    #difficultyBadge.level-up { animation: srpLevelUp 0.6s ease; }
+    body.dark-mode #difficultyBadge {
+      background: linear-gradient(135deg, rgba(123,47,247,0.2), rgba(247,37,133,0.15));
+      color: #f0e8ff;
+    }
+
     #countdownBar {
       display: none;
       height: 6px;
@@ -726,6 +765,11 @@
         <i class="fa fa-microphone"></i>
         <span id="micLabel">Listening — spell the word aloud, letter by letter…</span>
       </div>
+      <div id="difficultyBadge">
+        <span class="icon">🌱</span>
+        <span class="label">Beginner pace</span>
+        <span class="meta">— get ready</span>
+      </div>
       <div id="countdownBar"><div id="countdownFill"></div></div>
 
       <!-- Buttons -->
@@ -907,7 +951,21 @@
 
     let activeRecognition  = null;
     let recognitionTimeout = null;
-    const MIC_TIMEOUT_MS   = 12000;  // 12 s to spell the word
+    // ── Adaptive difficulty: starts gentle, ramps up as user progresses ──
+    // Beginner (0-4):   slow speech, 20s timeout — confidence-building
+    // Intermediate (5-14): medium speech, 15s timeout
+    // Standard (15+):   normal speech, 12s timeout — Spelling Bee level
+    function getDifficultyForWord(wordIndex) {
+      if (wordIndex < 5) {
+        return { rate: 0.6,  timeout: 20000, level: 'Beginner',     icon: '\ud83c\udf31' };
+      } else if (wordIndex < 15) {
+        return { rate: 0.75, timeout: 15000, level: 'Intermediate', icon: '\ud83c\udf3f' };
+      } else {
+        return { rate: 0.85, timeout: 12000, level: 'Standard',     icon: '\ud83c\udfc6' };
+      }
+    }
+    // Legacy reference — now superseded by getDifficultyForWord()
+    const MIC_TIMEOUT_MS = 12000;
 
     // ── UI helpers ──────────────────────────────────────────────────────────
     function setFeedback(msg, isError = false) {
@@ -1003,7 +1061,43 @@
     // ── TTS: speak word then open mic ────────────────────────────────────────
     // BUG 1: voices loaded asynchronously
     // BUG 2: 900ms pause between TTS end and mic start
+
+    // Update the level badge based on current word index, with pulse on level change
+    let _lastLevel = null;
+    function updateDifficultyBadge() {
+      const badge = document.getElementById('difficultyBadge');
+      if (!badge) return;
+      const diff = getDifficultyForWord(state.currentIndex);
+      const iconEl = badge.querySelector('.icon');
+      const labelEl = badge.querySelector('.label');
+      const metaEl = badge.querySelector('.meta');
+      if (iconEl) iconEl.textContent = diff.icon;
+      if (labelEl) labelEl.textContent = diff.level + ' pace';
+      if (metaEl) {
+        // Show "next: X words to Intermediate" type hints
+        if (diff.level === 'Beginner') {
+          const remaining = 5 - state.currentIndex;
+          metaEl.textContent = remaining > 0 ? '— ' + remaining + ' to next level' : '';
+        } else if (diff.level === 'Intermediate') {
+          const remaining = 15 - state.currentIndex;
+          metaEl.textContent = remaining > 0 ? '— ' + remaining + ' to Standard' : '';
+        } else {
+          metaEl.textContent = '— Bee competition pace';
+        }
+      }
+      badge.classList.add('visible');
+      // Pulse if level changed
+      if (_lastLevel !== null && _lastLevel !== diff.level) {
+        badge.classList.remove('level-up');
+        // Force reflow to restart the animation
+        void badge.offsetWidth;
+        badge.classList.add('level-up');
+      }
+      _lastLevel = diff.level;
+    }
+
     async function speakWord(word) {
+      updateDifficultyBadge();  // Refresh level badge for current word
       if (!window.speechSynthesis) {
         setFeedback('Speech synthesis not supported in this browser.', true);
         return;
@@ -1018,7 +1112,9 @@
 
       const voices = await getVoices();
       const utter  = new SpeechSynthesisUtterance(word);
-      utter.rate   = 0.78;
+      // Adaptive speech rate based on word index in session
+      const _difficulty = getDifficultyForWord(state.currentIndex);
+      utter.rate   = _difficulty.rate;
       utter.pitch  = 1;
       utter.volume = 1;
       utter.lang   = 'en-GB';
@@ -1071,7 +1167,8 @@
 
       rec.onstart = () => {
         showMic(true, '🎤 Listening — spell the word aloud, letter by letter…');
-        startCountdown(MIC_TIMEOUT_MS);
+        const _diff = getDifficultyForWord(state.currentIndex);
+        startCountdown(_diff.timeout);
       };
 
       rec.onresult = event => {
@@ -1133,7 +1230,7 @@
         abortRecognition();
         setFeedback("⏱️ Time's up! Moving to next word…", true);
         setTimeout(() => skipWord(), 1500);
-      }, MIC_TIMEOUT_MS);
+      }, getDifficultyForWord(state.currentIndex).timeout);
     }
 
     // ── Evaluate spelling ────────────────────────────────────────────────────
@@ -1214,6 +1311,7 @@
 
     // ── Start session ────────────────────────────────────────────────────────
     function startSession() {
+      _lastLevel = null;  // Reset badge tracking on new session
       // ── Daily session limit check ──────────────────────────────
       if (!srpLimit.canStart('bee')) {
         srpLimit.showGate('bee');
@@ -1258,6 +1356,8 @@
 
     // ── End session ──────────────────────────────────────────────────────────
     function endSession() {
+      const _badge = document.getElementById('difficultyBadge');
+      if (_badge) _badge.classList.remove('visible');
       state.isActive = false;
       state.wordToken++;
       abortRecognition();
@@ -1540,7 +1640,7 @@
   <footer style="text-align:center;margin-top:40px;padding:20px;color:#666;border-top:1px solid rgba(255,255,255,0.1);">
     <div style="display:flex;justify-content:center;gap:30px;margin-bottom:20px;flex-wrap:wrap;">
       <div style="text-align:center;"><i class="fa fa-lock" style="color:#7b2ff7;font-size:1.5em;"></i><div style="font-size:0.8em;">SSL Secure</div></div>
-      <div style="text-align:center;"><i class="fa fa-shield-alt" style="color:#7b2ff7;font-size:1.5em;"></i><div style="font-size:0.8em;">Cancel Anytime</div></div>
+      <div style="text-align:center;"><i class="fa fa-shield-alt" style="color:#7b2ff7;font-size:1.5em;"></i><div style="font-size:0.8em;">14-Day Refund</div></div>
       <div style="text-align:center;"><i class="fa fa-user-shield" style="color:#7b2ff7;font-size:1.5em;"></i><div style="font-size:0.8em;">GDPR Compliant</div></div>
     </div>
     <p>
