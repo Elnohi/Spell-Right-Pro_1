@@ -642,6 +642,44 @@
     .rating-action-btn:hover { opacity:.85; }
     .rating-thanks { font-size:0.95rem; font-weight:600; color:#00c57a; padding:10px 0; }
 
+    /* ── Premium Bee adaptive-difficulty badge ─────────────────────────────── */
+    .bee-difficulty-badge {
+      display: none;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 8px 14px;
+      margin: 8px auto 12px;
+      background: linear-gradient(135deg, rgba(123,47,247,0.12), rgba(247,37,133,0.08));
+      border: 1px solid rgba(123,47,247,0.25);
+      border-radius: 20px;
+      font-size: 0.82rem;
+      font-weight: 700;
+      color: var(--brand, #7b2ff7);
+      width: fit-content;
+      max-width: 100%;
+      transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .bee-difficulty-badge.visible { display: inline-flex; }
+    .bee-difficulty-badge .icon { font-size: 1.05rem; }
+    .bee-difficulty-badge .label { letter-spacing: 0.02em; }
+    .bee-difficulty-badge .meta {
+      font-size: 0.7rem;
+      font-weight: 600;
+      opacity: 0.7;
+      margin-left: 4px;
+    }
+    @keyframes srpBeeLevelUp {
+      0%   { transform: scale(1); }
+      50%  { transform: scale(1.08); box-shadow: 0 0 20px rgba(123,47,247,0.4); }
+      100% { transform: scale(1); }
+    }
+    .bee-difficulty-badge.level-up { animation: srpBeeLevelUp 0.6s ease; }
+    body.dark-mode .bee-difficulty-badge {
+      background: linear-gradient(135deg, rgba(123,47,247,0.2), rgba(247,37,133,0.15));
+      color: #f0e8ff;
+    }
+
   </style>
 </head>
 
@@ -1009,6 +1047,13 @@
         <button class="back-to-setup" onclick="backToSetup('bee')">
           <i class="fa fa-arrow-left"></i> Change settings
         </button>
+
+        <!-- Adaptive difficulty badge (Bee mode only) -->
+        <div id="beeDifficultyBadge" class="bee-difficulty-badge">
+          <span class="icon">🌱</span>
+          <span class="label">Beginner pace</span>
+          <span class="meta">— get ready</span>
+        </div>
 
         <!-- Progress -->
         <div id="beeProgress" class="progress-text"></div>
