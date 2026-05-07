@@ -951,21 +951,71 @@
 
     let activeRecognition  = null;
     let recognitionTimeout = null;
-    // ── Adaptive difficulty: starts gentle, ramps up as user progresses ──
-    // Beginner (0-4):   slow speech, 20s timeout — confidence-building
-    // Intermediate (5-14): medium speech, 15s timeout
-    // Standard (15+):   normal speech, 12s timeout — Spelling Bee level
-    function getDifficultyForWord(wordIndex) {
-      if (wordIndex < 5) {
-        return { rate: 0.6,  timeout: 20000, level: 'Beginner',     icon: '\ud83c\udf31' };
-      } else if (wordIndex < 15) {
-        return { rate: 0.75, timeout: 15000, level: 'Intermediate', icon: '\ud83c\udf3f' };
-      } else {
-        return { rate: 0.85, timeout: 12000, level: 'Standard',     icon: '\ud83c\udfc6' };
+    // ── Adaptive difficulty: ACCURACY-GATED progression ──────────────────
+    // Beginner: slow speech (0.6), 20s timeout
+    //   → advance to Intermediate ONLY after 5+ attempts AND ≥80% accuracy
+    // Intermediate: medium speech (0.75), 15s timeout
+    //   → advance to Standard ONLY after 10+ more attempts AND ≥80% accuracy
+    // Standard: full speech (0.85), 12s timeout — Spelling Bee competition pace
+    //
+    // If user can't reach 80%, they stay at the gentler pace indefinitely —
+    // pedagogically correct: don't punish struggling users with faster speed.
+    //
+    // Reads state.beginnerEndIndex and state.intermediateEndIndex to decide
+    // current level. Promotion is set by checkPromotion() after each word.
+    function getDifficultyForWord(state) {
+      if (state && state.beginnerEndIndex !== null && state.beginnerEndIndex !== undefined) {
+        if (state.intermediateEndIndex !== null && state.intermediateEndIndex !== undefined) {
+          return { rate: 0.85, timeout: 12000, level: 'Standard',     icon: '\ud83c\udfc6' };
+        }
+        return   { rate: 0.75, timeout: 15000, level: 'Intermediate', icon: '\ud83c\udf3f' };
+      }
+      return     { rate: 0.6,  timeout: 20000, level: 'Beginner',     icon: '\ud83c\udf31' };
+    }
+    // Legacy reference — kept for safety, no longer used
+    const MIC_TIMEOUT_MS = 12000;
+
+    // ── Promotion thresholds ────────────────────────────────────────────────
+    const BEGINNER_MIN_ATTEMPTS     = 5;   // need at least this many before promoting
+    const INTERMEDIATE_MIN_ATTEMPTS = 10;  // additional attempts at Intermediate
+    const PROMOTION_ACCURACY        = 0.80;
+
+    // Called AFTER state.correct/incorrect updated for current word, BEFORE advanceToNext.
+    // Sets state.beginnerEndIndex or state.intermediateEndIndex when criteria met.
+    function checkPromotion(state) {
+      // Already at Standard — nothing to do
+      if (state.intermediateEndIndex !== null && state.intermediateEndIndex !== undefined) return;
+
+      // Total attempts so far = correct + incorrect counts
+      const totalAttempts = state.correct.length + state.incorrect.length;
+
+      // ── Beginner → Intermediate ──
+      if (state.beginnerEndIndex === null || state.beginnerEndIndex === undefined) {
+        if (totalAttempts < BEGINNER_MIN_ATTEMPTS) return;  // not enough data yet
+        const accuracy = state.correct.length / totalAttempts;
+        if (accuracy >= PROMOTION_ACCURACY) {
+          state.beginnerEndIndex = totalAttempts;
+          state.correctAtBeginnerEnd = state.correct.length;
+          console.log('🌿 Promoted to Intermediate at attempt ' + totalAttempts +
+                      ' (' + state.correct.length + '/' + totalAttempts +
+                      ' = ' + Math.round(accuracy*100) + '% accuracy)');
+        }
+        return;
+      }
+
+      // ── Intermediate → Standard ──
+      // (we only reach here if beginnerEndIndex is set and intermediateEndIndex is not)
+      const attemptsAtInter = totalAttempts - state.beginnerEndIndex;
+      const correctAtInter  = state.correct.length - (state.correctAtBeginnerEnd || 0);
+      if (attemptsAtInter < INTERMEDIATE_MIN_ATTEMPTS) return;
+      const interAccuracy = correctAtInter / attemptsAtInter;
+      if (interAccuracy >= PROMOTION_ACCURACY) {
+        state.intermediateEndIndex = totalAttempts;
+        console.log('🏆 Promoted to Standard at attempt ' + totalAttempts +
+                    ' (' + correctAtInter + '/' + attemptsAtInter +
+                    ' = ' + Math.round(interAccuracy*100) + '% accuracy)');
       }
     }
-    // Legacy reference — now superseded by getDifficultyForWord()
-    const MIC_TIMEOUT_MS = 12000;
 
     // ── UI helpers ──────────────────────────────────────────────────────────
     function setFeedback(msg, isError = false) {
@@ -1062,29 +1112,50 @@
     // BUG 1: voices loaded asynchronously
     // BUG 2: 900ms pause between TTS end and mic start
 
-    // Update the level badge based on current word index, with pulse on level change
+    // Update the level badge based on current state, with pulse on level change
     let _lastLevel = null;
     function updateDifficultyBadge() {
       const badge = document.getElementById('difficultyBadge');
       if (!badge) return;
-      const diff = getDifficultyForWord(state.currentIndex);
+      const diff = getDifficultyForWord(state);
       const iconEl = badge.querySelector('.icon');
       const labelEl = badge.querySelector('.label');
       const metaEl = badge.querySelector('.meta');
       if (iconEl) iconEl.textContent = diff.icon;
       if (labelEl) labelEl.textContent = diff.level + ' pace';
-      if (metaEl) {
-        // Show "next: X words to Intermediate" type hints
-        if (diff.level === 'Beginner') {
-          const remaining = 5 - state.currentIndex;
-          metaEl.textContent = remaining > 0 ? '— ' + remaining + ' to next level' : '';
-        } else if (diff.level === 'Intermediate') {
-          const remaining = 15 - state.currentIndex;
-          metaEl.textContent = remaining > 0 ? '— ' + remaining + ' to Standard' : '';
+
+      // Compute progress hint based on current level
+      const totalAttempts = state.correct.length + state.incorrect.length;
+      let hint = '';
+      if (diff.level === 'Beginner') {
+        if (totalAttempts < BEGINNER_MIN_ATTEMPTS) {
+          // Still warming up — show attempts remaining before promotion eligible
+          const remaining = BEGINNER_MIN_ATTEMPTS - totalAttempts;
+          hint = '\u2014 ' + state.correct.length + '/' + totalAttempts +
+                 ' so far · ' + remaining + ' more then 80% to advance';
         } else {
-          metaEl.textContent = '— Bee competition pace';
+          // Enough attempts but accuracy too low — show current %
+          const pct = Math.round((state.correct.length / totalAttempts) * 100);
+          hint = '\u2014 ' + state.correct.length + '/' + totalAttempts +
+                 ' (' + pct + '%) · need 80% to advance';
         }
+      } else if (diff.level === 'Intermediate') {
+        const interAttempts = totalAttempts - state.beginnerEndIndex;
+        const interCorrect  = state.correct.length - (state.correctAtBeginnerEnd || 0);
+        if (interAttempts < INTERMEDIATE_MIN_ATTEMPTS) {
+          const remaining = INTERMEDIATE_MIN_ATTEMPTS - interAttempts;
+          hint = '\u2014 ' + interCorrect + '/' + interAttempts +
+                 ' so far · ' + remaining + ' more then 80% to advance';
+        } else {
+          const pct = interAttempts > 0 ? Math.round((interCorrect / interAttempts) * 100) : 0;
+          hint = '\u2014 ' + interCorrect + '/' + interAttempts +
+                 ' (' + pct + '%) · need 80% to advance';
+        }
+      } else {
+        hint = '\u2014 Bee competition pace';
       }
+      if (metaEl) metaEl.textContent = hint;
+
       badge.classList.add('visible');
       // Pulse if level changed
       if (_lastLevel !== null && _lastLevel !== diff.level) {
@@ -1112,8 +1183,8 @@
 
       const voices = await getVoices();
       const utter  = new SpeechSynthesisUtterance(word);
-      // Adaptive speech rate based on word index in session
-      const _difficulty = getDifficultyForWord(state.currentIndex);
+      // Adaptive speech rate based on current difficulty level
+      const _difficulty = getDifficultyForWord(state);
       utter.rate   = _difficulty.rate;
       utter.pitch  = 1;
       utter.volume = 1;
@@ -1127,21 +1198,40 @@
 
       setFeedback('🔊 Listen carefully…');
 
+      // BUG FIX: track which word this speech is for, so onend / watchdog
+      // / onerror don't fire for stale utterances after we've moved on.
+      const speechToken = state.wordToken;
+      let micOpened = false;
+      const proceedToMic = (reason) => {
+        if (micOpened) return;                          // only fire once
+        if (speechToken !== state.wordToken) return;    // stale — already moved on
+        if (!state.isActive) return;                    // session ended
+        micOpened = true;
+        if (reason) console.log('Mic opening via:', reason);
+        state.isWaiting = false;
+        openMic(word, state.wordToken);
+      };
+
       utter.onend = () => {
-        // BUG 2 FIX: 900ms gap so TTS audio tail clears the microphone
-        setTimeout(() => {
-          if (!state.isActive) return;
-          state.isWaiting = false;
-          openMic(word, state.wordToken);
-        }, 900);
+        // 900ms gap so TTS audio tail clears the microphone
+        setTimeout(() => proceedToMic('onend'), 900);
       };
 
       utter.onerror = e => {
         console.warn('TTS error:', e.error);
-        setFeedback('Could not speak word — check browser audio permissions.', true);
+        // BUG FIX: don't leave the session frozen. Open mic anyway after a
+        // short delay so the user can still attempt to spell the word.
+        // Don't show a scary error — just continue.
+        setTimeout(() => proceedToMic('onerror'), 600);
       };
 
       speechSynthesis.speak(utter);
+
+      // BUG FIX (Chrome onend silent failure): watchdog timer.
+      // If onend never fires within (rate-adjusted estimate + 4s buffer), force the mic open.
+      // Estimate: ~250ms per character at rate 1.0, scaled inversely.
+      const estimatedSpeechMs = Math.max(2000, (word.length * 250) / Math.max(0.5, _difficulty.rate));
+      setTimeout(() => proceedToMic('watchdog'), estimatedSpeechMs + 4000);
     }
 
     // ── Open microphone for one spelling attempt ──────────────────────────────
@@ -1167,7 +1257,7 @@
 
       rec.onstart = () => {
         showMic(true, '🎤 Listening — spell the word aloud, letter by letter…');
-        const _diff = getDifficultyForWord(state.currentIndex);
+        const _diff = getDifficultyForWord(state);
         startCountdown(_diff.timeout);
       };
 
@@ -1212,13 +1302,28 @@
       };
 
       rec.onend = () => {
-        // onend can fire before onresult on some browsers
+        // onend can fire before onresult on some browsers. We use a delayed
+        // safety check: if no result/error has been processed by 1.5s after
+        // onend, force a skip so we don't freeze.
         if (capturedToken !== state.wordToken) return;
-        if (!recognitionTimeout) return;   // result already handled
-        // Reached here with no result → treat as timeout
-        abortRecognition();
-        setFeedback("⏱️ No answer received — moving on…", true);
-        setTimeout(() => skipWord(), 1500);
+        // If the timeout is still pending, the result/error path will handle it.
+        // If timeout was already cleared, result/error already ran — nothing to do.
+        // BUT if neither happens (rare browser bug), schedule a fallback.
+        setTimeout(() => {
+          if (capturedToken !== state.wordToken) return;
+          if (!state.isActive) return;
+          // If we're still on the same word and nothing has progressed, force skip.
+          // We check by seeing if the recognition for this token is still "active"
+          // (recognitionTimeout would have been cleared by now if anything ran).
+          if (recognitionTimeout) {
+            // Timeout still pending → result/error never fired. Force-clear and skip.
+            clearTimeout(recognitionTimeout);
+            recognitionTimeout = null;
+            abortRecognition();
+            setFeedback("⏱️ No answer received — moving on…", true);
+            setTimeout(() => skipWord(), 800);
+          }
+        }, 1500);
       };
 
       rec.start();
@@ -1230,7 +1335,7 @@
         abortRecognition();
         setFeedback("⏱️ Time's up! Moving to next word…", true);
         setTimeout(() => skipWord(), 1500);
-      }, getDifficultyForWord(state.currentIndex).timeout);
+      }, getDifficultyForWord(state).timeout);
     }
 
     // ── Evaluate spelling ────────────────────────────────────────────────────
@@ -1264,6 +1369,7 @@
         setFeedback(`❌ Not quite. You spelled: "${heard}" — correct spelling: ${expectedWord}`);
       }
 
+      checkPromotion(state);   // accuracy-gated level advancement
       advanceToNext();
     }
 
@@ -1279,6 +1385,7 @@
         });
       }
       state.streak = 0;
+      checkPromotion(state);   // accuracy-gated level advancement
       advanceToNext();
     }
 
@@ -1344,6 +1451,10 @@
       state.streak       = 0;
       state.maxStreak    = 0;
       state.wordToken    = 0;
+      // Accuracy-gated difficulty state — reset every session
+      state.beginnerEndIndex     = null;   // null = still at Beginner
+      state.intermediateEndIndex = null;   // null = not yet at Standard
+      state.correctAtBeginnerEnd = 0;      // snapshot for per-level accuracy
 
       if (els.summary) { els.summary.style.display = 'none'; els.summary.classList.add('hidden'); }
 
@@ -1491,8 +1602,11 @@
       Object.assign(state, {
         words: missed, currentIndex: 0, correct: [], incorrect: [],
         flags: new Set(), isActive: true, isWaiting: false,
-        score: 0, streak: 0, maxStreak: 0, wordToken: 0
+        score: 0, streak: 0, maxStreak: 0, wordToken: 0,
+        beginnerEndIndex: null, intermediateEndIndex: null,
+        correctAtBeginnerEnd: 0
       });
+      _lastLevel = null;
       if (els.summary) { els.summary.style.display = 'none'; els.summary.classList.add('hidden'); }
       setProgress();
       setFeedback(`Practising ${missed.length} missed words`);
@@ -1640,7 +1754,7 @@
   <footer style="text-align:center;margin-top:40px;padding:20px;color:#666;border-top:1px solid rgba(255,255,255,0.1);">
     <div style="display:flex;justify-content:center;gap:30px;margin-bottom:20px;flex-wrap:wrap;">
       <div style="text-align:center;"><i class="fa fa-lock" style="color:#7b2ff7;font-size:1.5em;"></i><div style="font-size:0.8em;">SSL Secure</div></div>
-      <div style="text-align:center;"><i class="fa fa-shield-alt" style="color:#7b2ff7;font-size:1.5em;"></i><div style="font-size:0.8em;">Cancel Anytime</div></div>
+      <div style="text-align:center;"><i class="fa fa-shield-alt" style="color:#7b2ff7;font-size:1.5em;"></i><div style="font-size:0.8em;">14-Day Refund</div></div>
       <div style="text-align:center;"><i class="fa fa-user-shield" style="color:#7b2ff7;font-size:1.5em;"></i><div style="font-size:0.8em;">GDPR Compliant</div></div>
     </div>
     <p>
