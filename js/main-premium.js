@@ -28,6 +28,111 @@ let flaggedWords = new Set();
 let customLists = JSON.parse(localStorage.getItem('premiumCustomLists') || '{}');
 let currentCustomList = null;
 
+// ── Premium Bee adaptive difficulty (Bee mode only) ────────────────────────
+// Mirrors the freemium Bee progression: starts gentle, speeds up only after
+// the user demonstrates ≥80% accuracy. School and OET are unaffected.
+let beeBeginnerEndIndex     = null;   // null = still at Beginner
+let beeIntermediateEndIndex = null;   // null = not yet at Standard
+let beeCorrectAtBeginnerEnd = 0;      // snapshot for per-level accuracy
+let beeLastBadgeLevel       = null;   // for pulse animation on level change
+const BEE_BEGINNER_MIN     = 5;       // need 5+ attempts before Beginner promotion
+const BEE_INTERMEDIATE_MIN = 10;      // need 10+ more attempts at Intermediate
+const BEE_PROMOTION_PCT    = 0.80;    // 80% accuracy required to advance
+
+// Returns {rate, level, icon} for the CURRENT Bee level based on tracking vars.
+// Used by speakWord (rate) and updateBeeBadge (display).
+function getBeeDifficulty() {
+  if (beeBeginnerEndIndex !== null) {
+    if (beeIntermediateEndIndex !== null) {
+      return { rate: 0.85, level: 'Standard',     icon: '\ud83c\udfc6' };
+    }
+    return   { rate: 0.75, level: 'Intermediate', icon: '\ud83c\udf3f' };
+  }
+  return     { rate: 0.6,  level: 'Beginner',     icon: '\ud83c\udf31' };
+}
+
+// Called in checkBeeAnswer AFTER correctWords/incorrectWords are updated.
+// Sets beeBeginnerEndIndex / beeIntermediateEndIndex when criteria met.
+function checkBeePromotion() {
+  if (beeIntermediateEndIndex !== null) return;  // already at Standard
+  const totalAttempts = correctWords.length + incorrectWords.length;
+
+  if (beeBeginnerEndIndex === null) {
+    if (totalAttempts < BEE_BEGINNER_MIN) return;
+    const accuracy = correctWords.length / totalAttempts;
+    if (accuracy >= BEE_PROMOTION_PCT) {
+      beeBeginnerEndIndex = totalAttempts;
+      beeCorrectAtBeginnerEnd = correctWords.length;
+      console.log('🌿 Bee promoted to Intermediate at attempt ' + totalAttempts +
+                  ' (' + correctWords.length + '/' + totalAttempts +
+                  ' = ' + Math.round(accuracy * 100) + '%)');
+    }
+    return;
+  }
+
+  // Already at Intermediate — check for promotion to Standard
+  const attemptsAtInter = totalAttempts - beeBeginnerEndIndex;
+  const correctAtInter  = correctWords.length - beeCorrectAtBeginnerEnd;
+  if (attemptsAtInter < BEE_INTERMEDIATE_MIN) return;
+  const interAccuracy = correctAtInter / attemptsAtInter;
+  if (interAccuracy >= BEE_PROMOTION_PCT) {
+    beeIntermediateEndIndex = totalAttempts;
+    console.log('🏆 Bee promoted to Standard at attempt ' + totalAttempts +
+                ' (' + correctAtInter + '/' + attemptsAtInter +
+                ' = ' + Math.round(interAccuracy * 100) + '%)');
+  }
+}
+
+// Update the on-screen badge inside the bee-area. Pulses on level change.
+function updateBeeBadge() {
+  const badge = document.getElementById('beeDifficultyBadge');
+  if (!badge) return;
+  const diff = getBeeDifficulty();
+  const iconEl  = badge.querySelector('.icon');
+  const labelEl = badge.querySelector('.label');
+  const metaEl  = badge.querySelector('.meta');
+  if (iconEl) iconEl.textContent = diff.icon;
+  if (labelEl) labelEl.textContent = diff.level + ' pace';
+
+  // Build progress hint
+  const totalAttempts = correctWords.length + incorrectWords.length;
+  let hint = '';
+  if (diff.level === 'Beginner') {
+    if (totalAttempts < BEE_BEGINNER_MIN) {
+      const remaining = BEE_BEGINNER_MIN - totalAttempts;
+      hint = '\u2014 ' + correctWords.length + '/' + totalAttempts +
+             ' so far \u00b7 ' + remaining + ' more then 80% to advance';
+    } else {
+      const pct = Math.round((correctWords.length / totalAttempts) * 100);
+      hint = '\u2014 ' + correctWords.length + '/' + totalAttempts +
+             ' (' + pct + '%) \u00b7 need 80% to advance';
+    }
+  } else if (diff.level === 'Intermediate') {
+    const interAttempts = totalAttempts - beeBeginnerEndIndex;
+    const interCorrect  = correctWords.length - beeCorrectAtBeginnerEnd;
+    if (interAttempts < BEE_INTERMEDIATE_MIN) {
+      const remaining = BEE_INTERMEDIATE_MIN - interAttempts;
+      hint = '\u2014 ' + interCorrect + '/' + interAttempts +
+             ' so far \u00b7 ' + remaining + ' more then 80% to advance';
+    } else {
+      const pct = interAttempts > 0 ? Math.round((interCorrect / interAttempts) * 100) : 0;
+      hint = '\u2014 ' + interCorrect + '/' + interAttempts +
+             ' (' + pct + '%) \u00b7 need 80% to advance';
+    }
+  } else {
+    hint = '\u2014 Bee competition pace';
+  }
+  if (metaEl) metaEl.textContent = hint;
+
+  badge.classList.add('visible');
+  if (beeLastBadgeLevel !== null && beeLastBadgeLevel !== diff.level) {
+    badge.classList.remove('level-up');
+    void badge.offsetWidth;
+    badge.classList.add('level-up');
+  }
+  beeLastBadgeLevel = diff.level;
+}
+
 // Initialize Firebase components when ready
 function initializeFirebase() {
     // ── localStorage hint (NOT a gate) ──────────────────────────────────────
@@ -559,7 +664,11 @@ function checkBeeAnswer(spokenText) {
     feedbackElement.style.color = '#dc3545';
     feedbackElement.style.fontWeight = 'bold';
   }
-  
+
+  // Adaptive difficulty: check whether user has earned promotion
+  checkBeePromotion();
+  updateBeeBadge();
+
   currentIndex++;
   
   if (currentIndex < currentList.length) {
@@ -1042,6 +1151,14 @@ function resetTraining() {
   correctWords = [];
   incorrectWords = [];
   flaggedWords = new Set();
+  // Reset Bee adaptive-difficulty tracking — fresh chance each session
+  beeBeginnerEndIndex     = null;
+  beeIntermediateEndIndex = null;
+  beeCorrectAtBeginnerEnd = 0;
+  beeLastBadgeLevel       = null;
+  // Hide the badge until next Bee session shows it
+  const _bbadge = document.getElementById('beeDifficultyBadge');
+  if (_bbadge) _bbadge.classList.remove('visible');
   speechSynthesis.cancel();
   
   if (recognition && isListening) {
@@ -1084,6 +1201,8 @@ function startTraining(mode) {
                      'committee','conscientious','millennium','perseverance','questionnaire'];
     }
     showFeedback('Spelling Bee started — ' + currentList.length + ' words', 'info');
+    // Initialize the adaptive-difficulty badge — starts at Beginner pace
+    updateBeeBadge();
     nextWord();
   } else {
     // school — use built-in school list
@@ -1154,7 +1273,9 @@ async function speakWord(word) {
     const accentSelect = document.getElementById(`${currentMode}Accent`);
     const accent = accentSelect?.value || 'en-GB';
     utter.lang = accent;
-    utter.rate = 0.85;
+    // Adaptive rate for Bee mode (gentle for beginners, faster as user advances).
+    // School and OET stay at the standard rate (typed input — speed less critical).
+    utter.rate = (currentMode === 'bee') ? getBeeDifficulty().rate : 0.85;
     utter.pitch = 1;
     
     // Cancel previous speech; wait a tick so cancel's 'end' fires
