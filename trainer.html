@@ -1241,5 +1241,12 @@
   }
 })();
 </script>
+
+  <script>
+  window.addEventListener('error', function(e) {
+    if (typeof gtag !== 'undefined' && e.error)
+      gtag('event', 'exception', { description: e.error.message, fatal: false });
+  });
+</script>
 </body>
 </html>
