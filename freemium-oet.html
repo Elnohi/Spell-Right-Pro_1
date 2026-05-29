@@ -1839,7 +1839,9 @@ const firebaseConfig = {
   
   // Monitor errors
   window.addEventListener('error', function(e) {
-    console.error('Page error:', e.error);
+  if (typeof gtag !== 'undefined' && e.error)
+    gtag('event', 'exception', { description: e.error.message, fatal: false });
+});
     
     // Send to error tracking service
     if (typeof gtag !== 'undefined') {
