@@ -179,8 +179,8 @@ class FirebaseUtils {
           }));
           return true;
         } else {
-          console.log('❌ Firestore premiumUsers: subscription expired or inactive');
-          return false;
+          console.warn('⚠️ Firestore premiumUsers: subscription expired or inactive');
+return false;
         }
       }
     } catch (err) {
