@@ -184,7 +184,7 @@ async function writePremiumRecord(uid, email, plan, sessionId, source) {
   const expiry = new Date();
   if (plan === 'annual')        expiry.setFullYear(expiry.getFullYear() + 1);
   else if (plan === 'sixmonth') expiry.setMonth(expiry.getMonth() + 6);
-  else                          expiry.setDate(expiry.getDate() + 30);
+  else expiry.setMonth(expiry.getMonth() + 1);
   const record = {
     email, plan, active: true,
     activatedAt:     admin.firestore.FieldValue.serverTimestamp(),
